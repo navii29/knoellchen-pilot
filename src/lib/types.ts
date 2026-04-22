@@ -10,6 +10,11 @@ export interface Organization {
   email: string | null;
   tax_number: string | null;
   processing_fee: number;
+  slug: string | null;
+  inbound_email: string | null;
+  sender_email: string | null;
+  sender_name: string | null;
+  email_automation_enabled: boolean;
   created_at: string;
 }
 
@@ -134,6 +139,12 @@ export interface Ticket {
   questionnaire_path: string | null;
   letter_sent: boolean;
   authority_sent: boolean;
+  inbound_email_id: string | null;
+  letter_sent_at: string | null;
+  letter_sent_to: string | null;
+  authority_sent_at: string | null;
+  authority_sent_to: string | null;
+  authority_email: string | null;
   source: "upload" | "email";
   notes: string | null;
   created_at: string;

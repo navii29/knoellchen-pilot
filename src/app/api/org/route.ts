@@ -15,10 +15,24 @@ export const PATCH = async (req: Request) => {
   if (!profile) return NextResponse.json({ error: "No profile" }, { status: 401 });
 
   const body = (await req.json()) as Record<string, unknown>;
-  const allowed = ["name", "street", "zip", "city", "phone", "email", "tax_number", "processing_fee"];
+  const allowed = [
+    "name",
+    "street",
+    "zip",
+    "city",
+    "phone",
+    "email",
+    "tax_number",
+    "processing_fee",
+    "sender_name",
+    "sender_email",
+    "email_automation_enabled",
+  ];
   const update: Record<string, unknown> = {};
   for (const k of allowed) if (k in body) update[k] = body[k];
   if ("processing_fee" in update) update.processing_fee = Number(update.processing_fee);
+  if ("email_automation_enabled" in update)
+    update.email_automation_enabled = Boolean(update.email_automation_enabled);
 
   const admin = createAdminClient();
   const { data, error } = await admin

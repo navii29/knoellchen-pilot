@@ -4,21 +4,26 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Building2,
+  Check,
   CheckCircle,
   FileStack,
   FileText,
   Loader2,
+  Mail,
   ReceiptText,
+  Send,
   type LucideIcon,
 } from "lucide-react";
 import { THEME } from "@/lib/theme";
-import { fmtEur } from "@/lib/utils";
+import { fmtEur, fmtDate } from "@/lib/utils";
 import type { Ticket } from "@/lib/types";
 
 export const TicketActions = ({ ticket }: { ticket: Ticket }) => {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [authorityInput, setAuthorityInput] = useState(ticket.authority_email || "");
+  const [showAuthorityField, setShowAuthorityField] = useState(false);
 
   const generateDocs = async () => {
     setLoading("docs");
@@ -28,6 +33,54 @@ export const TicketActions = ({ ticket }: { ticket: Ticket }) => {
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
       setError(j.error || "Dokumente konnten nicht erstellt werden");
+      return;
+    }
+    router.refresh();
+  };
+
+  const sendToRenter = async () => {
+    if (!ticket.renter_email) return;
+    if (
+      !confirm(
+        `E-Mail mit Anschreiben + Rechnung an ${ticket.renter_email} senden?`
+      )
+    )
+      return;
+    setLoading("send_renter");
+    setError(null);
+    const res = await fetch(`/api/tickets/${ticket.id}/send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "mieter" }),
+    });
+    setLoading(null);
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      setError(j.error || "Versand fehlgeschlagen");
+      return;
+    }
+    router.refresh();
+  };
+
+  const sendToAuthority = async () => {
+    const target = ticket.authority_email || authorityInput.trim();
+    if (!target) {
+      setShowAuthorityField(true);
+      setError("Bitte Behörden-E-Mail eingeben");
+      return;
+    }
+    if (!confirm(`Zeugenfragebogen an ${target} senden?`)) return;
+    setLoading("send_authority");
+    setError(null);
+    const res = await fetch(`/api/tickets/${ticket.id}/send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "behoerde", behoerde_email: target }),
+    });
+    setLoading(null);
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      setError(j.error || "Versand fehlgeschlagen");
       return;
     }
     router.refresh();
@@ -50,93 +103,116 @@ export const TicketActions = ({ ticket }: { ticket: Ticket }) => {
     router.refresh();
   };
 
-  const markSent = async () => {
-    setLoading("sent");
-    setError(null);
-    const res = await fetch(`/api/tickets/${ticket.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ letter_sent: true, authority_sent: true, status: "weiterbelastet" }),
-    });
-    setLoading(null);
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
-      setError(j.error || "Konnte nicht aktualisieren");
-      return;
-    }
-    router.refresh();
-  };
-
   const total = (ticket.fine_amount || 0) + Number(ticket.processing_fee || 0);
   const docsReady = !!ticket.letter_path && !!ticket.invoice_path;
-
-  type Action = {
-    key: string;
-    Icon: LucideIcon;
-    label: string;
-    hint: string;
-    onClick: () => void;
-    disabled?: boolean;
-  };
-
-  const actions: Action[] = [
-    {
-      key: "docs",
-      Icon: FileStack,
-      label: docsReady ? "Dokumente neu erstellen" : "PDFs erstellen",
-      hint: docsReady ? "Anschreiben, Rechnung, Zeugenfragebogen" : "Anschreiben + Rechnung + Zeugenfragebogen",
-      onClick: generateDocs,
-      disabled: !ticket.plate || !ticket.fine_amount,
-    },
-    {
-      key: "sent",
-      Icon: Building2,
-      label: "Als versendet markieren",
-      hint: "Mieter + Behörde benachrichtigt",
-      onClick: markSent,
-      disabled: !docsReady || ticket.letter_sent,
-    },
-    {
-      key: "paid",
-      Icon: CheckCircle,
-      label: "Als bezahlt markieren",
-      hint: `${fmtEur(total)} eingegangen`,
-      onClick: markPaid,
-      disabled: ticket.paid,
-    },
-  ];
 
   return (
     <div>
       <div className="text-xs uppercase tracking-wider text-stone-500 font-medium mb-2">Aktionen</div>
+
       <div className="grid sm:grid-cols-2 gap-2.5">
-        {actions.map((a) => (
-          <button
-            key={a.key}
-            onClick={a.onClick}
-            disabled={a.disabled || loading != null}
-            className="flex items-start gap-3 p-3.5 rounded-lg ring-1 ring-stone-200 bg-white hover:bg-stone-50 text-left disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center"
-              style={{ background: THEME.primaryTint, color: THEME.primary }}
-            >
-              {loading === a.key ? <Loader2 size={15} className="animate-spin" /> : <a.Icon size={15} />}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium">{a.label}</div>
-              <div className="text-xs text-stone-500 truncate">{a.hint}</div>
-            </div>
-          </button>
-        ))}
+        <ActionButton
+          Icon={FileStack}
+          label={docsReady ? "PDFs neu erstellen" : "PDFs erstellen"}
+          hint="Anschreiben + Rechnung + Zeugenfragebogen"
+          onClick={generateDocs}
+          disabled={!ticket.plate || !ticket.fine_amount}
+          loading={loading === "docs"}
+        />
+
+        <ActionButton
+          Icon={Mail}
+          label={ticket.letter_sent ? "Erneut an Mieter senden" : "An Mieter senden"}
+          hint={
+            ticket.renter_email
+              ? `Per E-Mail an ${ticket.renter_email}`
+              : "Mieter-E-Mail fehlt im Vertrag"
+          }
+          onClick={sendToRenter}
+          disabled={!docsReady || !ticket.renter_email}
+          loading={loading === "send_renter"}
+        />
+
+        <ActionButton
+          Icon={Building2}
+          label={ticket.authority_sent ? "Erneut an Behörde senden" : "An Behörde senden"}
+          hint={
+            ticket.authority_email || authorityInput
+              ? `Per E-Mail an ${ticket.authority_email || authorityInput}`
+              : "Behörden-E-Mail eintragen"
+          }
+          onClick={sendToAuthority}
+          disabled={!ticket.questionnaire_path}
+          loading={loading === "send_authority"}
+        />
+
+        <ActionButton
+          Icon={CheckCircle}
+          label="Als bezahlt markieren"
+          hint={`${fmtEur(total)} eingegangen`}
+          onClick={markPaid}
+          disabled={ticket.paid}
+          loading={loading === "paid"}
+        />
       </div>
+
+      {(showAuthorityField || (!ticket.authority_email && !ticket.authority_sent)) && (
+        <div className="mt-3 flex items-center gap-2">
+          <input
+            type="email"
+            value={authorityInput}
+            onChange={(e) => setAuthorityInput(e.target.value)}
+            placeholder="bussgeld@behoerde.de"
+            className="flex-1 px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400 font-mono"
+          />
+          <button
+            onClick={sendToAuthority}
+            disabled={!authorityInput || loading != null || !ticket.questionnaire_path}
+            className="inline-flex items-center gap-1.5 text-sm text-white px-3 py-2 rounded-md font-medium disabled:opacity-50"
+            style={{ background: THEME.primary }}
+          >
+            <Send size={13} /> Senden
+          </button>
+        </div>
+      )}
+
       {ticket.letter_path && (
         <div className="mt-3 grid sm:grid-cols-3 gap-2 text-sm">
           <DocLink label="Anschreiben" Icon={FileText} url={`/api/tickets/${ticket.id}/files/letter`} />
           <DocLink label="Rechnung" Icon={ReceiptText} url={`/api/tickets/${ticket.id}/files/invoice`} />
-          <DocLink label="Zeugenfragebogen" Icon={Building2} url={`/api/tickets/${ticket.id}/files/questionnaire`} />
+          <DocLink
+            label="Zeugenfragebogen"
+            Icon={Building2}
+            url={`/api/tickets/${ticket.id}/files/questionnaire`}
+          />
         </div>
       )}
+
+      {(ticket.letter_sent || ticket.authority_sent) && (
+        <div className="mt-4 rounded-lg ring-1 ring-emerald-200 bg-emerald-50/50 p-3 space-y-1.5 text-sm">
+          {ticket.letter_sent && ticket.letter_sent_at && (
+            <div className="flex items-center gap-2 text-emerald-800">
+              <Check size={14} />
+              <span>
+                Anschreiben gesendet am{" "}
+                <strong>{fmtDate(ticket.letter_sent_at)}</strong> an{" "}
+                <span className="font-mono text-xs">{ticket.letter_sent_to}</span>
+              </span>
+            </div>
+          )}
+          {ticket.authority_sent && ticket.authority_sent_at && (
+            <div className="flex items-center gap-2 text-emerald-800">
+              <Check size={14} />
+              <span>
+                Zeugenfragebogen gesendet am{" "}
+                <strong>{fmtDate(ticket.authority_sent_at)}</strong> an{" "}
+                <span className="font-mono text-xs">{ticket.authority_sent_to}</span>
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       {error && (
         <div className="mt-3 text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2">
           {error}
@@ -145,6 +221,39 @@ export const TicketActions = ({ ticket }: { ticket: Ticket }) => {
     </div>
   );
 };
+
+const ActionButton = ({
+  Icon,
+  label,
+  hint,
+  onClick,
+  disabled,
+  loading,
+}: {
+  Icon: LucideIcon;
+  label: string;
+  hint: string;
+  onClick: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+}) => (
+  <button
+    onClick={onClick}
+    disabled={disabled || loading}
+    className="flex items-start gap-3 p-3.5 rounded-lg ring-1 ring-stone-200 bg-white hover:bg-stone-50 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+  >
+    <div
+      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+      style={{ background: THEME.primaryTint, color: THEME.primary }}
+    >
+      {loading ? <Loader2 size={15} className="animate-spin" /> : <Icon size={15} />}
+    </div>
+    <div className="flex-1 min-w-0">
+      <div className="text-sm font-medium">{label}</div>
+      <div className="text-xs text-stone-500 truncate">{hint}</div>
+    </div>
+  </button>
+);
 
 const DocLink = ({ label, Icon, url }: { label: string; Icon: LucideIcon; url: string }) => (
   <a

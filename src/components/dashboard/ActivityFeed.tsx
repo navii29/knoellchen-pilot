@@ -1,6 +1,8 @@
 import {
   AlarmClock,
+  Building2,
   FileSignature,
+  Inbox,
   Mail,
   Send,
   UserCheck,
@@ -22,18 +24,24 @@ type Item = {
 
 const TICKET_ICONS: Record<string, { Icon: LucideIcon; color: string }> = {
   upload: { Icon: Mail, color: "#f59e0b" },
+  inbound: { Icon: Inbox, color: "#f59e0b" },
   parsed: { Icon: Mail, color: "#f59e0b" },
   matched: { Icon: UserCheck, color: "#2563eb" },
   documents: { Icon: Send, color: "#059669" },
+  sent_renter: { Icon: Mail, color: "#0d9488" },
+  sent_authority: { Icon: Building2, color: "#0d9488" },
   paid: { Icon: Wallet, color: "#059669" },
   reminder: { Icon: AlarmClock, color: "#7c3aed" },
 };
 
 const TICKET_LABELS: Record<string, (l: TicketLog) => string> = {
   upload: () => "Strafzettel hochgeladen",
+  inbound: (l) => `Strafzettel per E-Mail empfangen${(l.details as { subject?: string })?.subject ? ` — „${(l.details as { subject?: string }).subject}"` : ""}`,
   parsed: () => "KI-Auslesung abgeschlossen",
   matched: (l) => `Fahrer zugeordnet: ${(l.details as { renter_name?: string })?.renter_name ?? "—"}`,
   documents: () => "Dokumente generiert",
+  sent_renter: (l) => `E-Mail an Mieter gesendet (${(l.details as { to?: string })?.to ?? "—"})`,
+  sent_authority: (l) => `Zeugenfragebogen an Behörde gesendet (${(l.details as { to?: string })?.to ?? "—"})`,
   paid: () => "Zahlung eingegangen",
   reminder: () => "Mahnung ausgelöst",
 };
