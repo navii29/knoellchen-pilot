@@ -1,0 +1,112 @@
+// Lokales Preview: rendert die 3 PDFs mit Testdaten nach /tmp/.
+// Run: npx tsx scripts/preview-pdfs.ts
+import { writeFileSync } from "fs";
+import {
+  generateInvoicePdf,
+  generateLetterPdf,
+  generateQuestionnairePdf,
+} from "../src/lib/pdf-generator";
+import type { Contract, Organization, Ticket } from "../src/lib/types";
+
+const org: Organization = {
+  id: "00000000",
+  name: "Stadtflotte München GmbH",
+  street: "Bayerstraße 12",
+  zip: "80335",
+  city: "München",
+  phone: "+49 89 12345678",
+  email: "kontakt@stadtflotte.de",
+  tax_number: "DE123456789",
+  processing_fee: 25,
+  slug: "stadtflotte",
+  inbound_email: "stadtflotte@knoellchen-pilot.de",
+  sender_email: null,
+  sender_name: null,
+  email_automation_enabled: true,
+  created_at: new Date().toISOString(),
+};
+
+const ticket: Ticket = {
+  id: "t1",
+  org_id: "00000000",
+  ticket_nr: "KP-253494",
+  status: "zugeordnet",
+  plate: "M-AV 5678",
+  vehicle_type: "VW Polo",
+  offense: "Geschwindigkeitsüberschreitung außerorts um 21 km/h",
+  offense_details: "71 km/h bei zulässigen 50 km/h (nach Toleranzabzug)",
+  location: "Landsberger Straße 155, 80339 München",
+  offense_date: "2026-04-21",
+  offense_time: "14:38",
+  authority: "Polizeipräsidium München",
+  reference_nr: "PP-VK-2026-04-29381",
+  fine_amount: 115.0,
+  points: 1,
+  deadline: "2026-05-06",
+  ai_confidence: 0.98,
+  ai_raw_response: null,
+  booking_id: null,
+  contract_id: "c1",
+  renter_name: "Lukas Becker",
+  renter_email: "lukas.becker@example.de",
+  processing_fee: 25,
+  paid: false,
+  reminder_level: 0,
+  upload_path: null,
+  letter_path: null,
+  invoice_path: null,
+  questionnaire_path: null,
+  letter_sent: false,
+  authority_sent: false,
+  inbound_email_id: null,
+  letter_sent_at: null,
+  letter_sent_to: null,
+  authority_sent_at: null,
+  authority_sent_to: null,
+  authority_email: null,
+  source: "upload",
+  notes: null,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
+const contract: Contract = {
+  id: "c1",
+  org_id: "00000000",
+  contract_nr: "MV-2026-0042",
+  vehicle_id: null,
+  plate: "M-AV 5678",
+  vehicle_type: "VW Polo",
+  renter_name: "Lukas Becker",
+  renter_email: "lukas.becker@example.de",
+  renter_phone: "+49 175 8765432",
+  renter_address: "Sonnenstraße 24, 80331 München",
+  renter_birthday: "1992-09-15",
+  renter_license_nr: "B 8765432109",
+  renter_license_class: "B",
+  renter_license_expiry: "2025-06-12",
+  pickup_date: "2026-04-20",
+  pickup_time: "09:30",
+  return_date: "2026-04-23",
+  return_time: "18:00",
+  actual_return_date: null,
+  daily_rate: 49.0,
+  total_amount: 147.0,
+  deposit: 250.0,
+  km_pickup: 24812,
+  km_return: null,
+  status: "aktiv",
+  contract_pdf_path: null,
+  pickup_photos: [],
+  return_photos: [],
+  notes: null,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
+writeFileSync("/tmp/preview-letter.pdf", Buffer.from(generateLetterPdf(org, ticket, contract)));
+writeFileSync("/tmp/preview-invoice.pdf", Buffer.from(generateInvoicePdf(org, ticket, contract)));
+writeFileSync("/tmp/preview-questionnaire.pdf", Buffer.from(generateQuestionnairePdf(org, ticket, contract)));
+console.log("✓ /tmp/preview-letter.pdf");
+console.log("✓ /tmp/preview-invoice.pdf");
+console.log("✓ /tmp/preview-questionnaire.pdf");
