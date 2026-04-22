@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   Settings,
   Sparkles,
+  WandSparkles,
 } from "lucide-react";
 import { THEME } from "@/lib/theme";
 
@@ -18,6 +19,7 @@ type BadgeKey = "tickets" | "contracts";
 
 const ITEMS: Array<{ href: string; label: string; Icon: typeof Car; badgeKey?: BadgeKey }> = [
   { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
+  { href: "/dashboard/assistant", label: "Assistent", Icon: WandSparkles },
   { href: "/dashboard/contracts", label: "Verträge", Icon: FileSignature, badgeKey: "contracts" },
   { href: "/dashboard/tickets", label: "Strafzettel", Icon: FileText, badgeKey: "tickets" },
   { href: "/dashboard/vehicles", label: "Fahrzeuge", Icon: Car },

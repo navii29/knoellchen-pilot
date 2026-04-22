@@ -1,0 +1,354 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { nextContractNr } from "./contract-utils";
+
+export type ToolContext = {
+  org_id: string;
+  admin: SupabaseClient;
+};
+
+export type ToolResult = {
+  ok: boolean;
+  data?: unknown;
+  error?: string;
+};
+
+export type Tool = {
+  name: string;
+  description: string;
+  input_schema: Record<string, unknown>;
+  handler: (input: Record<string, unknown>, ctx: ToolContext) => Promise<ToolResult>;
+};
+
+// Hilfsfunktion: Datum normalisieren (YYYY-MM-DD oder dd.mm.yyyy → ISO)
+const parseDate = (s: unknown): string | null => {
+  if (typeof s !== "string") return null;
+  const trimmed = s.trim();
+  if (!trimmed) return null;
+  if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) return trimmed.slice(0, 10);
+  const m = trimmed.match(/^(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})/);
+  if (m) {
+    const [, d, mm, y] = m;
+    const yyyy = y.length === 2 ? "20" + y : y;
+    return `${yyyy}-${mm.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+  return null;
+};
+
+// =========================================================
+// 1) create_contract
+// =========================================================
+const createContract: Tool = {
+  name: "create_contract",
+  description:
+    "Legt einen neuen Mietvertrag an. Verwende dies wenn der Nutzer eine Vermietung erfassen möchte. Pflichtfelder: plate, renter_name, pickup_date, return_date. Optionale Felder: vehicle_type, renter_email, renter_phone, renter_address, renter_birthday, renter_license_nr, daily_rate, total_amount, deposit, contract_nr.",
+  input_schema: {
+    type: "object",
+    properties: {
+      plate: { type: "string", description: "Kennzeichen, z.B. 'M-AV 5678'" },
+      vehicle_type: { type: "string", description: "Fahrzeugtyp, z.B. 'VW Golf VIII'" },
+      renter_name: { type: "string" },
+      renter_email: { type: "string" },
+      renter_phone: { type: "string" },
+      renter_address: { type: "string" },
+      renter_birthday: { type: "string", description: "YYYY-MM-DD" },
+      renter_license_nr: { type: "string" },
+      pickup_date: { type: "string", description: "YYYY-MM-DD" },
+      return_date: { type: "string", description: "YYYY-MM-DD" },
+      pickup_time: { type: "string", description: "HH:MM" },
+      return_time: { type: "string", description: "HH:MM" },
+      daily_rate: { type: "number" },
+      total_amount: { type: "number" },
+      deposit: { type: "number" },
+      contract_nr: { type: "string" },
+    },
+    required: ["plate", "renter_name", "pickup_date", "return_date"],
+  },
+  handler: async (input, ctx) => {
+    const plate = String(input.plate).toUpperCase().trim();
+    const pickup = parseDate(input.pickup_date);
+    const ret = parseDate(input.return_date);
+    if (!pickup || !ret) return { ok: false, error: "Ungültiges Datumsformat — bitte YYYY-MM-DD verwenden" };
+
+    await ctx.admin
+      .from("vehicles")
+      .upsert(
+        { org_id: ctx.org_id, plate, vehicle_type: input.vehicle_type ?? null },
+        { onConflict: "org_id,plate", ignoreDuplicates: true }
+      );
+
+    const { data: vehicle } = await ctx.admin
+      .from("vehicles")
+      .select("id")
+      .eq("org_id", ctx.org_id)
+      .eq("plate", plate)
+      .maybeSingle();
+
+    const { data, error } = await ctx.admin
+      .from("contracts")
+      .insert({
+        org_id: ctx.org_id,
+        contract_nr: (input.contract_nr as string) || nextContractNr(),
+        vehicle_id: vehicle?.id ?? null,
+        plate,
+        vehicle_type: (input.vehicle_type as string) ?? null,
+        renter_name: String(input.renter_name).trim(),
+        renter_email: (input.renter_email as string)?.trim() || null,
+        renter_phone: (input.renter_phone as string)?.trim() || null,
+        renter_address: (input.renter_address as string)?.trim() || null,
+        renter_birthday: parseDate(input.renter_birthday),
+        renter_license_nr: (input.renter_license_nr as string)?.trim() || null,
+        pickup_date: pickup,
+        return_date: ret,
+        pickup_time: (input.pickup_time as string) ?? null,
+        return_time: (input.return_time as string) ?? null,
+        daily_rate: typeof input.daily_rate === "number" ? input.daily_rate : null,
+        total_amount: typeof input.total_amount === "number" ? input.total_amount : null,
+        deposit: typeof input.deposit === "number" ? input.deposit : null,
+        status: "aktiv",
+      })
+      .select("id, contract_nr, plate, renter_name, renter_email, pickup_date, return_date")
+      .single();
+
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: { contract: data } };
+  },
+};
+
+// =========================================================
+// 2) create_vehicle
+// =========================================================
+const createVehicle: Tool = {
+  name: "create_vehicle",
+  description: "Legt ein neues Fahrzeug zur Flotte hinzu (Kennzeichen + optional Typ und Farbe).",
+  input_schema: {
+    type: "object",
+    properties: {
+      plate: { type: "string" },
+      vehicle_type: { type: "string" },
+      color: { type: "string" },
+    },
+    required: ["plate"],
+  },
+  handler: async (input, ctx) => {
+    const plate = String(input.plate).toUpperCase().trim();
+    const { data, error } = await ctx.admin
+      .from("vehicles")
+      .upsert(
+        {
+          org_id: ctx.org_id,
+          plate,
+          vehicle_type: (input.vehicle_type as string) ?? null,
+          color: (input.color as string) ?? null,
+        },
+        { onConflict: "org_id,plate" }
+      )
+      .select("id, plate, vehicle_type, color")
+      .single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: { vehicle: data } };
+  },
+};
+
+// =========================================================
+// 3) search_contracts
+// =========================================================
+const searchContracts: Tool = {
+  name: "search_contracts",
+  description:
+    "Sucht Mietverträge. Mindestens ein Filter sollte gesetzt sein. Filtert nach Kennzeichen, Mietername, Status oder Zeitraum (Vertrag aktiv an einem bestimmten Datum).",
+  input_schema: {
+    type: "object",
+    properties: {
+      plate: { type: "string" },
+      renter_query: { type: "string", description: "Teil des Mieternamens oder der E-Mail" },
+      status: { type: "string", enum: ["aktiv", "abgeschlossen", "storniert"] },
+      active_on: { type: "string", description: "YYYY-MM-DD — nur Verträge die an diesem Tag aktiv waren" },
+      limit: { type: "number" },
+    },
+  },
+  handler: async (input, ctx) => {
+    let q = ctx.admin.from("contracts").select("*").eq("org_id", ctx.org_id);
+    if (input.plate) {
+      const p = String(input.plate).toUpperCase().trim();
+      q = q.or(`plate.eq.${p},plate.eq.${p.replace(/\s+/g, "")}`);
+    }
+    if (input.renter_query) {
+      const term = `%${input.renter_query}%`;
+      q = q.or(`renter_name.ilike.${term},renter_email.ilike.${term}`);
+    }
+    if (input.status) q = q.eq("status", input.status);
+    if (input.active_on) {
+      const d = parseDate(input.active_on);
+      if (d) q = q.lte("pickup_date", d).gte("return_date", d);
+    }
+    q = q.order("pickup_date", { ascending: false }).limit(Number(input.limit) || 10);
+    const { data, error } = await q;
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: { count: data?.length ?? 0, contracts: data ?? [] } };
+  },
+};
+
+// =========================================================
+// 4) search_tickets
+// =========================================================
+const searchTickets: Tool = {
+  name: "search_tickets",
+  description: "Sucht Strafzettel nach Status, Kennzeichen oder Datumsbereich.",
+  input_schema: {
+    type: "object",
+    properties: {
+      status: { type: "string", enum: ["neu", "zugeordnet", "weiterbelastet", "bezahlt"] },
+      plate: { type: "string" },
+      from_date: { type: "string", description: "YYYY-MM-DD (offense_date >=)" },
+      to_date: { type: "string", description: "YYYY-MM-DD (offense_date <=)" },
+      limit: { type: "number" },
+    },
+  },
+  handler: async (input, ctx) => {
+    let q = ctx.admin.from("tickets").select("*").eq("org_id", ctx.org_id);
+    if (input.status) q = q.eq("status", input.status);
+    if (input.plate) {
+      const p = String(input.plate).toUpperCase().trim();
+      q = q.or(`plate.eq.${p},plate.eq.${p.replace(/\s+/g, "")}`);
+    }
+    if (input.from_date) {
+      const d = parseDate(input.from_date);
+      if (d) q = q.gte("offense_date", d);
+    }
+    if (input.to_date) {
+      const d = parseDate(input.to_date);
+      if (d) q = q.lte("offense_date", d);
+    }
+    q = q.order("created_at", { ascending: false }).limit(Number(input.limit) || 20);
+    const { data, error } = await q;
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: { count: data?.length ?? 0, tickets: data ?? [] } };
+  },
+};
+
+// =========================================================
+// 5) get_stats
+// =========================================================
+const getStats: Tool = {
+  name: "get_stats",
+  description: "Liefert Dashboard-Kennzahlen (Verträge nach Status, Strafzettel nach Status, Flottengröße).",
+  input_schema: { type: "object", properties: {} },
+  handler: async (_input, ctx) => {
+    const [
+      { count: vehicles },
+      { count: contractsActive },
+      { count: contractsClosed },
+      { count: ticketsNew },
+      { count: ticketsAssigned },
+      { count: ticketsBilled },
+      { count: ticketsPaid },
+      { data: feeRows },
+    ] = await Promise.all([
+      ctx.admin.from("vehicles").select("*", { count: "exact", head: true }).eq("org_id", ctx.org_id),
+      ctx.admin.from("contracts").select("*", { count: "exact", head: true }).eq("org_id", ctx.org_id).eq("status", "aktiv"),
+      ctx.admin.from("contracts").select("*", { count: "exact", head: true }).eq("org_id", ctx.org_id).eq("status", "abgeschlossen"),
+      ctx.admin.from("tickets").select("*", { count: "exact", head: true }).eq("org_id", ctx.org_id).eq("status", "neu"),
+      ctx.admin.from("tickets").select("*", { count: "exact", head: true }).eq("org_id", ctx.org_id).eq("status", "zugeordnet"),
+      ctx.admin.from("tickets").select("*", { count: "exact", head: true }).eq("org_id", ctx.org_id).eq("status", "weiterbelastet"),
+      ctx.admin.from("tickets").select("*", { count: "exact", head: true }).eq("org_id", ctx.org_id).eq("status", "bezahlt"),
+      ctx.admin
+        .from("tickets")
+        .select("processing_fee, fine_amount, status")
+        .eq("org_id", ctx.org_id)
+        .in("status", ["weiterbelastet", "bezahlt"]),
+    ]);
+
+    const fees = (feeRows ?? []).reduce((s, r) => s + Number((r as { processing_fee: number }).processing_fee || 0), 0);
+    const volume = (feeRows ?? []).reduce(
+      (s, r) =>
+        s +
+        Number((r as { processing_fee: number }).processing_fee || 0) +
+        Number((r as { fine_amount: number }).fine_amount || 0),
+      0
+    );
+
+    return {
+      ok: true,
+      data: {
+        stats: {
+          vehicles_total: vehicles ?? 0,
+          contracts_active: contractsActive ?? 0,
+          contracts_closed: contractsClosed ?? 0,
+          tickets_new: ticketsNew ?? 0,
+          tickets_assigned: ticketsAssigned ?? 0,
+          tickets_billed: ticketsBilled ?? 0,
+          tickets_paid: ticketsPaid ?? 0,
+          processing_fees_eur: Number(fees.toFixed(2)),
+          total_volume_eur: Number(volume.toFixed(2)),
+        },
+      },
+    };
+  },
+};
+
+// =========================================================
+// 6) find_driver_for_date
+// =========================================================
+const findDriverForDate: Tool = {
+  name: "find_driver_for_date",
+  description:
+    "Findet den Mieter eines Fahrzeugs an einem bestimmten Datum (Kennzeichen + Datum → Mietvertrag).",
+  input_schema: {
+    type: "object",
+    properties: {
+      plate: { type: "string" },
+      date: { type: "string", description: "YYYY-MM-DD" },
+    },
+    required: ["plate", "date"],
+  },
+  handler: async (input, ctx) => {
+    const plate = String(input.plate).toUpperCase().trim();
+    const date = parseDate(input.date);
+    if (!date) return { ok: false, error: "Ungültiges Datum" };
+
+    const { data } = await ctx.admin
+      .from("contracts")
+      .select("*")
+      .eq("org_id", ctx.org_id)
+      .or(`plate.eq.${plate},plate.eq.${plate.replace(/\s+/g, "")}`)
+      .lte("pickup_date", date)
+      .order("pickup_date", { ascending: false });
+
+    const match = (data ?? []).find((c) => {
+      const end = (c as { actual_return_date?: string; return_date: string }).actual_return_date ?? c.return_date;
+      return end >= date;
+    });
+
+    if (!match) return { ok: true, data: { found: false, query: { plate, date } } };
+    return { ok: true, data: { found: true, contract: match } };
+  },
+};
+
+export const TOOLS: Tool[] = [
+  createContract,
+  createVehicle,
+  searchContracts,
+  searchTickets,
+  getStats,
+  findDriverForDate,
+];
+
+export const TOOLS_FOR_API = TOOLS.map((t) => ({
+  name: t.name,
+  description: t.description,
+  input_schema: t.input_schema,
+}));
+
+export const handleTool = async (
+  name: string,
+  input: Record<string, unknown>,
+  ctx: ToolContext
+): Promise<ToolResult> => {
+  const t = TOOLS.find((x) => x.name === name);
+  if (!t) return { ok: false, error: `Unbekanntes Tool: ${name}` };
+  try {
+    return await t.handler(input, ctx);
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+};
