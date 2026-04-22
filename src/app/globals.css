@@ -2,26 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html { scroll-behavior: smooth; }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: #fafaf9; /* stone-50 */
+  color: #1c1917; /* stone-900 */
 }
 
+.font-display { font-feature-settings: "ss01","cv11"; letter-spacing: -0.035em; }
+.font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+.grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(0,0,0,0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.fade-up { opacity: 0; transform: translateY(16px); transition: opacity .7s ease, transform .7s ease; }
+.fade-up.in { opacity: 1; transform: translateY(0); }
+
+.shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+.scroll-thin::-webkit-scrollbar { width: 10px; height: 10px; }
+.scroll-thin::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 10px; }
+.scroll-thin::-webkit-scrollbar-track { background: transparent; }
+
+.pulse-dot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: .4;
+  animation: pulse 2s ease-out infinite;
+}
+@keyframes pulse { 0% { transform: scale(1); opacity: .5 } 100% { transform: scale(2.2); opacity: 0 } }
+
+@keyframes slide-in { from { transform: translateX(24px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }
+.animate-slide-in { animation: slide-in .25s ease; }
+
+@keyframes spin { to { transform: rotate(360deg) } }
+
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+  .text-balance { text-wrap: balance; }
 }
