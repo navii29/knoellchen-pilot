@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronDown, Copy, Loader2, Mail, Save, Send } from "lucide-react";
+import { Check, ChevronDown, Copy, Loader2, Save, Send } from "lucide-react";
 import { THEME } from "@/lib/theme";
 import type { Organization } from "@/lib/types";
 
@@ -114,14 +114,9 @@ export const SettingsClient = ({ org }: { org: Organization }) => {
             </Field>
           </div>
 
-          <div className="mt-3 text-xs text-amber-700 bg-amber-50 ring-1 ring-amber-200 rounded-lg px-3 py-2.5 flex items-start gap-2">
-            <Mail size={14} className="mt-0.5 shrink-0" />
-            <div>
-              <strong>Wichtig:</strong> Die Absender-E-Mail muss in Postmark als{" "}
-              <em>Sender Signature</em> verifiziert sein, sonst lehnt Postmark den Versand ab. Bei
-              fehlender Konfiguration nutzen wir <span className="font-mono">noreply@knoellchen-pilot.de</span>.
-            </div>
-          </div>
+          <p className="mt-3 text-xs text-stone-500">
+            E-Mails an Mieter und Behörden werden von dieser Adresse gesendet.
+          </p>
 
           <label className="mt-5 flex items-start gap-3 p-3 rounded-lg ring-1 ring-stone-200 cursor-pointer">
             <input
