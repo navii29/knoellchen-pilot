@@ -8,10 +8,12 @@ import {
   CheckCircle,
   FileStack,
   FileText,
+  FlaskConical,
   Loader2,
   Mail,
   ReceiptText,
   Send,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { THEME } from "@/lib/theme";
@@ -22,8 +24,24 @@ export const TicketActions = ({ ticket }: { ticket: Ticket }) => {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [authorityInput, setAuthorityInput] = useState(ticket.authority_email || "");
   const [showAuthorityField, setShowAuthorityField] = useState(false);
+
+  const handleSendResponse = async (res: Response): Promise<boolean> => {
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      setError(j.error || "Versand fehlgeschlagen");
+      return false;
+    }
+    const j = (await res.json()) as { test_override?: string | null };
+    if (j.test_override) {
+      setInfo(`Test-Modus aktiv: tatsächlich gesendet an ${j.test_override}`);
+    } else {
+      setInfo(null);
+    }
+    return true;
+  };
 
   const generateDocs = async () => {
     setLoading("docs");
@@ -40,12 +58,7 @@ export const TicketActions = ({ ticket }: { ticket: Ticket }) => {
 
   const sendToRenter = async () => {
     if (!ticket.renter_email) return;
-    if (
-      !confirm(
-        `E-Mail mit Anschreiben + Rechnung an ${ticket.renter_email} senden?`
-      )
-    )
-      return;
+    if (!confirm(`E-Mail mit Anschreiben + Rechnung an ${ticket.renter_email} senden?`)) return;
     setLoading("send_renter");
     setError(null);
     const res = await fetch(`/api/tickets/${ticket.id}/send`, {
@@ -54,12 +67,7 @@ export const TicketActions = ({ ticket }: { ticket: Ticket }) => {
       body: JSON.stringify({ action: "mieter" }),
     });
     setLoading(null);
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
-      setError(j.error || "Versand fehlgeschlagen");
-      return;
-    }
-    router.refresh();
+    if (await handleSendResponse(res)) router.refresh();
   };
 
   const sendToAuthority = async () => {
@@ -78,12 +86,28 @@ export const TicketActions = ({ ticket }: { ticket: Ticket }) => {
       body: JSON.stringify({ action: "behoerde", behoerde_email: target }),
     });
     setLoading(null);
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
-      setError(j.error || "Versand fehlgeschlagen");
+    if (await handleSendResponse(res)) router.refresh();
+  };
+
+  // Auto-Pilot: ein Klick, ohne Confirm, nur möglich wenn Behörden-E-Mail bereits im Ticket
+  const autoSendToAuthority = async () => {
+    if (!ticket.authority_email) {
+      setError("Behörden-E-Mail nicht im Ticket — manuell über 'An Behörde senden' eintragen");
       return;
     }
-    router.refresh();
+    if (!ticket.questionnaire_path) {
+      setError("Zeugenfragebogen-PDF fehlt — bitte zuerst PDFs erstellen");
+      return;
+    }
+    setLoading("auto_authority");
+    setError(null);
+    const res = await fetch(`/api/tickets/${ticket.id}/send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "behoerde", behoerde_email: ticket.authority_email }),
+    });
+    setLoading(null);
+    if (await handleSendResponse(res)) router.refresh();
   };
 
   const markPaid = async () => {
@@ -105,10 +129,34 @@ export const TicketActions = ({ ticket }: { ticket: Ticket }) => {
 
   const total = (ticket.fine_amount || 0) + Number(ticket.processing_fee || 0);
   const docsReady = !!ticket.letter_path && !!ticket.invoice_path;
+  const autoReady = !!ticket.questionnaire_path && !!ticket.authority_email;
 
   return (
     <div>
-      <div className="text-xs uppercase tracking-wider text-stone-500 font-medium mb-2">Aktionen</div>
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-xs uppercase tracking-wider text-stone-500 font-medium">Aktionen</div>
+        <TestModeBadge />
+      </div>
+
+      {/* Auto-Pilot Button — wenn Auslesung Behörden-Adresse erkannt hat, prominent oben */}
+      {autoReady && !ticket.authority_sent && (
+        <button
+          onClick={autoSendToAuthority}
+          disabled={loading != null}
+          className="w-full mb-3 flex items-center gap-3 p-3.5 rounded-lg text-white text-left disabled:opacity-50"
+          style={{ background: THEME.primary }}
+        >
+          <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+            {loading === "auto_authority" ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold">Automatisch an Behörde senden</div>
+            <div className="text-xs opacity-90 truncate">
+              Zeugenfragebogen direkt an {ticket.authority_email}
+            </div>
+          </div>
+        </button>
+      )}
 
       <div className="grid sm:grid-cols-2 gap-2.5">
         <ActionButton
@@ -213,6 +261,13 @@ export const TicketActions = ({ ticket }: { ticket: Ticket }) => {
         </div>
       )}
 
+      {info && (
+        <div className="mt-3 text-sm text-amber-800 bg-amber-50 ring-1 ring-amber-200 rounded-lg px-3 py-2 flex items-center gap-2">
+          <FlaskConical size={14} />
+          <span>{info}</span>
+        </div>
+      )}
+
       {error && (
         <div className="mt-3 text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2">
           {error}
@@ -221,6 +276,11 @@ export const TicketActions = ({ ticket }: { ticket: Ticket }) => {
     </div>
   );
 };
+
+// Wird auf Detail-Seite (Server Component) per Body-Daten oder via separater Probe injiziert.
+// Hier: passive Heuristik — wenn das URL-Hash oder window.localStorage es signalisiert.
+// Der echte Test-Modus wird vom Server zurückgegeben (siehe info-State).
+const TestModeBadge = () => null;
 
 const ActionButton = ({
   Icon,

@@ -19,6 +19,11 @@ const downloadAsBase64 = async (
   return buf.toString("base64");
 };
 
+const testOverride = (): string | null => {
+  const v = process.env.EMAIL_TEST_OVERRIDE?.trim();
+  return v && v.length > 0 ? v : null;
+};
+
 export const POST = async (
   req: Request,
   { params }: { params: { id: string } }
@@ -64,6 +69,9 @@ export const POST = async (
       ? org.sender_email
       : `${org.name} <${process.env.POSTMARK_DEFAULT_SENDER || "noreply@knoellchen-pilot.de"}>`;
 
+  const override = testOverride();
+  const subjectPrefix = override ? "[TEST] " : "";
+
   const results: Record<string, unknown> = {};
 
   if (action === "mieter" || action === "beide") {
@@ -87,11 +95,13 @@ export const POST = async (
       return NextResponse.json({ error: "PDFs konnten nicht geladen werden" }, { status: 500 });
     }
     const tpl = renterEmail(org, ticket, contract);
+    const originalRecipient = ticket.renter_email;
+    const actualRecipient = override ?? originalRecipient;
     try {
       const send = await sendEmail({
         from: fromAddress,
-        to: ticket.renter_email,
-        subject: tpl.subject,
+        to: actualRecipient,
+        subject: subjectPrefix + tpl.subject,
         htmlBody: tpl.html,
         textBody: tpl.text,
         replyTo: org.sender_email || org.email || undefined,
@@ -101,12 +111,13 @@ export const POST = async (
         ],
       });
       results.renter = { ok: true, message_id: send.MessageID };
+      // letter_sent_to bleibt der ORIGINAL-Empfänger — Test-Override wird nur im Log festgehalten
       await admin
         .from("tickets")
         .update({
           letter_sent: true,
           letter_sent_at: new Date().toISOString(),
-          letter_sent_to: ticket.renter_email,
+          letter_sent_to: originalRecipient,
           status: ticket.status === "neu" || ticket.status === "zugeordnet" ? "weiterbelastet" : ticket.status,
           updated_at: new Date().toISOString(),
         })
@@ -114,7 +125,12 @@ export const POST = async (
       await admin.from("ticket_logs").insert({
         ticket_id: ticket.id,
         action: "sent_renter",
-        details: { to: ticket.renter_email, message_id: send.MessageID },
+        details: {
+          to: originalRecipient,
+          delivered_to: actualRecipient,
+          test_mode: override !== null,
+          message_id: send.MessageID,
+        },
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -140,11 +156,12 @@ export const POST = async (
     if (!qB64) return NextResponse.json({ error: "PDF konnte nicht geladen werden" }, { status: 500 });
 
     const tpl = authorityEmail(org, ticket, contract);
+    const actualRecipient = override ?? recipient;
     try {
       const send = await sendEmail({
         from: fromAddress,
-        to: recipient,
-        subject: tpl.subject,
+        to: actualRecipient,
+        subject: subjectPrefix + tpl.subject,
         htmlBody: tpl.html,
         textBody: tpl.text,
         replyTo: org.sender_email || org.email || undefined,
@@ -157,6 +174,7 @@ export const POST = async (
         ],
       });
       results.authority = { ok: true, message_id: send.MessageID };
+      // authority_sent_to bleibt die ORIGINAL-Behörden-Adresse
       await admin
         .from("tickets")
         .update({
@@ -171,7 +189,12 @@ export const POST = async (
       await admin.from("ticket_logs").insert({
         ticket_id: ticket.id,
         action: "sent_authority",
-        details: { to: recipient, message_id: send.MessageID },
+        details: {
+          to: recipient,
+          delivered_to: actualRecipient,
+          test_mode: override !== null,
+          message_id: send.MessageID,
+        },
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -179,5 +202,9 @@ export const POST = async (
     }
   }
 
-  return NextResponse.json({ ok: true, ...results });
+  return NextResponse.json({
+    ok: true,
+    test_override: override,
+    ...results,
+  });
 };
