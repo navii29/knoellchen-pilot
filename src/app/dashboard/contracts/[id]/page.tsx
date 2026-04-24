@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Camera, ChevronRight, Coins, ScrollText, User } from "lucide-react";
+import { AlertOctagon, ArrowLeft, Calendar, Camera, ChevronRight, Coins, Plus, ScrollText, User } from "lucide-react";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { ContractStatusBadge } from "@/components/contract/StatusBadge";
@@ -9,7 +9,7 @@ import { ContractActions } from "./ContractActions";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeExtraKm } from "@/lib/km";
 import { POSITIONS } from "@/lib/handover";
-import type { Contract, HandoverPhoto, Ticket, Vehicle } from "@/lib/types";
+import type { Contract, DamageReport, HandoverPhoto, Ticket, Vehicle } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +34,13 @@ export default async function ContractDetailPage({ params }: { params: { id: str
     .eq("contract_id", c.id)
     .order("created_at", { ascending: false });
   const linkedTickets = (tickets || []) as Ticket[];
+
+  const { data: damageRows } = await supabase
+    .from("damage_reports")
+    .select("*")
+    .eq("contract_id", c.id)
+    .order("date", { ascending: false });
+  const damageReports = (damageRows || []) as DamageReport[];
 
   const { data: vehicleRow } = await supabase
     .from("vehicles")
@@ -225,6 +232,61 @@ export default async function ContractDetailPage({ params }: { params: { id: str
           </div>
 
           <div className="mt-6">
+            <div className="flex items-end justify-between mb-2">
+              <div className="text-xs uppercase tracking-wider text-stone-500 font-medium flex items-center gap-1.5">
+                <AlertOctagon size={12} />
+                Schadensberichte ({damageReports.length})
+              </div>
+              <Link
+                href={`/dashboard/damage-reports/new?contract_id=${c.id}`}
+                className="text-xs text-teal-700 hover:underline inline-flex items-center gap-1"
+              >
+                <Plus size={12} /> Neuer Bericht
+              </Link>
+            </div>
+            {damageReports.length === 0 ? (
+              <div className="rounded-xl bg-white ring-1 ring-stone-200 px-5 py-6 text-center text-xs text-stone-500">
+                Keine Schäden zu diesem Vertrag dokumentiert.
+              </div>
+            ) : (
+              <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+                {damageReports.map((d) => {
+                  const meta = DAMAGE_STATUS_META[d.status];
+                  return (
+                    <Link
+                      key={d.id}
+                      href={`/dashboard/damage-reports/${d.id}`}
+                      className="grid grid-cols-[100px_1fr_120px_24px] items-center gap-3 px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+                    >
+                      <span className="font-mono text-xs">{fmtDate(d.date)}</span>
+                      <span className="truncate">
+                        {d.location || d.description || "—"}
+                        {d.photos && d.photos.length > 0 && (
+                          <span className="text-stone-400 ml-2 text-xs">
+                            · {d.photos.length} {d.photos.length === 1 ? "Foto" : "Fotos"}
+                          </span>
+                        )}
+                      </span>
+                      <span
+                        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium justify-self-start"
+                        style={{
+                          background: meta.bg,
+                          color: meta.text,
+                          boxShadow: `inset 0 0 0 1px ${meta.ring}`,
+                        }}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: meta.color }} />
+                        {meta.label}
+                      </span>
+                      <ChevronRight size={14} className="text-stone-300" />
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-6">
             <div className="text-xs uppercase tracking-wider text-stone-500 font-medium mb-2">
               Verknüpfte Strafzettel ({linkedTickets.length})
             </div>
@@ -287,6 +349,15 @@ const Row = ({
     <div className={mono ? "font-mono text-stone-800" : "text-stone-800"}>{value}</div>
   </div>
 );
+
+const DAMAGE_STATUS_META: Record<
+  DamageReport["status"],
+  { label: string; bg: string; ring: string; color: string; text: string }
+> = {
+  offen: { label: "Offen", bg: "#fef2f2", ring: "#fecaca", color: "#dc2626", text: "#b91c1c" },
+  gemeldet: { label: "Gemeldet", bg: "#fefce8", ring: "#fde68a", color: "#ca8a04", text: "#a16207" },
+  reguliert: { label: "Reguliert", bg: "#f0fdf4", ring: "#bbf7d0", color: "#16a34a", text: "#15803d" },
+};
 
 const PhotoThumb = ({ url, label }: { url: string | null; label: string }) => {
   if (!url) {

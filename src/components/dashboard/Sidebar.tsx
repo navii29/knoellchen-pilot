@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  AlertOctagon,
   BarChart3,
   Calendar,
   Car,
@@ -16,7 +17,7 @@ import {
   WandSparkles,
 } from "lucide-react";
 
-type BadgeKey = "tickets" | "contracts" | "customers";
+type BadgeKey = "tickets" | "contracts" | "customers" | "damage";
 
 const ITEMS: Array<{ href: string; label: string; Icon: typeof Car; badgeKey?: BadgeKey }> = [
   { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
@@ -24,6 +25,7 @@ const ITEMS: Array<{ href: string; label: string; Icon: typeof Car; badgeKey?: B
   { href: "/dashboard/contracts", label: "Verträge", Icon: FileSignature, badgeKey: "contracts" },
   { href: "/dashboard/customers", label: "Kunden", Icon: Users, badgeKey: "customers" },
   { href: "/dashboard/tickets", label: "Strafzettel", Icon: FileText, badgeKey: "tickets" },
+  { href: "/dashboard/damage-reports", label: "Schäden", Icon: AlertOctagon, badgeKey: "damage" },
   { href: "/dashboard/vehicles", label: "Fahrzeuge", Icon: Car },
   { href: "/dashboard/calendar", label: "Kalender", Icon: Calendar },
   { href: "/dashboard/reports", label: "Auswertung", Icon: BarChart3 },
@@ -35,11 +37,13 @@ export const Sidebar = ({
   ticketCount,
   contractCount,
   customerCount,
+  damageCount,
 }: {
   orgName: string;
   ticketCount: number;
   contractCount: number;
   customerCount: number;
+  damageCount: number;
 }) => {
   const pathname = usePathname();
   return (
@@ -67,6 +71,8 @@ export const Sidebar = ({
               ? contractCount
               : it.badgeKey === "customers"
               ? customerCount
+              : it.badgeKey === "damage"
+              ? damageCount
               : null;
           return (
             <Link

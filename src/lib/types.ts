@@ -144,6 +144,28 @@ export interface ParsedCustomerData {
   confidence?: number;
 }
 
+export type DamageReportStatus = "offen" | "gemeldet" | "reguliert";
+
+export interface DamageReport {
+  id: string;
+  org_id: string;
+  contract_id: string | null;
+  vehicle_id: string | null;
+  date: string;
+  time: string | null;
+  location: string | null;
+  description: string | null;
+  police_reference_nr: string | null;
+  insurance_claim_nr: string | null;
+  other_party_name: string | null;
+  other_party_plate: string | null;
+  other_party_insurance: string | null;
+  photos: string[];
+  status: DamageReportStatus;
+  created_at: string;
+  updated_at: string;
+}
+
 export type HandoverPhotoType = "pickup" | "return";
 
 export type HandoverPosition =
