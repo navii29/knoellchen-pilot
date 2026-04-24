@@ -14,9 +14,16 @@ export const POST = async (req: Request) => {
     .single();
   if (!profile) return NextResponse.json({ error: "No profile" }, { status: 401 });
 
-  const body = (await req.json()) as { plate?: string; vehicle_type?: string; color?: string };
+  const body = (await req.json()) as {
+    plate?: string;
+    vehicle_type?: string;
+    color?: string;
+    first_registration?: string;
+  };
   const plate = body.plate?.trim().toUpperCase();
   if (!plate) return NextResponse.json({ error: "Kennzeichen fehlt" }, { status: 400 });
+
+  const firstReg = body.first_registration?.trim();
 
   const admin = createAdminClient();
   const { data, error } = await admin
@@ -27,6 +34,7 @@ export const POST = async (req: Request) => {
         plate,
         vehicle_type: body.vehicle_type?.trim() || null,
         color: body.color?.trim() || null,
+        first_registration: firstReg && firstReg.length > 0 ? firstReg : null,
       },
       { onConflict: "org_id,plate" }
     )

@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nextContractNr } from "./contract-utils";
+import { computeDecommission } from "./decommission";
+import type { Vehicle } from "./types";
 
 export type ToolContext = {
   org_id: string;
@@ -324,6 +326,67 @@ const findDriverForDate: Tool = {
   },
 };
 
+// =========================================================
+// 7) get_decommission_alerts
+// =========================================================
+const getDecommissionAlerts: Tool = {
+  name: "get_decommission_alerts",
+  description:
+    "Liefert die Liste der Fahrzeuge, die bald ausgesteuert werden müssen (Aussteuerungsdatum innerhalb des Fensters). Default: 21 Tage. Verwende dieses Tool wenn der Nutzer fragt, welche Autos demnächst aus der Flotte fliegen, ausgesteuert werden, abgemeldet werden müssen oder das 6-Monats-Limit erreichen.",
+  input_schema: {
+    type: "object",
+    properties: {
+      window_days: {
+        type: "number",
+        description:
+          "Wie viele Tage in die Zukunft geschaut wird. Default 21. Auch überfällige Fahrzeuge werden immer mitgeliefert.",
+      },
+    },
+  },
+  handler: async (input, ctx) => {
+    const windowDays = typeof input.window_days === "number" ? input.window_days : 21;
+    const today = new Date().toISOString().slice(0, 10);
+    const upper = new Date();
+    upper.setDate(upper.getDate() + windowDays);
+    const upperIso = upper.toISOString().slice(0, 10);
+
+    const { data, error } = await ctx.admin
+      .from("vehicles")
+      .select("*")
+      .eq("org_id", ctx.org_id)
+      .not("decommission_date", "is", null)
+      .lte("decommission_date", upperIso)
+      .order("decommission_date", { ascending: true });
+
+    if (error) return { ok: false, error: error.message };
+
+    const vehicles = (data ?? []) as Vehicle[];
+    const enriched = vehicles.map((v) => {
+      const info = computeDecommission(v);
+      return {
+        id: v.id,
+        plate: v.plate,
+        vehicle_type: v.vehicle_type,
+        first_registration: v.first_registration,
+        decommission_date: v.decommission_date,
+        days_left: info.daysLeft,
+        level: info.level,
+        status: info.label,
+      };
+    });
+
+    return {
+      ok: true,
+      data: {
+        count: enriched.length,
+        window_days: windowDays,
+        today,
+        vehicles: enriched,
+      },
+    };
+  },
+};
+
 export const TOOLS: Tool[] = [
   createContract,
   createVehicle,
@@ -331,6 +394,7 @@ export const TOOLS: Tool[] = [
   searchTickets,
   getStats,
   findDriverForDate,
+  getDecommissionAlerts,
 ];
 
 export const TOOLS_FOR_API = TOOLS.map((t) => ({

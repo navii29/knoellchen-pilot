@@ -32,6 +32,9 @@ export interface Vehicle {
   plate: string;
   vehicle_type: string | null;
   color: string | null;
+  first_registration: string | null;
+  decommission_date: string | null;
+  decommission_reminded: boolean;
   created_at: string;
 }
 

@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Car, Loader2, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Car, ChevronRight, Loader2, Plus, Trash2 } from "lucide-react";
 import { THEME } from "@/lib/theme";
+import { fmtDate } from "@/lib/utils";
+import { computeDecommission } from "@/lib/decommission";
 import type { Vehicle } from "@/lib/types";
 
 export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
@@ -11,6 +14,7 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
   const [plate, setPlate] = useState("");
   const [type, setType] = useState("");
   const [color, setColor] = useState("");
+  const [firstReg, setFirstReg] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +25,12 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
     const res = await fetch("/api/vehicles", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plate, vehicle_type: type, color }),
+      body: JSON.stringify({
+        plate,
+        vehicle_type: type,
+        color,
+        first_registration: firstReg || null,
+      }),
     });
     setBusy(false);
     if (!res.ok) {
@@ -32,6 +41,7 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
     setPlate("");
     setType("");
     setColor("");
+    setFirstReg("");
     router.refresh();
   };
 
@@ -45,23 +55,63 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
     <>
       <div className="font-display font-bold text-2xl tracking-tight">Fahrzeuge</div>
       <p className="text-sm text-stone-500 mt-1">
-        Übersicht Ihrer Mietflotte. Wird automatisch beim Buchungs-Import ergänzt.
+        Übersicht der Mietflotte. Erstzulassung eintragen — Aussteuerungsdatum wird automatisch berechnet (+ 180 Tage).
       </p>
 
-      <form onSubmit={add} className="mt-6 rounded-xl bg-white ring-1 ring-stone-200 p-5 grid sm:grid-cols-[160px_1fr_140px_auto] gap-3 items-end">
+      <form
+        onSubmit={add}
+        className="mt-6 rounded-xl bg-white ring-1 ring-stone-200 p-5 grid sm:grid-cols-[140px_1fr_120px_150px_auto] gap-3 items-end"
+      >
         <Field label="Kennzeichen *">
-          <input required value={plate} onChange={(e) => setPlate(e.target.value)} placeholder="M-KP 2847" className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400 font-mono uppercase" />
+          <input
+            required
+            value={plate}
+            onChange={(e) => setPlate(e.target.value)}
+            placeholder="M-KP 2847"
+            className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400 font-mono uppercase"
+          />
         </Field>
         <Field label="Fahrzeugtyp">
-          <input value={type} onChange={(e) => setType(e.target.value)} placeholder="VW Golf VIII" className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400" />
+          <input
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            placeholder="VW Golf VIII"
+            className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400"
+          />
         </Field>
         <Field label="Farbe">
-          <input value={color} onChange={(e) => setColor(e.target.value)} placeholder="weiß" className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400" />
+          <input
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            placeholder="weiß"
+            className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400"
+          />
         </Field>
-        <button type="submit" disabled={busy} className="inline-flex items-center justify-center gap-1.5 text-sm text-white px-4 py-2 rounded-lg font-medium" style={{ background: THEME.primary }}>
+        <Field label="Erstzulassung">
+          <input
+            type="date"
+            value={firstReg}
+            onChange={(e) => setFirstReg(e.target.value)}
+            className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400 font-mono"
+          />
+        </Field>
+        <button
+          type="submit"
+          disabled={busy}
+          className="inline-flex items-center justify-center gap-1.5 text-sm text-white px-4 py-2 rounded-lg font-medium"
+          style={{ background: THEME.primary }}
+        >
           {busy ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Hinzufügen
         </button>
       </form>
+      {firstReg && (
+        <div className="mt-2 text-xs text-stone-500">
+          Aussteuerung berechnet auf:{" "}
+          <span className="font-mono text-stone-700">
+            {fmtDate(addDays(firstReg, 180))}
+          </span>
+        </div>
+      )}
       {error && (
         <div className="mt-3 text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2">{error}</div>
       )}
@@ -70,25 +120,65 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
         {initial.length === 0 && (
           <div className="px-5 py-12 text-center text-sm text-stone-500">Noch keine Fahrzeuge.</div>
         )}
-        {initial.map((v) => (
-          <div
-            key={v.id}
-            className="grid grid-cols-[40px_140px_1fr_140px_auto] items-center gap-3 px-5 py-3 border-b border-stone-50 last:border-0 text-sm"
-          >
-            <div className="w-8 h-8 rounded-lg bg-stone-100 text-stone-700 flex items-center justify-center">
-              <Car size={15} />
+        {initial.map((v) => {
+          const info = computeDecommission(v);
+          return (
+            <div
+              key={v.id}
+              className="grid grid-cols-[40px_120px_1fr_100px_220px_24px_auto] items-center gap-3 px-5 py-3 border-b border-stone-50 last:border-0 text-sm"
+            >
+              <div className="w-8 h-8 rounded-lg bg-stone-100 text-stone-700 flex items-center justify-center">
+                <Car size={15} />
+              </div>
+              <span className="font-mono font-semibold">{v.plate}</span>
+              <span className="text-stone-700 truncate">{v.vehicle_type || "—"}</span>
+              <span className="text-stone-500 text-xs">{v.color || "—"}</span>
+              <span>
+                {v.decommission_date ? (
+                  <span
+                    className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium"
+                    style={{
+                      background: info.bg,
+                      color: info.textColor,
+                      boxShadow: `inset 0 0 0 1px ${info.ring}`,
+                    }}
+                  >
+                    <span
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ background: info.color }}
+                    />
+                    {info.label}
+                  </span>
+                ) : (
+                  <span className="text-xs text-stone-400">Erstzulassung fehlt</span>
+                )}
+              </span>
+              <Link
+                href={`/dashboard/vehicles/${v.id}`}
+                className="text-stone-400 hover:text-stone-700 p-1.5"
+                title="Detail"
+              >
+                <ChevronRight size={14} />
+              </Link>
+              <button
+                onClick={() => remove(v.id)}
+                className="text-stone-400 hover:text-red-600 p-1.5"
+                title="Löschen"
+              >
+                <Trash2 size={14} />
+              </button>
             </div>
-            <span className="font-mono font-semibold">{v.plate}</span>
-            <span className="text-stone-700">{v.vehicle_type || "—"}</span>
-            <span className="text-stone-500">{v.color || "—"}</span>
-            <button onClick={() => remove(v.id)} className="text-stone-400 hover:text-red-600 p-1.5">
-              <Trash2 size={14} />
-            </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </>
   );
+};
+
+const addDays = (iso: string, days: number): string => {
+  const d = new Date(iso);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
 };
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (

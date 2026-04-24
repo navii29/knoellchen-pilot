@@ -1,12 +1,14 @@
 import { Car, Coins, FileSignature, Inbox } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { fmtEur } from "@/lib/utils";
-import type { Contract, Ticket, TicketLog } from "@/lib/types";
+import type { Contract, Ticket, TicketLog, Vehicle } from "@/lib/types";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { StatCard, HeroStat } from "@/components/dashboard/StatCard";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 import { ThroughputChart } from "@/components/dashboard/ThroughputChart";
 import { TicketTable } from "@/components/dashboard/TicketTable";
+import { DecommissionAlert } from "@/components/dashboard/DecommissionAlert";
+import { isDecommissionAlertWindow } from "@/lib/decommission";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +35,7 @@ export default async function DashboardPage() {
     { data: contracts },
     { count: vehicleCount },
     { count: activeContractCount },
+    { data: vehicles },
   ] = await Promise.all([
     supabase.from("tickets").select("*").order("created_at", { ascending: false }).limit(50),
     supabase.from("organizations").select("name").single(),
@@ -48,11 +51,19 @@ export default async function DashboardPage() {
       .limit(8),
     supabase.from("vehicles").select("*", { count: "exact", head: true }),
     supabase.from("contracts").select("*", { count: "exact", head: true }).eq("status", "aktiv"),
+    supabase
+      .from("vehicles")
+      .select("*")
+      .not("decommission_date", "is", null)
+      .order("decommission_date", { ascending: true }),
   ]);
 
   const allTickets = (tickets ?? []) as Ticket[];
   const allLogs = (logs ?? []) as TicketLog[];
   const recentContracts = (contracts ?? []) as Contract[];
+  const decommissionAlerts = ((vehicles ?? []) as Vehicle[]).filter((v) =>
+    isDecommissionAlertWindow(v, 21)
+  );
 
   const counts = {
     neu: allTickets.filter((t) => t.status === "neu").length,
@@ -92,6 +103,8 @@ export default async function DashboardPage() {
               </span>
             </div>
           </div>
+
+          {decommissionAlerts.length > 0 && <DecommissionAlert vehicles={decommissionAlerts} />}
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
             <div className="lg:col-span-2">

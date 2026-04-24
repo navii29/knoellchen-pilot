@@ -14,6 +14,7 @@ import {
   FileSignature,
   FileText,
   BarChart3,
+  CalendarClock,
   Loader2,
   UserCheck,
 } from "lucide-react";
@@ -25,9 +26,9 @@ type ChatMsg = { role: "user" | "assistant"; content: string; toolCalls?: ToolCa
 
 const SUGGESTIONS = [
   "Wie viele aktive Verträge haben wir?",
+  "Welche Autos werden bald ausgesteuert?",
   "Zeig mir alle offenen Strafzettel",
   "Wer hatte M-AV 5678 am 21. April?",
-  "Neuer Vertrag: VW Polo, M-OL 1001, Maria Schmidt vom 25. bis 30. April",
 ];
 
 export const AssistantClient = () => {
@@ -185,6 +186,13 @@ const ToolResult = ({ call }: { call: ToolCall }) => {
   if (call.name === "search_tickets" && Array.isArray(d.tickets))
     return <TicketList tickets={d.tickets as TicketSummary[]} />;
   if (call.name === "get_stats" && d.stats) return <StatsCard stats={d.stats as Stats} />;
+  if (call.name === "get_decommission_alerts" && Array.isArray(d.vehicles))
+    return (
+      <DecommissionList
+        vehicles={d.vehicles as DecommissionItem[]}
+        windowDays={Number(d.window_days) || 21}
+      />
+    );
   if (call.name === "find_driver_for_date") {
     if (d.found && d.contract) return <ContractCreatedCard contract={d.contract as ContractSummary} headline="Fahrer gefunden" />;
     return (
@@ -356,6 +364,74 @@ const Stat = ({ label, value, Icon }: { label: string; value: string | number; I
     <div className="font-display font-bold text-2xl mt-1 tabular-nums">{value}</div>
   </div>
 );
+
+type DecommissionItem = {
+  id: string;
+  plate: string;
+  vehicle_type: string | null;
+  decommission_date: string | null;
+  days_left: number | null;
+  level: "ok" | "soon" | "warn" | "urgent" | "due";
+  status: string;
+};
+
+const LEVEL_STYLE: Record<DecommissionItem["level"], { bg: string; ring: string; color: string; text: string }> = {
+  ok: { bg: "#f0fdf4", ring: "#bbf7d0", color: "#16a34a", text: "#15803d" },
+  soon: { bg: "#fefce8", ring: "#fde68a", color: "#ca8a04", text: "#a16207" },
+  warn: { bg: "#fefce8", ring: "#fde68a", color: "#ca8a04", text: "#a16207" },
+  urgent: { bg: "#fff7ed", ring: "#fed7aa", color: "#ea580c", text: "#c2410c" },
+  due: { bg: "#fef2f2", ring: "#fecaca", color: "#dc2626", text: "#b91c1c" },
+};
+
+const DecommissionList = ({
+  vehicles,
+  windowDays,
+}: {
+  vehicles: DecommissionItem[];
+  windowDays: number;
+}) => {
+  if (vehicles.length === 0)
+    return (
+      <EmptyResult
+        Icon={CalendarClock}
+        text={`Keine Fahrzeuge in den nächsten ${windowDays} Tagen auszusteuern.`}
+      />
+    );
+  return (
+    <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-stone-100 text-xs uppercase tracking-wider text-stone-500 font-medium flex items-center gap-1.5">
+        <CalendarClock size={12} /> Aussteuerung in den nächsten {windowDays} Tagen
+      </div>
+      {vehicles.map((v) => {
+        const s = LEVEL_STYLE[v.level];
+        return (
+          <Link
+            key={v.id}
+            href={`/dashboard/vehicles/${v.id}`}
+            className="grid grid-cols-[110px_1fr_140px_auto] items-center gap-3 px-4 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+          >
+            <span className="font-mono font-semibold">{v.plate}</span>
+            <span className="text-stone-700 truncate">{v.vehicle_type || "—"}</span>
+            <span className="text-xs text-stone-500 font-mono">
+              {v.decommission_date ? fmtDate(v.decommission_date) : "—"}
+            </span>
+            <span
+              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium"
+              style={{
+                background: s.bg,
+                color: s.text,
+                boxShadow: `inset 0 0 0 1px ${s.ring}`,
+              }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: s.color }} />
+              {v.status}
+            </span>
+          </Link>
+        );
+      })}
+    </div>
+  );
+};
 
 const EmptyResult = ({ Icon, text }: { Icon: LucideIcon; text: string }) => (
   <div className="rounded-xl bg-stone-100 px-4 py-6 text-center text-sm text-stone-500">
