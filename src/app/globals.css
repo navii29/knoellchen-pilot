@@ -59,6 +59,12 @@ body {
 }
 .overdue-blink { animation: overdue-blink 1.6s ease-in-out infinite; }
 
+@keyframes overdue-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.55); }
+  50%      { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+}
+.overdue-pulse { animation: overdue-pulse 1.8s ease-out infinite; }
+
 @layer utilities {
   .text-balance { text-wrap: balance; }
 }

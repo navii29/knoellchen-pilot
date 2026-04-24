@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   addDays,
   colorForContract,
@@ -16,21 +16,35 @@ import {
 import type { Contract, Vehicle } from "@/lib/types";
 
 const WEEKDAY = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+const MONTHS = [
+  "Januar",
+  "Februar",
+  "März",
+  "April",
+  "Mai",
+  "Juni",
+  "Juli",
+  "August",
+  "September",
+  "Oktober",
+  "November",
+  "Dezember",
+];
 
-const fmtDayHeader = (d: Date) =>
-  `${d.getDate().toString().padStart(2, "0")}.${(d.getMonth() + 1).toString().padStart(2, "0")}`;
-
-const fmtRange = (start: Date, end: Date) => {
-  const sameMonth = start.getMonth() === end.getMonth();
-  const sameYear = start.getFullYear() === end.getFullYear();
-  const startStr = `${start.getDate()}.${sameMonth && sameYear ? "" : (start.getMonth() + 1) + "."}`;
-  const endStr = `${end.getDate()}.${(end.getMonth() + 1).toString().padStart(2, "0")}.${end.getFullYear()}`;
-  return `${startStr} – ${endStr}`;
-};
-
-const TRACK_HEIGHT = 28; // px pro Track innerhalb einer Vehicle-Zeile
+const TRACK_HEIGHT = 32;
 const TRACK_GAP = 4;
-const ROW_PADDING = 8;
+const ROW_PADDING = 10;
+const ROW_MIN_HEIGHT = TRACK_HEIGHT + ROW_PADDING * 2;
+
+const monthYearLabel = (start: Date, end: Date) => {
+  if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
+    return `${MONTHS[start.getMonth()]} ${start.getFullYear()}`;
+  }
+  if (start.getFullYear() === end.getFullYear()) {
+    return `${MONTHS[start.getMonth()].slice(0, 3)} – ${MONTHS[end.getMonth()].slice(0, 3)} ${start.getFullYear()}`;
+  }
+  return `${MONTHS[start.getMonth()].slice(0, 3)} ${start.getFullYear()} – ${MONTHS[end.getMonth()].slice(0, 3)} ${end.getFullYear()}`;
+};
 
 export const CalendarClient = ({
   vehicles,
@@ -46,12 +60,12 @@ export const CalendarClient = ({
   const router = useRouter();
   const weekStart = useMemo(() => parseIso(weekStartIso), [weekStartIso]);
   const days = useMemo(() => weekDays(weekStart), [weekStart]);
+  const weekEnd = addDays(weekStart, 6);
 
   const prevWeek = toIso(addDays(weekStart, -7));
   const nextWeek = toIso(addDays(weekStart, 7));
   const today = toIso(new Date());
 
-  // Index Verträge pro Vehicle
   const byVehicle = useMemo(() => {
     const map = new Map<string, Contract[]>();
     for (const c of contracts) {
@@ -73,42 +87,46 @@ export const CalendarClient = ({
 
   return (
     <>
-      <div className="flex items-end justify-between gap-3 flex-wrap mb-4">
+      <div className="flex items-end justify-between gap-4 flex-wrap mb-6">
         <div>
-          <div className="font-display font-bold text-2xl tracking-tight">Kalender</div>
+          <div className="font-display font-bold text-[28px] tracking-tight text-stone-900">
+            {monthYearLabel(weekStart, weekEnd)}
+          </div>
           <p className="text-sm text-stone-500 mt-1">
-            Flottenbelegung pro Woche · {fmtRange(weekStart, addDays(weekStart, 6))}
+            KW {getIsoWeek(weekStart)} · Flottenbelegung auf einen Blick
           </p>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="inline-flex items-center rounded-lg bg-white ring-1 ring-stone-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden">
           <Link
             href={`/dashboard/calendar?week=${prevWeek}`}
-            className="inline-flex items-center gap-1 text-sm px-3 py-1.5 rounded-md bg-white ring-1 ring-stone-200 hover:bg-stone-50"
+            className="px-2.5 py-1.5 text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors border-r border-stone-200"
+            aria-label="Vorherige Woche"
           >
-            <ChevronLeft size={14} /> Vorherige
+            <ChevronLeft size={16} />
           </Link>
           <Link
             href={`/dashboard/calendar?week=${today}`}
-            className="inline-flex items-center gap-1 text-sm px-3 py-1.5 rounded-md bg-white ring-1 ring-stone-200 hover:bg-stone-50"
+            className="px-3.5 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50 hover:text-stone-900 transition-colors border-r border-stone-200"
           >
-            <CalendarIcon size={14} /> Heute
+            Heute
           </Link>
           <Link
             href={`/dashboard/calendar?week=${nextWeek}`}
-            className="inline-flex items-center gap-1 text-sm px-3 py-1.5 rounded-md bg-white ring-1 ring-stone-200 hover:bg-stone-50"
+            className="px-2.5 py-1.5 text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+            aria-label="Nächste Woche"
           >
-            Nächste <ChevronRight size={14} />
+            <ChevronRight size={16} />
           </Link>
         </div>
       </div>
 
-      <div className="rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
-        {/* Header-Reihe */}
+      <div className="rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden ring-1 ring-stone-100">
         <div
-          className="grid border-b border-stone-200 bg-stone-50/50 sticky top-0 z-10"
-          style={{ gridTemplateColumns: `220px repeat(7, minmax(80px, 1fr))` }}
+          className="grid border-b border-stone-100 bg-stone-50/50"
+          style={{ gridTemplateColumns: `200px repeat(7, 1fr)` }}
         >
-          <div className="px-4 py-3 text-[11px] uppercase tracking-wider text-stone-500 font-semibold">
+          <div className="px-4 py-3 text-[11px] uppercase tracking-wider text-stone-500 font-semibold border-r border-stone-100">
             Fahrzeug
           </div>
           {days.map((d, i) => {
@@ -118,62 +136,74 @@ export const CalendarClient = ({
             return (
               <div
                 key={iso}
-                className={`px-2 py-3 text-center border-l border-stone-100 ${
-                  isWeekend ? "bg-stone-50" : ""
-                }`}
+                className="px-2 py-3 flex flex-col items-center justify-center gap-1 border-l border-stone-100 first:border-l-0"
               >
                 <div
-                  className={`text-[11px] font-medium ${
-                    isToday ? "text-teal-700" : "text-stone-500"
+                  className={`text-[10px] font-medium uppercase tracking-wider ${
+                    isToday ? "text-teal-700" : isWeekend ? "text-stone-300" : "text-stone-500"
                   }`}
                 >
                   {WEEKDAY[i]}
                 </div>
-                <div
-                  className={`font-mono text-sm tabular-nums mt-0.5 ${
-                    isToday ? "text-teal-700 font-semibold" : "text-stone-900"
-                  }`}
-                >
-                  {fmtDayHeader(d)}
-                </div>
+                {isToday ? (
+                  <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-teal-600 text-white font-mono text-[13px] font-semibold tabular-nums">
+                    {d.getDate()}
+                  </div>
+                ) : (
+                  <div
+                    className={`font-mono text-sm tabular-nums ${
+                      isWeekend ? "text-stone-300" : "text-stone-900"
+                    }`}
+                  >
+                    {d.getDate()}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
 
-        {/* Vehicle-Zeilen */}
         {vehicles.length === 0 ? (
-          <div className="px-5 py-12 text-center text-sm text-stone-500">
+          <div className="px-5 py-16 text-center text-sm text-stone-500">
             Noch keine Fahrzeuge — leg zuerst welche unter &bdquo;Fahrzeuge&ldquo; an.
           </div>
         ) : (
-          vehicles.map((v) => (
-            <VehicleRow
-              key={v.id}
-              vehicle={v}
-              contracts={byVehicle.get(v.plate) ?? []}
-              weekStart={weekStart}
-              todayIso={todayIso}
-              todayCol={todayCol}
-              onOpen={(id) => router.push(`/dashboard/contracts/${id}`)}
-            />
-          ))
-        )}
-      </div>
+          <div className="relative">
+            {vehicles.map((v, idx) => (
+              <VehicleRow
+                key={v.id}
+                vehicle={v}
+                contracts={byVehicle.get(v.plate) ?? []}
+                weekStart={weekStart}
+                todayIso={todayIso}
+                todayCol={todayCol}
+                zebra={idx % 2 === 1}
+                onOpen={(id) => router.push(`/dashboard/contracts/${id}`)}
+              />
+            ))}
 
-      <div className="mt-4 text-xs text-stone-500 flex items-center gap-4 flex-wrap">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-teal-100 ring-1 ring-teal-300" /> Aktiver Vertrag
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded overdue-blink" /> Überfällige Rückgabe
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="w-px h-3 bg-teal-500" /> Heute
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-stone-50" /> Wochenende
-        </span>
+            {/* Heute-Linie durchgängig über alle Zeilen */}
+            {todayCol != null && (
+              <div
+                className="absolute top-0 bottom-0 z-20 pointer-events-none"
+                style={{
+                  left: `calc(200px + ((${todayCol - 1} + 0.5) / 7) * (100% - 200px))`,
+                  transform: "translateX(-1px)",
+                }}
+              >
+                <div className="w-0.5 h-full bg-teal-500" />
+                <div
+                  className="absolute -top-1 -left-[5px] w-0 h-0"
+                  style={{
+                    borderLeft: "6px solid transparent",
+                    borderRight: "6px solid transparent",
+                    borderTop: "6px solid #14b8a6",
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </>
   );
@@ -185,6 +215,7 @@ const VehicleRow = ({
   weekStart,
   todayIso,
   todayCol,
+  zebra,
   onOpen,
 }: {
   vehicle: Vehicle;
@@ -192,6 +223,7 @@ const VehicleRow = ({
   weekStart: Date;
   todayIso: string;
   todayCol: number | null;
+  zebra: boolean;
   onOpen: (id: string) => void;
 }) => {
   const { laid, trackCount } = useMemo(
@@ -199,48 +231,48 @@ const VehicleRow = ({
     [contracts, weekStart, todayIso]
   );
 
-  const rowHeight = trackCount * TRACK_HEIGHT + (trackCount - 1) * TRACK_GAP + ROW_PADDING * 2;
+  const rowHeight = Math.max(
+    ROW_MIN_HEIGHT,
+    trackCount * TRACK_HEIGHT + (trackCount - 1) * TRACK_GAP + ROW_PADDING * 2
+  );
 
   return (
     <div
-      className="grid border-b border-stone-100 last:border-0 hover:bg-stone-50/40 transition-colors"
-      style={{ gridTemplateColumns: `220px repeat(7, minmax(80px, 1fr))`, minHeight: rowHeight }}
+      className={`group grid border-b border-stone-100 last:border-0 transition-colors ${
+        zebra ? "bg-stone-50/30" : "bg-white"
+      } hover:bg-stone-50/60`}
+      style={{ gridTemplateColumns: `200px repeat(7, 1fr)`, minHeight: rowHeight }}
     >
       <div className="px-4 py-3 flex items-center gap-2 border-r border-stone-100">
-        <div className="min-w-0">
-          <div className="font-mono font-semibold text-sm">{vehicle.plate}</div>
-          <div className="text-xs text-stone-500 truncate">{vehicle.vehicle_type || "—"}</div>
+        <div className="min-w-0 w-full">
+          <div className="font-mono font-semibold text-sm text-stone-900 truncate">
+            {vehicle.plate}
+          </div>
+          <div className="text-xs text-stone-400 truncate mt-0.5">
+            {vehicle.vehicle_type || "—"}
+          </div>
         </div>
       </div>
 
-      {/* 7 Day-Cells als Background */}
+      {/* 7 Day-Cells als Hintergrund mit Hover */}
       <div
         className="relative col-span-7 grid"
-        style={{ gridTemplateColumns: `repeat(7, minmax(80px, 1fr))` }}
+        style={{ gridTemplateColumns: `repeat(7, 1fr)` }}
       >
         {Array.from({ length: 7 }, (_, i) => {
-          const isWeekend = i >= 5;
           const isToday = todayCol === i + 1;
           return (
             <div
               key={i}
-              className={`border-l border-stone-100 first:border-l-0 ${
-                isWeekend ? "bg-stone-50" : ""
-              } ${isToday ? "bg-teal-50/40" : ""}`}
+              className={`border-l border-stone-100 first:border-l-0 transition-colors hover:bg-emerald-50/40 ${
+                isToday ? "bg-teal-50/20" : ""
+              }`}
               style={{ height: rowHeight }}
             />
           );
         })}
 
-        {/* Today vertical line — über den Cells */}
-        {todayCol != null && (
-          <div
-            className="absolute top-0 bottom-0 w-px bg-teal-500 z-10 pointer-events-none"
-            style={{ left: `calc((${todayCol - 1} / 7) * 100% + (1 / 7) * 50%)` }}
-          />
-        )}
-
-        {/* Contract bars — absolut positioniert */}
+        {/* Contract bars */}
         {laid.map((l) => (
           <ContractBar key={l.contract.id} laid={l} onOpen={onOpen} />
         ))}
@@ -262,8 +294,7 @@ const ContractBar = ({
   const leftPct = ((laid.startCol - 1) / 7) * 100;
   const widthPct = (laid.span / 7) * 100;
 
-  // Innerhalb der Zelle Padding (links/rechts) damit Bars nicht 100% touchen
-  const inset = 4; // px
+  const inset = 3;
 
   const baseStyle: React.CSSProperties = {
     position: "absolute",
@@ -271,27 +302,43 @@ const ContractBar = ({
     left: `calc(${leftPct}% + ${inset}px)`,
     width: `calc(${widthPct}% - ${inset * 2}px)`,
     height: TRACK_HEIGHT,
-    background: laid.isOverdue ? undefined : color.bg,
-    color: laid.isOverdue ? "#7f1d1d" : color.text,
-    boxShadow: laid.isOverdue ? undefined : `inset 0 0 0 1px ${color.ring}`,
-    borderTopLeftRadius: laid.clippedLeft ? 2 : 6,
-    borderBottomLeftRadius: laid.clippedLeft ? 2 : 6,
-    borderTopRightRadius: laid.clippedRight ? 2 : 6,
-    borderBottomRightRadius: laid.clippedRight ? 2 : 6,
+    background: laid.isOverdue ? "#dc2626" : color.bg,
+    color: "#ffffff",
+    boxShadow: laid.isOverdue
+      ? "0 1px 2px rgba(220,38,38,0.3)"
+      : `0 1px 2px rgba(0,0,0,0.08)`,
   };
 
   return (
     <button
       onClick={() => onOpen(c.id)}
       title={`${c.contract_nr} · ${c.renter_name}`}
-      className={`px-2.5 text-xs font-medium flex items-center gap-1.5 hover:brightness-95 transition z-20 truncate ${
-        laid.isOverdue ? "overdue-blink" : ""
+      onMouseEnter={(e) => {
+        if (!laid.isOverdue) e.currentTarget.style.background = color.bgHover;
+      }}
+      onMouseLeave={(e) => {
+        if (!laid.isOverdue) e.currentTarget.style.background = color.bg;
+      }}
+      className={`px-3 text-[12px] font-medium flex items-center gap-1.5 rounded-md transition-all z-10 truncate text-left ${
+        laid.isOverdue ? "overdue-pulse" : ""
       }`}
       style={baseStyle}
     >
-      {laid.isOverdue && <AlertTriangle size={11} className="shrink-0" />}
-      <span className="truncate">{c.renter_name}</span>
-      {laid.clippedRight && <ChevronRight size={11} className="shrink-0 opacity-60" />}
+      {laid.isOverdue && <AlertTriangle size={12} className="shrink-0 text-white" />}
+      <span className="truncate flex-1">{c.renter_name}</span>
+      {laid.clippedRight && (
+        <ChevronRight size={12} className="shrink-0 opacity-80" />
+      )}
     </button>
   );
+};
+
+// ISO-Woche: 1-53 nach ISO-8601 (Mo=Start, Woche 1 enthält 4. Januar)
+const getIsoWeek = (d: Date): number => {
+  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const dayNr = (target.getDay() + 6) % 7;
+  target.setDate(target.getDate() - dayNr + 3);
+  const firstThursday = new Date(target.getFullYear(), 0, 4);
+  const diff = (target.getTime() - firstThursday.getTime()) / 86_400_000;
+  return 1 + Math.round(diff / 7);
 };

@@ -114,19 +114,19 @@ export const layoutWeek = (
   return { laid, trackCount: Math.max(1, trackEnds.length) };
 };
 
-// Stabile Pastell-Farbe pro Vertrag (deterministisch via Hash)
-export const colorForContract = (id: string): { bg: string; ring: string; text: string } => {
+// Stabile satte Farbe pro Vertrag (deterministisch via Hash) — weißer Text
+export const colorForContract = (id: string): { bg: string; bgHover: string; ring: string } => {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
   const palette = [
-    { bg: "#ccfbf1", ring: "#5eead4", text: "#0f766e" }, // teal
-    { bg: "#dbeafe", ring: "#93c5fd", text: "#1d4ed8" }, // blue
-    { bg: "#ede9fe", ring: "#c4b5fd", text: "#6d28d9" }, // violet
-    { bg: "#fce7f3", ring: "#f9a8d4", text: "#be185d" }, // pink
-    { bg: "#fef3c7", ring: "#fcd34d", text: "#a16207" }, // amber
-    { bg: "#dcfce7", ring: "#86efac", text: "#15803d" }, // green
-    { bg: "#ffedd5", ring: "#fdba74", text: "#c2410c" }, // orange
-    { bg: "#e0e7ff", ring: "#a5b4fc", text: "#4338ca" }, // indigo
+    { bg: "#0d9488", bgHover: "#0f766e", ring: "#0f766e" }, // teal-600
+    { bg: "#2563eb", bgHover: "#1d4ed8", ring: "#1d4ed8" }, // blue-600
+    { bg: "#7c3aed", bgHover: "#6d28d9", ring: "#6d28d9" }, // violet-600
+    { bg: "#db2777", bgHover: "#be185d", ring: "#be185d" }, // pink-600
+    { bg: "#d97706", bgHover: "#b45309", ring: "#b45309" }, // amber-600
+    { bg: "#16a34a", bgHover: "#15803d", ring: "#15803d" }, // green-600
+    { bg: "#ea580c", bgHover: "#c2410c", ring: "#c2410c" }, // orange-600
+    { bg: "#4f46e5", bgHover: "#4338ca", ring: "#4338ca" }, // indigo-600
   ];
   return palette[h % palette.length];
 };
