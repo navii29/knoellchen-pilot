@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Calendar, ChevronRight, Coins, ScrollText, User } from "lucide-react";
+import { ArrowLeft, Calendar, Camera, ChevronRight, Coins, ScrollText, User } from "lucide-react";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { ContractStatusBadge } from "@/components/contract/StatusBadge";
@@ -8,7 +8,8 @@ import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ContractActions } from "./ContractActions";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeExtraKm } from "@/lib/km";
-import type { Contract, Ticket, Vehicle } from "@/lib/types";
+import { POSITIONS } from "@/lib/handover";
+import type { Contract, HandoverPhoto, Ticket, Vehicle } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -47,14 +48,29 @@ export default async function ContractDetailPage({ params }: { params: { id: str
     pricePerKm,
   });
 
+  const admin = createAdminClient();
   let pdfUrl: string | null = null;
   if (c.contract_pdf_path) {
-    const admin = createAdminClient();
     const { data: signed } = await admin.storage
       .from("contract-uploads")
       .createSignedUrl(c.contract_pdf_path, 3600);
     pdfUrl = signed?.signedUrl || null;
   }
+
+  const { data: photoRows } = await supabase
+    .from("handover_photos")
+    .select("*")
+    .eq("contract_id", c.id);
+  const handoverPhotos: Array<HandoverPhoto & { url: string | null }> = await Promise.all(
+    ((photoRows ?? []) as HandoverPhoto[]).map(async (p) => {
+      const { data: signed } = await admin.storage
+        .from("handover-photos")
+        .createSignedUrl(p.photo_path, 3600);
+      return { ...p, url: signed?.signedUrl || null };
+    })
+  );
+  const pickupCount = handoverPhotos.filter((p) => p.type === "pickup").length;
+  const returnCount = handoverPhotos.filter((p) => p.type === "return").length;
 
   return (
     <>
@@ -160,6 +176,55 @@ export default async function ContractDetailPage({ params }: { params: { id: str
           </div>
 
           <div className="mt-6">
+            <div className="flex items-end justify-between mb-2">
+              <div className="text-xs uppercase tracking-wider text-stone-500 font-medium flex items-center gap-1.5">
+                <Camera size={12} />
+                Fahrzeugzustand · {pickupCount}/10 Übergabe · {returnCount}/10 Rücknahme
+              </div>
+              <Link
+                href={`/dashboard/contracts/${c.id}/handover`}
+                className="text-xs text-teal-700 hover:underline inline-flex items-center gap-1"
+              >
+                Fotos verwalten <ChevronRight size={12} />
+              </Link>
+            </div>
+            {handoverPhotos.length === 0 ? (
+              <Link
+                href={`/dashboard/contracts/${c.id}/handover`}
+                className="block rounded-xl bg-white ring-1 ring-stone-200 hover:ring-stone-400 transition px-5 py-8 text-center text-sm text-stone-500"
+              >
+                <Camera size={24} className="mx-auto text-stone-300" />
+                <div className="mt-2">Noch keine Übergabe-Fotos</div>
+                <div className="text-xs text-teal-700 mt-1">Fotos jetzt aufnehmen →</div>
+              </Link>
+            ) : (
+              <div className="rounded-xl bg-white ring-1 ring-stone-200 p-4">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  {POSITIONS.map((pos) => {
+                    const pickup = handoverPhotos.find(
+                      (p) => p.type === "pickup" && p.position === pos.key
+                    );
+                    const ret = handoverPhotos.find(
+                      (p) => p.type === "return" && p.position === pos.key
+                    );
+                    return (
+                      <div key={pos.key} className="space-y-1">
+                        <div className="text-[10px] uppercase tracking-wider text-stone-500 font-medium">
+                          {pos.label}
+                        </div>
+                        <div className="grid grid-cols-2 gap-1">
+                          <PhotoThumb url={pickup?.url || null} label="Vor" />
+                          <PhotoThumb url={ret?.url || null} label="Nach" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-6">
             <div className="text-xs uppercase tracking-wider text-stone-500 font-medium mb-2">
               Verknüpfte Strafzettel ({linkedTickets.length})
             </div>
@@ -222,3 +287,27 @@ const Row = ({
     <div className={mono ? "font-mono text-stone-800" : "text-stone-800"}>{value}</div>
   </div>
 );
+
+const PhotoThumb = ({ url, label }: { url: string | null; label: string }) => {
+  if (!url) {
+    return (
+      <div className="aspect-square bg-stone-50 rounded-md flex items-center justify-center text-[9px] uppercase tracking-wider text-stone-300">
+        {label}
+      </div>
+    );
+  }
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="relative aspect-square block rounded-md overflow-hidden bg-stone-100"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt={label} className="w-full h-full object-cover" />
+      <span className="absolute bottom-0 left-0 right-0 px-1 py-0.5 text-[9px] uppercase tracking-wider text-white bg-black/40 text-center">
+        {label}
+      </span>
+    </a>
+  );
+};

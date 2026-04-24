@@ -144,6 +144,38 @@ export interface ParsedCustomerData {
   confidence?: number;
 }
 
+export type HandoverPhotoType = "pickup" | "return";
+
+export type HandoverPosition =
+  | "front"
+  | "rear"
+  | "left"
+  | "right"
+  | "front_left"
+  | "front_right"
+  | "rear_left"
+  | "rear_right"
+  | "interior"
+  | "dashboard";
+
+export interface HandoverPhoto {
+  id: string;
+  contract_id: string;
+  org_id: string;
+  type: HandoverPhotoType;
+  position: HandoverPosition;
+  photo_path: string;
+  created_at: string;
+}
+
+export type DamageSeverity = "none" | "minor" | "major";
+
+export interface DamageComparisonResult {
+  has_damage: boolean;
+  description: string;
+  severity: DamageSeverity;
+}
+
 export interface Booking {
   id: string;
   org_id: string;

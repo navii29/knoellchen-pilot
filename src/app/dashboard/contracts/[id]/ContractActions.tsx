@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Download, Loader2, Trash2, X } from "lucide-react";
+import Link from "next/link";
+import { Camera, Check, Download, Loader2, Trash2, X } from "lucide-react";
 import { THEME } from "@/lib/theme";
 import type { Contract } from "@/lib/types";
 
@@ -68,6 +69,13 @@ export const ContractActions = ({
             <Download size={14} /> Vertrags-PDF anzeigen
           </a>
         )}
+
+        <Link
+          href={`/dashboard/contracts/${contract.id}/handover`}
+          className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-stone-200 hover:bg-stone-50"
+        >
+          <Camera size={14} /> Übergabe-Fotos
+        </Link>
 
         {contract.status === "aktiv" && !showReturn && (
           <button

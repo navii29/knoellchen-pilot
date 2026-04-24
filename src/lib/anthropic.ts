@@ -1,5 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { ParsedContractData, ParsedCustomerData, ParsedTicketData } from "./types";
+import type {
+  DamageComparisonResult,
+  ParsedContractData,
+  ParsedCustomerData,
+  ParsedTicketData,
+} from "./types";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
@@ -174,5 +179,71 @@ export const parseCustomerDocument = async (
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
   const data = JSON.parse(jsonMatch[0]) as ParsedCustomerData;
+  return { data, raw: response };
+};
+
+const DAMAGE_PROMPT = `Du bist Experte für Fahrzeug-Schadensbegutachtung in Autovermietungen.
+Vergleiche zwei Fotos der gleichen Fahrzeugposition: Foto 1 ist der Zustand bei Übergabe an den Mieter, Foto 2 bei der Rücknahme.
+
+Suche nach NEUEN Schäden, die zwischen den Fotos aufgetreten sind:
+- Kratzer, Dellen, Risse
+- Lackabplatzungen, Beulen
+- Beschädigungen an Stoßstangen, Spiegeln, Felgen
+- Starke Verschmutzung im Innenraum (über normale Nutzung hinaus)
+- Risse oder Brennlöcher in Polstern
+
+Wichtig: Schäden die schon auf dem Übergabefoto sichtbar sind, gelten NICHT als neue Schäden.
+Reflexionen, unterschiedliche Lichtverhältnisse oder Schatten sind KEINE Schäden.
+
+Severity-Bewertung:
+- "none": kein neuer Schaden erkennbar
+- "minor": kleine Kratzer, leichte Verschmutzung, kosmetisch
+- "major": Dellen, Risse, sichtbare strukturelle Schäden, große Verschmutzung
+
+Antworte AUSSCHLIESSLICH mit gültigem JSON:
+{
+  "has_damage": true oder false,
+  "description": "Kurze deutsche Beschreibung des Schadens, oder 'Keine neuen Schäden erkennbar'",
+  "severity": "none" | "minor" | "major"
+}`;
+
+export const compareHandoverPhotos = async (
+  beforeBase64: string,
+  beforeMediaType: "image/jpeg" | "image/png" | "image/webp",
+  afterBase64: string,
+  afterMediaType: "image/jpeg" | "image/png" | "image/webp",
+  positionLabel: string
+): Promise<{ data: DamageComparisonResult; raw: unknown }> => {
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 800,
+    system: DAMAGE_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: `Position: ${positionLabel}. Foto 1 = Übergabe.` },
+          {
+            type: "image",
+            source: { type: "base64", media_type: beforeMediaType, data: beforeBase64 },
+          },
+          { type: "text", text: "Foto 2 = Rücknahme." },
+          {
+            type: "image",
+            source: { type: "base64", media_type: afterMediaType, data: afterBase64 },
+          },
+          { type: "text", text: "Vergleiche und antworte mit dem JSON-Schema." },
+        ],
+      },
+    ],
+  });
+
+  const text = response.content
+    .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
+    .map((b) => b.text)
+    .join("");
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
+  const data = JSON.parse(jsonMatch[0]) as DamageComparisonResult;
   return { data, raw: response };
 };
