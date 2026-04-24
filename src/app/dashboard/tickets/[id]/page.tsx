@@ -61,7 +61,7 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
     <>
       <Topbar section={`Strafzettel · ${t.ticket_nr}`} />
       <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
-        <div className="max-w-4xl mx-auto p-6 md:p-10">
+        <div className="max-w-4xl mx-auto p-4 md:p-10">
           <Link
             href="/dashboard"
             className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"

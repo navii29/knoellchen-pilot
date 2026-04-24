@@ -38,7 +38,7 @@ export default async function DashboardLayout({
   ]);
 
   return (
-    <div className="h-screen flex bg-stone-50">
+    <div className="md:h-screen md:flex bg-stone-50 min-h-screen">
       <Sidebar
         orgName={org?.name || "Mein Konto"}
         ticketCount={openTickets || 0}
@@ -46,7 +46,7 @@ export default async function DashboardLayout({
         customerCount={customers || 0}
         damageCount={openDamages || 0}
       />
-      <div className="flex-1 flex flex-col min-w-0">{children}</div>
+      <div className="flex-1 flex flex-col min-w-0 w-full">{children}</div>
     </div>
   );
 }

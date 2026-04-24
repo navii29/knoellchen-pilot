@@ -87,13 +87,13 @@ export const CalendarClient = ({
 
   return (
     <>
-      <div className="flex items-end justify-between gap-4 flex-wrap mb-6">
+      <div className="flex items-end justify-between gap-4 flex-wrap mb-4 md:mb-6">
         <div>
-          <div className="font-display font-bold text-[28px] tracking-tight text-stone-900">
+          <div className="font-display font-bold text-2xl md:text-[28px] tracking-tight text-stone-900">
             {monthYearLabel(weekStart, weekEnd)}
           </div>
-          <p className="text-sm text-stone-500 mt-1">
-            KW {getIsoWeek(weekStart)} · Flottenbelegung auf einen Blick
+          <p className="text-xs md:text-sm text-stone-500 mt-1">
+            KW {getIsoWeek(weekStart)} · Flottenbelegung
           </p>
         </div>
 
@@ -121,10 +121,11 @@ export const CalendarClient = ({
         </div>
       </div>
 
-      <div className="rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden ring-1 ring-stone-100">
+      <div className="rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] ring-1 ring-stone-100 overflow-hidden">
+       <div className="overflow-x-auto">
         <div
-          className="grid border-b border-stone-100 bg-stone-50/50"
-          style={{ gridTemplateColumns: `200px repeat(7, 1fr)` }}
+          className="min-w-[760px] grid border-b border-stone-100 bg-stone-50/50"
+          style={{ gridTemplateColumns: `200px repeat(7, minmax(80px, 1fr))` }}
         >
           <div className="px-4 py-3 text-[11px] uppercase tracking-wider text-stone-500 font-semibold border-r border-stone-100">
             Fahrzeug
@@ -164,11 +165,11 @@ export const CalendarClient = ({
         </div>
 
         {vehicles.length === 0 ? (
-          <div className="px-5 py-16 text-center text-sm text-stone-500">
+          <div className="px-5 py-16 text-center text-sm text-stone-500 min-w-[760px]">
             Noch keine Fahrzeuge — leg zuerst welche unter &bdquo;Fahrzeuge&ldquo; an.
           </div>
         ) : (
-          <div className="relative">
+          <div className="relative min-w-[760px]">
             {vehicles.map((v, idx) => (
               <VehicleRow
                 key={v.id}
@@ -204,6 +205,10 @@ export const CalendarClient = ({
             )}
           </div>
         )}
+       </div>
+       <div className="md:hidden text-[11px] text-stone-400 px-3 py-2 border-t border-stone-100 bg-stone-50/50">
+         ← horizontal scrollen, um alle Tage zu sehen →
+       </div>
       </div>
     </>
   );

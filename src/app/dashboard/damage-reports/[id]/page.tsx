@@ -75,7 +75,7 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
     <>
       <Topbar section={`Schadensbericht · ${fmtDate(r.date)}`} />
       <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
-        <div className="max-w-4xl mx-auto p-6 md:p-10">
+        <div className="max-w-4xl mx-auto p-4 md:p-10">
           <Link
             href="/dashboard/damage-reports"
             className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
@@ -83,8 +83,8 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
             <ArrowLeft size={14} /> Zurück zur Liste
           </Link>
 
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div>
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="min-w-0">
               <div className="flex items-center gap-2 mb-2">
                 <AlertOctagon size={18} style={{ color: meta.color }} />
                 <span
@@ -99,7 +99,7 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
                   {meta.label}
                 </span>
               </div>
-              <h1 className="font-display font-bold text-3xl tracking-tight">
+              <h1 className="font-display font-bold text-2xl md:text-3xl tracking-tight break-words">
                 {r.location || "Unbekannter Ort"}
               </h1>
               <div className="mt-1 text-sm text-stone-500 font-mono">

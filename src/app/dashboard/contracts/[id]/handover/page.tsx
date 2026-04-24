@@ -42,7 +42,7 @@ export default async function HandoverPage({ params }: { params: { id: string } 
     <>
       <Topbar section={`Übergabe · ${c.contract_nr}`} />
       <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
-        <div className="max-w-5xl mx-auto p-6 md:p-10">
+        <div className="max-w-5xl mx-auto p-4 md:p-10">
           <HandoverClient
             contractId={c.id}
             contractNr={c.contract_nr}

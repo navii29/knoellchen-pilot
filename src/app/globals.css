@@ -67,4 +67,18 @@ body {
 
 @layer utilities {
   .text-balance { text-wrap: balance; }
+  .touch-target { min-height: 44px; min-width: 44px; }
+  .scroll-snap-x {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .snap-start { scroll-snap-align: start; }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+/* iOS: verhindert Auto-Zoom auf Inputs mit < 16px Schrift */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
 }

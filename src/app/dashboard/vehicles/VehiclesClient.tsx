@@ -63,7 +63,7 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
 
       <form
         onSubmit={add}
-        className="mt-6 rounded-xl bg-white ring-1 ring-stone-200 p-5 grid sm:grid-cols-[140px_1fr_110px_140px_120px_auto] gap-3 items-end"
+        className="mt-6 rounded-xl bg-white ring-1 ring-stone-200 p-4 md:p-5 grid grid-cols-2 sm:grid-cols-[140px_1fr_110px_140px_120px_auto] gap-3 items-end"
       >
         <Field label="Kennzeichen *">
           <input
@@ -139,55 +139,109 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
           return (
             <div
               key={v.id}
-              className="grid grid-cols-[40px_120px_1fr_100px_220px_24px_auto] items-center gap-3 px-5 py-3 border-b border-stone-50 last:border-0 text-sm"
+              className="border-b border-stone-50 last:border-0"
             >
-              <div className="w-8 h-8 rounded-lg bg-stone-100 text-stone-700 flex items-center justify-center">
-                <Car size={15} />
-              </div>
-              <span className="font-mono font-semibold">{v.plate}</span>
-              <span className="text-stone-700 truncate">
-                {v.vehicle_type || "—"}
-                {v.extra_km_price != null && (
-                  <span className="text-stone-400 text-[11px] ml-2 font-mono">
-                    · {Number(v.extra_km_price).toFixed(2).replace(".", ",")} €/km
-                  </span>
-                )}
-              </span>
-              <span className="text-stone-500 text-xs">{v.color || "—"}</span>
-              <span>
-                {v.decommission_date ? (
-                  <span
-                    className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium"
-                    style={{
-                      background: info.bg,
-                      color: info.textColor,
-                      boxShadow: `inset 0 0 0 1px ${info.ring}`,
-                    }}
-                  >
+              {/* Desktop */}
+              <div className="hidden md:grid grid-cols-[40px_120px_1fr_100px_220px_24px_auto] items-center gap-3 px-5 py-3 text-sm">
+                <div className="w-8 h-8 rounded-lg bg-stone-100 text-stone-700 flex items-center justify-center">
+                  <Car size={15} />
+                </div>
+                <span className="font-mono font-semibold">{v.plate}</span>
+                <span className="text-stone-700 truncate">
+                  {v.vehicle_type || "—"}
+                  {v.extra_km_price != null && (
+                    <span className="text-stone-400 text-[11px] ml-2 font-mono">
+                      · {Number(v.extra_km_price).toFixed(2).replace(".", ",")} €/km
+                    </span>
+                  )}
+                </span>
+                <span className="text-stone-500 text-xs">{v.color || "—"}</span>
+                <span>
+                  {v.decommission_date ? (
                     <span
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: info.color }}
-                    />
-                    {info.label}
-                  </span>
-                ) : (
-                  <span className="text-xs text-stone-400">Erstzulassung fehlt</span>
-                )}
-              </span>
-              <Link
-                href={`/dashboard/vehicles/${v.id}`}
-                className="text-stone-400 hover:text-stone-700 p-1.5"
-                title="Detail"
-              >
-                <ChevronRight size={14} />
-              </Link>
-              <button
-                onClick={() => remove(v.id)}
-                className="text-stone-400 hover:text-red-600 p-1.5"
-                title="Löschen"
-              >
-                <Trash2 size={14} />
-              </button>
+                      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium"
+                      style={{
+                        background: info.bg,
+                        color: info.textColor,
+                        boxShadow: `inset 0 0 0 1px ${info.ring}`,
+                      }}
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ background: info.color }}
+                      />
+                      {info.label}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-stone-400">Erstzulassung fehlt</span>
+                  )}
+                </span>
+                <Link
+                  href={`/dashboard/vehicles/${v.id}`}
+                  className="text-stone-400 hover:text-stone-700 p-1.5"
+                  title="Detail"
+                >
+                  <ChevronRight size={14} />
+                </Link>
+                <button
+                  onClick={() => remove(v.id)}
+                  className="text-stone-400 hover:text-red-600 p-1.5"
+                  title="Löschen"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+
+              {/* Mobile */}
+              <div className="md:hidden flex items-start gap-3 px-4 py-3">
+                <Link
+                  href={`/dashboard/vehicles/${v.id}`}
+                  className="flex-1 min-w-0 flex items-start gap-3 active:bg-stone-100 -mx-4 -my-3 px-4 py-3"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-stone-100 text-stone-700 flex items-center justify-center shrink-0">
+                    <Car size={16} />
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-0.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono font-semibold text-sm">{v.plate}</span>
+                      {v.color && (
+                        <span className="text-[11px] text-stone-400">· {v.color}</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-stone-500 truncate">
+                      {v.vehicle_type || "—"}
+                      {v.extra_km_price != null && (
+                        <span className="text-stone-400 ml-1.5 font-mono">
+                          · {Number(v.extra_km_price).toFixed(2).replace(".", ",")} €/km
+                        </span>
+                      )}
+                    </div>
+                    {v.decommission_date && (
+                      <span
+                        className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-[10px] font-medium mt-1"
+                        style={{
+                          background: info.bg,
+                          color: info.textColor,
+                          boxShadow: `inset 0 0 0 1px ${info.ring}`,
+                        }}
+                      >
+                        <span
+                          className="w-1 h-1 rounded-full"
+                          style={{ background: info.color }}
+                        />
+                        {info.label}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+                <button
+                  onClick={() => remove(v.id)}
+                  className="touch-target flex items-center justify-center text-stone-400 hover:text-red-600"
+                  title="Löschen"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </div>
           );
         })}

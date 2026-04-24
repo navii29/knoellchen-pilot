@@ -15,7 +15,7 @@ export default async function VehiclesPage() {
   return (
     <>
       <Topbar section="Fahrzeuge" />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50 p-6 md:p-10">
+      <div className="flex-1 overflow-auto scroll-thin bg-stone-50 p-4 md:p-10">
         <div className="max-w-4xl mx-auto">
           <VehiclesClient initial={vehicles} />
         </div>

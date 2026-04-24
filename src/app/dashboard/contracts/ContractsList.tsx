@@ -78,15 +78,62 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
       </div>
 
       <div className="mt-4 rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
-        <div className="grid grid-cols-[140px_110px_1fr_180px_120px_120px_24px] gap-3 px-5 py-2.5 text-[11px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
-          <span>Vertrags-Nr</span>
-          <span>Kennzeichen</span>
-          <span>Mieter</span>
-          <span>E-Mail</span>
-          <span>Zeitraum</span>
-          <span>Status</span>
-          <span></span>
+        {/* Desktop-Tabelle */}
+        <div className="hidden md:block">
+          <div className="grid grid-cols-[140px_110px_1fr_180px_120px_120px_24px] gap-3 px-5 py-2.5 text-[11px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
+            <span>Vertrags-Nr</span>
+            <span>Kennzeichen</span>
+            <span>Mieter</span>
+            <span>E-Mail</span>
+            <span>Zeitraum</span>
+            <span>Status</span>
+            <span></span>
+          </div>
+          {filtered.map((c) => (
+            <Link
+              key={c.id}
+              href={`/dashboard/contracts/${c.id}`}
+              className="grid grid-cols-[140px_110px_1fr_180px_120px_120px_24px] gap-3 items-center px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+            >
+              <span className="font-mono text-xs">{c.contract_nr}</span>
+              <span className="font-mono font-semibold">{c.plate}</span>
+              <span className="text-stone-900 truncate">{c.renter_name}</span>
+              <span className="text-stone-500 text-xs truncate font-mono">{c.renter_email || "—"}</span>
+              <span className="text-stone-700 font-mono text-xs">
+                {fmtDate(c.pickup_date)}
+                <br />
+                <span className="text-stone-400">→ {fmtDate(c.actual_return_date || c.return_date)}</span>
+              </span>
+              <ContractStatusBadge status={c.status} />
+              <ChevronRight size={14} className="text-stone-300" />
+            </Link>
+          ))}
         </div>
+
+        {/* Mobile-Cards */}
+        <div className="md:hidden divide-y divide-stone-100">
+          {filtered.map((c) => (
+            <Link
+              key={c.id}
+              href={`/dashboard/contracts/${c.id}`}
+              className="flex items-start gap-3 px-4 py-3 hover:bg-stone-50 active:bg-stone-100"
+            >
+              <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <ContractStatusBadge status={c.status} />
+                  <span className="font-mono font-semibold text-sm">{c.plate}</span>
+                  <span className="ml-auto font-mono text-[11px] text-stone-500">{c.contract_nr}</span>
+                </div>
+                <div className="text-sm text-stone-900 truncate">{c.renter_name}</div>
+                <div className="text-[11px] text-stone-500 font-mono">
+                  {fmtDate(c.pickup_date)} → {fmtDate(c.actual_return_date || c.return_date)}
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-stone-300 shrink-0 mt-1" />
+            </Link>
+          ))}
+        </div>
+
         {filtered.length === 0 && (
           <div className="px-5 py-12 text-center text-sm text-stone-500">
             <FileSignature size={28} className="mx-auto text-stone-300" />
@@ -100,25 +147,6 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
             </Link>
           </div>
         )}
-        {filtered.map((c) => (
-          <Link
-            key={c.id}
-            href={`/dashboard/contracts/${c.id}`}
-            className="grid grid-cols-[140px_110px_1fr_180px_120px_120px_24px] gap-3 items-center px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
-          >
-            <span className="font-mono text-xs">{c.contract_nr}</span>
-            <span className="font-mono font-semibold">{c.plate}</span>
-            <span className="text-stone-900 truncate">{c.renter_name}</span>
-            <span className="text-stone-500 text-xs truncate font-mono">{c.renter_email || "—"}</span>
-            <span className="text-stone-700 font-mono text-xs">
-              {fmtDate(c.pickup_date)}
-              <br />
-              <span className="text-stone-400">→ {fmtDate(c.actual_return_date || c.return_date)}</span>
-            </span>
-            <ContractStatusBadge status={c.status} />
-            <ChevronRight size={14} className="text-stone-300" />
-          </Link>
-        ))}
       </div>
     </>
   );

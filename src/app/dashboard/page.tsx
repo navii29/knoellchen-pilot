@@ -84,10 +84,10 @@ export default async function DashboardPage() {
     <>
       <Topbar />
       <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
-        <div className="px-8 py-8 space-y-6 max-w-[1400px]">
+        <div className="px-4 md:px-8 py-6 md:py-8 space-y-6 max-w-[1400px]">
           <div className="flex items-end justify-between flex-wrap gap-4">
             <div>
-              <h1 className="font-display font-semibold text-[28px] tracking-tight text-stone-900">
+              <h1 className="font-display font-semibold text-2xl md:text-[28px] tracking-tight text-stone-900">
                 Guten Tag, {org?.name || "Team"}
               </h1>
               <p className="text-sm text-stone-500 mt-1.5">
@@ -106,8 +106,8 @@ export default async function DashboardPage() {
 
           {decommissionAlerts.length > 0 && <DecommissionAlert vehicles={decommissionAlerts} />}
 
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+            <div className="col-span-2 lg:col-span-2">
               <HeroStat
                 label="Strafzettel offen"
                 value={counts.neu}

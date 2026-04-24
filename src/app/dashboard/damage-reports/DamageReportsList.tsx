@@ -124,14 +124,106 @@ export const DamageReportsList = ({
       </div>
 
       <div className="mt-4 rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
-        <div className="grid grid-cols-[110px_110px_1fr_180px_120px_24px] gap-3 px-5 py-2.5 text-[11px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
-          <span>Datum</span>
-          <span>Kennzeichen</span>
-          <span>Ort / Beschreibung</span>
-          <span>Aktenzeichen</span>
-          <span>Status</span>
-          <span></span>
+        {/* Desktop */}
+        <div className="hidden md:block">
+          <div className="grid grid-cols-[110px_110px_1fr_180px_120px_24px] gap-3 px-5 py-2.5 text-[11px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
+            <span>Datum</span>
+            <span>Kennzeichen</span>
+            <span>Ort / Beschreibung</span>
+            <span>Aktenzeichen</span>
+            <span>Status</span>
+            <span></span>
+          </div>
+          {filtered.map((r) => {
+            const v = r.vehicle_id ? vehicleById.get(r.vehicle_id) : null;
+            const meta = STATUS_META[r.status];
+            return (
+              <Link
+                key={r.id}
+                href={`/dashboard/damage-reports/${r.id}`}
+                className="grid grid-cols-[110px_110px_1fr_180px_120px_24px] gap-3 items-center px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+              >
+                <span className="font-mono text-xs">
+                  {fmtDate(r.date)}
+                  {r.time && <span className="text-stone-400 ml-1">{r.time}</span>}
+                </span>
+                <span className="font-mono font-semibold">{v?.plate || "—"}</span>
+                <span className="truncate">
+                  {r.location && <span className="text-stone-900">{r.location}</span>}
+                  {r.description && (
+                    <span className="text-stone-400 ml-2 text-xs">· {r.description}</span>
+                  )}
+                  {!r.location && !r.description && <span className="text-stone-400">—</span>}
+                </span>
+                <span className="text-xs text-stone-500 truncate font-mono">
+                  {r.police_reference_nr || r.insurance_claim_nr || "—"}
+                </span>
+                <span
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium justify-self-start"
+                  style={{
+                    background: meta.bg,
+                    color: meta.text,
+                    boxShadow: `inset 0 0 0 1px ${meta.ring}`,
+                  }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: meta.color }} />
+                  {meta.label}
+                </span>
+                <ChevronRight size={14} className="text-stone-300" />
+              </Link>
+            );
+          })}
         </div>
+
+        {/* Mobile */}
+        <div className="md:hidden divide-y divide-stone-100">
+          {filtered.map((r) => {
+            const v = r.vehicle_id ? vehicleById.get(r.vehicle_id) : null;
+            const meta = STATUS_META[r.status];
+            return (
+              <Link
+                key={r.id}
+                href={`/dashboard/damage-reports/${r.id}`}
+                className="flex items-start gap-3 px-4 py-3 hover:bg-stone-50 active:bg-stone-100"
+              >
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium"
+                      style={{
+                        background: meta.bg,
+                        color: meta.text,
+                        boxShadow: `inset 0 0 0 1px ${meta.ring}`,
+                      }}
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ background: meta.color }}
+                      />
+                      {meta.label}
+                    </span>
+                    {v?.plate && (
+                      <span className="font-mono font-semibold text-sm">{v.plate}</span>
+                    )}
+                    <span className="ml-auto font-mono text-[11px] text-stone-500">
+                      {fmtDate(r.date)}
+                    </span>
+                  </div>
+                  <div className="text-sm text-stone-900 truncate">
+                    {r.location || r.description || "—"}
+                  </div>
+                  {(r.police_reference_nr || r.insurance_claim_nr) && (
+                    <div className="text-[11px] text-stone-500 font-mono truncate">
+                      {r.police_reference_nr || r.insurance_claim_nr}
+                    </div>
+                  )}
+                </div>
+                <ChevronRight size={16} className="text-stone-300 shrink-0 mt-1" />
+              </Link>
+            );
+          })}
+        </div>
+
         {filtered.length === 0 && (
           <div className="px-5 py-12 text-center text-sm text-stone-500">
             <AlertOctagon size={28} className="mx-auto text-stone-300" />
@@ -149,45 +241,6 @@ export const DamageReportsList = ({
             )}
           </div>
         )}
-        {filtered.map((r) => {
-          const v = r.vehicle_id ? vehicleById.get(r.vehicle_id) : null;
-          const meta = STATUS_META[r.status];
-          return (
-            <Link
-              key={r.id}
-              href={`/dashboard/damage-reports/${r.id}`}
-              className="grid grid-cols-[110px_110px_1fr_180px_120px_24px] gap-3 items-center px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
-            >
-              <span className="font-mono text-xs">
-                {fmtDate(r.date)}
-                {r.time && <span className="text-stone-400 ml-1">{r.time}</span>}
-              </span>
-              <span className="font-mono font-semibold">{v?.plate || "—"}</span>
-              <span className="truncate">
-                {r.location && <span className="text-stone-900">{r.location}</span>}
-                {r.description && (
-                  <span className="text-stone-400 ml-2 text-xs">· {r.description}</span>
-                )}
-                {!r.location && !r.description && <span className="text-stone-400">—</span>}
-              </span>
-              <span className="text-xs text-stone-500 truncate font-mono">
-                {r.police_reference_nr || r.insurance_claim_nr || "—"}
-              </span>
-              <span
-                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium justify-self-start"
-                style={{
-                  background: meta.bg,
-                  color: meta.text,
-                  boxShadow: `inset 0 0 0 1px ${meta.ring}`,
-                }}
-              >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: meta.color }} />
-                {meta.label}
-              </span>
-              <ChevronRight size={14} className="text-stone-300" />
-            </Link>
-          );
-        })}
       </div>
     </>
   );

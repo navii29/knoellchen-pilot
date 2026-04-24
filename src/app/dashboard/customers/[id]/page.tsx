@@ -66,7 +66,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
     <>
       <Topbar section={`Kunde · ${fullName(c)}`} />
       <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
-        <div className="max-w-4xl mx-auto p-6 md:p-10">
+        <div className="max-w-4xl mx-auto p-4 md:p-10">
           <Link
             href="/dashboard/customers"
             className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"

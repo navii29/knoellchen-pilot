@@ -15,7 +15,7 @@ export default async function TicketsListPage() {
   return (
     <>
       <Topbar section="Strafzettel" />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50 p-6 md:p-10">
+      <div className="flex-1 overflow-auto scroll-thin bg-stone-50 p-4 md:p-10">
         <div className="max-w-6xl mx-auto">
           <div className="font-display font-bold text-2xl tracking-tight mb-4">Alle Strafzettel</div>
           <TicketTable tickets={tickets} />

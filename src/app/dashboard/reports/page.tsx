@@ -5,7 +5,7 @@ export default function ReportsPage() {
   return (
     <>
       <Topbar section="Auswertung" />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50 p-6 md:p-10">
+      <div className="flex-1 overflow-auto scroll-thin bg-stone-50 p-4 md:p-10">
         <div className="max-w-3xl mx-auto rounded-xl bg-white ring-1 ring-stone-200 p-12 text-center">
           <div className="w-12 h-12 mx-auto rounded-xl bg-stone-100 text-stone-500 flex items-center justify-center">
             <BarChart3 size={22} />
