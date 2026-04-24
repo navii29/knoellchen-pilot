@@ -387,6 +387,114 @@ const getDecommissionAlerts: Tool = {
   },
 };
 
+// =========================================================
+// 8) find_available_vehicles
+// =========================================================
+const findAvailableVehicles: Tool = {
+  name: "find_available_vehicles",
+  description:
+    "Findet Fahrzeuge die in einem Zeitraum nicht vermietet sind (also für eine neue Buchung verfügbar). Verwende dies wenn der Nutzer fragt welche Autos an einem bestimmten Tag oder Zeitraum frei sind. Mindestens `from` muss gesetzt sein. Wenn `to` weggelassen wird, prüft das Tool nur diesen einen Tag.",
+  input_schema: {
+    type: "object",
+    properties: {
+      from: { type: "string", description: "Startdatum YYYY-MM-DD (inklusive)" },
+      to: { type: "string", description: "Enddatum YYYY-MM-DD (inklusive). Default = from." },
+    },
+    required: ["from"],
+  },
+  handler: async (input, ctx) => {
+    const from = parseDate(input.from);
+    const to = parseDate(input.to) ?? from;
+    if (!from || !to) return { ok: false, error: "Ungültiges Datumsformat" };
+    if (to < from) return { ok: false, error: "Enddatum vor Startdatum" };
+
+    const [{ data: vehiclesData }, { data: contractsData }] = await Promise.all([
+      ctx.admin
+        .from("vehicles")
+        .select("id, plate, vehicle_type, color, decommission_date")
+        .eq("org_id", ctx.org_id)
+        .order("plate", { ascending: true }),
+      ctx.admin
+        .from("contracts")
+        .select("plate, pickup_date, return_date, actual_return_date, renter_name, contract_nr, status")
+        .eq("org_id", ctx.org_id)
+        .neq("status", "storniert")
+        .lte("pickup_date", to),
+    ]);
+
+    type ContractRow = {
+      plate: string;
+      pickup_date: string;
+      return_date: string;
+      actual_return_date: string | null;
+      renter_name: string;
+      contract_nr: string;
+      status: string;
+    };
+    const allContracts = (contractsData ?? []) as ContractRow[];
+
+    // Vertrag belegt einen Tag X wenn pickup_date <= X <= COALESCE(actual_return_date, return_date)
+    const overlaps = (c: ContractRow): boolean => {
+      const end = c.actual_return_date ?? c.return_date;
+      return c.pickup_date <= to && end >= from;
+    };
+
+    const blockedByPlate = new Map<string, ContractRow[]>();
+    for (const c of allContracts) {
+      if (!overlaps(c)) continue;
+      const list = blockedByPlate.get(c.plate) ?? [];
+      list.push(c);
+      blockedByPlate.set(c.plate, list);
+    }
+
+    const vehicles = (vehiclesData ?? []) as Array<{
+      id: string;
+      plate: string;
+      vehicle_type: string | null;
+      color: string | null;
+      decommission_date: string | null;
+    }>;
+
+    const available = vehicles
+      .filter((v) => !blockedByPlate.has(v.plate))
+      .map((v) => ({
+        id: v.id,
+        plate: v.plate,
+        vehicle_type: v.vehicle_type,
+        color: v.color,
+        decommission_warning:
+          v.decommission_date != null && v.decommission_date <= to ? v.decommission_date : null,
+      }));
+
+    const blocked = vehicles
+      .filter((v) => blockedByPlate.has(v.plate))
+      .map((v) => {
+        const conflicts = blockedByPlate.get(v.plate) ?? [];
+        return {
+          plate: v.plate,
+          vehicle_type: v.vehicle_type,
+          conflicts: conflicts.map((c) => ({
+            contract_nr: c.contract_nr,
+            renter_name: c.renter_name,
+            pickup_date: c.pickup_date,
+            return_date: c.actual_return_date ?? c.return_date,
+          })),
+        };
+      });
+
+    return {
+      ok: true,
+      data: {
+        range: { from, to },
+        available_count: available.length,
+        blocked_count: blocked.length,
+        available,
+        blocked,
+      },
+    };
+  },
+};
+
 export const TOOLS: Tool[] = [
   createContract,
   createVehicle,
@@ -395,6 +503,7 @@ export const TOOLS: Tool[] = [
   getStats,
   findDriverForDate,
   getDecommissionAlerts,
+  findAvailableVehicles,
 ];
 
 export const TOOLS_FOR_API = TOOLS.map((t) => ({

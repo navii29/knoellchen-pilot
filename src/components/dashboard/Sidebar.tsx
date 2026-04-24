@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  Calendar,
   Car,
   ChevronRight,
   FileSignature,
@@ -24,6 +25,7 @@ const ITEMS: Array<{ href: string; label: string; Icon: typeof Car; badgeKey?: B
   { href: "/dashboard/customers", label: "Kunden", Icon: Users, badgeKey: "customers" },
   { href: "/dashboard/tickets", label: "Strafzettel", Icon: FileText, badgeKey: "tickets" },
   { href: "/dashboard/vehicles", label: "Fahrzeuge", Icon: Car },
+  { href: "/dashboard/calendar", label: "Kalender", Icon: Calendar },
   { href: "/dashboard/reports", label: "Auswertung", Icon: BarChart3 },
   { href: "/dashboard/settings", label: "Einstellungen", Icon: Settings },
 ];

@@ -26,8 +26,8 @@ type ChatMsg = { role: "user" | "assistant"; content: string; toolCalls?: ToolCa
 
 const SUGGESTIONS = [
   "Wie viele aktive Verträge haben wir?",
+  "Welche Autos sind am 28. April frei?",
   "Welche Autos werden bald ausgesteuert?",
-  "Zeig mir alle offenen Strafzettel",
   "Wer hatte M-AV 5678 am 21. April?",
 ];
 
@@ -191,6 +191,14 @@ const ToolResult = ({ call }: { call: ToolCall }) => {
       <DecommissionList
         vehicles={d.vehicles as DecommissionItem[]}
         windowDays={Number(d.window_days) || 21}
+      />
+    );
+  if (call.name === "find_available_vehicles" && d.range)
+    return (
+      <AvailableVehiclesCard
+        range={d.range as { from: string; to: string }}
+        available={(d.available as AvailableVehicleItem[]) || []}
+        blocked={(d.blocked as BlockedVehicleItem[]) || []}
       />
     );
   if (call.name === "find_driver_for_date") {
@@ -429,6 +437,100 @@ const DecommissionList = ({
           </Link>
         );
       })}
+    </div>
+  );
+};
+
+type AvailableVehicleItem = {
+  id: string;
+  plate: string;
+  vehicle_type: string | null;
+  color: string | null;
+  decommission_warning: string | null;
+};
+
+type BlockedVehicleItem = {
+  plate: string;
+  vehicle_type: string | null;
+  conflicts: Array<{
+    contract_nr: string;
+    renter_name: string;
+    pickup_date: string;
+    return_date: string;
+  }>;
+};
+
+const AvailableVehiclesCard = ({
+  range,
+  available,
+  blocked,
+}: {
+  range: { from: string; to: string };
+  available: AvailableVehicleItem[];
+  blocked: BlockedVehicleItem[];
+}) => {
+  const headline =
+    range.from === range.to
+      ? `Verfügbarkeit am ${fmtDate(range.from)}`
+      : `Verfügbarkeit ${fmtDate(range.from)} – ${fmtDate(range.to)}`;
+  return (
+    <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-stone-100 text-xs uppercase tracking-wider text-stone-500 font-medium flex items-center justify-between">
+        <span>{headline}</span>
+        <span className="font-mono text-stone-700">
+          {available.length} frei · {blocked.length} belegt
+        </span>
+      </div>
+
+      {available.length > 0 && (
+        <div>
+          {available.map((v) => (
+            <div
+              key={v.id}
+              className="grid grid-cols-[110px_1fr_120px] items-center gap-3 px-4 py-2.5 border-b border-stone-50 last:border-0 text-sm"
+            >
+              <span className="font-mono font-semibold">{v.plate}</span>
+              <span className="text-stone-700 truncate">
+                {v.vehicle_type || "—"}
+                {v.color && <span className="text-stone-400 text-xs ml-2">· {v.color}</span>}
+              </span>
+              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 justify-self-start">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                {v.decommission_warning ? "frei (Aussteuerung naht)" : "frei"}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {available.length === 0 && (
+        <div className="px-4 py-6 text-center text-sm text-stone-500">
+          Kein Fahrzeug in diesem Zeitraum frei.
+        </div>
+      )}
+
+      {blocked.length > 0 && (
+        <div className="border-t border-stone-100 bg-stone-50/50">
+          <div className="px-4 py-2 text-[11px] uppercase tracking-wider text-stone-500 font-medium">
+            Belegt ({blocked.length})
+          </div>
+          {blocked.map((v) => (
+            <div
+              key={v.plate}
+              className="grid grid-cols-[110px_1fr] items-start gap-3 px-4 py-2 text-xs"
+            >
+              <span className="font-mono font-semibold text-stone-700">{v.plate}</span>
+              <div>
+                {v.conflicts.map((c, i) => (
+                  <div key={i} className="text-stone-500">
+                    {c.renter_name} · {fmtDate(c.pickup_date)} → {fmtDate(c.return_date)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
