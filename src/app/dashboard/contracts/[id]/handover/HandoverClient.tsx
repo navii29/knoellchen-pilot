@@ -256,8 +256,7 @@ export const HandoverClient = ({
                     fileRefs.current[key] = el;
                   }}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  capture="environment"
+                  accept="image/*"
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
