@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { computeExtraKm } from "@/lib/km";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -42,6 +43,7 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
     "deposit",
     "km_pickup",
     "km_return",
+    "km_limit",
     "status",
     "notes",
     "contract_pdf_path",
@@ -55,6 +57,42 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
   update.updated_at = new Date().toISOString();
 
   const admin = createAdminClient();
+
+  // Mehrkilometer neu berechnen, wenn km-relevante Felder angefasst werden
+  const kmFieldTouched = ["km_pickup", "km_return", "km_limit", "plate"].some((k) => k in body);
+  if (kmFieldTouched) {
+    const { data: current } = await admin
+      .from("contracts")
+      .select("km_pickup, km_return, km_limit, plate, org_id")
+      .eq("id", params.id)
+      .eq("org_id", auth.org_id)
+      .maybeSingle();
+
+    if (current) {
+      const plate = typeof update.plate === "string" ? update.plate : current.plate;
+      const kmPickup =
+        "km_pickup" in update ? (update.km_pickup as number | null) : (current.km_pickup as number | null);
+      const kmReturn =
+        "km_return" in update ? (update.km_return as number | null) : (current.km_return as number | null);
+      const kmLimit =
+        "km_limit" in update ? (update.km_limit as number | null) : (current.km_limit as number | null);
+
+      let price: number | null = null;
+      if (plate) {
+        const { data: v } = await admin
+          .from("vehicles")
+          .select("extra_km_price")
+          .eq("org_id", auth.org_id)
+          .eq("plate", plate)
+          .maybeSingle();
+        if (v?.extra_km_price != null) price = Number(v.extra_km_price);
+      }
+
+      const extra = computeExtraKm({ kmPickup, kmReturn, kmLimit, pricePerKm: price });
+      update.extra_km_cost = extra ? extra.cost : null;
+    }
+  }
+
   const { data, error } = await admin
     .from("contracts")
     .update(update)

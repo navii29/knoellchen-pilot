@@ -103,6 +103,7 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
                 color: v.color || "",
                 first_registration: v.first_registration || "",
                 decommission_reminded: v.decommission_reminded,
+                extra_km_price: v.extra_km_price != null ? String(v.extra_km_price) : "",
               }}
             />
           </div>

@@ -35,6 +35,15 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
   if ("color" in body) patch.color = trimOrNull(body.color);
   if ("first_registration" in body) patch.first_registration = trimOrNull(body.first_registration);
   if ("decommission_reminded" in body) patch.decommission_reminded = Boolean(body.decommission_reminded);
+  if ("extra_km_price" in body) {
+    const raw = body.extra_km_price;
+    if (raw == null || raw === "") {
+      patch.extra_km_price = null;
+    } else {
+      const n = Number(String(raw).replace(",", "."));
+      if (Number.isFinite(n) && n >= 0) patch.extra_km_price = n;
+    }
+  }
 
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: "Keine Änderungen" }, { status: 400 });

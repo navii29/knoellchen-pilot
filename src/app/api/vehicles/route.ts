@@ -19,11 +19,20 @@ export const POST = async (req: Request) => {
     vehicle_type?: string;
     color?: string;
     first_registration?: string;
+    extra_km_price?: number | string | null;
   };
   const plate = body.plate?.trim().toUpperCase();
   if (!plate) return NextResponse.json({ error: "Kennzeichen fehlt" }, { status: 400 });
 
   const firstReg = body.first_registration?.trim();
+  const extraKmPriceNum =
+    body.extra_km_price == null || body.extra_km_price === ""
+      ? null
+      : Number(String(body.extra_km_price).replace(",", "."));
+  const extraKmPrice =
+    extraKmPriceNum != null && Number.isFinite(extraKmPriceNum) && extraKmPriceNum >= 0
+      ? extraKmPriceNum
+      : null;
 
   const admin = createAdminClient();
   const { data, error } = await admin
@@ -35,6 +44,7 @@ export const POST = async (req: Request) => {
         vehicle_type: body.vehicle_type?.trim() || null,
         color: body.color?.trim() || null,
         first_registration: firstReg && firstReg.length > 0 ? firstReg : null,
+        ...(extraKmPrice != null ? { extra_km_price: extraKmPrice } : {}),
       },
       { onConflict: "org_id,plate" }
     )

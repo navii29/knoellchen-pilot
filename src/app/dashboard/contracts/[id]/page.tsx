@@ -7,7 +7,8 @@ import { ContractStatusBadge } from "@/components/contract/StatusBadge";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ContractActions } from "./ContractActions";
 import { fmtDate, fmtEur } from "@/lib/utils";
-import type { Contract, Ticket } from "@/lib/types";
+import { computeExtraKm } from "@/lib/km";
+import type { Contract, Ticket, Vehicle } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,19 @@ export default async function ContractDetailPage({ params }: { params: { id: str
     .eq("contract_id", c.id)
     .order("created_at", { ascending: false });
   const linkedTickets = (tickets || []) as Ticket[];
+
+  const { data: vehicleRow } = await supabase
+    .from("vehicles")
+    .select("extra_km_price")
+    .eq("plate", c.plate)
+    .maybeSingle();
+  const pricePerKm = (vehicleRow as Pick<Vehicle, "extra_km_price"> | null)?.extra_km_price ?? null;
+  const km = computeExtraKm({
+    kmPickup: c.km_pickup,
+    kmReturn: c.km_return,
+    kmLimit: c.km_limit,
+    pricePerKm,
+  });
 
   let pdfUrl: string | null = null;
   if (c.contract_pdf_path) {
@@ -93,9 +107,53 @@ export default async function ContractDetailPage({ params }: { params: { id: str
             <InfoCard Icon={ScrollText} title="Kilometer & Notizen">
               <Row label="km Abholung" value={c.km_pickup ?? "—"} mono />
               <Row label="km Rückgabe" value={c.km_return ?? "—"} mono />
+              <Row label="Freikilometer" value={c.km_limit ?? "unbegrenzt"} mono />
+              {km && (
+                <>
+                  <Row label="Gefahren" value={`${km.drivenKm} km`} mono />
+                  {km.extraKm > 0 && (
+                    <Row
+                      label="Mehrkilometer"
+                      value={
+                        <span className="text-amber-700 font-mono">
+                          {km.extraKm} km × {km.pricePerKm.toFixed(2).replace(".", ",")} € ={" "}
+                          <strong>{fmtEur(km.cost)}</strong>
+                        </span>
+                      }
+                    />
+                  )}
+                </>
+              )}
               <Row label="Notizen" value={c.notes || "—"} />
             </InfoCard>
           </div>
+
+          {km && km.extraKm > 0 && (
+            <div className="mt-6 rounded-xl bg-amber-50 ring-1 ring-amber-200 p-5">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-lg bg-white text-amber-700 flex items-center justify-center shrink-0 ring-1 ring-amber-200">
+                  <ScrollText size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11px] uppercase tracking-wider text-amber-800 font-semibold">
+                    Mehrkilometer
+                  </div>
+                  <div className="font-display font-semibold text-lg text-amber-900 mt-0.5">
+                    {km.drivenKm} km gefahren · {c.km_limit} km frei · {km.extraKm} km zusätzlich
+                  </div>
+                  <div className="text-sm text-amber-800 mt-1">
+                    {km.extraKm} km × {km.pricePerKm.toFixed(2).replace(".", ",")} €/km ={" "}
+                    <strong className="font-mono">{fmtEur(km.cost)}</strong>
+                    {pricePerKm == null && (
+                      <span className="text-xs ml-2 opacity-80">
+                        (Fahrzeug-Preis fehlt — bitte am Fahrzeug eintragen)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="mt-6">
             <ContractActions contract={c} pdfUrl={pdfUrl} />

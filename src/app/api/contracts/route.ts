@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { nextContractNr } from "@/lib/contract-utils";
+import { computeExtraKm } from "@/lib/km";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -47,6 +48,28 @@ export const POST = async (req: Request) => {
   const customerIdRaw = (body.customer_id as string)?.trim();
   const customerId = customerIdRaw && customerIdRaw.length > 0 ? customerIdRaw : null;
 
+  const kmPickup = numeric(body.km_pickup);
+  const kmReturn = numeric(body.km_return);
+  const kmLimit = numeric(body.km_limit);
+
+  let vehiclePrice: number | null = null;
+  if (vehicle?.id) {
+    const { data: v } = await admin
+      .from("vehicles")
+      .select("extra_km_price")
+      .eq("id", vehicle.id)
+      .maybeSingle();
+    if (v?.extra_km_price != null) vehiclePrice = Number(v.extra_km_price);
+  }
+
+  const extra = computeExtraKm({
+    kmPickup,
+    kmReturn,
+    kmLimit,
+    pricePerKm: vehiclePrice,
+  });
+  const extraKmCost = extra ? extra.cost : null;
+
   const insertRow = {
     org_id: auth.org_id,
     contract_nr: (body.contract_nr as string)?.trim() || nextContractNr(),
@@ -69,7 +92,10 @@ export const POST = async (req: Request) => {
     daily_rate: numeric(body.daily_rate),
     total_amount: numeric(body.total_amount),
     deposit: numeric(body.deposit),
-    km_pickup: numeric(body.km_pickup),
+    km_pickup: kmPickup,
+    km_return: kmReturn,
+    km_limit: kmLimit,
+    extra_km_cost: extraKmCost,
     contract_pdf_path: (body.contract_pdf_path as string) ?? null,
     notes: (body.notes as string) ?? null,
     status: (body.status as string) ?? "aktiv",

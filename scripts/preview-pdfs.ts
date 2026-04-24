@@ -96,6 +96,8 @@ const contract: Contract = {
   deposit: 250.0,
   km_pickup: 24812,
   km_return: null,
+  km_limit: null,
+  extra_km_cost: null,
   status: "aktiv",
   contract_pdf_path: null,
   pickup_photos: [],

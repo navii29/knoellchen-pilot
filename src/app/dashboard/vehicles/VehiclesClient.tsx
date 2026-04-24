@@ -15,6 +15,7 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
   const [type, setType] = useState("");
   const [color, setColor] = useState("");
   const [firstReg, setFirstReg] = useState("");
+  const [extraKmPrice, setExtraKmPrice] = useState("0.29");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +31,7 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
         vehicle_type: type,
         color,
         first_registration: firstReg || null,
+        extra_km_price: extraKmPrice ? Number(extraKmPrice.replace(",", ".")) : null,
       }),
     });
     setBusy(false);
@@ -42,6 +44,7 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
     setType("");
     setColor("");
     setFirstReg("");
+    setExtraKmPrice("0.29");
     router.refresh();
   };
 
@@ -60,7 +63,7 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
 
       <form
         onSubmit={add}
-        className="mt-6 rounded-xl bg-white ring-1 ring-stone-200 p-5 grid sm:grid-cols-[140px_1fr_120px_150px_auto] gap-3 items-end"
+        className="mt-6 rounded-xl bg-white ring-1 ring-stone-200 p-5 grid sm:grid-cols-[140px_1fr_110px_140px_120px_auto] gap-3 items-end"
       >
         <Field label="Kennzeichen *">
           <input
@@ -94,6 +97,17 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
             onChange={(e) => setFirstReg(e.target.value)}
             className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400 font-mono"
           />
+        </Field>
+        <Field label="Mehr-km Preis">
+          <div className="relative">
+            <input
+              value={extraKmPrice}
+              onChange={(e) => setExtraKmPrice(e.target.value)}
+              placeholder="0.29"
+              className="w-full px-3 py-2 pr-9 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400 font-mono"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">€/km</span>
+          </div>
         </Field>
         <button
           type="submit"
@@ -131,7 +145,14 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
                 <Car size={15} />
               </div>
               <span className="font-mono font-semibold">{v.plate}</span>
-              <span className="text-stone-700 truncate">{v.vehicle_type || "—"}</span>
+              <span className="text-stone-700 truncate">
+                {v.vehicle_type || "—"}
+                {v.extra_km_price != null && (
+                  <span className="text-stone-400 text-[11px] ml-2 font-mono">
+                    · {Number(v.extra_km_price).toFixed(2).replace(".", ",")} €/km
+                  </span>
+                )}
+              </span>
               <span className="text-stone-500 text-xs">{v.color || "—"}</span>
               <span>
                 {v.decommission_date ? (

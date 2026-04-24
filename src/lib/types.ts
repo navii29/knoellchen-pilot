@@ -35,6 +35,7 @@ export interface Vehicle {
   first_registration: string | null;
   decommission_date: string | null;
   decommission_reminded: boolean;
+  extra_km_price: number | null;
   created_at: string;
 }
 
@@ -66,6 +67,8 @@ export interface Contract {
   deposit: number | null;
   km_pickup: number | null;
   km_return: number | null;
+  km_limit: number | null;
+  extra_km_cost: number | null;
   status: ContractStatus;
   contract_pdf_path: string | null;
   pickup_photos: unknown[];

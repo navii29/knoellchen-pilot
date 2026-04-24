@@ -11,6 +11,7 @@ type Initial = {
   color: string;
   first_registration: string;
   decommission_reminded: boolean;
+  extra_km_price: string;
 };
 
 const addDays = (iso: string, days: number): string => {
@@ -48,6 +49,7 @@ export const VehicleEditClient = ({
         color: data.color,
         first_registration: data.first_registration || null,
         decommission_reminded: data.decommission_reminded,
+        extra_km_price: data.extra_km_price === "" ? null : data.extra_km_price,
       }),
     });
     setBusy(false);
@@ -93,6 +95,17 @@ export const VehicleEditClient = ({
               Aussteuerung: {fmtDate(addDays(data.first_registration, 180))}
             </div>
           )}
+        </Field>
+        <Field label="Mehr-km Preis (€/km)">
+          <div className="relative">
+            <input
+              value={data.extra_km_price}
+              onChange={(e) => set("extra_km_price", e.target.value)}
+              placeholder="0.29"
+              className="input pr-10 font-mono"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">€/km</span>
+          </div>
         </Field>
         <Field label="Reminder">
           <label className="inline-flex items-center gap-2 mt-2 text-sm cursor-pointer select-none">

@@ -29,6 +29,7 @@ type FormState = {
   total_amount: string;
   deposit: string;
   km_pickup: string;
+  km_limit: string;
   contract_pdf_path: string;
   notes: string;
 };
@@ -54,6 +55,7 @@ const empty: FormState = {
   total_amount: "",
   deposit: "",
   km_pickup: "",
+  km_limit: "",
   contract_pdf_path: "",
   notes: "",
 };
@@ -161,6 +163,7 @@ export const NewContractClient = ({
       total_amount: d.total_amount ? String(d.total_amount) : "",
       deposit: d.deposit ? String(d.deposit) : "",
       km_pickup: "",
+      km_limit: "",
       contract_pdf_path: j.pdf_path || "",
       notes: "",
     });
@@ -180,6 +183,7 @@ export const NewContractClient = ({
       total_amount: numeric(data.total_amount),
       deposit: numeric(data.deposit),
       km_pickup: numeric(data.km_pickup),
+      km_limit: numeric(data.km_limit),
     };
     const res = await fetch("/api/contracts", {
       method: "POST",
@@ -409,6 +413,14 @@ export const NewContractClient = ({
             </Field>
             <Field label="km bei Abholung">
               <input value={data.km_pickup} onChange={set("km_pickup")} className="input font-mono" />
+            </Field>
+            <Field label="Freikilometer">
+              <input
+                value={data.km_limit}
+                onChange={set("km_limit")}
+                placeholder="z.B. 1500 (leer = unbegrenzt)"
+                className="input font-mono"
+              />
             </Field>
           </Section>
 
