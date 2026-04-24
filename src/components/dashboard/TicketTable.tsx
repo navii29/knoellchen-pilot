@@ -21,7 +21,7 @@ export const TicketTable = ({ tickets }: { tickets: Ticket[] }) => {
   const filtered = tickets.filter((t) => (filter === "alle" ? true : t.status === filter));
 
   return (
-    <div className="rounded-xl ring-1 ring-stone-200 bg-white">
+    <div className="rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
       <div className="px-5 py-3.5 border-b border-stone-100 flex items-center justify-between flex-wrap gap-2">
         <div className="font-display font-semibold">Strafzettel</div>
         <div className="flex items-center gap-1 text-xs flex-wrap">

@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { ParsedContractData, ParsedTicketData } from "./types";
+import type { ParsedContractData, ParsedCustomerData, ParsedTicketData } from "./types";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
@@ -117,5 +117,62 @@ export const parseContractImage = async (
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
   const data = JSON.parse(jsonMatch[0]) as ParsedContractData;
+  return { data, raw: response };
+};
+
+const CUSTOMER_PROMPT = `Du bist Experte für deutsche Personaldokumente: Personalausweis, Reisepass und EU-Führerschein.
+Lies das übermittelte Foto und extrahiere alle Personendaten präzise.
+
+Antworte AUSSCHLIESSLICH mit gültigem JSON (keine Erklärungen, kein Markdown):
+{
+  "document_type": "license" wenn Führerschein, "id_card" wenn Personalausweis/Reisepass, sonst null,
+  "salutation": "Herr" oder "Frau" wenn aus dem Geschlecht (M/F) ableitbar, sonst null,
+  "title": "akademischer Titel (Dr., Prof.) wenn auf dem Dokument, sonst null",
+  "first_name": "Vorname(n)",
+  "last_name": "Nachname (Geburtsname falls separat angegeben weglassen)",
+  "birthday": "YYYY-MM-DD",
+  "street": "Straße ohne Hausnummer (nur Personalausweis hat Adresse, Führerschein nicht)",
+  "house_nr": "Hausnummer",
+  "zip": "PLZ",
+  "city": "Ort",
+  "license_nr": "Führerscheinnummer (nur Führerschein, Feld 5)",
+  "license_class": "Klassen z.B. B, BE, A1 — kommagetrennt (Feld 9)",
+  "license_expiry": "YYYY-MM-DD (Ablaufdatum, Feld 4b)",
+  "id_card_nr": "Ausweisnummer (nur Personalausweis/Reisepass)",
+  "confidence": Zahl 0.0 bis 1.0
+}
+
+Wenn ein Feld nicht erkennbar ist, setze null. Datumsformat strikt YYYY-MM-DD.
+Beachte: Auf einem deutschen Führerschein steht KEINE Adresse — nur auf dem Personalausweis.`;
+
+export const parseCustomerDocument = async (
+  imageBase64: string,
+  mediaType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf"
+): Promise<{ data: ParsedCustomerData; raw: unknown }> => {
+  const isPdf = mediaType === "application/pdf";
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 1500,
+    system: CUSTOMER_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: isPdf ? "document" : "image",
+            source: { type: "base64", media_type: mediaType, data: imageBase64 },
+          } as Anthropic.Messages.ContentBlockParam,
+          { type: "text", text: "Extrahiere alle Personendaten." },
+        ],
+      },
+    ],
+  });
+  const text = response.content
+    .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
+    .map((b) => b.text)
+    .join("");
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
+  const data = JSON.parse(jsonMatch[0]) as ParsedCustomerData;
   return { data, raw: response };
 };

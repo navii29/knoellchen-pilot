@@ -44,10 +44,14 @@ export const POST = async (req: Request) => {
   const numeric = (v: unknown) =>
     v == null || v === "" ? null : Number(v);
 
+  const customerIdRaw = (body.customer_id as string)?.trim();
+  const customerId = customerIdRaw && customerIdRaw.length > 0 ? customerIdRaw : null;
+
   const insertRow = {
     org_id: auth.org_id,
     contract_nr: (body.contract_nr as string)?.trim() || nextContractNr(),
     vehicle_id: vehicle?.id ?? null,
+    customer_id: customerId,
     plate,
     vehicle_type: (body.vehicle_type as string) ?? null,
     renter_name: String(body.renter_name).trim(),

@@ -75,6 +75,7 @@ const contract: Contract = {
   org_id: "00000000",
   contract_nr: "MV-2026-0042",
   vehicle_id: null,
+  customer_id: null,
   plate: "M-AV 5678",
   vehicle_type: "VW Polo",
   renter_name: "Lukas Becker",

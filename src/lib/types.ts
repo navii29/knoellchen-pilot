@@ -42,6 +42,7 @@ export interface Contract {
   org_id: string;
   contract_nr: string;
   vehicle_id: string | null;
+  customer_id: string | null;
   plate: string;
   vehicle_type: string | null;
   renter_name: string;
@@ -88,6 +89,52 @@ export interface ParsedContractData {
   daily_rate?: number | null;
   total_amount?: number | null;
   deposit?: number | null;
+  confidence?: number;
+}
+
+export interface Customer {
+  id: string;
+  org_id: string;
+  salutation: string | null;
+  title: string | null;
+  first_name: string | null;
+  last_name: string;
+  birthday: string | null;
+  street: string | null;
+  house_nr: string | null;
+  zip: string | null;
+  city: string | null;
+  country: string | null;
+  email: string | null;
+  phone: string | null;
+  license_nr: string | null;
+  license_class: string | null;
+  license_expiry: string | null;
+  id_card_nr: string | null;
+  license_photo_path: string | null;
+  id_card_photo_path: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type CustomerDocumentType = "license" | "id_card";
+
+export interface ParsedCustomerData {
+  salutation?: string | null;
+  title?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  birthday?: string | null;
+  street?: string | null;
+  house_nr?: string | null;
+  zip?: string | null;
+  city?: string | null;
+  license_nr?: string | null;
+  license_class?: string | null;
+  license_expiry?: string | null;
+  id_card_nr?: string | null;
+  document_type?: CustomerDocumentType | null;
   confidence?: number;
 }
 

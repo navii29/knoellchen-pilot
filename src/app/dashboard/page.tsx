@@ -1,10 +1,9 @@
 import { Car, Coins, FileSignature, Inbox } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { THEME } from "@/lib/theme";
 import { fmtEur } from "@/lib/utils";
 import type { Contract, Ticket, TicketLog } from "@/lib/types";
 import { Topbar } from "@/components/dashboard/Topbar";
-import { StatCard } from "@/components/dashboard/StatCard";
+import { StatCard, HeroStat } from "@/components/dashboard/StatCard";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 import { ThroughputChart } from "@/components/dashboard/ThroughputChart";
 import { TicketTable } from "@/components/dashboard/TicketTable";
@@ -72,60 +71,65 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <Topbar section="Dashboard" />
+      <Topbar />
       <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
-        <div className="p-6 space-y-6">
+        <div className="px-8 py-8 space-y-6 max-w-[1400px]">
           <div className="flex items-end justify-between flex-wrap gap-4">
             <div>
-              <div className="font-display font-bold text-3xl tracking-tight">
-                Guten Tag, {org?.name || "Team"} 👋
-              </div>
-              <div className="text-sm text-stone-500 mt-1">
+              <h1 className="font-display font-semibold text-[28px] tracking-tight text-stone-900">
+                Guten Tag, {org?.name || "Team"}
+              </h1>
+              <p className="text-sm text-stone-500 mt-1.5">
                 {today} ·{" "}
                 {counts.neu === 0
                   ? "Keine offenen Eingänge"
                   : `${counts.neu} ${counts.neu === 1 ? "neuer Strafzettel wartet" : "neue Strafzettel warten"} auf Freigabe`}
-              </div>
+              </p>
             </div>
-            <div className="hidden md:flex items-center gap-2 text-xs text-stone-500">
+            <div className="hidden md:flex items-center gap-2 text-xs text-stone-400">
               <span className="inline-flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Alle Systeme online
               </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+            <div className="lg:col-span-2">
+              <HeroStat
+                label="Strafzettel offen"
+                value={counts.neu}
+                Icon={Inbox}
+                pulse={counts.neu > 0}
+                sub={
+                  counts.neu === 0
+                    ? "Keine offenen Eingänge"
+                    : counts.neu === 1
+                    ? "Wartet auf Freigabe"
+                    : "Warten auf Freigabe"
+                }
+              />
+            </div>
             <StatCard
               label="Aktive Verträge"
               value={activeContractCount ?? 0}
               Icon={FileSignature}
-              color={THEME.primary}
               sub="Laufende Mietverträge"
-            />
-            <StatCard
-              label="Strafzettel offen"
-              value={counts.neu}
-              Icon={Inbox}
-              color="#f59e0b"
-              sub="Warten auf Freigabe"
             />
             <StatCard
               label="Bearbeitungsgebühren"
               value={fmtEur(counts.gebuehren)}
               Icon={Coins}
-              color="#059669"
               sub="Diesen Monat"
             />
             <StatCard
               label="Flotte"
               value={vehicleCount ?? 0}
               Icon={Car}
-              color="#2563eb"
-              sub="Fahrzeuge in der Flotte"
+              sub="Fahrzeuge"
             />
           </div>
 
-          <div className="grid lg:grid-cols-[1.4fr_1fr] gap-4">
+          <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6">
             <ActivityFeed ticketLogs={allLogs} contracts={recentContracts} />
             <ThroughputChart data={throughput} total={throughput.reduce((s, v) => s + v, 0)} />
           </div>
