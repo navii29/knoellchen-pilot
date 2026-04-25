@@ -196,7 +196,7 @@ export const NewDamageReportClient = ({
               required
               value={data.date}
               onChange={set("date")}
-              className="input font-mono"
+              className="input tabular-nums"
             />
           </Field>
           <Field label="Uhrzeit">
@@ -204,7 +204,7 @@ export const NewDamageReportClient = ({
               type="time"
               value={data.time}
               onChange={set("time")}
-              className="input font-mono"
+              className="input tabular-nums"
             />
           </Field>
           <div className="sm:col-span-2">
@@ -235,14 +235,14 @@ export const NewDamageReportClient = ({
             <input
               value={data.police_reference_nr}
               onChange={set("police_reference_nr")}
-              className="input font-mono"
+              className="input tabular-nums"
             />
           </Field>
           <Field label="Versicherungs-Schadennr.">
             <input
               value={data.insurance_claim_nr}
               onChange={set("insurance_claim_nr")}
-              className="input font-mono"
+              className="input tabular-nums"
             />
           </Field>
         </Section>

@@ -348,7 +348,7 @@ export const NewContractClient = ({
                 value={data.contract_nr}
                 onChange={set("contract_nr")}
                 placeholder="MV-2026-0042 (leer = automatisch)"
-                className="input font-mono"
+                className="input tabular-nums"
               />
             </Field>
             <Field label="Notizen">
@@ -370,19 +370,19 @@ export const NewContractClient = ({
               <input required value={data.renter_name} onChange={set("renter_name")} className="input" />
             </Field>
             <Field label="Geburtsdatum">
-              <input value={data.renter_birthday} onChange={set("renter_birthday")} placeholder="YYYY-MM-DD" className="input font-mono" />
+              <input value={data.renter_birthday} onChange={set("renter_birthday")} placeholder="YYYY-MM-DD" className="input tabular-nums" />
             </Field>
             <Field label="Adresse">
               <input value={data.renter_address} onChange={set("renter_address")} className="input" />
             </Field>
             <Field label="Führerschein-Nr.">
-              <input value={data.renter_license_nr} onChange={set("renter_license_nr")} className="input font-mono" />
+              <input value={data.renter_license_nr} onChange={set("renter_license_nr")} className="input tabular-nums" />
             </Field>
             <Field label="E-Mail">
               <input type="email" value={data.renter_email} onChange={set("renter_email")} className="input" />
             </Field>
             <Field label="Telefon">
-              <input value={data.renter_phone} onChange={set("renter_phone")} className="input font-mono" />
+              <input value={data.renter_phone} onChange={set("renter_phone")} className="input tabular-nums" />
             </Field>
           </Section>
 
@@ -391,35 +391,35 @@ export const NewContractClient = ({
               <input type="date" required value={data.pickup_date} onChange={set("pickup_date")} className="input" />
             </Field>
             <Field label="Uhrzeit Abholung">
-              <input type="time" value={data.pickup_time} onChange={set("pickup_time")} className="input font-mono" />
+              <input type="time" value={data.pickup_time} onChange={set("pickup_time")} className="input tabular-nums" />
             </Field>
             <Field label="Mietende *">
               <input type="date" required value={data.return_date} onChange={set("return_date")} className="input" />
             </Field>
             <Field label="Uhrzeit Rückgabe">
-              <input type="time" value={data.return_time} onChange={set("return_time")} className="input font-mono" />
+              <input type="time" value={data.return_time} onChange={set("return_time")} className="input tabular-nums" />
             </Field>
           </Section>
 
           <Section title="Kosten & Kilometer">
             <Field label="Tagespreis (€)">
-              <input value={data.daily_rate} onChange={set("daily_rate")} className="input font-mono" />
+              <input value={data.daily_rate} onChange={set("daily_rate")} className="input tabular-nums" />
             </Field>
             <Field label="Gesamtbetrag (€)">
-              <input value={data.total_amount} onChange={set("total_amount")} className="input font-mono" />
+              <input value={data.total_amount} onChange={set("total_amount")} className="input tabular-nums" />
             </Field>
             <Field label="Kaution (€)">
-              <input value={data.deposit} onChange={set("deposit")} className="input font-mono" />
+              <input value={data.deposit} onChange={set("deposit")} className="input tabular-nums" />
             </Field>
             <Field label="km bei Abholung">
-              <input value={data.km_pickup} onChange={set("km_pickup")} className="input font-mono" />
+              <input value={data.km_pickup} onChange={set("km_pickup")} className="input tabular-nums" />
             </Field>
             <Field label="Freikilometer">
               <input
                 value={data.km_limit}
                 onChange={set("km_limit")}
                 placeholder="z.B. 1500 (leer = unbegrenzt)"
-                className="input font-mono"
+                className="input tabular-nums"
               />
             </Field>
           </Section>

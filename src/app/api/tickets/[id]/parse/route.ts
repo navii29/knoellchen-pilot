@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { parseTicketImage } from "@/lib/anthropic";
 import { normalizePlate } from "@/lib/plate";
+import { computeCharge } from "@/lib/charge";
 
 export const maxDuration = 60;
 
@@ -51,6 +52,21 @@ export const POST = async (
   }
 
   const d = parsed.data;
+
+  // Org-Default für Bearbeitungsgebühr (jetzt als NETTO interpretiert)
+  const { data: org } = await admin
+    .from("organizations")
+    .select("processing_fee")
+    .eq("id", ticket.org_id)
+    .maybeSingle();
+  const feeNet = Number(org?.processing_fee ?? 25) || 25;
+  const breakdown = computeCharge({
+    fineAmount: d.fine_amount ?? 0,
+    chargeFine: ticket.charge_fine ?? true,
+    feeNet,
+    chargeFee: ticket.charge_fee ?? true,
+  });
+
   await admin
     .from("tickets")
     .update({
@@ -68,6 +84,16 @@ export const POST = async (
       deadline: d.deadline || null,
       ai_confidence: d.confidence ?? 0.9,
       ai_raw_response: parsed.raw as Record<string, unknown>,
+      // Charge-Aufschlüsselung initialisieren falls noch leer
+      ...(ticket.fee_net == null
+        ? {
+            fee_net: breakdown.fee_net,
+            fee_vat: breakdown.fee_vat,
+            fee_gross: breakdown.fee_gross,
+            total_charge: breakdown.total_charge,
+            processing_fee: breakdown.fee_gross,
+          }
+        : {}),
       updated_at: new Date().toISOString(),
     })
     .eq("id", ticket.id);

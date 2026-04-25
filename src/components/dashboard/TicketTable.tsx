@@ -70,7 +70,7 @@ export const TicketTable = ({ tickets }: { tickets: Ticket[] }) => {
                 {t.location && <span className="text-stone-400 ml-2 text-xs">· {t.location}</span>}
               </span>
               <span className="text-xs text-stone-500 truncate">{t.authority || "—"}</span>
-              <span className="font-mono tabular-nums text-right">
+              <span className="tabular-nums text-right">
                 {fmtEur((t.fine_amount || 0) + Number(t.processing_fee || 0))}
               </span>
               <span className="text-xs text-stone-400 text-right">{relTime(t.created_at)}</span>
@@ -94,7 +94,7 @@ export const TicketTable = ({ tickets }: { tickets: Ticket[] }) => {
                 <span className="font-mono font-semibold text-sm tracking-tight">
                   {t.plate || "—"}
                 </span>
-                <span className="ml-auto font-mono tabular-nums text-sm">
+                <span className="ml-auto tabular-nums text-sm">
                   {fmtEur((t.fine_amount || 0) + Number(t.processing_fee || 0))}
                 </span>
               </div>

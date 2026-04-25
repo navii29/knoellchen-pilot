@@ -143,7 +143,7 @@ export const DamageReportsList = ({
                 href={`/dashboard/damage-reports/${r.id}`}
                 className="grid grid-cols-[110px_110px_1fr_180px_120px_24px] gap-3 items-center px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
               >
-                <span className="font-mono text-xs">
+                <span className="tabular-nums text-xs">
                   {fmtDate(r.date)}
                   {r.time && <span className="text-stone-400 ml-1">{r.time}</span>}
                 </span>
@@ -205,7 +205,7 @@ export const DamageReportsList = ({
                     {v?.plate && (
                       <span className="font-mono font-semibold text-sm">{v.plate}</span>
                     )}
-                    <span className="ml-auto font-mono text-[11px] text-stone-500">
+                    <span className="ml-auto tabular-nums text-[11px] text-stone-500">
                       {fmtDate(r.date)}
                     </span>
                   </div>

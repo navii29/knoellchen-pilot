@@ -130,7 +130,7 @@ export const ContractActions = ({
               value={kmReturn}
               onChange={(e) => setKmReturn(e.target.value)}
               placeholder="z.B. 12450"
-              className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400 font-mono"
+              className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400 tabular-nums"
             />
           </label>
           <button

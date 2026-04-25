@@ -98,8 +98,8 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
               <span className="font-mono text-xs">{c.contract_nr}</span>
               <span className="font-mono font-semibold">{c.plate}</span>
               <span className="text-stone-900 truncate">{c.renter_name}</span>
-              <span className="text-stone-500 text-xs truncate font-mono">{c.renter_email || "—"}</span>
-              <span className="text-stone-700 font-mono text-xs">
+              <span className="text-stone-500 text-xs truncate">{c.renter_email || "—"}</span>
+              <span className="text-stone-700 tabular-nums text-xs">
                 {fmtDate(c.pickup_date)}
                 <br />
                 <span className="text-stone-400">→ {fmtDate(c.actual_return_date || c.return_date)}</span>
@@ -125,7 +125,7 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
                   <span className="ml-auto font-mono text-[11px] text-stone-500">{c.contract_nr}</span>
                 </div>
                 <div className="text-sm text-stone-900 truncate">{c.renter_name}</div>
-                <div className="text-[11px] text-stone-500 font-mono">
+                <div className="text-[11px] text-stone-500 tabular-nums">
                   {fmtDate(c.pickup_date)} → {fmtDate(c.actual_return_date || c.return_date)}
                 </div>
               </div>

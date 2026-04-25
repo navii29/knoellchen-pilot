@@ -130,13 +130,13 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
                 </Link>
                 <Link
                   href={`/dashboard/vehicles/${v.id}`}
-                  className="text-xs text-stone-500 font-mono text-right tabular-nums"
+                  className="text-xs text-stone-500 text-right tabular-nums"
                 >
                   {v.km_at_intake != null ? v.km_at_intake.toLocaleString("de-DE") : "—"}
                 </Link>
                 <Link
                   href={`/dashboard/vehicles/${v.id}`}
-                  className="text-xs text-stone-500 font-mono"
+                  className="text-xs text-stone-500 tabular-nums"
                 >
                   {v.first_registration ? fmtDate(v.first_registration) : "—"}
                   {v.decommission_date && (

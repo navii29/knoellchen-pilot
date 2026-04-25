@@ -102,7 +102,7 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
               <h1 className="font-display font-bold text-2xl md:text-3xl tracking-tight break-words">
                 {r.location || "Unbekannter Ort"}
               </h1>
-              <div className="mt-1 text-sm text-stone-500 font-mono">
+              <div className="mt-1 text-sm text-stone-500 tabular-nums">
                 {fmtDate(r.date)}
                 {r.time && <span className="ml-2">{r.time}</span>}
               </div>
@@ -119,14 +119,14 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
             </InfoCard>
 
             <InfoCard Icon={ShieldAlert} title="Aktenzeichen">
-              <Row label="Polizei" value={r.police_reference_nr || "—"} mono />
-              <Row label="Versicherung" value={r.insurance_claim_nr || "—"} mono />
+              <Row label="Polizei" value={r.police_reference_nr ? <span className="font-mono">{r.police_reference_nr}</span> : "—"} />
+              <Row label="Versicherung" value={r.insurance_claim_nr ? <span className="font-mono">{r.insurance_claim_nr}</span> : "—"} />
             </InfoCard>
 
             {(r.other_party_name || r.other_party_plate || r.other_party_insurance) && (
               <InfoCard Icon={User} title="Unfallgegner">
                 <Row label="Name" value={r.other_party_name || "—"} />
-                <Row label="Kennzeichen" value={r.other_party_plate || "—"} mono />
+                <Row label="Kennzeichen" value={r.other_party_plate ? <span className="font-mono font-semibold">{r.other_party_plate}</span> : "—"} />
                 <Row label="Versicherung" value={r.other_party_insurance || "—"} />
               </InfoCard>
             )}
@@ -168,7 +168,7 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
                     <Row
                       label="Mietzeitraum"
                       value={
-                        <span className="font-mono text-xs">
+                        <span className="tabular-nums text-xs">
                           {fmtDate(contract.pickup_date)} → {fmtDate(contract.return_date)}
                         </span>
                       }
@@ -243,6 +243,6 @@ const Row = ({
 }) => (
   <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
     <div className="text-stone-500 text-xs">{label}</div>
-    <div className={mono ? "font-mono text-stone-800" : "text-stone-800"}>{value}</div>
+    <div className={mono ? "tabular-nums text-stone-800" : "text-stone-800"}>{value}</div>
   </div>
 );

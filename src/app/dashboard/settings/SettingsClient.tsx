@@ -58,35 +58,43 @@ export const SettingsClient = ({ org }: { org: Organization }) => {
             <Field label="Firmenname *">
               <input required value={data.name} onChange={set("name")} className="input" />
             </Field>
-            <Field label="Bearbeitungsgebühr (EUR)">
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={data.processing_fee}
-                onChange={set("processing_fee")}
-                className="input font-mono"
-              />
+            <Field label="Bearbeitungsgebühr (netto)">
+              <div className="relative">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={data.processing_fee}
+                  onChange={set("processing_fee")}
+                  className="input tabular-nums pr-10"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">
+                  € netto
+                </span>
+              </div>
+              <div className="text-[11px] text-stone-500 mt-1">
+                Standardwert für neue Strafzettel. Im Strafzettel-Detail veränderbar — wird mit 19% MwSt versteuert.
+              </div>
             </Field>
             <Field label="Straße">
               <input value={data.street} onChange={set("street")} className="input" />
             </Field>
             <div className="grid grid-cols-[100px_1fr] gap-3">
               <Field label="PLZ">
-                <input value={data.zip} onChange={set("zip")} className="input font-mono" />
+                <input value={data.zip} onChange={set("zip")} className="input tabular-nums" />
               </Field>
               <Field label="Ort">
                 <input value={data.city} onChange={set("city")} className="input" />
               </Field>
             </div>
             <Field label="Telefon">
-              <input value={data.phone} onChange={set("phone")} className="input font-mono" />
+              <input value={data.phone} onChange={set("phone")} className="input tabular-nums" />
             </Field>
             <Field label="E-Mail">
               <input type="email" value={data.email} onChange={set("email")} className="input" />
             </Field>
             <Field label="USt-IdNr.">
-              <input value={data.tax_number} onChange={set("tax_number")} className="input font-mono" />
+              <input value={data.tax_number} onChange={set("tax_number")} className="input tabular-nums" />
             </Field>
           </div>
         </Section>
@@ -109,7 +117,7 @@ export const SettingsClient = ({ org }: { org: Organization }) => {
                 value={data.sender_email}
                 onChange={set("sender_email")}
                 placeholder="info@ihre-firma.de"
-                className="input font-mono"
+                className="input tabular-nums"
               />
             </Field>
           </div>

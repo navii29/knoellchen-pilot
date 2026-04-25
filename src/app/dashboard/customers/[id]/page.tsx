@@ -97,21 +97,13 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
             </InfoCard>
 
             <InfoCard Icon={Mail} title="Kontakt">
-              <Row
-                label="E-Mail"
-                value={c.email || "—"}
-                mono={!!c.email}
-              />
-              <Row
-                label="Telefon"
-                value={c.phone || "—"}
-                mono={!!c.phone}
-              />
+              <Row label="E-Mail" value={c.email || "—"} />
+              <Row label="Telefon" value={c.phone || "—"} mono={!!c.phone} />
             </InfoCard>
 
             <InfoCard Icon={CreditCard} title="Führerschein">
-              <Row label="Nummer" value={c.license_nr || "—"} mono />
-              <Row label="Klassen" value={c.license_class || "—"} mono />
+              <Row label="Nummer" value={c.license_nr ? <span className="font-mono">{c.license_nr}</span> : "—"} />
+              <Row label="Klassen" value={c.license_class || "—"} />
               <Row label="Gültig bis" value={c.license_expiry ? fmtDate(c.license_expiry) : "—"} mono />
               {licenseUrl && (
                 <a
@@ -126,7 +118,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
             </InfoCard>
 
             <InfoCard Icon={IdCard} title="Personalausweis">
-              <Row label="Nummer" value={c.id_card_nr || "—"} mono />
+              <Row label="Nummer" value={c.id_card_nr ? <span className="font-mono">{c.id_card_nr}</span> : "—"} />
               {idCardUrl && (
                 <a
                   href={idCardUrl}
@@ -176,7 +168,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                   <span className="font-mono text-xs">{ct.contract_nr}</span>
                   <span className="font-mono font-semibold">{ct.plate}</span>
                   <span className="text-stone-700 truncate">{ct.vehicle_type || "—"}</span>
-                  <span className="text-xs text-stone-500 font-mono">
+                  <span className="text-xs text-stone-500 tabular-nums">
                     {fmtDate(ct.pickup_date)} → {fmtDate(ct.return_date)}
                   </span>
                   <ContractStatusBadge status={ct.status} />
@@ -220,6 +212,6 @@ const Row = ({
 }) => (
   <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
     <div className="text-stone-500 text-xs">{label}</div>
-    <div className={mono ? "font-mono text-stone-800" : "text-stone-800"}>{value}</div>
+    <div className={mono ? "tabular-nums text-stone-800" : "text-stone-800"}>{value}</div>
   </div>
 );

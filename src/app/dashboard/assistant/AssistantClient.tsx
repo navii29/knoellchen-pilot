@@ -374,7 +374,7 @@ const TicketList = ({ tickets }: { tickets: TicketSummary[] }) => {
             </div>
           </div>
           <div className="text-right">
-            <div className="font-mono text-sm">{fmtEur(t.fine_amount)}</div>
+            <div className="tabular-nums text-sm">{fmtEur(t.fine_amount)}</div>
             <div className="text-[10px] uppercase font-medium text-stone-500 mt-0.5">{t.status}</div>
           </div>
         </Link>
@@ -451,7 +451,7 @@ const DecommissionList = ({
           >
             <span className="font-mono font-semibold">{v.plate}</span>
             <span className="text-stone-700 truncate">{v.vehicle_type || "—"}</span>
-            <span className="text-xs text-stone-500 font-mono">
+            <span className="text-xs text-stone-500 tabular-nums">
               {v.decommission_date ? fmtDate(v.decommission_date) : "—"}
             </span>
             <span
@@ -508,7 +508,7 @@ const AvailableVehiclesCard = ({
     <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
       <div className="px-4 py-2.5 border-b border-stone-100 text-xs uppercase tracking-wider text-stone-500 font-medium flex items-center justify-between">
         <span>{headline}</span>
-        <span className="font-mono text-stone-700">
+        <span className="text-stone-700 tabular-nums">
           {available.length} frei · {blocked.length} belegt
         </span>
       </div>

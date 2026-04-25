@@ -147,12 +147,12 @@ export const CalendarClient = ({
                   {WEEKDAY[i]}
                 </div>
                 {isToday ? (
-                  <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-teal-600 text-white font-mono text-[13px] font-semibold tabular-nums">
+                  <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-teal-600 text-white text-[13px] font-semibold tabular-nums">
                     {d.getDate()}
                   </div>
                 ) : (
                   <div
-                    className={`font-mono text-sm tabular-nums ${
+                    className={`text-sm tabular-nums ${
                       isWeekend ? "text-stone-300" : "text-stone-900"
                     }`}
                   >

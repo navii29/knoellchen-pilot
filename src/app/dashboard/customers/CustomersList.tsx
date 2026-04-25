@@ -87,8 +87,8 @@ export const CustomersList = ({ initial }: { initial: Customer[] }) => {
                   <span className="text-stone-400 text-xs ml-2">{c.salutation}</span>
                 )}
               </span>
-              <span className="text-stone-500 text-xs truncate font-mono">{c.email || "—"}</span>
-              <span className="text-stone-500 text-xs truncate font-mono">{c.phone || "—"}</span>
+              <span className="text-stone-500 text-xs truncate">{c.email || "—"}</span>
+              <span className="text-stone-500 text-xs truncate tabular-nums">{c.phone || "—"}</span>
               <span className="text-stone-500 text-xs truncate">{fullAddress(c) || "—"}</span>
               <ChevronRight size={14} className="text-stone-300" />
             </Link>
@@ -107,9 +107,9 @@ export const CustomersList = ({ initial }: { initial: Customer[] }) => {
                 <div className="text-sm font-medium text-stone-900 truncate">
                   {fullName(c) || "—"}
                 </div>
-                <div className="text-[11px] text-stone-500 truncate font-mono">{c.email || "—"}</div>
+                <div className="text-[11px] text-stone-500 truncate">{c.email || "—"}</div>
                 {c.phone && (
-                  <div className="text-[11px] text-stone-500 truncate font-mono">{c.phone}</div>
+                  <div className="text-[11px] text-stone-500 truncate tabular-nums">{c.phone}</div>
                 )}
                 {fullAddress(c) && (
                   <div className="text-[11px] text-stone-400 truncate">{fullAddress(c)}</div>

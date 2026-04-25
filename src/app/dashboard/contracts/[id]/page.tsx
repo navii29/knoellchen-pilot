@@ -118,7 +118,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
                 <Row label="Tatsächliche Rückgabe" value={fmtDate(c.actual_return_date)} />
               )}
               <Row label="Fahrzeug" value={c.vehicle_type || "—"} />
-              <Row label="Kennzeichen" value={c.plate} mono />
+              <Row label="Kennzeichen" value={<span className="font-mono font-semibold">{c.plate}</span>} />
             </InfoCard>
 
             <InfoCard Icon={Coins} title="Kosten">
@@ -138,7 +138,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
                     <Row
                       label="Mehrkilometer"
                       value={
-                        <span className="text-amber-700 font-mono">
+                        <span className="text-amber-700 tabular-nums">
                           {km.extraKm} km × {km.pricePerKm.toFixed(2).replace(".", ",")} € ={" "}
                           <strong>{fmtEur(km.cost)}</strong>
                         </span>
@@ -166,7 +166,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
                   </div>
                   <div className="text-sm text-amber-800 mt-1">
                     {km.extraKm} km × {km.pricePerKm.toFixed(2).replace(".", ",")} €/km ={" "}
-                    <strong className="font-mono">{fmtEur(km.cost)}</strong>
+                    <strong className="tabular-nums">{fmtEur(km.cost)}</strong>
                     {pricePerKm == null && (
                       <span className="text-xs ml-2 opacity-80">
                         (Fahrzeug-Preis fehlt — bitte am Fahrzeug eintragen)
@@ -258,7 +258,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
                       href={`/dashboard/damage-reports/${d.id}`}
                       className="grid grid-cols-[100px_1fr_120px_24px] items-center gap-3 px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
                     >
-                      <span className="font-mono text-xs">{fmtDate(d.date)}</span>
+                      <span className="tabular-nums text-xs">{fmtDate(d.date)}</span>
                       <span className="truncate">
                         {d.location || d.description || "—"}
                         {d.photos && d.photos.length > 0 && (
@@ -304,7 +304,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
                 >
                   <span className="font-mono text-xs">{t.ticket_nr}</span>
                   <span className="truncate">{t.offense || "—"}</span>
-                  <span className="text-xs text-stone-500 font-mono">{fmtDate(t.offense_date)}</span>
+                  <span className="text-xs text-stone-500 tabular-nums">{fmtDate(t.offense_date)}</span>
                   <StatusBadge status={t.status} />
                   <ChevronRight size={14} className="text-stone-300" />
                 </Link>
@@ -346,7 +346,7 @@ const Row = ({
 }) => (
   <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
     <div className="text-stone-500 text-xs">{label}</div>
-    <div className={mono ? "font-mono text-stone-800" : "text-stone-800"}>{value}</div>
+    <div className={mono ? "tabular-nums text-stone-800" : "text-stone-800"}>{value}</div>
   </div>
 );
 

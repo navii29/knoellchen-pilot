@@ -228,7 +228,7 @@ export const VehicleForm = ({
               value={data.fin_number}
               onChange={set("fin_number")}
               placeholder="WBA8E91040K123456"
-              className="input font-mono"
+              className="input tabular-nums"
             />
           </Field>
           <Field label="Leistung (PS)">
@@ -236,7 +236,7 @@ export const VehicleForm = ({
               value={data.power_ps}
               onChange={set("power_ps")}
               placeholder="190"
-              className="input font-mono"
+              className="input tabular-nums"
             />
           </Field>
           <Field label="Kraftstoff">
@@ -268,7 +268,7 @@ export const VehicleForm = ({
               value={data.seats}
               onChange={set("seats")}
               placeholder="5"
-              className="input font-mono"
+              className="input tabular-nums"
             />
           </Field>
           <Field label="Gepäckstücke">
@@ -276,7 +276,7 @@ export const VehicleForm = ({
               value={data.luggage}
               onChange={set("luggage")}
               placeholder="2"
-              className="input font-mono"
+              className="input tabular-nums"
             />
           </Field>
           <Field label="Karosserieform">
@@ -304,7 +304,7 @@ export const VehicleForm = ({
             </select>
           </Field>
           <Field label="Anzeige-Name (auto)">
-            <div className="input bg-stone-50 text-stone-500 font-mono">
+            <div className="input bg-stone-50 text-stone-500 tabular-nums">
               {previewType || "wird aus Hersteller + Modell erstellt"}
             </div>
           </Field>
@@ -316,7 +316,7 @@ export const VehicleForm = ({
               type="date"
               value={data.available_from}
               onChange={set("available_from")}
-              className="input font-mono"
+              className="input tabular-nums"
             />
           </Field>
           <Field label="Km-Stand bei Einflottung">
@@ -324,7 +324,7 @@ export const VehicleForm = ({
               value={data.km_at_intake}
               onChange={set("km_at_intake")}
               placeholder="12500"
-              className="input font-mono"
+              className="input tabular-nums"
             />
           </Field>
           <Field label="Erstzulassung">
@@ -332,11 +332,11 @@ export const VehicleForm = ({
               type="date"
               value={data.first_registration}
               onChange={set("first_registration")}
-              className="input font-mono"
+              className="input tabular-nums"
             />
           </Field>
           <Field label="Aussteuerung (auto)">
-            <div className="input bg-stone-50 text-stone-500 font-mono">
+            <div className="input bg-stone-50 text-stone-500 tabular-nums">
               {decommissionPreview ? fmtDate(decommissionPreview) + " (+ 180 Tage)" : "—"}
             </div>
           </Field>
@@ -345,7 +345,7 @@ export const VehicleForm = ({
               value={data.max_km_total}
               onChange={set("max_km_total")}
               placeholder="80000"
-              className="input font-mono"
+              className="input tabular-nums"
             />
           </Field>
           <Field label="Inklusivkilometer / Monat">
@@ -353,7 +353,7 @@ export const VehicleForm = ({
               value={data.inclusive_km_month}
               onChange={set("inclusive_km_month")}
               placeholder="2000"
-              className="input font-mono"
+              className="input tabular-nums"
             />
           </Field>
           <Field label="Mehrkilometer-Preis (€/km)">
@@ -362,7 +362,7 @@ export const VehicleForm = ({
                 value={data.extra_km_price}
                 onChange={set("extra_km_price")}
                 placeholder="0.29"
-                className="input pr-10 font-mono"
+                className="input pr-10 tabular-nums"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">
                 €/km
@@ -378,7 +378,7 @@ export const VehicleForm = ({
                 value={data.daily_rate}
                 onChange={set("daily_rate")}
                 placeholder="49.00"
-                className="input pr-8 font-mono"
+                className="input pr-8 tabular-nums"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">€</span>
             </div>
@@ -389,7 +389,7 @@ export const VehicleForm = ({
                 value={data.weekly_rate}
                 onChange={set("weekly_rate")}
                 placeholder="299.00"
-                className="input pr-8 font-mono"
+                className="input pr-8 tabular-nums"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">€</span>
             </div>
@@ -400,7 +400,7 @@ export const VehicleForm = ({
                 value={data.monthly_rate}
                 onChange={set("monthly_rate")}
                 placeholder="999.00"
-                className="input pr-8 font-mono"
+                className="input pr-8 tabular-nums"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">€</span>
             </div>
@@ -411,7 +411,7 @@ export const VehicleForm = ({
                 value={data.deposit}
                 onChange={set("deposit")}
                 placeholder="500.00"
-                className="input pr-8 font-mono"
+                className="input pr-8 tabular-nums"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">€</span>
             </div>

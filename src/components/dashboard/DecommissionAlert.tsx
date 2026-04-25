@@ -61,7 +61,7 @@ export const DecommissionAlert = ({ vehicles }: { vehicles: Vehicle[] }) => {
               >
                 <span className="font-mono font-semibold text-stone-900">{v.plate}</span>
                 <span className="text-stone-700 truncate">{v.vehicle_type || "—"}</span>
-                <span className="font-mono text-xs text-stone-600">
+                <span className="tabular-nums text-xs text-stone-600">
                   Aussteuerung: {fmtDate(v.decommission_date)}
                 </span>
                 <span

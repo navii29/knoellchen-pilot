@@ -86,9 +86,9 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
               <h1 className="font-display font-bold text-2xl md:text-3xl tracking-tight">
                 {displayName}
               </h1>
-              <div className="mt-1 text-sm text-stone-500 font-mono">
-                {v.plate}
-                {v.color && <span className="ml-2">· {v.color}</span>}
+              <div className="mt-1 text-sm text-stone-500">
+                <span className="font-mono">{v.plate}</span>
+                {v.color && <span className="ml-2 font-sans">· {v.color}</span>}
               </div>
             </div>
             <VehicleDeleteButton vehicleId={v.id} />
@@ -143,7 +143,7 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
               <Row label="Karosserie" value={v.body_type || "—"} />
               <Row label="Kategorie" value={v.category || "—"} />
               <Row label="Farbe" value={v.color || "—"} />
-              <Row label="FIN" value={v.fin_number || "—"} mono />
+              <Row label="FIN" value={v.fin_number ? <span className="font-mono">{v.fin_number}</span> : "—"} />
             </InfoCard>
 
             <InfoCard Icon={Settings2} title="Technik">
@@ -232,7 +232,7 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
                 >
                   <span className="font-mono text-xs">{ct.contract_nr}</span>
                   <span className="text-stone-700 truncate">{ct.renter_name}</span>
-                  <span className="text-xs text-stone-500 font-mono">
+                  <span className="text-xs text-stone-500 tabular-nums">
                     {fmtDate(ct.pickup_date)} → {fmtDate(ct.return_date)}
                   </span>
                   <ContractStatusBadge status={ct.status} />
@@ -276,6 +276,6 @@ const Row = ({
 }) => (
   <div className="grid grid-cols-[140px_1fr] gap-2 text-sm">
     <div className="text-stone-500 text-xs">{label}</div>
-    <div className={mono ? "font-mono text-stone-800" : "text-stone-800"}>{value}</div>
+    <div className={mono ? "tabular-nums text-stone-800" : "text-stone-800"}>{value}</div>
   </div>
 );

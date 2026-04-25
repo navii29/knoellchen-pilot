@@ -211,7 +211,7 @@ export const TicketActions = ({ ticket }: { ticket: Ticket }) => {
             value={authorityInput}
             onChange={(e) => setAuthorityInput(e.target.value)}
             placeholder="bussgeld@behoerde.de"
-            className="flex-1 px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400 font-mono"
+            className="flex-1 px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400"
           />
           <button
             onClick={sendToAuthority}
@@ -244,7 +244,7 @@ export const TicketActions = ({ ticket }: { ticket: Ticket }) => {
               <span>
                 Anschreiben gesendet am{" "}
                 <strong>{fmtDate(ticket.letter_sent_at)}</strong> an{" "}
-                <span className="font-mono text-xs">{ticket.letter_sent_to}</span>
+                <span className="text-xs">{ticket.letter_sent_to}</span>
               </span>
             </div>
           )}
@@ -254,7 +254,7 @@ export const TicketActions = ({ ticket }: { ticket: Ticket }) => {
               <span>
                 Zeugenfragebogen gesendet am{" "}
                 <strong>{fmtDate(ticket.authority_sent_at)}</strong> an{" "}
-                <span className="font-mono text-xs">{ticket.authority_sent_to}</span>
+                <span className="text-xs">{ticket.authority_sent_to}</span>
               </span>
             </div>
           )}

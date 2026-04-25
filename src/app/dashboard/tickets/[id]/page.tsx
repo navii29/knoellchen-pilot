@@ -6,6 +6,7 @@ import { Topbar } from "@/components/dashboard/Topbar";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ConfidenceBanner } from "@/components/ticket/ConfidenceBanner";
 import { TicketActions } from "@/components/ticket/TicketActions";
+import { ChargeEditor } from "@/components/ticket/ChargeEditor";
 import { fmtDate, fmtEur, initials, relTime } from "@/lib/utils";
 import type { Ticket, Contract, TicketLog } from "@/lib/types";
 
@@ -55,8 +56,6 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
     uploadUrl = signed?.signedUrl || null;
   }
 
-  const total = (t.fine_amount || 0) + Number(t.processing_fee || 0);
-
   return (
     <>
       <Topbar section={`Strafzettel · ${t.ticket_nr}`} />
@@ -95,14 +94,12 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
               {[
                 ["Kennzeichen", t.plate || "—", "font-mono font-semibold"],
                 ["Fahrzeug", t.vehicle_type || "—"],
-                ["Tatzeit", t.offense_date ? fmtDate(t.offense_date) + (t.offense_time ? " · " + t.offense_time : "") : "—", "font-mono"],
+                ["Tatzeit", t.offense_date ? fmtDate(t.offense_date) + (t.offense_time ? " · " + t.offense_time : "") : "—", "tabular-nums"],
                 ["Tatort", t.location || "—"],
                 ["Behörde", t.authority || "—"],
-                ["Aktenzeichen", t.reference_nr || "—", "font-mono"],
-                ["Bußgeld", fmtEur(t.fine_amount), "font-mono"],
-                ["Bearbeitungsgebühr", fmtEur(Number(t.processing_fee)), "font-mono"],
-                ["Gesamtbetrag", fmtEur(total), "font-mono font-semibold"],
-                ["Frist Behörde", fmtDate(t.deadline), "font-mono"],
+                ["Aktenzeichen", t.reference_nr || "—", "font-mono text-xs"],
+                ["Bußgeld (Behörde)", fmtEur(t.fine_amount), "tabular-nums"],
+                ["Frist Behörde", fmtDate(t.deadline), "tabular-nums"],
               ].map(([k, v, cls]) => (
                 <div key={k as string} className="grid grid-cols-[160px_1fr] gap-3 px-4 py-2.5 text-sm">
                   <div className="text-stone-500">{k}</div>
@@ -110,6 +107,8 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
                 </div>
               ))}
             </div>
+
+            <ChargeEditor ticket={t} />
 
             <div>
               <div className="text-xs uppercase tracking-wider text-stone-500 font-medium mb-2">
@@ -135,21 +134,21 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
                       <div className="mt-3 grid grid-cols-2 gap-2.5 text-xs">
                         <div>
                           <div className="text-stone-500">Mietbeginn</div>
-                          <div className="font-mono mt-0.5">{fmtDate(contract.pickup_date)}</div>
+                          <div className="tabular-nums mt-0.5">{fmtDate(contract.pickup_date)}</div>
                         </div>
                         <div>
                           <div className="text-stone-500">Mietende</div>
-                          <div className="font-mono mt-0.5">
+                          <div className="tabular-nums mt-0.5">
                             {fmtDate(contract.actual_return_date || contract.return_date)}
                           </div>
                         </div>
                         <div>
                           <div className="text-stone-500">E-Mail</div>
-                          <div className="font-mono mt-0.5 truncate">{contract.renter_email || "—"}</div>
+                          <div className="mt-0.5 truncate">{contract.renter_email || "—"}</div>
                         </div>
                         <div>
                           <div className="text-stone-500">Telefon</div>
-                          <div className="font-mono mt-0.5">{contract.renter_phone || "—"}</div>
+                          <div className="tabular-nums mt-0.5">{contract.renter_phone || "—"}</div>
                         </div>
                       </div>
                     </div>

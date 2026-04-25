@@ -267,6 +267,12 @@ export interface Ticket {
   renter_name: string | null;
   renter_email: string | null;
   processing_fee: number;
+  charge_fine: boolean;
+  charge_fee: boolean;
+  fee_net: number | null;
+  fee_vat: number | null;
+  fee_gross: number | null;
+  total_charge: number | null;
   paid: boolean;
   reminder_level: number;
   upload_path: string | null;

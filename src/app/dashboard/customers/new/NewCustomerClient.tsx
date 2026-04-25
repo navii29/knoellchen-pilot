@@ -304,7 +304,7 @@ export const NewCustomerClient = () => {
                 type="date"
                 value={data.birthday}
                 onChange={set("birthday")}
-                className="input font-mono"
+                className="input tabular-nums"
               />
             </Field>
           </Section>
@@ -314,10 +314,10 @@ export const NewCustomerClient = () => {
               <input value={data.street} onChange={set("street")} className="input" />
             </Field>
             <Field label="Hausnummer">
-              <input value={data.house_nr} onChange={set("house_nr")} className="input font-mono" />
+              <input value={data.house_nr} onChange={set("house_nr")} className="input tabular-nums" />
             </Field>
             <Field label="PLZ">
-              <input value={data.zip} onChange={set("zip")} className="input font-mono" />
+              <input value={data.zip} onChange={set("zip")} className="input tabular-nums" />
             </Field>
             <Field label="Ort">
               <input value={data.city} onChange={set("city")} className="input" />
@@ -329,22 +329,22 @@ export const NewCustomerClient = () => {
               <input type="email" value={data.email} onChange={set("email")} className="input" />
             </Field>
             <Field label="Telefon">
-              <input value={data.phone} onChange={set("phone")} className="input font-mono" />
+              <input value={data.phone} onChange={set("phone")} className="input tabular-nums" />
             </Field>
           </Section>
 
           <Section title="Führerschein & Ausweis">
             <Field label="Führerschein-Nr.">
-              <input value={data.license_nr} onChange={set("license_nr")} className="input font-mono" />
+              <input value={data.license_nr} onChange={set("license_nr")} className="input tabular-nums" />
             </Field>
             <Field label="Klassen">
-              <input value={data.license_class} onChange={set("license_class")} placeholder="B, BE" className="input font-mono" />
+              <input value={data.license_class} onChange={set("license_class")} placeholder="B, BE" className="input tabular-nums" />
             </Field>
             <Field label="FS gültig bis">
-              <input type="date" value={data.license_expiry} onChange={set("license_expiry")} className="input font-mono" />
+              <input type="date" value={data.license_expiry} onChange={set("license_expiry")} className="input tabular-nums" />
             </Field>
             <Field label="Ausweis-Nr.">
-              <input value={data.id_card_nr} onChange={set("id_card_nr")} className="input font-mono" />
+              <input value={data.id_card_nr} onChange={set("id_card_nr")} className="input tabular-nums" />
             </Field>
           </Section>
 

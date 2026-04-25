@@ -172,7 +172,7 @@ export const HandoverClient = ({
           </p>
         </div>
         <div className="text-right text-xs text-stone-500">
-          <div className="font-mono">{renterName}</div>
+          <div>{renterName}</div>
         </div>
       </div>
 

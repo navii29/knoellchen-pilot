@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import type { Contract, Organization, Ticket } from "./types";
 import { fmtDate, fmtEur } from "./utils";
+import { chargeFromTicket, VAT_RATE } from "./charge";
 
 // ============================================
 // DIN 5008 Form B — Layout-Konstanten (mm)
@@ -313,10 +314,19 @@ export const generateLetterPdf = (
   }`;
   drawSubject(doc, subject);
 
-  const total = (ticket.fine_amount || 0) + Number(ticket.processing_fee || 0);
+  const charge = chargeFromTicket(ticket);
   const tatzeit = `${fmtDate(ticket.offense_date)}${
     ticket.offense_time ? ", " + ticket.offense_time + " Uhr" : ""
   }`;
+
+  const introClause =
+    charge.charge_fine && charge.charge_fee
+      ? "stellen wir Ihnen das Bußgeld zuzüglich unserer vertraglich vereinbarten Bearbeitungsgebühr in Rechnung"
+      : charge.charge_fine
+      ? "stellen wir Ihnen das Bußgeld in Rechnung"
+      : charge.charge_fee
+      ? "stellen wir Ihnen die vertraglich vereinbarte Bearbeitungsgebühr in Rechnung"
+      : "informieren wir Sie über den Vorgang";
 
   const paragraphsBefore: string[] = [
     `bezugnehmend auf den Ihnen überlassenen Mietwagen mit dem Kennzeichen ${ticket.plate || "—"}${
@@ -325,22 +335,39 @@ export const generateLetterPdf = (
     `Tatvorwurf: ${ticket.offense || "—"}${
       ticket.offense_details ? " — " + ticket.offense_details : ""
     }\nTatzeit: ${tatzeit}\nTatort: ${ticket.location || "—"}`,
-    `Da Sie das Fahrzeug zum Tatzeitpunkt im Rahmen Ihres Mietvertrags geführt haben, leiten wir Ihre Daten an die Behörde weiter und stellen Ihnen das Bußgeld zuzüglich unserer vertraglich vereinbarten Bearbeitungsgebühr in Rechnung:`,
+    `Da Sie das Fahrzeug zum Tatzeitpunkt im Rahmen Ihres Mietvertrags geführt haben, leiten wir Ihre Daten an die Behörde weiter und ${introClause}:`,
   ];
 
   let y = drawBody(doc, `Sehr geehrte:r ${surname},`, paragraphsBefore);
 
-  // Saubere 2-Spalten-Aufstellung statt Spaces
-  y = drawAmountSummary(doc, y + 2, [
-    { label: "Bußgeld", amount: ticket.fine_amount || 0 },
-    { label: "Bearbeitungsgebühr", amount: Number(ticket.processing_fee) },
-    { label: "Gesamtbetrag", amount: total, bold: true },
-  ]);
+  // Aufstellung — nur aktivierte Positionen, mit MwSt-Aufschlüsselung
+  const summaryRows: Array<{ label: string; amount: number; bold?: boolean }> = [];
+  if (charge.charge_fine) {
+    summaryRows.push({ label: "Bußgeld (durchlaufender Posten)", amount: charge.fine_amount });
+  }
+  if (charge.charge_fee) {
+    summaryRows.push({ label: "Bearbeitungsgebühr (netto)", amount: charge.fee_net });
+    summaryRows.push({
+      label: `zzgl. ${Math.round(VAT_RATE * 100)}% MwSt`,
+      amount: charge.fee_vat,
+    });
+    summaryRows.push({ label: "Bearbeitungsgebühr (brutto)", amount: charge.fee_gross });
+  }
+  if (summaryRows.length > 0) {
+    summaryRows.push({ label: "Gesamtbetrag", amount: charge.total_charge, bold: true });
+    y = drawAmountSummary(doc, y + 2, summaryRows);
+  }
 
-  // Knapper Schlusssatz (eine Zeile) statt zwei langer Paragraphen
-  const restParagraphs: string[] = [
-    `Bitte überweisen Sie den Gesamtbetrag innerhalb von 14 Tagen unter Angabe der Vorgangs-Nr. ${ticket.ticket_nr}. Details zur Bankverbindung finden Sie in der beigefügten Rechnung.`,
-  ];
+  // Schlusssatz abhängig davon, ob etwas zu zahlen ist
+  const restParagraphs: string[] =
+    charge.total_charge > 0
+      ? [
+          `Bitte überweisen Sie den Gesamtbetrag innerhalb von 14 Tagen unter Angabe der Vorgangs-Nr. ${ticket.ticket_nr}. Details zur Bankverbindung finden Sie in der beigefügten Rechnung.`,
+          `Hinweis: Das Bußgeld ist ein durchlaufender Posten gem. § 10 Abs. 1 Satz 6 UStG. Die Bearbeitungsgebühr unterliegt der Umsatzsteuer (${Math.round(VAT_RATE * 100)}%).`,
+        ]
+      : [
+          `Dieser Vorgang dient ausschließlich der Information — es entstehen für Sie keine Forderungen unsererseits.`,
+        ];
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
   setColor(doc, INK);
@@ -381,9 +408,7 @@ export const generateInvoicePdf = (
   // Betreff
   drawSubject(doc, `Rechnung Nr. ${ticket.ticket_nr}`);
 
-  const fine = ticket.fine_amount || 0;
-  const fee = Number(ticket.processing_fee || 0);
-  const total = fine + fee;
+  const charge = chargeFromTicket(ticket);
 
   // Meta-Block (Rechnungs-Nr / Datum / Leistungsdatum)
   let y = SALUT_Y;
@@ -405,33 +430,48 @@ export const generateInvoicePdf = (
     doc.text(m[1] || "—", x, y + 4.5);
   });
 
-  // Positionstabelle
+  // Positionstabelle — nur aktivierte Positionen
   y += 16;
-  drawInvoiceTable(doc, y, [
-    {
-      pos: "1",
+  const rows: Array<{ pos: string; desc: string; amount: number; hint?: string }> = [];
+  let pos = 1;
+  if (charge.charge_fine) {
+    rows.push({
+      pos: String(pos++),
       desc: `Bußgeld nach § 24 StVG${ticket.offense ? "  ·  " + ticket.offense : ""}${
         ticket.location ? "\n" + ticket.location : ""
       }${ticket.offense_date ? "  ·  " + fmtDate(ticket.offense_date) : ""}`,
-      amount: fine,
-      hint: "Durchlaufender Posten",
-    },
-    {
-      pos: "2",
+      amount: charge.fine_amount,
+      hint: "Durchlaufender Posten · keine USt",
+    });
+  }
+  if (charge.charge_fee) {
+    rows.push({
+      pos: String(pos++),
       desc: `Bearbeitungsgebühr nach Mietvertrag${
         contract?.contract_nr ? "  ·  " + contract.contract_nr : ""
       }`,
-      amount: fee,
-      hint: "Schadensersatz, nicht steuerbar",
-    },
-  ]);
+      amount: charge.fee_net,
+      hint: `netto · zzgl. ${Math.round(VAT_RATE * 100)}% MwSt`,
+    });
+  }
 
-  // Summen-Block
-  y += 50; // unter Tabelle
-  drawTotalsBlock(doc, y, total);
+  if (rows.length > 0) {
+    drawInvoiceTable(doc, y, rows);
+    y += rows.length * 26 + 4;
+  } else {
+    setColor(doc, GRAY_60);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(10);
+    doc.text("Keine berechneten Positionen.", M.left, y);
+    y += 10;
+  }
+
+  // Summen-Block mit MwSt-Aufschlüsselung
+  y += 14;
+  drawTotalsBlock(doc, y, charge);
 
   // Zahlungshinweise
-  y += 30;
+  y += charge.charge_fee ? 42 : 22;
   setColor(doc, INK);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
@@ -440,16 +480,19 @@ export const generateInvoicePdf = (
   doc.setFontSize(9);
   setColor(doc, GRAY_60);
   y += 5;
-  const payNote = doc.splitTextToSize(
-    `Bitte überweisen Sie den Gesamtbetrag innerhalb von 14 Tagen ohne Abzug. Verwendungszweck: ${ticket.ticket_nr}. Bei Rückfragen kontaktieren Sie uns gerne über die oben genannten Kontaktdaten.`,
-    PAGE.w - M.left - M.right
-  );
+  const payText =
+    charge.total_charge > 0
+      ? `Bitte überweisen Sie den Gesamtbetrag innerhalb von 14 Tagen ohne Abzug. Verwendungszweck: ${ticket.ticket_nr}.`
+      : `Es wird kein Betrag fällig. Diese Aufstellung dient nur Ihrer Information.`;
+  const payNote = doc.splitTextToSize(payText, PAGE.w - M.left - M.right);
   doc.text(payNote, M.left, y, { lineHeightFactor: 1.5 });
 
   // Steuerlicher Hinweis
   y += payNote.length * 4.5 + 5;
   const taxNote = doc.splitTextToSize(
-    `Hinweis: Das weiterbelastete Bußgeld stellt einen durchlaufenden Posten gem. § 10 Abs. 1 Satz 6 UStG dar und unterliegt nicht der Umsatzsteuer. Die Bearbeitungsgebühr ist umsatzsteuerlicher Schadensersatz und nach § 1 Abs. 1 UStG nicht steuerbar.`,
+    `Hinweis: Das Bußgeld ist ein durchlaufender Posten gem. § 10 Abs. 1 Satz 6 UStG. Die Bearbeitungsgebühr unterliegt der Umsatzsteuer (${Math.round(
+      VAT_RATE * 100
+    )}%).`,
     PAGE.w - M.left - M.right
   );
   setColor(doc, GRAY_60);
@@ -507,23 +550,59 @@ const drawInvoiceTable = (
   }
 };
 
-// Summen-Block rechts
-const drawTotalsBlock = (doc: jsPDF, startY: number, total: number) => {
+// Summen-Block rechts mit MwSt-Aufschlüsselung (Bußgeld separat als nicht-steuerbar)
+const drawTotalsBlock = (
+  doc: jsPDF,
+  startY: number,
+  charge: ReturnType<typeof chargeFromTicket>
+) => {
   const labelX = PAGE.w - M.right - 60;
   const valueX = PAGE.w - M.right;
+  let y = startY;
+
+  if (charge.charge_fee) {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    setColor(doc, GRAY_60);
+    doc.text("Bearbeitung netto", labelX, y);
+    setColor(doc, INK);
+    doc.text(fmtEur(charge.fee_net), valueX, y, { align: "right" });
+    y += 5;
+
+    setColor(doc, GRAY_60);
+    doc.text(`+ ${Math.round(VAT_RATE * 100)}% MwSt`, labelX, y);
+    setColor(doc, INK);
+    doc.text(fmtEur(charge.fee_vat), valueX, y, { align: "right" });
+    y += 5;
+  }
+
+  if (charge.charge_fine) {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    setColor(doc, GRAY_60);
+    doc.text("Bußgeld (durchl. Posten)", labelX, y);
+    setColor(doc, INK);
+    doc.text(fmtEur(charge.fine_amount), valueX, y, { align: "right" });
+    y += 5;
+  }
+
+  // Trennlinie
+  setStroke(doc, GRAY_15);
+  doc.setLineWidth(0.3);
+  doc.line(labelX, y + 1, valueX, y + 1);
+  y += 6;
 
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   setColor(doc, INK);
-  doc.text("Gesamtbetrag", labelX, startY);
+  doc.text("Gesamtbetrag", labelX, y);
   setColor(doc, TEAL);
   doc.setFontSize(14);
-  doc.text(fmtEur(total), valueX, startY, { align: "right" });
+  doc.text(fmtEur(charge.total_charge), valueX, y, { align: "right" });
 
-  // Akzent-Linie unter Total
   setStroke(doc, TEAL);
   doc.setLineWidth(0.6);
-  doc.line(labelX, startY + 2.5, valueX, startY + 2.5);
+  doc.line(labelX, y + 2.5, valueX, y + 2.5);
 };
 
 // ============================================
