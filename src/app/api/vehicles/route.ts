@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { normalizePlate } from "@/lib/plate";
 
 export const POST = async (req: Request) => {
   const supabase = createClient();
@@ -21,7 +22,7 @@ export const POST = async (req: Request) => {
     first_registration?: string;
     extra_km_price?: number | string | null;
   };
-  const plate = body.plate?.trim().toUpperCase();
+  const plate = normalizePlate(body.plate);
   if (!plate) return NextResponse.json({ error: "Kennzeichen fehlt" }, { status: 400 });
 
   const firstReg = body.first_registration?.trim();

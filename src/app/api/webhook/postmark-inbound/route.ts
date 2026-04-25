@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { slugFromInboundAddress } from "@/lib/slug";
 import { parseTicketImage } from "@/lib/anthropic";
 import { nextTicketNr } from "@/lib/utils";
+import { normalizePlate } from "@/lib/plate";
 
 export const maxDuration = 60;
 
@@ -208,7 +209,7 @@ export const POST = async (req: Request) => {
           .update({
             reference_nr: d.reference_nr || null,
             authority: d.authority || payload.FromName || null,
-            plate: d.plate || null,
+            plate: normalizePlate(d.plate) || null,
             vehicle_type: d.vehicle_type || null,
             offense_date: d.offense_date || null,
             offense_time: d.offense_time || null,
@@ -231,16 +232,15 @@ export const POST = async (req: Request) => {
 
         // Match aus Verträgen
         if (d.plate && d.offense_date) {
-          const normPlate = d.plate.toUpperCase().replace(/\s+/g, " ").trim();
-          const altPlate = normPlate.replace(/\s+/g, "");
-          const { data: matches } = await admin
+          const ticketPlate = normalizePlate(d.plate);
+          const { data: candidates } = await admin
             .from("contracts")
             .select("*")
             .eq("org_id", orgId)
-            .or(`plate.eq.${normPlate},plate.eq.${altPlate}`)
             .lte("pickup_date", d.offense_date)
             .order("pickup_date", { ascending: false });
-          const match = (matches ?? []).find((c) => {
+          const match = (candidates ?? []).find((c) => {
+            if (normalizePlate(c.plate) !== ticketPlate) return false;
             const end = c.actual_return_date ?? c.return_date;
             return end >= d.offense_date!;
           });

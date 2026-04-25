@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { normalizePlate } from "@/lib/plate";
 
 export const POST = async (
   _req: Request,
@@ -25,20 +26,22 @@ export const POST = async (
     );
   }
 
-  const normPlate = ticket.plate.toUpperCase().replace(/\s+/g, " ").trim();
-  const altPlate = normPlate.replace(/\s+/g, "");
+  const ticketPlate = normalizePlate(ticket.plate);
+  if (!ticketPlate) {
+    return NextResponse.json({ error: "Kennzeichen ungültig" }, { status: 400 });
+  }
 
-  // Vertrag suchen: Plate stimmt, pickup_date vor Tatdatum,
-  // (actual_return_date oder return_date) am/nach Tatdatum.
-  const { data: matches } = await admin
+  // Alle Vertrags-Kandidaten der Org an diesem Tatdatum holen, dann normalisiert vergleichen.
+  // (Datums-Filter über DB, Plate-Match in JS — robust gegen Formatabweichungen.)
+  const { data: candidates } = await admin
     .from("contracts")
     .select("*")
     .eq("org_id", ticket.org_id)
-    .or(`plate.eq.${normPlate},plate.eq.${altPlate}`)
     .lte("pickup_date", ticket.offense_date)
     .order("pickup_date", { ascending: false });
 
-  const match = (matches ?? []).find((c) => {
+  const match = (candidates ?? []).find((c) => {
+    if (normalizePlate(c.plate) !== ticketPlate) return false;
     const end = c.actual_return_date ?? c.return_date;
     return end >= ticket.offense_date;
   });

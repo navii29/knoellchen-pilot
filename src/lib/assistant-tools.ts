@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nextContractNr } from "./contract-utils";
 import { computeDecommission } from "./decommission";
+import { normalizePlate } from "./plate";
 import type { Vehicle } from "./types";
 
 export type ToolContext = {
@@ -66,7 +67,7 @@ const createContract: Tool = {
     required: ["plate", "renter_name", "pickup_date", "return_date"],
   },
   handler: async (input, ctx) => {
-    const plate = String(input.plate).toUpperCase().trim();
+    const plate = normalizePlate(input.plate as string);
     const pickup = parseDate(input.pickup_date);
     const ret = parseDate(input.return_date);
     if (!pickup || !ret) return { ok: false, error: "Ungültiges Datumsformat — bitte YYYY-MM-DD verwenden" };
@@ -132,7 +133,7 @@ const createVehicle: Tool = {
     required: ["plate"],
   },
   handler: async (input, ctx) => {
-    const plate = String(input.plate).toUpperCase().trim();
+    const plate = normalizePlate(input.plate as string);
     const { data, error } = await ctx.admin
       .from("vehicles")
       .upsert(
@@ -171,8 +172,8 @@ const searchContracts: Tool = {
   handler: async (input, ctx) => {
     let q = ctx.admin.from("contracts").select("*").eq("org_id", ctx.org_id);
     if (input.plate) {
-      const p = String(input.plate).toUpperCase().trim();
-      q = q.or(`plate.eq.${p},plate.eq.${p.replace(/\s+/g, "")}`);
+      const p = normalizePlate(input.plate as string);
+      q = q.eq("plate", p);
     }
     if (input.renter_query) {
       const term = `%${input.renter_query}%`;
@@ -210,8 +211,8 @@ const searchTickets: Tool = {
     let q = ctx.admin.from("tickets").select("*").eq("org_id", ctx.org_id);
     if (input.status) q = q.eq("status", input.status);
     if (input.plate) {
-      const p = String(input.plate).toUpperCase().trim();
-      q = q.or(`plate.eq.${p},plate.eq.${p.replace(/\s+/g, "")}`);
+      const p = normalizePlate(input.plate as string);
+      q = q.eq("plate", p);
     }
     if (input.from_date) {
       const d = parseDate(input.from_date);
@@ -304,7 +305,7 @@ const findDriverForDate: Tool = {
     required: ["plate", "date"],
   },
   handler: async (input, ctx) => {
-    const plate = String(input.plate).toUpperCase().trim();
+    const plate = normalizePlate(input.plate as string);
     const date = parseDate(input.date);
     if (!date) return { ok: false, error: "Ungültiges Datum" };
 
@@ -312,7 +313,7 @@ const findDriverForDate: Tool = {
       .from("contracts")
       .select("*")
       .eq("org_id", ctx.org_id)
-      .or(`plate.eq.${plate},plate.eq.${plate.replace(/\s+/g, "")}`)
+      .eq("plate", plate)
       .lte("pickup_date", date)
       .order("pickup_date", { ascending: false });
 
@@ -495,6 +496,96 @@ const findAvailableVehicles: Tool = {
   },
 };
 
+// =========================================================
+// 9) assign_ticket_to_contract
+// =========================================================
+const assignTicketToContract: Tool = {
+  name: "assign_ticket_to_contract",
+  description:
+    "Ordnet einen Strafzettel manuell einem Mietvertrag zu — übernimmt renter_name und renter_email vom Vertrag, setzt status='zugeordnet'. Verwende dies wenn der Nutzer explizit eine Zuordnung verlangt (z.B. 'Ordne Strafzettel KP-405715 dem Vertrag MV-2026-8541 zu') oder wenn das automatische Matching scheiterte und der Nutzer den richtigen Vertrag nennt. Ticket und Vertrag werden über ihre Nummer (ticket_nr / contract_nr) ODER über ihre UUID identifiziert.",
+  input_schema: {
+    type: "object",
+    properties: {
+      ticket: {
+        type: "string",
+        description: "Strafzettel-Nr (z.B. 'KP-405715') oder UUID des Tickets",
+      },
+      contract: {
+        type: "string",
+        description: "Vertrags-Nr (z.B. 'MV-2026-8541') oder UUID des Vertrags",
+      },
+    },
+    required: ["ticket", "contract"],
+  },
+  handler: async (input, ctx) => {
+    const ticketKey = String(input.ticket || "").trim();
+    const contractKey = String(input.contract || "").trim();
+    if (!ticketKey || !contractKey) {
+      return { ok: false, error: "ticket und contract sind Pflichtfelder" };
+    }
+
+    const isUuid = (s: string) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+
+    const ticketQuery = isUuid(ticketKey)
+      ? ctx.admin.from("tickets").select("*").eq("id", ticketKey)
+      : ctx.admin.from("tickets").select("*").eq("ticket_nr", ticketKey);
+    const { data: tickets } = await ticketQuery.eq("org_id", ctx.org_id).limit(1);
+    const ticket = (tickets ?? [])[0];
+    if (!ticket) {
+      return { ok: false, error: `Strafzettel '${ticketKey}' nicht gefunden` };
+    }
+
+    const contractQuery = isUuid(contractKey)
+      ? ctx.admin.from("contracts").select("*").eq("id", contractKey)
+      : ctx.admin.from("contracts").select("*").eq("contract_nr", contractKey);
+    const { data: contracts } = await contractQuery.eq("org_id", ctx.org_id).limit(1);
+    const contract = (contracts ?? [])[0];
+    if (!contract) {
+      return { ok: false, error: `Vertrag '${contractKey}' nicht gefunden` };
+    }
+
+    const { data: updated, error } = await ctx.admin
+      .from("tickets")
+      .update({
+        contract_id: contract.id,
+        renter_name: contract.renter_name,
+        renter_email: contract.renter_email,
+        status: "zugeordnet",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", ticket.id)
+      .eq("org_id", ctx.org_id)
+      .select("id, ticket_nr, status, renter_name, renter_email, contract_id")
+      .single();
+    if (error) return { ok: false, error: error.message };
+
+    await ctx.admin.from("ticket_logs").insert({
+      ticket_id: ticket.id,
+      action: "matched",
+      details: {
+        renter_name: contract.renter_name,
+        contract_id: contract.id,
+        contract_nr: contract.contract_nr,
+        manual: true,
+      },
+    });
+
+    return {
+      ok: true,
+      data: {
+        ticket: updated,
+        contract: {
+          id: contract.id,
+          contract_nr: contract.contract_nr,
+          plate: contract.plate,
+          renter_name: contract.renter_name,
+        },
+      },
+    };
+  },
+};
+
 export const TOOLS: Tool[] = [
   createContract,
   createVehicle,
@@ -504,6 +595,7 @@ export const TOOLS: Tool[] = [
   findDriverForDate,
   getDecommissionAlerts,
   findAvailableVehicles,
+  assignTicketToContract,
 ];
 
 export const TOOLS_FOR_API = TOOLS.map((t) => ({

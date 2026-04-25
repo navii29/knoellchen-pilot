@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { nextContractNr } from "@/lib/contract-utils";
 import { computeExtraKm } from "@/lib/km";
+import { normalizePlate } from "@/lib/plate";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -28,7 +29,8 @@ export const POST = async (req: Request) => {
   }
 
   const admin = createAdminClient();
-  const plate = String(body.plate).trim().toUpperCase();
+  const plate = normalizePlate(body.plate as string);
+  if (!plate) return NextResponse.json({ error: "Kennzeichen ungültig" }, { status: 400 });
   await admin
     .from("vehicles")
     .upsert(

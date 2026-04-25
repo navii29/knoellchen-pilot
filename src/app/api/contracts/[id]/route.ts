@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { computeExtraKm } from "@/lib/km";
+import { normalizePlate } from "@/lib/plate";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -53,7 +54,7 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
   if (Object.keys(update).length === 0)
     return NextResponse.json({ error: "Nichts zu aktualisieren" }, { status: 400 });
 
-  if (typeof update.plate === "string") update.plate = update.plate.toUpperCase();
+  if (typeof update.plate === "string") update.plate = normalizePlate(update.plate);
   update.updated_at = new Date().toISOString();
 
   const admin = createAdminClient();

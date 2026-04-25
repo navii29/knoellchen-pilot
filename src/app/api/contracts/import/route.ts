@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Papa from "papaparse";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { nextContractNr } from "@/lib/contract-utils";
+import { normalizePlate } from "@/lib/plate";
 
 const COL_ALIASES: Record<string, string[]> = {
   contract_nr: ["vertragsnr", "vertrags_nr", "vertragsnummer", "contract_nr"],
@@ -108,7 +109,7 @@ export const POST = async (req: Request) => {
     for (const [csvHeader, field] of Object.entries(headerMap)) {
       obj[field] = (raw[csvHeader] || "").trim() || null;
     }
-    const plate = obj.plate?.toUpperCase();
+    const plate = normalizePlate(obj.plate);
     const renter = obj.renter_name;
     const pickup = parseDate(obj.pickup_date || undefined);
     const ret = parseDate(obj.return_date || undefined);

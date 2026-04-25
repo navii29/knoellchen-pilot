@@ -209,6 +209,37 @@ const ToolResult = ({ call }: { call: ToolCall }) => {
       </div>
     );
   }
+  if (call.name === "assign_ticket_to_contract" && d.ticket && d.contract) {
+    const t = d.ticket as { id: string; ticket_nr: string; renter_name: string };
+    const c = d.contract as { id: string; contract_nr: string; plate: string; renter_name: string };
+    return (
+      <Link
+        href={`/dashboard/tickets/${t.id}`}
+        className="block rounded-xl bg-white ring-1 ring-stone-200 hover:ring-stone-400 p-4 transition"
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+            style={{ background: THEME.primaryTint, color: THEME.primary }}
+          >
+            <UserCheck size={16} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs uppercase tracking-wider text-stone-500 font-medium">
+              Strafzettel zugeordnet
+            </div>
+            <div className="font-display font-semibold text-lg mt-0.5">{t.renter_name}</div>
+            <div className="text-sm text-stone-500 flex flex-wrap gap-x-4 gap-y-1 mt-1">
+              <span className="font-mono">{t.ticket_nr}</span>
+              <span>→</span>
+              <span className="font-mono">{c.contract_nr}</span>
+              <span className="font-mono font-semibold text-stone-900">{c.plate}</span>
+            </div>
+          </div>
+        </div>
+      </Link>
+    );
+  }
   return null;
 };
 

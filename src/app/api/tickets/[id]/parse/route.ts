@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { parseTicketImage } from "@/lib/anthropic";
+import { normalizePlate } from "@/lib/plate";
 
 export const maxDuration = 60;
 
@@ -55,7 +56,7 @@ export const POST = async (
     .update({
       reference_nr: d.reference_nr || null,
       authority: d.authority || null,
-      plate: d.plate || null,
+      plate: normalizePlate(d.plate) || null,
       vehicle_type: d.vehicle_type || null,
       offense_date: d.offense_date || null,
       offense_time: d.offense_time || null,
