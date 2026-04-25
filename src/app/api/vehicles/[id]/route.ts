@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { VEHICLE_STATUSES } from "@/lib/vehicle";
+import type { VehicleStatus } from "@/lib/types";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -22,6 +24,52 @@ const trimOrNull = (v: unknown) => {
   return t === "" ? null : t;
 };
 
+const numOrNull = (v: unknown) => {
+  if (v === undefined) return undefined;
+  if (v == null || v === "") return null;
+  const n = typeof v === "number" ? v : Number(String(v).replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+};
+
+const intOrNull = (v: unknown) => {
+  const n = numOrNull(v);
+  if (n === undefined) return undefined;
+  return n == null ? null : Math.round(n);
+};
+
+const TEXT_FIELDS = [
+  "vehicle_type",
+  "color",
+  "first_registration",
+  "manufacturer",
+  "model",
+  "fuel_type",
+  "transmission",
+  "doors",
+  "body_type",
+  "fin_number",
+  "category",
+  "available_from",
+  "accessories",
+] as const;
+
+const NUMBER_FIELDS = [
+  "extra_km_price",
+  "daily_rate",
+  "weekly_rate",
+  "monthly_rate",
+  "deposit",
+] as const;
+
+const INT_FIELDS = [
+  "power_ps",
+  "seats",
+  "luggage",
+  "km_at_intake",
+  "max_km_total",
+  "inclusive_km_month",
+] as const;
+
 type RouteCtx = { params: { id: string } };
 
 export const PATCH = async (req: Request, { params }: RouteCtx) => {
@@ -31,18 +79,29 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
   const body = (await req.json()) as Record<string, unknown>;
   const patch: Record<string, unknown> = {};
 
-  if ("vehicle_type" in body) patch.vehicle_type = trimOrNull(body.vehicle_type);
-  if ("color" in body) patch.color = trimOrNull(body.color);
-  if ("first_registration" in body) patch.first_registration = trimOrNull(body.first_registration);
-  if ("decommission_reminded" in body) patch.decommission_reminded = Boolean(body.decommission_reminded);
-  if ("extra_km_price" in body) {
-    const raw = body.extra_km_price;
-    if (raw == null || raw === "") {
-      patch.extra_km_price = null;
-    } else {
-      const n = Number(String(raw).replace(",", "."));
-      if (Number.isFinite(n) && n >= 0) patch.extra_km_price = n;
+  for (const k of TEXT_FIELDS) {
+    if (k in body) {
+      const v = trimOrNull(body[k]);
+      if (v !== undefined) patch[k] = v;
     }
+  }
+  for (const k of NUMBER_FIELDS) {
+    if (k in body) {
+      const v = numOrNull(body[k]);
+      if (v !== undefined) patch[k] = v;
+    }
+  }
+  for (const k of INT_FIELDS) {
+    if (k in body) {
+      const v = intOrNull(body[k]);
+      if (v !== undefined) patch[k] = v;
+    }
+  }
+  if ("decommission_reminded" in body) {
+    patch.decommission_reminded = Boolean(body.decommission_reminded);
+  }
+  if ("status" in body && VEHICLE_STATUSES.includes(body.status as VehicleStatus)) {
+    patch.status = body.status;
   }
 
   if (Object.keys(patch).length === 0) {

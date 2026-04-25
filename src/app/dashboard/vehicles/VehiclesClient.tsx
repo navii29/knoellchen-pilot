@@ -1,52 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Car, ChevronRight, Loader2, Plus, Trash2 } from "lucide-react";
+import { Car, ChevronRight, Plus, Search, Trash2 } from "lucide-react";
 import { THEME } from "@/lib/theme";
 import { fmtDate } from "@/lib/utils";
 import { computeDecommission } from "@/lib/decommission";
-import type { Vehicle } from "@/lib/types";
+import { VEHICLE_STATUS_META, VEHICLE_STATUSES, buildVehicleType } from "@/lib/vehicle";
+import type { Vehicle, VehicleStatus } from "@/lib/types";
+
+const FILTERS: Array<VehicleStatus | "alle"> = ["alle", ...VEHICLE_STATUSES];
+const FILTER_LABELS: Record<string, string> = {
+  alle: "Alle",
+  aktiv: "Aktiv",
+  inaktiv: "Inaktiv",
+  werkstatt: "Werkstatt",
+  ausgesteuert: "Ausgesteuert",
+};
 
 export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
   const router = useRouter();
-  const [plate, setPlate] = useState("");
-  const [type, setType] = useState("");
-  const [color, setColor] = useState("");
-  const [firstReg, setFirstReg] = useState("");
-  const [extraKmPrice, setExtraKmPrice] = useState("0.29");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<VehicleStatus | "alle">("alle");
+  const [q, setQ] = useState("");
 
-  const add = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    const res = await fetch("/api/vehicles", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        plate,
-        vehicle_type: type,
-        color,
-        first_registration: firstReg || null,
-        extra_km_price: extraKmPrice ? Number(extraKmPrice.replace(",", ".")) : null,
-      }),
+  const filtered = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    return initial.filter((v) => {
+      if (filter !== "alle" && v.status !== filter) return false;
+      if (!needle) return true;
+      const name = buildVehicleType(v.manufacturer, v.model) || v.vehicle_type || "";
+      return [
+        v.plate,
+        name,
+        v.color,
+        v.body_type,
+        v.category,
+        v.fin_number,
+      ]
+        .filter(Boolean)
+        .some((s) => String(s).toLowerCase().includes(needle));
     });
-    setBusy(false);
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
-      setError(j.error || "Fehler");
-      return;
-    }
-    setPlate("");
-    setType("");
-    setColor("");
-    setFirstReg("");
-    setExtraKmPrice("0.29");
-    router.refresh();
-  };
+  }, [initial, filter, q]);
 
   const remove = async (id: string) => {
     if (!confirm("Fahrzeug wirklich löschen?")) return;
@@ -56,144 +51,139 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
 
   return (
     <>
-      <div className="font-display font-bold text-2xl tracking-tight">Fahrzeuge</div>
-      <p className="text-sm text-stone-500 mt-1">
-        Übersicht der Mietflotte. Erstzulassung eintragen — Aussteuerungsdatum wird automatisch berechnet (+ 180 Tage).
-      </p>
-
-      <form
-        onSubmit={add}
-        className="mt-6 rounded-xl bg-white ring-1 ring-stone-200 p-4 md:p-5 grid grid-cols-2 sm:grid-cols-[140px_1fr_110px_140px_120px_auto] gap-3 items-end"
-      >
-        <Field label="Kennzeichen *">
-          <input
-            required
-            value={plate}
-            onChange={(e) => setPlate(e.target.value)}
-            placeholder="M-KP 2847"
-            className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400 font-mono uppercase"
-          />
-        </Field>
-        <Field label="Fahrzeugtyp">
-          <input
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            placeholder="VW Golf VIII"
-            className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400"
-          />
-        </Field>
-        <Field label="Farbe">
-          <input
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            placeholder="weiß"
-            className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400"
-          />
-        </Field>
-        <Field label="Erstzulassung">
-          <input
-            type="date"
-            value={firstReg}
-            onChange={(e) => setFirstReg(e.target.value)}
-            className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400 font-mono"
-          />
-        </Field>
-        <Field label="Mehr-km Preis">
-          <div className="relative">
-            <input
-              value={extraKmPrice}
-              onChange={(e) => setExtraKmPrice(e.target.value)}
-              placeholder="0.29"
-              className="w-full px-3 py-2 pr-9 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400 font-mono"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">€/km</span>
-          </div>
-        </Field>
-        <button
-          type="submit"
-          disabled={busy}
-          className="inline-flex items-center justify-center gap-1.5 text-sm text-white px-4 py-2 rounded-lg font-medium"
+      <div className="flex items-end justify-between flex-wrap gap-3">
+        <div>
+          <div className="font-display font-bold text-2xl tracking-tight">Fahrzeuge</div>
+          <p className="text-sm text-stone-500 mt-1">
+            Stammdaten, Verfügbarkeit, Preise — alles in einem Datensatz pro Auto.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/vehicles/new"
+          className="inline-flex items-center gap-1.5 text-sm text-white px-3.5 py-1.5 rounded-md font-medium"
           style={{ background: THEME.primary }}
         >
-          {busy ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Hinzufügen
-        </button>
-      </form>
-      {firstReg && (
-        <div className="mt-2 text-xs text-stone-500">
-          Aussteuerung berechnet auf:{" "}
-          <span className="font-mono text-stone-700">
-            {fmtDate(addDays(firstReg, 180))}
-          </span>
-        </div>
-      )}
-      {error && (
-        <div className="mt-3 text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2">{error}</div>
-      )}
+          <Plus size={14} /> Neues Fahrzeug
+        </Link>
+      </div>
 
-      <div className="mt-6 rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
-        {initial.length === 0 && (
-          <div className="px-5 py-12 text-center text-sm text-stone-500">Noch keine Fahrzeuge.</div>
-        )}
-        {initial.map((v) => {
-          const info = computeDecommission(v);
-          return (
-            <div
-              key={v.id}
-              className="border-b border-stone-50 last:border-0"
+      <div className="mt-6 flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-1 text-xs flex-wrap">
+          {FILTERS.map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-2.5 py-1.5 rounded-md ${
+                filter === f ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-100"
+              }`}
             >
-              {/* Desktop */}
-              <div className="hidden md:grid grid-cols-[40px_120px_1fr_100px_220px_24px_auto] items-center gap-3 px-5 py-3 text-sm">
-                <div className="w-8 h-8 rounded-lg bg-stone-100 text-stone-700 flex items-center justify-center">
-                  <Car size={15} />
-                </div>
-                <span className="font-mono font-semibold">{v.plate}</span>
-                <span className="text-stone-700 truncate">
-                  {v.vehicle_type || "—"}
-                  {v.extra_km_price != null && (
-                    <span className="text-stone-400 text-[11px] ml-2 font-mono">
-                      · {Number(v.extra_km_price).toFixed(2).replace(".", ",")} €/km
-                    </span>
+              {FILTER_LABELS[f]}
+            </button>
+          ))}
+        </div>
+        <div className="relative">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Kennzeichen, Modell, FIN…"
+            className="pl-8 pr-3 py-2 bg-white rounded-md text-sm ring-1 ring-stone-200 w-72 outline-none focus:ring-stone-400"
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+        {/* Desktop */}
+        <div className="hidden md:block">
+          <div className="grid grid-cols-[120px_1fr_140px_120px_140px_120px_70px] gap-3 px-5 py-2.5 text-[11px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
+            <span>Kennzeichen</span>
+            <span>Hersteller / Modell</span>
+            <span>Karosserie</span>
+            <span className="text-right">Km-Stand</span>
+            <span>Erstzulassung</span>
+            <span>Status</span>
+            <span></span>
+          </div>
+          {filtered.map((v) => {
+            const meta = VEHICLE_STATUS_META[v.status];
+            const decom = computeDecommission(v);
+            const name = buildVehicleType(v.manufacturer, v.model) || v.vehicle_type || "—";
+            return (
+              <div
+                key={v.id}
+                className="grid grid-cols-[120px_1fr_140px_120px_140px_120px_70px] gap-3 items-center px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+              >
+                <Link href={`/dashboard/vehicles/${v.id}`} className="font-mono font-semibold">
+                  {v.plate}
+                </Link>
+                <Link href={`/dashboard/vehicles/${v.id}`} className="text-stone-700 truncate">
+                  {name}
+                  {v.color && (
+                    <span className="text-stone-400 text-xs ml-2">· {v.color}</span>
                   )}
-                </span>
-                <span className="text-stone-500 text-xs">{v.color || "—"}</span>
-                <span>
-                  {v.decommission_date ? (
-                    <span
-                      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium"
-                      style={{
-                        background: info.bg,
-                        color: info.textColor,
-                        boxShadow: `inset 0 0 0 1px ${info.ring}`,
-                      }}
-                    >
-                      <span
-                        className="w-1.5 h-1.5 rounded-full"
-                        style={{ background: info.color }}
-                      />
-                      {info.label}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-stone-400">Erstzulassung fehlt</span>
+                </Link>
+                <Link href={`/dashboard/vehicles/${v.id}`} className="text-xs text-stone-500 truncate">
+                  {v.body_type || "—"}
+                  {v.category && (
+                    <span className="text-stone-400 ml-1">· {v.category}</span>
                   )}
-                </span>
+                </Link>
                 <Link
                   href={`/dashboard/vehicles/${v.id}`}
-                  className="text-stone-400 hover:text-stone-700 p-1.5"
-                  title="Detail"
+                  className="text-xs text-stone-500 font-mono text-right tabular-nums"
                 >
-                  <ChevronRight size={14} />
+                  {v.km_at_intake != null ? v.km_at_intake.toLocaleString("de-DE") : "—"}
                 </Link>
-                <button
-                  onClick={() => remove(v.id)}
-                  className="text-stone-400 hover:text-red-600 p-1.5"
-                  title="Löschen"
+                <Link
+                  href={`/dashboard/vehicles/${v.id}`}
+                  className="text-xs text-stone-500 font-mono"
                 >
-                  <Trash2 size={14} />
-                </button>
+                  {v.first_registration ? fmtDate(v.first_registration) : "—"}
+                  {v.decommission_date && (
+                    <div className="text-[10px]" style={{ color: decom.textColor }}>
+                      {decom.label}
+                    </div>
+                  )}
+                </Link>
+                <span
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium justify-self-start"
+                  style={{
+                    background: meta.bg,
+                    color: meta.text,
+                    boxShadow: `inset 0 0 0 1px ${meta.ring}`,
+                  }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: meta.color }} />
+                  {meta.label}
+                </span>
+                <div className="flex items-center justify-end gap-1">
+                  <Link
+                    href={`/dashboard/vehicles/${v.id}`}
+                    className="text-stone-400 hover:text-stone-700 p-1.5"
+                    title="Detail"
+                  >
+                    <ChevronRight size={14} />
+                  </Link>
+                  <button
+                    onClick={() => remove(v.id)}
+                    className="text-stone-400 hover:text-red-600 p-1.5"
+                    title="Löschen"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
+            );
+          })}
+        </div>
 
-              {/* Mobile */}
-              <div className="md:hidden flex items-start gap-3 px-4 py-3">
+        {/* Mobile */}
+        <div className="md:hidden divide-y divide-stone-100">
+          {filtered.map((v) => {
+            const meta = VEHICLE_STATUS_META[v.status];
+            const name = buildVehicleType(v.manufacturer, v.model) || v.vehicle_type || "—";
+            return (
+              <div key={v.id} className="flex items-start gap-3 px-4 py-3">
                 <Link
                   href={`/dashboard/vehicles/${v.id}`}
                   className="flex-1 min-w-0 flex items-start gap-3 active:bg-stone-100 -mx-4 -my-3 px-4 py-3"
@@ -204,34 +194,24 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
                   <div className="flex-1 min-w-0 space-y-0.5">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-mono font-semibold text-sm">{v.plate}</span>
-                      {v.color && (
-                        <span className="text-[11px] text-stone-400">· {v.color}</span>
-                      )}
-                    </div>
-                    <div className="text-xs text-stone-500 truncate">
-                      {v.vehicle_type || "—"}
-                      {v.extra_km_price != null && (
-                        <span className="text-stone-400 ml-1.5 font-mono">
-                          · {Number(v.extra_km_price).toFixed(2).replace(".", ",")} €/km
-                        </span>
-                      )}
-                    </div>
-                    {v.decommission_date && (
                       <span
-                        className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-[10px] font-medium mt-1"
+                        className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-[10px] font-medium"
                         style={{
-                          background: info.bg,
-                          color: info.textColor,
-                          boxShadow: `inset 0 0 0 1px ${info.ring}`,
+                          background: meta.bg,
+                          color: meta.text,
+                          boxShadow: `inset 0 0 0 1px ${meta.ring}`,
                         }}
                       >
-                        <span
-                          className="w-1 h-1 rounded-full"
-                          style={{ background: info.color }}
-                        />
-                        {info.label}
+                        <span className="w-1 h-1 rounded-full" style={{ background: meta.color }} />
+                        {meta.label}
                       </span>
-                    )}
+                    </div>
+                    <div className="text-xs text-stone-700 truncate">{name}</div>
+                    <div className="text-[11px] text-stone-400 truncate">
+                      {[v.body_type, v.color, v.first_registration && fmtDate(v.first_registration)]
+                        .filter(Boolean)
+                        .join(" · ") || "—"}
+                    </div>
                   </div>
                 </Link>
                 <button
@@ -242,23 +222,28 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
                   <Trash2 size={16} />
                 </button>
               </div>
+            );
+          })}
+        </div>
+
+        {filtered.length === 0 && (
+          <div className="px-5 py-12 text-center text-sm text-stone-500">
+            <Car size={28} className="mx-auto text-stone-300" />
+            <div className="mt-3">
+              {q ? "Keine Fahrzeuge gefunden." : "Noch keine Fahrzeuge."}
             </div>
-          );
-        })}
+            {!q && (
+              <Link
+                href="/dashboard/vehicles/new"
+                className="inline-flex items-center gap-1.5 text-sm text-white px-3.5 py-1.5 rounded-md font-medium mt-4"
+                style={{ background: THEME.primary }}
+              >
+                <Plus size={14} /> Erstes Fahrzeug anlegen
+              </Link>
+            )}
+          </div>
+        )}
       </div>
     </>
   );
 };
-
-const addDays = (iso: string, days: number): string => {
-  const d = new Date(iso);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
-};
-
-const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <label className="block">
-    <div className="text-[11px] uppercase tracking-wider text-stone-500 font-medium mb-1">{label}</div>
-    {children}
-  </label>
-);

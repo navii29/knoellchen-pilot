@@ -1,6 +1,25 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { normalizePlate } from "@/lib/plate";
+import { VEHICLE_STATUSES, buildVehicleType } from "@/lib/vehicle";
+import type { VehicleStatus } from "@/lib/types";
+
+const trimOrNull = (v: unknown): string | null => {
+  if (typeof v !== "string") return null;
+  const t = v.trim();
+  return t === "" ? null : t;
+};
+
+const numOrNull = (v: unknown): number | null => {
+  if (v == null || v === "") return null;
+  const n = typeof v === "number" ? v : Number(String(v).replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+};
+
+const intOrNull = (v: unknown): number | null => {
+  const n = numOrNull(v);
+  return n == null ? null : Math.round(n);
+};
 
 export const POST = async (req: Request) => {
   const supabase = createClient();
@@ -15,40 +34,60 @@ export const POST = async (req: Request) => {
     .single();
   if (!profile) return NextResponse.json({ error: "No profile" }, { status: 401 });
 
-  const body = (await req.json()) as {
-    plate?: string;
-    vehicle_type?: string;
-    color?: string;
-    first_registration?: string;
-    extra_km_price?: number | string | null;
-  };
-  const plate = normalizePlate(body.plate);
+  const body = (await req.json()) as Record<string, unknown>;
+  const plate = normalizePlate(body.plate as string);
   if (!plate) return NextResponse.json({ error: "Kennzeichen fehlt" }, { status: 400 });
 
-  const firstReg = body.first_registration?.trim();
-  const extraKmPriceNum =
-    body.extra_km_price == null || body.extra_km_price === ""
-      ? null
-      : Number(String(body.extra_km_price).replace(",", "."));
-  const extraKmPrice =
-    extraKmPriceNum != null && Number.isFinite(extraKmPriceNum) && extraKmPriceNum >= 0
-      ? extraKmPriceNum
-      : null;
+  const status = VEHICLE_STATUSES.includes(body.status as VehicleStatus)
+    ? (body.status as VehicleStatus)
+    : "aktiv";
+
+  // vehicle_type wird vom DB-Trigger aus manufacturer/model gebaut, aber falls Client
+  // explizit einen Wert mitgibt, respektieren wir das (Backwards-Compat).
+  const manufacturer = trimOrNull(body.manufacturer);
+  const model = trimOrNull(body.model);
+  const explicitType = trimOrNull(body.vehicle_type);
+  const computedType = buildVehicleType(manufacturer, model);
+
+  const row = {
+    org_id: profile.org_id,
+    plate,
+    color: trimOrNull(body.color),
+    first_registration: trimOrNull(body.first_registration),
+    extra_km_price: numOrNull(body.extra_km_price),
+
+    manufacturer,
+    model,
+    power_ps: intOrNull(body.power_ps),
+    fuel_type: trimOrNull(body.fuel_type),
+    transmission: trimOrNull(body.transmission),
+    doors: trimOrNull(body.doors),
+    seats: intOrNull(body.seats),
+    luggage: intOrNull(body.luggage),
+    body_type: trimOrNull(body.body_type),
+    fin_number: trimOrNull(body.fin_number),
+    category: trimOrNull(body.category),
+
+    available_from: trimOrNull(body.available_from),
+    km_at_intake: intOrNull(body.km_at_intake),
+    max_km_total: intOrNull(body.max_km_total),
+    inclusive_km_month: intOrNull(body.inclusive_km_month),
+
+    daily_rate: numOrNull(body.daily_rate),
+    weekly_rate: numOrNull(body.weekly_rate),
+    monthly_rate: numOrNull(body.monthly_rate),
+    deposit: numOrNull(body.deposit),
+
+    accessories: trimOrNull(body.accessories),
+    status,
+
+    vehicle_type: computedType ?? explicitType,
+  };
 
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("vehicles")
-    .upsert(
-      {
-        org_id: profile.org_id,
-        plate,
-        vehicle_type: body.vehicle_type?.trim() || null,
-        color: body.color?.trim() || null,
-        first_registration: firstReg && firstReg.length > 0 ? firstReg : null,
-        ...(extraKmPrice != null ? { extra_km_price: extraKmPrice } : {}),
-      },
-      { onConflict: "org_id,plate" }
-    )
+    .upsert(row, { onConflict: "org_id,plate" })
     .select("*")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

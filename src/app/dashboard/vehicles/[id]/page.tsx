@@ -1,12 +1,25 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Car, ChevronRight, FileSignature } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  Car,
+  ChevronRight,
+  Coins,
+  FileSignature,
+  Gauge,
+  Settings2,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { ContractStatusBadge } from "@/components/contract/StatusBadge";
-import { VehicleEditClient } from "./VehicleEditClient";
-import { fmtDate } from "@/lib/utils";
+import { VehicleForm } from "@/components/vehicle/VehicleForm";
+import { VehicleDeleteButton } from "./VehicleDeleteButton";
+import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeDecommission } from "@/lib/decommission";
+import { VEHICLE_STATUS_META, buildVehicleType } from "@/lib/vehicle";
 import type { Contract, Vehicle } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +47,9 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
     .limit(50);
   const linkedContracts = (contracts || []) as Contract[];
 
-  const info = computeDecommission(v);
+  const decom = computeDecommission(v);
+  const status = VEHICLE_STATUS_META[v.status];
+  const displayName = buildVehicleType(v.manufacturer, v.model) || v.vehicle_type || "Fahrzeug";
 
   return (
     <>
@@ -49,64 +64,153 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
           </Link>
 
           <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-              <div className="text-xs text-stone-500 mb-1 font-mono">{v.vehicle_type || "Fahrzeug"}</div>
-              <h1 className="font-display font-bold text-3xl tracking-tight font-mono">{v.plate}</h1>
-              {v.color && <div className="mt-1 text-sm text-stone-500">Farbe: {v.color}</div>}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 mb-2">
+                <span
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium"
+                  style={{
+                    background: status.bg,
+                    color: status.text,
+                    boxShadow: `inset 0 0 0 1px ${status.ring}`,
+                  }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: status.color }} />
+                  {status.label}
+                </span>
+                {v.category && (
+                  <span className="text-[11px] uppercase tracking-wider text-stone-400 font-medium">
+                    {v.category}
+                  </span>
+                )}
+              </div>
+              <h1 className="font-display font-bold text-2xl md:text-3xl tracking-tight">
+                {displayName}
+              </h1>
+              <div className="mt-1 text-sm text-stone-500 font-mono">
+                {v.plate}
+                {v.color && <span className="ml-2">· {v.color}</span>}
+              </div>
             </div>
+            <VehicleDeleteButton vehicleId={v.id} />
           </div>
 
           {v.decommission_date && (
             <div
-              className="mt-6 rounded-2xl p-6 flex items-center gap-5"
-              style={{
-                background: info.bg,
-                boxShadow: `inset 0 0 0 1px ${info.ring}`,
-              }}
+              className="mt-6 rounded-2xl p-5 md:p-6 flex items-center gap-4 md:gap-5"
+              style={{ background: decom.bg, boxShadow: `inset 0 0 0 1px ${decom.ring}` }}
             >
               <div
-                className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: "white", color: info.color }}
+                className="w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: "white", color: decom.color }}
               >
-                <Calendar size={26} />
+                <Calendar size={22} />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[11px] uppercase tracking-wider font-semibold" style={{ color: info.textColor }}>
+                <div
+                  className="text-[11px] uppercase tracking-wider font-semibold"
+                  style={{ color: decom.textColor }}
+                >
                   Aussteuerung
                 </div>
-                <div className="font-display font-semibold text-2xl mt-0.5" style={{ color: info.textColor }}>
+                <div
+                  className="font-display font-semibold text-xl md:text-2xl mt-0.5"
+                  style={{ color: decom.textColor }}
+                >
                   {fmtDate(v.decommission_date)}
                 </div>
-                <div className="text-sm mt-1" style={{ color: info.textColor }}>
-                  {info.label}
+                <div className="text-sm mt-1" style={{ color: decom.textColor }}>
+                  {decom.label}
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-right shrink-0">
                 <div
-                  className="font-display font-bold text-4xl tabular-nums"
-                  style={{ color: info.color }}
+                  className="font-display font-bold text-3xl md:text-4xl tabular-nums"
+                  style={{ color: decom.color }}
                 >
-                  {info.daysLeft != null ? (info.daysLeft >= 0 ? info.daysLeft : `${info.daysLeft}`) : "—"}
+                  {decom.daysLeft != null ? decom.daysLeft : "—"}
                 </div>
-                <div className="text-[11px] uppercase tracking-wider" style={{ color: info.textColor }}>
-                  {info.daysLeft != null && info.daysLeft >= 0 ? "Tage" : "überfällig"}
+                <div className="text-[11px] uppercase tracking-wider" style={{ color: decom.textColor }}>
+                  {decom.daysLeft != null && decom.daysLeft >= 0 ? "Tage" : "überfällig"}
                 </div>
               </div>
             </div>
           )}
 
-          <div className="mt-6">
-            <VehicleEditClient
-              vehicleId={v.id}
-              initial={{
-                vehicle_type: v.vehicle_type || "",
-                color: v.color || "",
-                first_registration: v.first_registration || "",
-                decommission_reminded: v.decommission_reminded,
-                extra_km_price: v.extra_km_price != null ? String(v.extra_km_price) : "",
-              }}
-            />
+          <div className="mt-6 grid sm:grid-cols-2 gap-3">
+            <InfoCard Icon={Car} title="Stammdaten">
+              <Row label="Hersteller" value={v.manufacturer || "—"} />
+              <Row label="Modell" value={v.model || "—"} />
+              <Row label="Karosserie" value={v.body_type || "—"} />
+              <Row label="Kategorie" value={v.category || "—"} />
+              <Row label="Farbe" value={v.color || "—"} />
+              <Row label="FIN" value={v.fin_number || "—"} mono />
+            </InfoCard>
+
+            <InfoCard Icon={Settings2} title="Technik">
+              <Row label="Leistung" value={v.power_ps != null ? `${v.power_ps} PS` : "—"} mono />
+              <Row label="Kraftstoff" value={v.fuel_type || "—"} />
+              <Row label="Getriebe" value={v.transmission || "—"} />
+              <Row label="Türen" value={v.doors || "—"} mono />
+              <Row label="Sitzplätze" value={v.seats != null ? String(v.seats) : "—"} mono />
+              <Row label="Gepäck" value={v.luggage != null ? String(v.luggage) : "—"} mono />
+            </InfoCard>
+
+            <InfoCard Icon={Gauge} title="Verfügbarkeit & Kilometer">
+              <Row label="Verfügbar ab" value={v.available_from ? fmtDate(v.available_from) : "—"} mono />
+              <Row label="Erstzulassung" value={v.first_registration ? fmtDate(v.first_registration) : "—"} mono />
+              <Row label="Aussteuerung" value={v.decommission_date ? fmtDate(v.decommission_date) : "—"} mono />
+              <Row
+                label="Km bei Einflottung"
+                value={v.km_at_intake != null ? v.km_at_intake.toLocaleString("de-DE") : "—"}
+                mono
+              />
+              <Row
+                label="Max km gesamt"
+                value={v.max_km_total != null ? v.max_km_total.toLocaleString("de-DE") : "—"}
+                mono
+              />
+              <Row
+                label="Inkl. km / Monat"
+                value={v.inclusive_km_month != null ? v.inclusive_km_month.toLocaleString("de-DE") : "—"}
+                mono
+              />
+              <Row
+                label="Mehr-km Preis"
+                value={
+                  v.extra_km_price != null
+                    ? `${Number(v.extra_km_price).toFixed(2).replace(".", ",")} €/km`
+                    : "—"
+                }
+                mono
+              />
+            </InfoCard>
+
+            <InfoCard Icon={Coins} title="Preise (Brutto)">
+              <Row label="Tagesmiete" value={fmtEur(v.daily_rate)} mono />
+              <Row label="Wochenmiete" value={fmtEur(v.weekly_rate)} mono />
+              <Row label="Monatsmiete" value={fmtEur(v.monthly_rate)} mono />
+              <Row label="Kaution" value={fmtEur(v.deposit)} mono />
+            </InfoCard>
+
+            {v.accessories && (
+              <div className="sm:col-span-2 rounded-xl bg-white ring-1 ring-stone-200 p-5">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2">
+                  <Sparkles size={13} /> Zubehör
+                </div>
+                <div className="text-sm whitespace-pre-wrap">{v.accessories}</div>
+              </div>
+            )}
           </div>
+
+          <details className="mt-6 group">
+            <summary className="cursor-pointer text-sm font-medium text-stone-700 hover:text-stone-900 inline-flex items-center gap-1.5">
+              <ChevronRight size={14} className="group-open:rotate-90 transition-transform" />
+              Daten bearbeiten
+            </summary>
+            <div className="mt-4">
+              <VehicleForm mode="edit" initial={v} />
+            </div>
+          </details>
 
           <div className="mt-6">
             <div className="text-xs uppercase tracking-wider text-stone-500 font-medium mb-2 flex items-center gap-2">
@@ -142,3 +246,36 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
     </>
   );
 }
+
+const InfoCard = ({
+  title,
+  Icon,
+  children,
+}: {
+  title: string;
+  Icon: LucideIcon;
+  children: React.ReactNode;
+}) => (
+  <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
+    <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold mb-3">
+      <Icon size={13} />
+      {title}
+    </div>
+    <div className="space-y-1.5">{children}</div>
+  </div>
+);
+
+const Row = ({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: React.ReactNode;
+  mono?: boolean;
+}) => (
+  <div className="grid grid-cols-[140px_1fr] gap-2 text-sm">
+    <div className="text-stone-500 text-xs">{label}</div>
+    <div className={mono ? "font-mono text-stone-800" : "text-stone-800"}>{value}</div>
+  </div>
+);

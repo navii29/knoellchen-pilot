@@ -26,6 +26,8 @@ export interface AppUser {
   created_at: string;
 }
 
+export type VehicleStatus = "aktiv" | "inaktiv" | "werkstatt" | "ausgesteuert";
+
 export interface Vehicle {
   id: string;
   org_id: string;
@@ -36,7 +38,34 @@ export interface Vehicle {
   decommission_date: string | null;
   decommission_reminded: boolean;
   extra_km_price: number | null;
+
+  manufacturer: string | null;
+  model: string | null;
+  power_ps: number | null;
+  fuel_type: string | null;
+  transmission: string | null;
+  doors: string | null;
+  seats: number | null;
+  luggage: number | null;
+  body_type: string | null;
+  fin_number: string | null;
+  category: string | null;
+
+  available_from: string | null;
+  km_at_intake: number | null;
+  max_km_total: number | null;
+  inclusive_km_month: number | null;
+
+  daily_rate: number | null;
+  weekly_rate: number | null;
+  monthly_rate: number | null;
+  deposit: number | null;
+
+  accessories: string | null;
+  status: VehicleStatus;
+
   created_at: string;
+  updated_at: string;
 }
 
 export type ContractStatus = "aktiv" | "abgeschlossen" | "storniert";
