@@ -2,19 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
-html { scroll-behavior: smooth; }
-
-body {
-  font-family: 'Inter', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  background: #fafaf9; /* stone-50 */
-  color: #1c1917; /* stone-900 */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
-.font-display { font-feature-settings: "ss01","cv11"; letter-spacing: -0.035em; }
-.font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+body {
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-feature-settings: "ss01", "cv11", "kern";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background: #fafaf9; /* stone-50 */
+  color: #292524;     /* stone-800 — ein Tick weicher als pures stone-900 */
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@layer base {
+  h1, h2, h3, h4 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: #1c1917; /* stone-900 für Headings */
+  }
+  h1 { font-size: 26px; line-height: 1.15; }
+  h2 { font-size: 20px; line-height: 1.25; }
+  h3 { font-size: 16px; line-height: 1.3; }
+  /* Default-Body-Color */
+  p { color: #44403c; /* stone-700 */ }
+}
+
+.font-display { font-feature-settings: "ss01", "cv11", "kern"; letter-spacing: -0.025em; }
+.font-mono { font-feature-settings: "tnum", "zero"; }
 
 .grid-bg {
   background-image:
