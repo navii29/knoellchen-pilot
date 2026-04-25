@@ -98,6 +98,10 @@ export interface Contract {
   km_return: number | null;
   km_limit: number | null;
   extra_km_cost: number | null;
+  actual_days: number | null;
+  actual_km_allowed: number | null;
+  km_driven: number | null;
+  km_excess: number | null;
   status: ContractStatus;
   contract_pdf_path: string | null;
   pickup_photos: unknown[];

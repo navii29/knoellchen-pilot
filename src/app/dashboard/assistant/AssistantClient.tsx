@@ -27,7 +27,7 @@ type ChatMsg = { role: "user" | "assistant"; content: string; toolCalls?: ToolCa
 const SUGGESTIONS = [
   "Wie viele aktive Verträge haben wir?",
   "Welche Autos sind am 28. April frei?",
-  "Welche Autos werden bald ausgesteuert?",
+  "Rückgabe für MV-2026-8541: Kilometerstand 5890",
   "Wer hatte M-AV 5678 am 21. April?",
 ];
 
@@ -207,6 +207,14 @@ const ToolResult = ({ call }: { call: ToolCall }) => {
       <div className="rounded-xl bg-amber-50 ring-1 ring-amber-200 p-3 text-sm text-amber-900">
         Kein Mietvertrag für dieses Fahrzeug an diesem Datum gefunden.
       </div>
+    );
+  }
+  if (call.name === "process_return" && d.contract && d.summary) {
+    return (
+      <ProcessReturnCard
+        contract={d.contract as ContractSummary}
+        summary={d.summary as ReturnSummaryData}
+      />
     );
   }
   if (call.name === "assign_ticket_to_contract" && d.ticket && d.contract) {
@@ -565,6 +573,103 @@ const AvailableVehiclesCard = ({
     </div>
   );
 };
+
+type ReturnSummaryData = {
+  plannedDays: number;
+  actualDays: number;
+  daysDiff: number;
+  kmPickup: number | null;
+  kmReturn: number | null;
+  drivenKm: number | null;
+  inclusiveKmMonth: number | null;
+  source: "override" | "inclusive_month" | "none";
+  allowedKm: number | null;
+  excessKm: number;
+  pricePerKm: number;
+  cost: number;
+};
+
+const ProcessReturnCard = ({
+  contract,
+  summary,
+}: {
+  contract: ContractSummary;
+  summary: ReturnSummaryData;
+}) => {
+  const diffLabel =
+    summary.daysDiff === 0
+      ? "planmäßig"
+      : summary.daysDiff > 0
+      ? `${summary.daysDiff} Tage später`
+      : `${Math.abs(summary.daysDiff)} Tage früher`;
+  return (
+    <Link
+      href={`/dashboard/contracts/${contract.id}`}
+      className="block rounded-xl bg-white ring-1 ring-stone-200 hover:ring-stone-400 p-4 transition"
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+          style={{ background: THEME.primaryTint, color: THEME.primary }}
+        >
+          <CheckCircle2 size={16} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-xs uppercase tracking-wider text-stone-500 font-medium">
+            Rückgabe verarbeitet
+          </div>
+          <div className="font-display font-semibold text-lg mt-0.5">{contract.renter_name}</div>
+          <div className="text-sm text-stone-500 flex flex-wrap gap-x-4 gap-y-1 mt-1">
+            <span className="font-mono">{contract.contract_nr}</span>
+            <span className="font-mono font-semibold text-stone-900">{contract.plate}</span>
+            <span>
+              {fmtDate(contract.pickup_date)} →{" "}
+              {fmtDate(contract.actual_return_date || contract.return_date)} ({diffLabel})
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+        <ReturnStat label="Miettage" value={`${summary.actualDays}`} />
+        <ReturnStat
+          label="Gefahren"
+          value={summary.drivenKm != null ? `${summary.drivenKm.toLocaleString("de-DE")} km` : "—"}
+        />
+        <ReturnStat
+          label="Erlaubt"
+          value={summary.allowedKm != null ? `${summary.allowedKm.toLocaleString("de-DE")} km` : "—"}
+        />
+        <ReturnStat
+          label="Mehrkosten"
+          value={summary.cost > 0 ? fmtEur(summary.cost) : "—"}
+          highlight={summary.cost > 0}
+        />
+      </div>
+    </Link>
+  );
+};
+
+const ReturnStat = ({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) => (
+  <div className="rounded-md bg-stone-50 ring-1 ring-stone-100 px-2.5 py-2">
+    <div className="text-[10px] uppercase tracking-wider text-stone-400 font-medium">{label}</div>
+    <div
+      className={`tabular-nums font-display font-semibold mt-0.5 ${
+        highlight ? "text-amber-700" : "text-stone-900"
+      }`}
+    >
+      {value}
+    </div>
+  </div>
+);
 
 const EmptyResult = ({ Icon, text }: { Icon: LucideIcon; text: string }) => (
   <div className="rounded-xl bg-stone-100 px-4 py-6 text-center text-sm text-stone-500">

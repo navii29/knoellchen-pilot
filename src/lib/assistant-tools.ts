@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nextContractNr } from "./contract-utils";
 import { computeDecommission } from "./decommission";
+import { computeReturnSummary } from "./km";
 import { normalizePlate } from "./plate";
 import type { Vehicle } from "./types";
 
@@ -586,6 +587,112 @@ const assignTicketToContract: Tool = {
   },
 };
 
+// =========================================================
+// 10) process_return
+// =========================================================
+const processReturn: Tool = {
+  name: "process_return",
+  description:
+    "Verarbeitet die Rückgabe eines Mietvertrags: Status auf 'abgeschlossen' setzen, Rückgabedatum + Kilometerstand erfassen, taggenau Mehrkilometer berechnen (anteilig auf Inklusivkilometer pro Monat). Verwende dies wenn der Nutzer sagt 'Rückgabe für Vertrag X mit Kilometerstand Y' oder ähnlich. Wenn kein Datum angegeben wird, nimm heute. Vertrag wird per contract_nr ODER UUID identifiziert.",
+  input_schema: {
+    type: "object",
+    properties: {
+      contract: {
+        type: "string",
+        description: "Vertrags-Nr (z.B. 'MV-2026-8541') oder UUID",
+      },
+      km_return: {
+        type: "number",
+        description: "Kilometerstand bei Rückgabe",
+      },
+      actual_return_date: {
+        type: "string",
+        description: "YYYY-MM-DD. Wenn weggelassen: heute.",
+      },
+    },
+    required: ["contract", "km_return"],
+  },
+  handler: async (input, ctx) => {
+    const contractKey = String(input.contract || "").trim();
+    const kmReturnRaw = input.km_return;
+    if (!contractKey || kmReturnRaw == null) {
+      return { ok: false, error: "contract und km_return sind Pflichtfelder" };
+    }
+    const kmReturn = Number(kmReturnRaw);
+    if (!Number.isFinite(kmReturn)) {
+      return { ok: false, error: "km_return ist keine gültige Zahl" };
+    }
+
+    const isUuid = (s: string) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+    const cq = isUuid(contractKey)
+      ? ctx.admin.from("contracts").select("*").eq("id", contractKey)
+      : ctx.admin.from("contracts").select("*").eq("contract_nr", contractKey);
+    const { data: contracts } = await cq.eq("org_id", ctx.org_id).limit(1);
+    const contract = (contracts ?? [])[0];
+    if (!contract) {
+      return { ok: false, error: `Vertrag '${contractKey}' nicht gefunden` };
+    }
+
+    const actualReturn =
+      typeof input.actual_return_date === "string" && input.actual_return_date.trim()
+        ? parseDate(input.actual_return_date) || new Date().toISOString().slice(0, 10)
+        : new Date().toISOString().slice(0, 10);
+
+    // Vehicle für Inklusiv-km + Preis
+    let pricePerKm: number | null = null;
+    let inclusiveKmMonth: number | null = null;
+    if (contract.plate) {
+      const { data: v } = await ctx.admin
+        .from("vehicles")
+        .select("extra_km_price, inclusive_km_month")
+        .eq("org_id", ctx.org_id)
+        .eq("plate", contract.plate)
+        .maybeSingle();
+      if (v?.extra_km_price != null) pricePerKm = Number(v.extra_km_price);
+      if (v?.inclusive_km_month != null) inclusiveKmMonth = Number(v.inclusive_km_month);
+    }
+
+    const summary = computeReturnSummary({
+      pickupDate: contract.pickup_date,
+      plannedReturnDate: contract.return_date,
+      actualReturnDate: actualReturn,
+      kmPickup: contract.km_pickup,
+      kmReturn,
+      inclusiveKmMonth,
+      kmLimitOverride: contract.km_limit,
+      pricePerKm,
+    });
+
+    const { data: updated, error } = await ctx.admin
+      .from("contracts")
+      .update({
+        status: "abgeschlossen",
+        actual_return_date: actualReturn,
+        km_return: kmReturn,
+        actual_days: summary.actualDays,
+        actual_km_allowed: summary.allowedKm,
+        km_driven: summary.drivenKm,
+        km_excess: summary.excessKm,
+        extra_km_cost: summary.cost,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", contract.id)
+      .eq("org_id", ctx.org_id)
+      .select("id, contract_nr, plate, renter_name, pickup_date, return_date, actual_return_date, status")
+      .single();
+    if (error) return { ok: false, error: error.message };
+
+    return {
+      ok: true,
+      data: {
+        contract: updated,
+        summary,
+      },
+    };
+  },
+};
+
 export const TOOLS: Tool[] = [
   createContract,
   createVehicle,
@@ -596,6 +703,7 @@ export const TOOLS: Tool[] = [
   getDecommissionAlerts,
   findAvailableVehicles,
   assignTicketToContract,
+  processReturn,
 ];
 
 export const TOOLS_FOR_API = TOOLS.map((t) => ({

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { computeExtraKm } from "@/lib/km";
+import { computeReturnSummary } from "@/lib/km";
 import { normalizePlate } from "@/lib/plate";
 
 const requireAuth = async () => {
@@ -59,12 +59,23 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
 
   const admin = createAdminClient();
 
-  // Mehrkilometer neu berechnen, wenn km-relevante Felder angefasst werden
-  const kmFieldTouched = ["km_pickup", "km_return", "km_limit", "plate"].some((k) => k in body);
+  // Bei Änderung von km-/Datums-Feldern komplette Rückgabe-Aufstellung neu berechnen
+  const recalcTriggers = [
+    "km_pickup",
+    "km_return",
+    "km_limit",
+    "plate",
+    "pickup_date",
+    "return_date",
+    "actual_return_date",
+  ];
+  const kmFieldTouched = recalcTriggers.some((k) => k in body);
   if (kmFieldTouched) {
     const { data: current } = await admin
       .from("contracts")
-      .select("km_pickup, km_return, km_limit, plate, org_id")
+      .select(
+        "km_pickup, km_return, km_limit, plate, org_id, pickup_date, return_date, actual_return_date"
+      )
       .eq("id", params.id)
       .eq("org_id", auth.org_id)
       .maybeSingle();
@@ -77,20 +88,57 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
         "km_return" in update ? (update.km_return as number | null) : (current.km_return as number | null);
       const kmLimit =
         "km_limit" in update ? (update.km_limit as number | null) : (current.km_limit as number | null);
+      const pickupDate =
+        "pickup_date" in update ? (update.pickup_date as string) : (current.pickup_date as string);
+      const plannedReturn =
+        "return_date" in update ? (update.return_date as string) : (current.return_date as string);
+      const actualReturn =
+        "actual_return_date" in update
+          ? (update.actual_return_date as string | null)
+          : (current.actual_return_date as string | null);
 
       let price: number | null = null;
+      let inclusiveKmMonth: number | null = null;
       if (plate) {
         const { data: v } = await admin
           .from("vehicles")
-          .select("extra_km_price")
+          .select("extra_km_price, inclusive_km_month")
           .eq("org_id", auth.org_id)
           .eq("plate", plate)
           .maybeSingle();
         if (v?.extra_km_price != null) price = Number(v.extra_km_price);
+        if (v?.inclusive_km_month != null) inclusiveKmMonth = Number(v.inclusive_km_month);
       }
 
-      const extra = computeExtraKm({ kmPickup, kmReturn, kmLimit, pricePerKm: price });
-      update.extra_km_cost = extra ? extra.cost : null;
+      // Nur volle Aufstellung wenn Rückgabe erfolgt ist (actualReturn + km_return).
+      // Sonst nur einfach extra_km_cost zurücksetzen.
+      if (actualReturn && pickupDate && plannedReturn) {
+        const summary = computeReturnSummary({
+          pickupDate,
+          plannedReturnDate: plannedReturn,
+          actualReturnDate: actualReturn,
+          kmPickup,
+          kmReturn,
+          inclusiveKmMonth,
+          kmLimitOverride: kmLimit,
+          pricePerKm: price,
+        });
+        update.actual_days = summary.actualDays;
+        update.actual_km_allowed = summary.allowedKm;
+        update.km_driven = summary.drivenKm;
+        update.km_excess = summary.excessKm;
+        update.extra_km_cost = summary.cost;
+      } else {
+        // Vor Rückgabe: nur Driven aktualisieren falls beide km bekannt
+        if (
+          kmPickup != null &&
+          kmReturn != null &&
+          Number(kmReturn) >= Number(kmPickup)
+        ) {
+          update.km_driven = Number(kmReturn) - Number(kmPickup);
+        }
+        update.extra_km_cost = null;
+      }
     }
   }
 

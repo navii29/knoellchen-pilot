@@ -7,7 +7,7 @@ import { ContractStatusBadge } from "@/components/contract/StatusBadge";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ContractActions } from "./ContractActions";
 import { fmtDate, fmtEur } from "@/lib/utils";
-import { computeExtraKm } from "@/lib/km";
+import { computeReturnSummary } from "@/lib/km";
 import { POSITIONS } from "@/lib/handover";
 import type { Contract, DamageReport, HandoverPhoto, Ticket, Vehicle } from "@/lib/types";
 
@@ -44,16 +44,26 @@ export default async function ContractDetailPage({ params }: { params: { id: str
 
   const { data: vehicleRow } = await supabase
     .from("vehicles")
-    .select("extra_km_price")
+    .select("extra_km_price, inclusive_km_month")
     .eq("plate", c.plate)
     .maybeSingle();
-  const pricePerKm = (vehicleRow as Pick<Vehicle, "extra_km_price"> | null)?.extra_km_price ?? null;
-  const km = computeExtraKm({
-    kmPickup: c.km_pickup,
-    kmReturn: c.km_return,
-    kmLimit: c.km_limit,
-    pricePerKm,
-  });
+  const vRow = vehicleRow as Pick<Vehicle, "extra_km_price" | "inclusive_km_month"> | null;
+  const pricePerKm = vRow?.extra_km_price ?? null;
+  const inclusiveKmMonth = vRow?.inclusive_km_month ?? null;
+
+  const isReturned = !!c.actual_return_date;
+  const km = isReturned
+    ? computeReturnSummary({
+        pickupDate: c.pickup_date,
+        plannedReturnDate: c.return_date,
+        actualReturnDate: c.actual_return_date!,
+        kmPickup: c.km_pickup,
+        kmReturn: c.km_return,
+        inclusiveKmMonth,
+        kmLimitOverride: c.km_limit,
+        pricePerKm,
+      })
+    : null;
 
   const admin = createAdminClient();
   let pdfUrl: string | null = null;
@@ -130,16 +140,32 @@ export default async function ContractDetailPage({ params }: { params: { id: str
             <InfoCard Icon={ScrollText} title="Kilometer & Notizen">
               <Row label="km Abholung" value={c.km_pickup ?? "—"} mono />
               <Row label="km Rückgabe" value={c.km_return ?? "—"} mono />
-              <Row label="Freikilometer" value={c.km_limit ?? "unbegrenzt"} mono />
+              {!isReturned && (
+                <Row label="Freikilometer / Monat" value={inclusiveKmMonth ? inclusiveKmMonth.toLocaleString("de-DE") : c.km_limit ?? "unbegrenzt"} mono />
+              )}
               {km && (
                 <>
-                  <Row label="Gefahren" value={`${km.drivenKm} km`} mono />
-                  {km.extraKm > 0 && (
+                  <Row label="Miettage" value={`${km.actualDays} Tage`} mono />
+                  {km.drivenKm != null && (
+                    <Row label="Gefahren" value={`${km.drivenKm.toLocaleString("de-DE")} km`} mono />
+                  )}
+                  {km.allowedKm != null && (
+                    <Row
+                      label="Erlaubt"
+                      value={
+                        km.source === "inclusive_month" && km.inclusiveKmMonth
+                          ? `${km.allowedKm.toLocaleString("de-DE")} km (${km.actualDays} × ${km.inclusiveKmMonth.toLocaleString("de-DE")}/30)`
+                          : `${km.allowedKm.toLocaleString("de-DE")} km`
+                      }
+                      mono
+                    />
+                  )}
+                  {km.excessKm > 0 && (
                     <Row
                       label="Mehrkilometer"
                       value={
                         <span className="text-amber-700 tabular-nums">
-                          {km.extraKm} km × {km.pricePerKm.toFixed(2).replace(".", ",")} € ={" "}
+                          {km.excessKm.toLocaleString("de-DE")} km × {km.pricePerKm.toFixed(2).replace(".", ",")} € ={" "}
                           <strong>{fmtEur(km.cost)}</strong>
                         </span>
                       }
@@ -151,7 +177,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
             </InfoCard>
           </div>
 
-          {km && km.extraKm > 0 && (
+          {km && km.excessKm > 0 && (
             <div className="mt-6 rounded-xl bg-amber-50 ring-1 ring-amber-200 p-5">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-lg bg-white text-amber-700 flex items-center justify-center shrink-0 ring-1 ring-amber-200">
@@ -162,10 +188,11 @@ export default async function ContractDetailPage({ params }: { params: { id: str
                     Mehrkilometer
                   </div>
                   <div className="font-display font-semibold text-lg text-amber-900 mt-0.5">
-                    {km.drivenKm} km gefahren · {c.km_limit} km frei · {km.extraKm} km zusätzlich
+                    {km.actualDays} Tage · {km.drivenKm?.toLocaleString("de-DE")} km gefahren ·{" "}
+                    {km.allowedKm?.toLocaleString("de-DE")} km erlaubt · {km.excessKm.toLocaleString("de-DE")} km zusätzlich
                   </div>
                   <div className="text-sm text-amber-800 mt-1">
-                    {km.extraKm} km × {km.pricePerKm.toFixed(2).replace(".", ",")} €/km ={" "}
+                    {km.excessKm.toLocaleString("de-DE")} km × {km.pricePerKm.toFixed(2).replace(".", ",")} €/km ={" "}
                     <strong className="tabular-nums">{fmtEur(km.cost)}</strong>
                     {pricePerKm == null && (
                       <span className="text-xs ml-2 opacity-80">
