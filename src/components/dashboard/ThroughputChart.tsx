@@ -22,28 +22,30 @@ export const ThroughputChart = ({ data, total }: { data: number[]; total: number
   const fillPath = `${linePath} L ${px(last).toFixed(2)},${h} L 0,${h} Z`;
 
   return (
-    <div className="rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow duration-200 overflow-hidden">
-      <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
+    <div className="rounded-2xl bg-white ring-1 ring-black/[0.05] hover:ring-black/[0.08] transition-all duration-200 overflow-hidden">
+      <div className="px-7 py-5 border-b border-stone-100 flex items-center justify-between">
         <div>
-          <div className="font-display font-semibold text-stone-900">Durchsatz</div>
-          <div className="text-xs text-stone-400 mt-0.5">Strafzettel pro Tag · 14 Tage</div>
+          <div className="font-display font-medium text-[17px] tracking-tight text-stone-900">
+            Durchsatz
+          </div>
+          <div className="text-[12px] text-stone-400 mt-1">Strafzettel pro Tag · 14 Tage</div>
         </div>
         <div className="text-right">
-          <div className="font-display font-semibold text-2xl tracking-tight tabular-nums text-stone-900">
+          <div className="font-display font-medium text-[28px] leading-none tracking-[-0.025em] tabular-nums text-stone-900">
             {total}
           </div>
-          <div className="text-xs text-stone-400 mt-0.5">gesamt</div>
+          <div className="text-[12px] text-stone-400 mt-1">gesamt</div>
         </div>
       </div>
-      <div className="px-4 pt-2 pb-3">
+      <div className="px-5 pt-3 pb-4">
         <svg
           viewBox={`0 0 ${w} ${h + 8}`}
           preserveAspectRatio="none"
-          className="w-full h-[148px]"
+          className="w-full h-[156px]"
         >
           <defs>
             <linearGradient id="throughput-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#2dd4bf" stopOpacity="0.18" />
+              <stop offset="0%" stopColor="#2dd4bf" stopOpacity="0.22" />
               <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0" />
             </linearGradient>
           </defs>
@@ -51,16 +53,21 @@ export const ThroughputChart = ({ data, total }: { data: number[]; total: number
           <path
             d={linePath}
             fill="none"
-            stroke="#2dd4bf"
-            strokeWidth="1.5"
+            stroke="#0d9488"
+            strokeWidth="1.75"
             strokeLinecap="round"
             strokeLinejoin="round"
             vectorEffect="non-scaling-stroke"
           />
-          {/* letzter Punkt als Kreis */}
-          <circle cx={px(last)} cy={py(data[last] ?? 0)} r="1.6" fill="#0d9488" vectorEffect="non-scaling-stroke" />
+          <circle
+            cx={px(last)}
+            cy={py(data[last] ?? 0)}
+            r="2"
+            fill="#0d9488"
+            vectorEffect="non-scaling-stroke"
+          />
         </svg>
-        <div className="flex justify-between text-[10px] text-stone-400 px-1 mt-1 tabular-nums">
+        <div className="flex justify-between text-[10.5px] text-stone-400 px-1 mt-1.5 tabular-nums">
           <span>vor 14 Tagen</span>
           <span>heute</span>
         </div>

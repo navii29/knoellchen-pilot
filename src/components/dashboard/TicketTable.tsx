@@ -21,16 +21,20 @@ export const TicketTable = ({ tickets }: { tickets: Ticket[] }) => {
   const filtered = tickets.filter((t) => (filter === "alle" ? true : t.status === filter));
 
   return (
-    <div className="rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
-      <div className="px-4 md:px-5 py-3.5 border-b border-stone-100 flex items-center justify-between flex-wrap gap-2">
-        <div className="font-display font-semibold">Strafzettel</div>
-        <div className="flex items-center gap-1 text-xs flex-wrap">
+    <div className="rounded-2xl bg-white ring-1 ring-black/[0.05] overflow-hidden">
+      <div className="px-5 md:px-7 py-5 border-b border-stone-100 flex items-center justify-between flex-wrap gap-3">
+        <div className="font-display font-medium text-[17px] tracking-tight text-stone-900">
+          Strafzettel
+        </div>
+        <div className="flex items-center gap-1 text-[12.5px] flex-wrap">
           {FILTERS.map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-2.5 py-1.5 rounded-md ${
-                filter === f ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-100"
+              className={`px-3 h-7 rounded-full font-medium transition-colors ${
+                filter === f
+                  ? "bg-stone-900 text-white"
+                  : "text-stone-600 hover:bg-stone-100"
               }`}
             >
               {f === "alle" ? "Alle" : STATUS_META[f].label}
@@ -40,14 +44,14 @@ export const TicketTable = ({ tickets }: { tickets: Ticket[] }) => {
       </div>
 
       {filtered.length === 0 && (
-        <div className="px-5 py-12 text-center text-sm text-stone-500">
+        <div className="px-5 py-14 text-center text-[13.5px] text-stone-500">
           Noch keine Strafzettel in dieser Ansicht.
         </div>
       )}
 
       {/* Desktop: Tabelle */}
       <div className="hidden md:block">
-        <div className="grid grid-cols-[110px_110px_1fr_140px_120px_110px_24px] items-center gap-3 px-5 py-2.5 text-[11px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
+        <div className="grid grid-cols-[110px_110px_1fr_140px_120px_110px_24px] items-center gap-3 px-7 py-3 text-[10.5px] uppercase tracking-wider text-stone-400 font-medium border-b border-stone-100 bg-stone-50/40">
           <span>Status</span>
           <span>Kennzeichen</span>
           <span>Verstoß</span>
@@ -61,7 +65,7 @@ export const TicketTable = ({ tickets }: { tickets: Ticket[] }) => {
             <Link
               key={t.id}
               href={`/dashboard/tickets/${t.id}`}
-              className="w-full grid grid-cols-[110px_110px_1fr_140px_120px_110px_24px] items-center gap-3 px-5 py-3 border-b border-stone-50 last:border-0 text-sm text-left hover:bg-stone-50"
+              className="w-full grid grid-cols-[110px_110px_1fr_140px_120px_110px_24px] items-center gap-3 px-7 py-3.5 border-b border-stone-50 last:border-0 text-[13.5px] text-left hover:bg-stone-50/70 transition-colors"
             >
               <StatusBadge status={t.status} />
               <span className="font-mono font-semibold tracking-tight">{t.plate || "—"}</span>

@@ -84,29 +84,30 @@ export default async function DashboardPage() {
     <>
       <Topbar />
       <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
-        <div className="px-4 md:px-8 py-6 md:py-8 space-y-6 max-w-[1400px]">
+        <div className="px-4 md:px-10 py-8 md:py-12 space-y-8 max-w-[1400px]">
           <div className="flex items-end justify-between flex-wrap gap-4">
             <div>
-              <h1 className="font-display font-semibold text-2xl md:text-[28px] tracking-tight text-stone-900">
-                Guten Tag, {org?.name || "Team"}
+              <div className="text-[12px] uppercase tracking-wider text-stone-500 font-medium mb-2">
+                {today}
+              </div>
+              <h1 className="font-display font-medium text-[32px] md:text-[44px] leading-[1.05] tracking-[-0.03em] text-stone-900">
+                Guten Tag, {org?.name || "Team"}.
               </h1>
-              <p className="text-sm text-stone-500 mt-1.5">
-                {today} ·{" "}
+              <p className="text-[15px] text-stone-500 mt-3 max-w-2xl">
                 {counts.neu === 0
-                  ? "Keine offenen Eingänge"
-                  : `${counts.neu} ${counts.neu === 1 ? "neuer Strafzettel wartet" : "neue Strafzettel warten"} auf Freigabe`}
+                  ? "Keine offenen Eingänge — alles erledigt."
+                  : `${counts.neu} ${counts.neu === 1 ? "neuer Strafzettel wartet" : "neue Strafzettel warten"} auf Freigabe.`}
               </p>
             </div>
-            <div className="hidden md:flex items-center gap-2 text-xs text-stone-400">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Alle Systeme online
-              </span>
+            <div className="hidden md:flex items-center gap-2 px-3 h-7 rounded-full bg-white ring-1 ring-black/[0.05] text-[12px] text-stone-600">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Alle Systeme online
             </div>
           </div>
 
           {decommissionAlerts.length > 0 && <DecommissionAlert vehicles={decommissionAlerts} />}
 
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="col-span-2 lg:col-span-2">
               <HeroStat
                 label="Strafzettel offen"

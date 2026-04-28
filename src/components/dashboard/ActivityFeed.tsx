@@ -107,30 +107,38 @@ export const ActivityFeed = ({
   const top = items.slice(0, 8);
 
   return (
-    <div className="rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow duration-200 overflow-hidden">
-      <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
-        <div className="font-display font-semibold text-stone-900">Aktivität</div>
-        <span className="text-xs text-stone-400">Letzte Ereignisse</span>
+    <div className="rounded-2xl bg-white ring-1 ring-black/[0.05] hover:ring-black/[0.08] transition-all duration-200 overflow-hidden">
+      <div className="px-7 py-5 border-b border-stone-100 flex items-center justify-between">
+        <div className="font-display font-medium text-[17px] tracking-tight text-stone-900">
+          Aktivität
+        </div>
+        <span className="text-[12px] text-stone-400">Letzte Ereignisse</span>
       </div>
       <div className="divide-y divide-stone-100">
         {top.length === 0 && (
-          <div className="px-6 py-10 text-center text-sm text-stone-400">Noch keine Aktivität.</div>
+          <div className="px-6 py-12 text-center text-[13.5px] text-stone-400">
+            Noch keine Aktivität.
+          </div>
         )}
         {top.map((it) => (
           <Link
             key={it.id}
             href={it.href || "#"}
-            className="flex items-center gap-3 px-6 py-3 hover:bg-stone-50 transition-colors"
+            className="flex items-center gap-3.5 px-7 py-3.5 hover:bg-stone-50 transition-colors"
           >
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                it.tone === "accent" ? "bg-teal-50 text-teal-700" : "bg-stone-100 text-stone-600"
+              className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
+                it.tone === "accent"
+                  ? "bg-gradient-to-br from-teal-50 to-emerald-50 text-teal-700 ring-1 ring-teal-100"
+                  : "bg-stone-100 text-stone-600"
               }`}
             >
-              <it.Icon size={13} strokeWidth={1.75} />
+              <it.Icon size={14} strokeWidth={1.75} />
             </div>
-            <div className="flex-1 text-sm text-stone-700 truncate">{it.text}</div>
-            <div className="text-xs text-stone-400 tabular-nums shrink-0">{relTime(it.created_at)}</div>
+            <div className="flex-1 text-[13.5px] text-stone-700 truncate">{it.text}</div>
+            <div className="text-[11.5px] text-stone-400 tabular-nums shrink-0">
+              {relTime(it.created_at)}
+            </div>
           </Link>
         ))}
       </div>

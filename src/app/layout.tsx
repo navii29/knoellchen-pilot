@@ -17,16 +17,16 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Knöllchen-Pilot — Strafzettel automatisch bearbeiten",
+  title: "Knöllchen-Pilot — Die KI-Plattform für Autovermietungen",
   description:
-    "Die KI-Software, die Strafzettel für Autovermietungen vollautomatisch bearbeitet — von der E-Mail der Behörde bis zum Zeugenfragebogen zurück.",
+    "Verträge. Flotte. Kunden. Strafzettel. Alles in einer App — mit künstlicher Intelligenz. Das vollständige CRM und Flottenmanagement-System für moderne Autovermietungen.",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#0d9488",
+  themeColor: "#000000",
 };
 
 export default function RootLayout({

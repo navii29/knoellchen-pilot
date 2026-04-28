@@ -1,7 +1,7 @@
 import { type LucideIcon } from "lucide-react";
 
 const CARD_BASE =
-  "rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow duration-200";
+  "rounded-2xl bg-white ring-1 ring-black/[0.05] hover:ring-black/[0.08] transition-all duration-200";
 
 export const StatCard = ({
   label,
@@ -16,21 +16,23 @@ export const StatCard = ({
   accent?: boolean;
   sub?: string;
 }) => (
-  <div className={`${CARD_BASE} p-5`}>
+  <div className={`${CARD_BASE} p-6`}>
     <div className="flex items-start justify-between">
-      <div className="text-[13px] text-stone-500">{label}</div>
+      <div className="text-[12px] uppercase tracking-wider text-stone-500 font-medium">
+        {label}
+      </div>
       <div
-        className={`w-8 h-8 rounded-full flex items-center justify-center ${
-          accent ? "bg-amber-50 text-amber-700" : "bg-stone-100 text-stone-500"
+        className={`w-9 h-9 rounded-full flex items-center justify-center ${
+          accent ? "bg-amber-50 text-amber-700" : "bg-stone-100 text-stone-600"
         }`}
       >
-        <Icon size={14} strokeWidth={1.75} />
+        <Icon size={15} strokeWidth={1.75} />
       </div>
     </div>
-    <div className="mt-4 font-display font-semibold text-[26px] leading-none tracking-tight tabular-nums text-stone-900">
+    <div className="mt-5 font-display font-medium text-[34px] leading-none tracking-[-0.025em] tabular-nums text-stone-900">
       {value}
     </div>
-    {sub && <div className="mt-1.5 text-[11px] text-stone-400">{sub}</div>}
+    {sub && <div className="mt-2 text-[12px] text-stone-500">{sub}</div>}
   </div>
 );
 
@@ -47,34 +49,43 @@ export const HeroStat = ({
   sub?: string;
   pulse?: boolean;
 }) => (
-  <div
-    className={`${CARD_BASE} relative overflow-hidden p-6 md:p-7`}
-  >
-    {/* dezenter Hintergrund-Gradient */}
+  <div className={`${CARD_BASE} relative overflow-hidden p-7 md:p-8`}>
+    {/* Teal-Gradient-Glow Hintergrund */}
     <div
       aria-hidden
-      className="absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-[0.06]"
-      style={{ background: "radial-gradient(closest-side, #f59e0b, transparent)" }}
+      className="absolute -top-24 -right-16 w-64 h-64 rounded-full opacity-[0.10]"
+      style={{ background: "radial-gradient(closest-side, #0d9488, transparent 70%)" }}
+    />
+    {/* dezenter Akzent-Strich */}
+    <div
+      aria-hidden
+      className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-teal-400 to-emerald-500 rounded-l-2xl"
     />
 
     <div className="relative flex items-start justify-between">
-      <div className="flex items-center gap-2">
-        <div className="text-[13px] text-stone-500">{label}</div>
+      <div className="flex items-center gap-2.5">
+        <div className="text-[12px] uppercase tracking-wider text-stone-500 font-medium">
+          {label}
+        </div>
         {pulse && (
-          <span className="relative inline-flex w-1.5 h-1.5 rounded-full text-amber-500 pulse-dot">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
+          <span className="relative inline-flex w-2 h-2 rounded-full text-amber-500 pulse-dot">
+            <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
           </span>
         )}
       </div>
-      <div className="w-9 h-9 rounded-full flex items-center justify-center bg-amber-50 text-amber-700">
-        <Icon size={16} strokeWidth={1.75} />
+      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-50 text-teal-700 ring-1 ring-teal-100">
+        <Icon size={17} strokeWidth={1.75} />
       </div>
     </div>
 
-    <div className="relative mt-5 font-display font-semibold text-[56px] md:text-[64px] leading-none tracking-tight tabular-nums text-stone-900">
+    <div className="relative mt-7 font-display font-medium text-[68px] md:text-[88px] leading-none tracking-[-0.045em] tabular-nums text-stone-900">
       {value}
     </div>
 
-    {sub && <div className="relative mt-3 text-xs text-stone-500">{sub}</div>}
+    {sub && (
+      <div className="relative mt-4 text-[13px] text-stone-500 flex items-center gap-2">
+        {sub}
+      </div>
+    )}
   </div>
 );
