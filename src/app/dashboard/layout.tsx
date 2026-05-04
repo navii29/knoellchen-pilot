@@ -30,12 +30,18 @@ export default async function DashboardLayout({
     { count: customers },
     { count: openDamages },
   ] = await Promise.all([
-    supabase.from("organizations").select("name").eq("id", profile.org_id).single(),
+    supabase
+      .from("organizations")
+      .select("name, onboarding_completed")
+      .eq("id", profile.org_id)
+      .single(),
     supabase.from("tickets").select("*", { count: "exact", head: true }).eq("status", "neu"),
     supabase.from("contracts").select("*", { count: "exact", head: true }).eq("status", "aktiv"),
     supabase.from("customers").select("*", { count: "exact", head: true }),
     supabase.from("damage_reports").select("*", { count: "exact", head: true }).eq("status", "offen"),
   ]);
+
+  if (org && org.onboarding_completed === false) redirect("/onboarding");
 
   return (
     <div className="md:h-screen md:flex bg-stone-50 min-h-screen">
