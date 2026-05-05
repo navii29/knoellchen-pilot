@@ -48,10 +48,9 @@ export type LxInvoice = {
   totalPrice: { currency: "EUR" };
   taxConditions: { taxType: "net" | "gross" | "vatfree" };
   shippingConditions: {
-    shippingDate?: string;
-    shippingType: "service" | "serviceperiod";
-    shippingDateFrom?: string;
-    shippingDateTo?: string;
+    shippingDate: string;
+    shippingType: "service" | "serviceperiod" | "delivery" | "deliveryperiod";
+    shippingEndDate?: string;
   };
   remark?: string;
   introduction?: string;
@@ -283,8 +282,8 @@ export const buildContractInvoice = (
     taxConditions: { taxType: "net" },
     shippingConditions: {
       shippingType: "serviceperiod",
-      shippingDateFrom: isoWithTimezone(new Date(contract.pickup_date)),
-      shippingDateTo: isoWithTimezone(new Date(endDate)),
+      shippingDate: isoWithTimezone(new Date(contract.pickup_date)),
+      shippingEndDate: isoWithTimezone(new Date(endDate)),
     },
     introduction: `Vielen Dank für Ihren Mietvertrag ${contract.contract_nr}.`,
     remark: "Zahlbar innerhalb von 14 Tagen ohne Abzug.",
