@@ -81,6 +81,8 @@ export const POST = async (req: Request) => {
     accessories: trimOrNull(body.accessories),
     status,
 
+    echoes_device_id: trimOrNull(body.echoes_device_id),
+
     vehicle_type: computedType ?? explicitType,
   };
 

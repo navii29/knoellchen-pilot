@@ -51,6 +51,7 @@ const TEXT_FIELDS = [
   "category",
   "available_from",
   "accessories",
+  "echoes_device_id",
 ] as const;
 
 const NUMBER_FIELDS = [

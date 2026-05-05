@@ -8,6 +8,7 @@ import {
   Copy,
   Loader2,
   Lock,
+  MapPin,
   Save,
   Send,
   Wifi,
@@ -18,9 +19,11 @@ import type { Organization } from "@/lib/types";
 export const SettingsClient = ({
   org,
   lexofficeHasKey,
+  echoesHasKey,
 }: {
   org: Organization;
   lexofficeHasKey: boolean;
+  echoesHasKey: boolean;
 }) => {
   const [data, setData] = useState({
     name: org?.name || "",
@@ -35,6 +38,8 @@ export const SettingsClient = ({
     sender_email: org?.sender_email || "",
     email_automation_enabled: org?.email_automation_enabled || false,
     lexoffice_enabled: org?.lexoffice_enabled || false,
+    echoes_account_id: org?.echoes_account_id || "",
+    echoes_enabled: org?.echoes_enabled || false,
   });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -172,6 +177,21 @@ export const SettingsClient = ({
             hasKey={lexofficeHasKey}
             enabled={data.lexoffice_enabled}
             onToggle={(v) => setData((d) => ({ ...d, lexoffice_enabled: v }))}
+          />
+        </Section>
+
+        <Section
+          title="GPS-Tracking"
+          subtitle="Aktuelle Fahrzeugpositionen über Echoes.solutions abrufen."
+        >
+          <EchoesCard
+            hasKey={echoesHasKey}
+            accountId={data.echoes_account_id}
+            enabled={data.echoes_enabled}
+            onAccountChange={(v) =>
+              setData((d) => ({ ...d, echoes_account_id: v }))
+            }
+            onToggle={(v) => setData((d) => ({ ...d, echoes_enabled: v }))}
           />
         </Section>
 
@@ -427,6 +447,226 @@ const LexOfficeCard = ({
           </div>
           <div className="text-xs text-stone-500 mt-1">
             Wenn aktiviert: An Verträgen und Strafzetteln erscheint ein Button „An LexOffice übertragen“. Übertragene Dokumente werden in LexOffice als finalisierte Rechnungen angelegt und sind dort unveränderlich.
+          </div>
+        </div>
+      </label>
+    </div>
+  );
+};
+
+const EchoesCard = ({
+  hasKey,
+  accountId,
+  enabled,
+  onAccountChange,
+  onToggle,
+}: {
+  hasKey: boolean;
+  accountId: string;
+  enabled: boolean;
+  onAccountChange: (v: string) => void;
+  onToggle: (v: boolean) => void;
+}) => {
+  const [keyInput, setKeyInput] = useState("");
+  const [savingKey, setSavingKey] = useState(false);
+  const [keyMsg, setKeyMsg] = useState<string | null>(null);
+  const [keyErr, setKeyErr] = useState<string | null>(null);
+  const [hasKeyLocal, setHasKeyLocal] = useState(hasKey);
+
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{
+    device_count?: number;
+    online_count?: number;
+    sample?: Array<{ id: string; label: string; plate: string | null; online: boolean }>;
+  } | null>(null);
+  const [testErr, setTestErr] = useState<string | null>(null);
+  const [stubWarning, setStubWarning] = useState<string | null>(null);
+
+  const saveKey = async () => {
+    setKeyErr(null);
+    setKeyMsg(null);
+    setSavingKey(true);
+    try {
+      const res = await fetch("/api/org", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ echoes_api_key: keyInput.trim() || null }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setKeyErr(j.error ?? "Speichern fehlgeschlagen.");
+        return;
+      }
+      setKeyInput("");
+      setHasKeyLocal(true);
+      setKeyMsg("API-Key gespeichert.");
+    } finally {
+      setSavingKey(false);
+    }
+  };
+
+  const removeKey = async () => {
+    if (!confirm("Echoes API-Key wirklich entfernen?")) return;
+    setSavingKey(true);
+    try {
+      const res = await fetch("/api/org", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ echoes_api_key: null }),
+      });
+      if (res.ok) {
+        setHasKeyLocal(false);
+        setTestResult(null);
+        setKeyMsg("API-Key entfernt.");
+      }
+    } finally {
+      setSavingKey(false);
+    }
+  };
+
+  const testConnection = async () => {
+    setTestErr(null);
+    setTestResult(null);
+    setStubWarning(null);
+    setTesting(true);
+    try {
+      const res = await fetch("/api/org/echoes/test", { method: "POST" });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j.ok) {
+        setTestErr(j.error ?? "Verbindung fehlgeschlagen.");
+        return;
+      }
+      setTestResult(j.profile);
+      if (j.stub_warning) setStubWarning(j.stub_warning);
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg ring-1 ring-stone-200 bg-stone-50 p-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 text-sm font-medium text-stone-800">
+            <Lock size={14} className="text-stone-500" />
+            Echoes API-Key
+            {hasKeyLocal && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+                <Check size={11} /> Hinterlegt
+              </span>
+            )}
+          </div>
+          {hasKeyLocal && (
+            <button
+              type="button"
+              onClick={removeKey}
+              disabled={savingKey}
+              className="text-xs text-stone-500 hover:text-rose-700"
+            >
+              Entfernen
+            </button>
+          )}
+        </div>
+
+        <div className="mt-3 flex items-center gap-2">
+          <input
+            type="password"
+            value={keyInput}
+            onChange={(e) => setKeyInput(e.target.value)}
+            placeholder={hasKeyLocal ? "•••••••••••••••• (zum Ersetzen neuen Key eingeben)" : "API-Key aus Echoes einfügen"}
+            className="flex-1 px-3 py-2 rounded-md text-sm bg-white outline-none"
+            style={{ boxShadow: "inset 0 0 0 1px rgb(231 229 228)" }}
+            autoComplete="off"
+          />
+          <button
+            type="button"
+            onClick={saveKey}
+            disabled={savingKey || keyInput.trim().length === 0}
+            className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md ring-1 ring-stone-200 bg-white hover:bg-stone-100 disabled:opacity-40"
+          >
+            {savingKey ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+            Speichern
+          </button>
+        </div>
+
+        <div className="mt-2 text-[11px] text-stone-500">
+          Den API-Key bekommst du im Echoes-Dashboard unter Account → API. Wird ausschließlich serverseitig verwendet.
+        </div>
+
+        {keyMsg && <div className="mt-2 text-xs text-emerald-700">{keyMsg}</div>}
+        {keyErr && <div className="mt-2 text-xs text-rose-700">{keyErr}</div>}
+      </div>
+
+      <div className="grid sm:grid-cols-[1fr_auto] gap-3 items-end">
+        <label className="block">
+          <div className="text-[11px] uppercase tracking-wider text-stone-500 font-medium mb-1">
+            Echoes Account-ID
+          </div>
+          <input
+            value={accountId}
+            onChange={(e) => onAccountChange(e.target.value)}
+            placeholder="z. B. ECHO-12345"
+            className="w-full px-3 py-2 rounded-md text-sm bg-white outline-none"
+            style={{ boxShadow: "inset 0 0 0 1px rgb(231 229 228)" }}
+          />
+        </label>
+        <button
+          type="button"
+          onClick={testConnection}
+          disabled={!hasKeyLocal || !accountId.trim() || testing}
+          className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md ring-1 ring-stone-200 bg-white hover:bg-stone-50 disabled:opacity-40"
+        >
+          {testing ? <Loader2 size={13} className="animate-spin" /> : <Wifi size={13} />}
+          Verbindung testen
+        </button>
+      </div>
+
+      {testErr && (
+        <div className="text-sm rounded-md px-3 py-2 bg-rose-50 ring-1 ring-rose-200 text-rose-700">
+          {testErr}
+        </div>
+      )}
+      {testResult && (
+        <div className="text-sm rounded-md px-3 py-2 bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800">
+          <div className="font-medium flex items-center gap-1.5">
+            <Check size={14} /> Verbindung erfolgreich · {testResult.device_count} Tracker
+            {testResult.online_count != null && (
+              <span className="opacity-80">({testResult.online_count} online)</span>
+            )}
+          </div>
+          {testResult.sample && testResult.sample.length > 0 && (
+            <ul className="mt-2 space-y-0.5 text-xs opacity-90 font-mono">
+              {testResult.sample.map((d) => (
+                <li key={d.id}>
+                  {d.id} — {d.label}
+                  {d.plate && <span className="opacity-70"> · {d.plate}</span>}
+                  {!d.online && <span className="ml-1 opacity-70">(offline)</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+          {stubWarning && (
+            <div className="mt-2 text-[11px] text-amber-800 bg-amber-50 ring-1 ring-amber-200 rounded px-2 py-1">
+              ⚠ {stubWarning}
+            </div>
+          )}
+        </div>
+      )}
+
+      <label className="flex items-start gap-3 p-3 rounded-lg ring-1 ring-stone-200 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={(e) => onToggle(e.target.checked)}
+          disabled={!hasKeyLocal || !accountId.trim()}
+          className="mt-0.5 w-4 h-4 accent-teal-600 disabled:opacity-40"
+        />
+        <div className="flex-1">
+          <div className="font-medium text-sm flex items-center gap-1.5">
+            <MapPin size={13} /> GPS-Tracking aktivieren
+          </div>
+          <div className="text-xs text-stone-500 mt-1">
+            Wenn aktiviert: An jedem Fahrzeug mit hinterlegter Tracker-ID erscheint eine Standort-Karte. Über die Sync-Funktion können alle Positionen aktualisiert werden.
           </div>
         </div>
       </label>

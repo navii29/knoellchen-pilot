@@ -700,6 +700,98 @@ const processReturn: Tool = {
 };
 
 // =========================================================
+// 12) get_vehicle_location
+// =========================================================
+const getVehicleLocation: Tool = {
+  name: "get_vehicle_location",
+  description:
+    "Liefert die zuletzt bekannte GPS-Position eines Fahrzeugs anhand des Kennzeichens (aus dem internen Cache, der durch die Echoes.solutions-Sync befüllt wird). Gibt Latitude, Longitude, Zeitpunkt der Aufnahme und einen OpenStreetMap-Link zurück. Verwende dieses Tool wenn der Nutzer fragt: 'Wo ist M-OL 1001?', 'Wo steht das Auto X gerade?', 'Letzte Position von ...', 'Wann war das Auto zuletzt online?'.",
+  input_schema: {
+    type: "object",
+    properties: {
+      plate: {
+        type: "string",
+        description:
+          "Kennzeichen des Fahrzeugs, z. B. 'M-OL 1001'. Leerzeichen, Bindestriche und Groß/Kleinschreibung sind egal.",
+      },
+    },
+    required: ["plate"],
+  },
+  handler: async (input, ctx) => {
+    const plateRaw = input.plate;
+    if (typeof plateRaw !== "string" || !plateRaw.trim()) {
+      return { ok: false, error: "Kennzeichen fehlt." };
+    }
+    const plate = normalizePlate(plateRaw);
+    if (!plate) return { ok: false, error: `Kennzeichen ungültig: ${plateRaw}` };
+
+    const { data: vehicle, error } = await ctx.admin
+      .from("vehicles")
+      .select(
+        "id, plate, manufacturer, model, vehicle_type, echoes_device_id, last_gps_lat, last_gps_lng, last_gps_update"
+      )
+      .eq("org_id", ctx.org_id)
+      .eq("plate", plate)
+      .maybeSingle();
+    if (error) return { ok: false, error: error.message };
+    if (!vehicle)
+      return { ok: false, error: `Kein Fahrzeug mit Kennzeichen ${plate} gefunden.` };
+
+    if (!vehicle.echoes_device_id) {
+      return {
+        ok: true,
+        data: {
+          plate: vehicle.plate,
+          tracker_assigned: false,
+          message:
+            "Diesem Fahrzeug ist kein GPS-Tracker zugeordnet. Die Tracker-ID kann im Fahrzeug-Formular ergänzt werden.",
+        },
+      };
+    }
+
+    const lat = vehicle.last_gps_lat;
+    const lng = vehicle.last_gps_lng;
+    const updatedAt = vehicle.last_gps_update;
+    if (lat == null || lng == null) {
+      return {
+        ok: true,
+        data: {
+          plate: vehicle.plate,
+          tracker_assigned: true,
+          tracker_id: vehicle.echoes_device_id,
+          has_position: false,
+          message:
+            "Tracker ist zugeordnet, es wurde aber noch keine Position empfangen. Sync ausführen.",
+        },
+      };
+    }
+
+    const minutesAgo = updatedAt
+      ? Math.round((Date.now() - new Date(updatedAt).getTime()) / 60_000)
+      : null;
+
+    return {
+      ok: true,
+      data: {
+        plate: vehicle.plate,
+        label:
+          [vehicle.manufacturer, vehicle.model].filter(Boolean).join(" ") ||
+          vehicle.vehicle_type ||
+          null,
+        tracker_assigned: true,
+        tracker_id: vehicle.echoes_device_id,
+        has_position: true,
+        latitude: Number(lat),
+        longitude: Number(lng),
+        recorded_at: updatedAt,
+        minutes_ago: minutesAgo,
+        map_url: `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`,
+      },
+    };
+  },
+};
+
+// =========================================================
 // 11) get_vehicle_history
 // =========================================================
 const getVehicleHistory: Tool = {
@@ -832,6 +924,7 @@ export const TOOLS: Tool[] = [
   assignTicketToContract,
   processReturn,
   getVehicleHistory,
+  getVehicleLocation,
 ];
 
 export const TOOLS_FOR_API = TOOLS.map((t) => ({

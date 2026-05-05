@@ -2,12 +2,16 @@ import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 const SAFE_COLUMNS =
-  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, onboarding_completed, onboarding_step, created_at";
+  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, echoes_account_id, echoes_enabled, onboarding_completed, onboarding_step, created_at";
 
 const stripSecrets = <T extends Record<string, unknown>>(row: T) => {
-  const copy = { ...row } as T & { lexoffice_api_key?: string };
+  const copy = { ...row } as T & {
+    lexoffice_api_key?: string;
+    echoes_api_key?: string;
+  };
   delete copy.lexoffice_api_key;
-  return copy as Omit<T, "lexoffice_api_key">;
+  delete copy.echoes_api_key;
+  return copy as Omit<T, "lexoffice_api_key" | "echoes_api_key">;
 };
 
 export const PATCH = async (req: Request) => {
@@ -38,6 +42,9 @@ export const PATCH = async (req: Request) => {
     "email_automation_enabled",
     "lexoffice_api_key",
     "lexoffice_enabled",
+    "echoes_api_key",
+    "echoes_account_id",
+    "echoes_enabled",
   ];
   const update: Record<string, unknown> = {};
   for (const k of allowed) if (k in body) update[k] = body[k];
@@ -49,6 +56,18 @@ export const PATCH = async (req: Request) => {
   if ("lexoffice_api_key" in update) {
     const v = update.lexoffice_api_key;
     update.lexoffice_api_key =
+      typeof v === "string" && v.trim().length > 0 ? v.trim() : null;
+  }
+  if ("echoes_enabled" in update)
+    update.echoes_enabled = Boolean(update.echoes_enabled);
+  if ("echoes_api_key" in update) {
+    const v = update.echoes_api_key;
+    update.echoes_api_key =
+      typeof v === "string" && v.trim().length > 0 ? v.trim() : null;
+  }
+  if ("echoes_account_id" in update) {
+    const v = update.echoes_account_id;
+    update.echoes_account_id =
       typeof v === "string" && v.trim().length > 0 ? v.trim() : null;
   }
 
@@ -66,7 +85,8 @@ export const PATCH = async (req: Request) => {
   return NextResponse.json({
     ok: true,
     org: stripSecrets(data),
-    lexoffice_has_key: false, // wird durch GET separat geliefert
+    lexoffice_has_key: false,
+    echoes_has_key: false,
   });
 };
 
@@ -86,17 +106,23 @@ export const GET = async () => {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("organizations")
-    .select(`${SAFE_COLUMNS}, lexoffice_api_key`)
+    .select(`${SAFE_COLUMNS}, lexoffice_api_key, echoes_api_key`)
     .eq("id", profile.org_id)
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const hasKey =
-    typeof data.lexoffice_api_key === "string" && data.lexoffice_api_key.length > 0;
+  const row = data as Record<string, unknown>;
+  const lexofficeHasKey =
+    typeof row.lexoffice_api_key === "string" &&
+    (row.lexoffice_api_key as string).length > 0;
+  const echoesHasKey =
+    typeof row.echoes_api_key === "string" &&
+    (row.echoes_api_key as string).length > 0;
 
   return NextResponse.json({
     ok: true,
-    org: stripSecrets(data as Record<string, unknown>),
-    lexoffice_has_key: hasKey,
+    org: stripSecrets(row),
+    lexoffice_has_key: lexofficeHasKey,
+    echoes_has_key: echoesHasKey,
   });
 };

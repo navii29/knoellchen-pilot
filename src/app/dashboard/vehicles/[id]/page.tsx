@@ -19,6 +19,7 @@ import { VehicleForm } from "@/components/vehicle/VehicleForm";
 import { VehicleDeleteButton } from "./VehicleDeleteButton";
 import { VehicleEventsTimeline } from "@/components/vehicle/VehicleEventsTimeline";
 import { TuevCountdown } from "@/components/vehicle/TuevCountdown";
+import { GpsLocation } from "@/components/vehicle/GpsLocation";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeDecommission } from "@/lib/decommission";
 import { VEHICLE_STATUS_META, buildVehicleType } from "@/lib/vehicle";
@@ -42,7 +43,7 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
   if (!vehicle) notFound();
   const v = vehicle as Vehicle;
 
-  const [{ data: contracts }, { data: events }] = await Promise.all([
+  const [{ data: contracts }, { data: events }, { data: orgRow }] = await Promise.all([
     supabase
       .from("contracts")
       .select("*")
@@ -55,9 +56,12 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
       .eq("vehicle_id", v.id)
       .order("date", { ascending: false })
       .order("created_at", { ascending: false }),
+    supabase.from("organizations").select("echoes_enabled").single(),
   ]);
   const linkedContracts = (contracts || []) as Contract[];
   const vehicleEvents = (events || []) as VehicleEvent[];
+  const echoesEnabled = !!(orgRow as { echoes_enabled?: boolean } | null)
+    ?.echoes_enabled;
 
   const decom = computeDecommission(v);
   const status = VEHICLE_STATUS_META[v.status];
@@ -215,6 +219,18 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
               </div>
             )}
           </div>
+
+          {echoesEnabled && (
+            <div className="mt-6">
+              <GpsLocation
+                vehicleId={v.id}
+                hasDevice={!!v.echoes_device_id}
+                initialLat={v.last_gps_lat}
+                initialLng={v.last_gps_lng}
+                initialUpdatedAt={v.last_gps_update}
+              />
+            </div>
+          )}
 
           <div className="mt-6">
             <VehicleEventsTimeline vehicleId={v.id} events={vehicleEvents} />

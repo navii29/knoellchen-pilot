@@ -54,6 +54,9 @@ export type VehicleFormState = {
   // Sonstiges
   accessories: string;
   status: VehicleStatus;
+
+  // GPS-Tracking
+  echoes_device_id: string;
 };
 
 const empty: VehicleFormState = {
@@ -82,6 +85,7 @@ const empty: VehicleFormState = {
   deposit: "",
   accessories: "",
   status: "aktiv",
+  echoes_device_id: "",
 };
 
 const fromVehicle = (v: Vehicle): VehicleFormState => ({
@@ -110,6 +114,7 @@ const fromVehicle = (v: Vehicle): VehicleFormState => ({
   deposit: v.deposit != null ? String(v.deposit) : "",
   accessories: v.accessories || "",
   status: v.status || "aktiv",
+  echoes_device_id: v.echoes_device_id || "",
 });
 
 const addDays = (iso: string, days: number): string => {
@@ -438,6 +443,14 @@ export const VehicleForm = ({
                 </option>
               ))}
             </select>
+          </Field>
+          <Field label="GPS-Tracker ID (Echoes)">
+            <input
+              value={data.echoes_device_id}
+              onChange={set("echoes_device_id")}
+              placeholder="z. B. ECHO-12345"
+              className="input tabular-nums"
+            />
           </Field>
         </Card>
 

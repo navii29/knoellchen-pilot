@@ -17,6 +17,9 @@ export interface Organization {
   email_automation_enabled: boolean;
   lexoffice_enabled: boolean;
   // lexoffice_api_key absichtlich NICHT im Type — darf nie ans Frontend gelangen.
+  echoes_account_id: string | null;
+  echoes_enabled: boolean;
+  // echoes_api_key absichtlich NICHT im Type — darf nie ans Frontend gelangen.
   created_at: string;
 }
 
@@ -65,6 +68,11 @@ export interface Vehicle {
 
   accessories: string | null;
   status: VehicleStatus;
+
+  echoes_device_id: string | null;
+  last_gps_lat: number | null;
+  last_gps_lng: number | null;
+  last_gps_update: string | null;
 
   created_at: string;
   updated_at: string;

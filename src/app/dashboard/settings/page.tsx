@@ -6,20 +6,27 @@ import type { Organization } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 const SAFE_COLUMNS =
-  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, created_at";
+  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, echoes_account_id, echoes_enabled, created_at";
 
 export default async function SettingsPage() {
   const supabase = createClient();
   const { data } = await supabase
     .from("organizations")
-    .select(`${SAFE_COLUMNS}, lexoffice_api_key`)
+    .select(`${SAFE_COLUMNS}, lexoffice_api_key, echoes_api_key`)
     .single();
 
-  const { lexoffice_api_key, ...safe } = (data ?? {}) as {
+  const {
+    lexoffice_api_key,
+    echoes_api_key,
+    ...safe
+  } = (data ?? {}) as {
     lexoffice_api_key?: string | null;
+    echoes_api_key?: string | null;
   } & Record<string, unknown>;
   const lexofficeHasKey =
     typeof lexoffice_api_key === "string" && lexoffice_api_key.length > 0;
+  const echoesHasKey =
+    typeof echoes_api_key === "string" && echoes_api_key.length > 0;
 
   return (
     <>
@@ -29,6 +36,7 @@ export default async function SettingsPage() {
           <SettingsClient
             org={safe as unknown as Organization}
             lexofficeHasKey={lexofficeHasKey}
+            echoesHasKey={echoesHasKey}
           />
         </div>
       </div>

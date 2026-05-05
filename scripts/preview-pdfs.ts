@@ -24,6 +24,8 @@ const org: Organization = {
   sender_name: null,
   email_automation_enabled: true,
   lexoffice_enabled: false,
+  echoes_account_id: null,
+  echoes_enabled: false,
   created_at: new Date().toISOString(),
 };
 
