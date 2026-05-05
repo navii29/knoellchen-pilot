@@ -17,10 +17,13 @@ import { Topbar } from "@/components/dashboard/Topbar";
 import { ContractStatusBadge } from "@/components/contract/StatusBadge";
 import { VehicleForm } from "@/components/vehicle/VehicleForm";
 import { VehicleDeleteButton } from "./VehicleDeleteButton";
+import { VehicleEventsTimeline } from "@/components/vehicle/VehicleEventsTimeline";
+import { TuevCountdown } from "@/components/vehicle/TuevCountdown";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeDecommission } from "@/lib/decommission";
 import { VEHICLE_STATUS_META, buildVehicleType } from "@/lib/vehicle";
 import type { Contract, Vehicle } from "@/lib/types";
+import type { VehicleEvent } from "@/lib/vehicle-events";
 
 export const dynamic = "force-dynamic";
 
@@ -39,13 +42,22 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
   if (!vehicle) notFound();
   const v = vehicle as Vehicle;
 
-  const { data: contracts } = await supabase
-    .from("contracts")
-    .select("*")
-    .eq("plate", v.plate)
-    .order("pickup_date", { ascending: false })
-    .limit(50);
+  const [{ data: contracts }, { data: events }] = await Promise.all([
+    supabase
+      .from("contracts")
+      .select("*")
+      .eq("plate", v.plate)
+      .order("pickup_date", { ascending: false })
+      .limit(50),
+    supabase
+      .from("vehicle_events")
+      .select("*")
+      .eq("vehicle_id", v.id)
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false }),
+  ]);
   const linkedContracts = (contracts || []) as Contract[];
+  const vehicleEvents = (events || []) as VehicleEvent[];
 
   const decom = computeDecommission(v);
   const status = VEHICLE_STATUS_META[v.status];
@@ -93,6 +105,8 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
             </div>
             <VehicleDeleteButton vehicleId={v.id} />
           </div>
+
+          <TuevCountdown events={vehicleEvents} />
 
           {v.decommission_date && (
             <div
@@ -200,6 +214,10 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
                 <div className="text-sm whitespace-pre-wrap">{v.accessories}</div>
               </div>
             )}
+          </div>
+
+          <div className="mt-6">
+            <VehicleEventsTimeline vehicleId={v.id} events={vehicleEvents} />
           </div>
 
           <details className="mt-6 group">

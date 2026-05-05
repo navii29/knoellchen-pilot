@@ -8,7 +8,10 @@ import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 import { ThroughputChart } from "@/components/dashboard/ThroughputChart";
 import { TicketTable } from "@/components/dashboard/TicketTable";
 import { DecommissionAlert } from "@/components/dashboard/DecommissionAlert";
+import { VehicleDueAlert, type DueAlertItem } from "@/components/dashboard/VehicleDueAlert";
 import { isDecommissionAlertWindow } from "@/lib/decommission";
+import { buildVehicleType } from "@/lib/vehicle";
+import type { VehicleEventType } from "@/lib/vehicle-events";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +61,58 @@ export default async function DashboardPage() {
       .order("decommission_date", { ascending: true }),
   ]);
 
+  const dueWindowStart = new Date();
+  dueWindowStart.setHours(0, 0, 0, 0);
+  const dueWindowEnd = new Date(dueWindowStart);
+  dueWindowEnd.setDate(dueWindowEnd.getDate() + 30);
+  const todayIso = dueWindowStart.toISOString().slice(0, 10);
+  const horizonIso = dueWindowEnd.toISOString().slice(0, 10);
+
+  const { data: dueEventsRaw } = await supabase
+    .from("vehicle_events")
+    .select(
+      "vehicle_id, type, next_due_date, vehicles!inner(id, plate, manufacturer, model, vehicle_type)"
+    )
+    .gte("next_due_date", todayIso)
+    .lte("next_due_date", horizonIso)
+    .in("type", ["tuev", "service"])
+    .order("next_due_date", { ascending: true });
+
+  type DueVehicle = {
+    id: string;
+    plate: string;
+    manufacturer: string | null;
+    model: string | null;
+    vehicle_type: string | null;
+  };
+  type DueRow = {
+    vehicle_id: string;
+    type: string;
+    next_due_date: string;
+    vehicles: DueVehicle | DueVehicle[] | null;
+  };
+
+  const dueByKey = new Map<string, DueAlertItem>();
+  for (const row of (dueEventsRaw ?? []) as unknown as DueRow[]) {
+    const vehicleObj: DueVehicle | null = Array.isArray(row.vehicles)
+      ? row.vehicles[0] ?? null
+      : row.vehicles;
+    if (!vehicleObj || !row.next_due_date) continue;
+    const key = `${row.vehicle_id}-${row.type}`;
+    if (dueByKey.has(key)) continue;
+    dueByKey.set(key, {
+      vehicle_id: row.vehicle_id,
+      plate: vehicleObj.plate,
+      vehicle_label:
+        buildVehicleType(vehicleObj.manufacturer, vehicleObj.model) ||
+        vehicleObj.vehicle_type ||
+        "Fahrzeug",
+      type: row.type as VehicleEventType,
+      next_due_date: row.next_due_date,
+    });
+  }
+  const dueAlerts = Array.from(dueByKey.values());
+
   const allTickets = (tickets ?? []) as Ticket[];
   const allLogs = (logs ?? []) as TicketLog[];
   const recentContracts = (contracts ?? []) as Contract[];
@@ -106,6 +161,7 @@ export default async function DashboardPage() {
           </div>
 
           {decommissionAlerts.length > 0 && <DecommissionAlert vehicles={decommissionAlerts} />}
+          {dueAlerts.length > 0 && <VehicleDueAlert items={dueAlerts} />}
 
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="col-span-2 lg:col-span-2">

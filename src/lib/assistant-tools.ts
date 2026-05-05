@@ -4,6 +4,12 @@ import { computeDecommission } from "./decommission";
 import { computeReturnSummary } from "./km";
 import { normalizePlate } from "./plate";
 import type { Vehicle } from "./types";
+import {
+  EVENT_TYPE_META,
+  computeDue,
+  type VehicleEvent,
+  type VehicleEventType,
+} from "./vehicle-events";
 
 export type ToolContext = {
   org_id: string;
@@ -693,6 +699,127 @@ const processReturn: Tool = {
   },
 };
 
+// =========================================================
+// 11) get_vehicle_history
+// =========================================================
+const getVehicleHistory: Tool = {
+  name: "get_vehicle_history",
+  description:
+    "Liefert die Wartungs- und Service-Historie eines Fahrzeugs anhand des Kennzeichens, inklusive Service, Reifenwechsel, TÜV/HU, Reparaturen, Versicherung und sonstigen Ereignissen. Für jeden Eintrag werden Datum, Kosten, Anbieter/Werkstatt und der nächste fällige Termin (Datum + Tage bis dahin + Ampel-Status) zurückgegeben. Verwende dieses Tool, wenn der Nutzer fragt: 'Wann war der letzte Service von …', 'Wann ist der TÜV von … fällig', 'Was ist die Historie von …', 'Wann wurden zuletzt die Reifen gewechselt' oder 'Welche Reparaturen wurden an … gemacht'. Optional kann nach Typ gefiltert werden.",
+  input_schema: {
+    type: "object",
+    properties: {
+      plate: {
+        type: "string",
+        description:
+          "Kennzeichen des Fahrzeugs, z. B. 'M-OL 1001'. Leerzeichen, Bindestriche und Groß/Kleinschreibung sind egal.",
+      },
+      event_type: {
+        type: "string",
+        enum: ["service", "tires", "tuev", "repair", "insurance", "other"],
+        description:
+          "Optional: Nur Einträge dieses Typs. Beispiel: 'tuev' für reine TÜV-Abfrage.",
+      },
+      limit: {
+        type: "number",
+        description: "Maximale Anzahl Einträge (Default 10, max 50).",
+      },
+    },
+    required: ["plate"],
+  },
+  handler: async (input, ctx) => {
+    const plateRaw = input.plate;
+    if (typeof plateRaw !== "string" || !plateRaw.trim()) {
+      return { ok: false, error: "Kennzeichen fehlt." };
+    }
+    const plate = normalizePlate(plateRaw);
+    if (!plate) return { ok: false, error: `Kennzeichen ungültig: ${plateRaw}` };
+
+    const eventType = typeof input.event_type === "string" ? input.event_type : null;
+    const limit = Math.min(
+      Math.max(typeof input.limit === "number" ? input.limit : 10, 1),
+      50
+    );
+
+    const { data: vehicle, error: vErr } = await ctx.admin
+      .from("vehicles")
+      .select("id, plate, manufacturer, model, vehicle_type")
+      .eq("org_id", ctx.org_id)
+      .eq("plate", plate)
+      .maybeSingle();
+    if (vErr) return { ok: false, error: vErr.message };
+    if (!vehicle)
+      return {
+        ok: false,
+        error: `Kein Fahrzeug mit Kennzeichen ${plate} gefunden.`,
+      };
+
+    let query = ctx.admin
+      .from("vehicle_events")
+      .select("*")
+      .eq("org_id", ctx.org_id)
+      .eq("vehicle_id", vehicle.id)
+      .order("date", { ascending: false })
+      .limit(limit);
+    if (eventType) query = query.eq("type", eventType);
+
+    const { data: events, error: eErr } = await query;
+    if (eErr) return { ok: false, error: eErr.message };
+
+    const enriched = ((events ?? []) as VehicleEvent[]).map((ev) => {
+      const due = ev.next_due_date ? computeDue(ev.next_due_date) : null;
+      return {
+        id: ev.id,
+        type: ev.type,
+        type_label: EVENT_TYPE_META[ev.type as VehicleEventType].label,
+        date: ev.date,
+        km_at_event: ev.km_at_event,
+        description: ev.description,
+        cost_eur: ev.cost,
+        provider: ev.provider,
+        next_due_date: ev.next_due_date,
+        next_due_km: ev.next_due_km,
+        next_due_days_left: due?.daysLeft ?? null,
+        next_due_level: due?.level ?? null,
+        next_due_status: due?.label ?? null,
+        has_document: !!ev.document_path,
+      };
+    });
+
+    // Quick lookups for the common questions
+    const typedEvents = (events ?? []) as VehicleEvent[];
+    const lastService = typedEvents.find((e) => e.type === "service") ?? null;
+    const tuevWithDue = typedEvents
+      .filter((e) => e.type === "tuev" && e.next_due_date)
+      .sort((a, b) => (a.date < b.date ? 1 : -1))[0];
+
+    return {
+      ok: true,
+      data: {
+        vehicle: {
+          id: vehicle.id,
+          plate: vehicle.plate,
+          label:
+            [vehicle.manufacturer, vehicle.model].filter(Boolean).join(" ") ||
+            vehicle.vehicle_type ||
+            null,
+        },
+        count: enriched.length,
+        filter_type: eventType,
+        events: enriched,
+        last_service_date: lastService?.date ?? null,
+        next_tuev: tuevWithDue
+          ? {
+              due_date: tuevWithDue.next_due_date,
+              days_left: computeDue(tuevWithDue.next_due_date).daysLeft,
+              status: computeDue(tuevWithDue.next_due_date).label,
+            }
+          : null,
+      },
+    };
+  },
+};
+
 export const TOOLS: Tool[] = [
   createContract,
   createVehicle,
@@ -704,6 +831,7 @@ export const TOOLS: Tool[] = [
   findAvailableVehicles,
   assignTicketToContract,
   processReturn,
+  getVehicleHistory,
 ];
 
 export const TOOLS_FOR_API = TOOLS.map((t) => ({
