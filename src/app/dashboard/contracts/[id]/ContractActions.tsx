@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   AlertTriangle,
+  Calculator,
   Camera,
   Check,
   Download,
@@ -36,9 +37,11 @@ const todayIso = () => new Date().toISOString().slice(0, 10);
 export const ContractActions = ({
   contract,
   pdfUrl,
+  lexofficeEnabled,
 }: {
   contract: Contract;
   pdfUrl: string | null;
+  lexofficeEnabled: boolean;
 }) => {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -69,6 +72,21 @@ export const ContractActions = ({
     const res = await fetch(`/api/contracts/${contract.id}`, { method: "DELETE" });
     setBusy(null);
     if (res.ok) router.push("/dashboard/contracts");
+  };
+
+  const syncLexoffice = async () => {
+    setBusy("lexoffice");
+    setError(null);
+    const res = await fetch(`/api/contracts/${contract.id}/sync-lexoffice`, {
+      method: "POST",
+    });
+    const j = await res.json().catch(() => ({}));
+    setBusy(null);
+    if (!res.ok) {
+      setError(j.error || "Übertragung fehlgeschlagen");
+      return;
+    }
+    router.refresh();
   };
 
   return (
@@ -112,6 +130,31 @@ export const ContractActions = ({
             Stornieren
           </button>
         )}
+
+        {lexofficeEnabled &&
+          contract.status === "abgeschlossen" &&
+          (contract.lexoffice_invoice_id ? (
+            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-md bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800">
+              <Check size={12} />
+              In LexOffice
+              <span className="font-mono text-[11px] opacity-70">
+                · {contract.lexoffice_invoice_id.slice(0, 8)}
+              </span>
+            </span>
+          ) : (
+            <button
+              onClick={syncLexoffice}
+              disabled={busy != null}
+              className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-stone-200 hover:bg-stone-50 text-stone-700"
+            >
+              {busy === "lexoffice" ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Calculator size={14} />
+              )}
+              An LexOffice übertragen
+            </button>
+          ))}
 
         <div className="ml-auto">
           <button

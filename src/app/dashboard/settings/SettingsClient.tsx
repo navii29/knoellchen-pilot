@@ -1,11 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronDown, Copy, Loader2, Save, Send } from "lucide-react";
+import {
+  Calculator,
+  Check,
+  ChevronDown,
+  Copy,
+  Loader2,
+  Lock,
+  Save,
+  Send,
+  Wifi,
+} from "lucide-react";
 import { THEME } from "@/lib/theme";
 import type { Organization } from "@/lib/types";
 
-export const SettingsClient = ({ org }: { org: Organization }) => {
+export const SettingsClient = ({
+  org,
+  lexofficeHasKey,
+}: {
+  org: Organization;
+  lexofficeHasKey: boolean;
+}) => {
   const [data, setData] = useState({
     name: org?.name || "",
     street: org?.street || "",
@@ -18,6 +34,7 @@ export const SettingsClient = ({ org }: { org: Organization }) => {
     sender_name: org?.sender_name || "",
     sender_email: org?.sender_email || "",
     email_automation_enabled: org?.email_automation_enabled || false,
+    lexoffice_enabled: org?.lexoffice_enabled || false,
   });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -147,6 +164,17 @@ export const SettingsClient = ({ org }: { org: Organization }) => {
           </label>
         </Section>
 
+        <Section
+          title="Buchhaltung"
+          subtitle="Mietverträge und Strafzettel-Rechnungen direkt in LexOffice anlegen."
+        >
+          <LexOfficeCard
+            hasKey={lexofficeHasKey}
+            enabled={data.lexoffice_enabled}
+            onToggle={(v) => setData((d) => ({ ...d, lexoffice_enabled: v }))}
+          />
+        </Section>
+
         {err && <div className="text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2">{err}</div>}
         {msg && (
           <div className="text-sm text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200 rounded-lg px-3 py-2">
@@ -203,6 +231,208 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
     {children}
   </label>
 );
+
+const LexOfficeCard = ({
+  hasKey,
+  enabled,
+  onToggle,
+}: {
+  hasKey: boolean;
+  enabled: boolean;
+  onToggle: (v: boolean) => void;
+}) => {
+  const [keyInput, setKeyInput] = useState("");
+  const [savingKey, setSavingKey] = useState(false);
+  const [keyMsg, setKeyMsg] = useState<string | null>(null);
+  const [keyErr, setKeyErr] = useState<string | null>(null);
+  const [hasKeyLocal, setHasKeyLocal] = useState(hasKey);
+
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{
+    company_name?: string;
+    organization_id?: string;
+    tax_number?: string | null;
+    vat_id?: string | null;
+  } | null>(null);
+  const [testErr, setTestErr] = useState<string | null>(null);
+
+  const saveKey = async () => {
+    setKeyErr(null);
+    setKeyMsg(null);
+    setSavingKey(true);
+    try {
+      const res = await fetch("/api/org", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lexoffice_api_key: keyInput.trim() || null }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setKeyErr(j.error ?? "Speichern fehlgeschlagen.");
+        return;
+      }
+      setKeyInput("");
+      setHasKeyLocal(true);
+      setKeyMsg("API-Key gespeichert.");
+    } finally {
+      setSavingKey(false);
+    }
+  };
+
+  const removeKey = async () => {
+    if (!confirm("API-Key wirklich entfernen?")) return;
+    setSavingKey(true);
+    try {
+      const res = await fetch("/api/org", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lexoffice_api_key: null }),
+      });
+      if (res.ok) {
+        setHasKeyLocal(false);
+        setTestResult(null);
+        setKeyMsg("API-Key entfernt.");
+      }
+    } finally {
+      setSavingKey(false);
+    }
+  };
+
+  const testConnection = async () => {
+    setTestErr(null);
+    setTestResult(null);
+    setTesting(true);
+    try {
+      const res = await fetch("/api/org/lexoffice/test", { method: "POST" });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j.ok) {
+        setTestErr(j.error ?? "Verbindung fehlgeschlagen.");
+        return;
+      }
+      setTestResult(j.profile);
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg ring-1 ring-stone-200 bg-stone-50 p-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 text-sm font-medium text-stone-800">
+            <Lock size={14} className="text-stone-500" />
+            LexOffice API-Key
+            {hasKeyLocal && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+                <Check size={11} /> Hinterlegt
+              </span>
+            )}
+          </div>
+          {hasKeyLocal && (
+            <button
+              type="button"
+              onClick={removeKey}
+              disabled={savingKey}
+              className="text-xs text-stone-500 hover:text-rose-700"
+            >
+              Entfernen
+            </button>
+          )}
+        </div>
+
+        <div className="mt-3 flex items-center gap-2">
+          <input
+            type="password"
+            value={keyInput}
+            onChange={(e) => setKeyInput(e.target.value)}
+            placeholder={hasKeyLocal ? "•••••••••••••••• (zum Ersetzen neuen Key eingeben)" : "API-Key aus LexOffice einfügen"}
+            className="flex-1 px-3 py-2 rounded-md text-sm bg-white outline-none"
+            style={{ boxShadow: "inset 0 0 0 1px rgb(231 229 228)" }}
+            autoComplete="off"
+          />
+          <button
+            type="button"
+            onClick={saveKey}
+            disabled={savingKey || keyInput.trim().length === 0}
+            className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md ring-1 ring-stone-200 bg-white hover:bg-stone-100 disabled:opacity-40"
+          >
+            {savingKey ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+            Speichern
+          </button>
+        </div>
+
+        <div className="mt-2 text-[11px] text-stone-500">
+          Den API-Key finden Sie in LexOffice unter Mein Konto → Öffentliche API → Schlüssel erstellen. Er wird nur serverseitig verwendet und niemals an den Browser gesendet.
+        </div>
+
+        {keyMsg && (
+          <div className="mt-2 text-xs text-emerald-700">{keyMsg}</div>
+        )}
+        {keyErr && <div className="mt-2 text-xs text-rose-700">{keyErr}</div>}
+      </div>
+
+      <div className="rounded-lg ring-1 ring-stone-200 p-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 text-sm font-medium text-stone-800">
+            <Wifi size={14} className="text-stone-500" />
+            Verbindung testen
+          </div>
+          <button
+            type="button"
+            onClick={testConnection}
+            disabled={!hasKeyLocal || testing}
+            className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md ring-1 ring-stone-200 bg-white hover:bg-stone-50 disabled:opacity-40"
+          >
+            {testing ? <Loader2 size={13} className="animate-spin" /> : <Wifi size={13} />}
+            Test
+          </button>
+        </div>
+        {!hasKeyLocal && (
+          <div className="mt-2 text-xs text-stone-500">
+            Erst API-Key speichern, dann Verbindung prüfen.
+          </div>
+        )}
+        {testErr && (
+          <div className="mt-3 text-sm rounded-md px-3 py-2 bg-rose-50 ring-1 ring-rose-200 text-rose-700">
+            {testErr}
+          </div>
+        )}
+        {testResult && (
+          <div className="mt-3 text-sm rounded-md px-3 py-2 bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800">
+            <div className="font-medium flex items-center gap-1.5">
+              <Check size={14} /> Verbunden mit {testResult.company_name}
+            </div>
+            <div className="mt-1 text-xs opacity-90 space-y-0.5">
+              {testResult.tax_number && <div>Steuernummer: {testResult.tax_number}</div>}
+              {testResult.vat_id && <div>USt-IdNr.: {testResult.vat_id}</div>}
+              <div className="font-mono text-[11px] opacity-70">
+                Org-ID: {testResult.organization_id}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <label className="flex items-start gap-3 p-3 rounded-lg ring-1 ring-stone-200 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={(e) => onToggle(e.target.checked)}
+          disabled={!hasKeyLocal}
+          className="mt-0.5 w-4 h-4 accent-teal-600 disabled:opacity-40"
+        />
+        <div className="flex-1">
+          <div className="font-medium text-sm flex items-center gap-1.5">
+            <Calculator size={13} /> LexOffice-Übertragung aktivieren
+          </div>
+          <div className="text-xs text-stone-500 mt-1">
+            Wenn aktiviert: An Verträgen und Strafzetteln erscheint ein Button „An LexOffice übertragen“. Übertragene Dokumente werden in LexOffice als finalisierte Rechnungen angelegt und sind dort unveränderlich.
+          </div>
+        </div>
+      </label>
+    </div>
+  );
+};
 
 const InboundCard = ({ inboundEmail }: { inboundEmail: string | null }) => {
   const [copied, setCopied] = useState(false);

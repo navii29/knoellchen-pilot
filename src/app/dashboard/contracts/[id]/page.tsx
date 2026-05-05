@@ -20,13 +20,14 @@ export default async function ContractDetailPage({ params }: { params: { id: str
   } = await supabase.auth.getUser();
   if (!user) notFound();
 
-  const { data: contract } = await supabase
-    .from("contracts")
-    .select("*")
-    .eq("id", params.id)
-    .maybeSingle();
+  const [{ data: contract }, { data: orgRow }] = await Promise.all([
+    supabase.from("contracts").select("*").eq("id", params.id).maybeSingle(),
+    supabase.from("organizations").select("lexoffice_enabled").single(),
+  ]);
   if (!contract) notFound();
   const c = contract as Contract;
+  const lexofficeEnabled = !!(orgRow as { lexoffice_enabled?: boolean } | null)
+    ?.lexoffice_enabled;
 
   const { data: tickets } = await supabase
     .from("tickets")
@@ -206,7 +207,11 @@ export default async function ContractDetailPage({ params }: { params: { id: str
           )}
 
           <div className="mt-6">
-            <ContractActions contract={c} pdfUrl={pdfUrl} />
+            <ContractActions
+              contract={c}
+              pdfUrl={pdfUrl}
+              lexofficeEnabled={lexofficeEnabled}
+            />
           </div>
 
           <div className="mt-6">

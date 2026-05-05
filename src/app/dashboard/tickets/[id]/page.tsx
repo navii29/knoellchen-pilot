@@ -35,7 +35,7 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
   if (!ticket) notFound();
   const t = ticket as Ticket;
 
-  const [{ data: contractData }, { data: logs }] = await Promise.all([
+  const [{ data: contractData }, { data: logs }, { data: orgRow }] = await Promise.all([
     t.contract_id
       ? supabase.from("contracts").select("*").eq("id", t.contract_id).maybeSingle()
       : Promise.resolve({ data: null as Contract | null }),
@@ -44,8 +44,11 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
       .select("*")
       .eq("ticket_id", t.id)
       .order("created_at", { ascending: true }),
+    supabase.from("organizations").select("lexoffice_enabled").single(),
   ]);
   const contract = contractData as Contract | null;
+  const lexofficeEnabled = !!(orgRow as { lexoffice_enabled?: boolean } | null)
+    ?.lexoffice_enabled;
 
   let uploadUrl: string | null = null;
   if (t.upload_path) {
@@ -180,7 +183,7 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
               )}
             </div>
 
-            <TicketActions ticket={t} />
+            <TicketActions ticket={t} lexofficeEnabled={lexofficeEnabled} />
 
             <div>
               <div className="text-xs uppercase tracking-wider text-stone-500 font-medium mb-2">Verlauf</div>

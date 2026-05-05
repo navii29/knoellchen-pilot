@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Building2,
+  Calculator,
   Check,
   CheckCircle,
   FileStack,
@@ -20,7 +21,13 @@ import { THEME } from "@/lib/theme";
 import { fmtEur, fmtDate } from "@/lib/utils";
 import type { Ticket } from "@/lib/types";
 
-export const TicketActions = ({ ticket }: { ticket: Ticket }) => {
+export const TicketActions = ({
+  ticket,
+  lexofficeEnabled,
+}: {
+  ticket: Ticket;
+  lexofficeEnabled: boolean;
+}) => {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +48,21 @@ export const TicketActions = ({ ticket }: { ticket: Ticket }) => {
       setInfo(null);
     }
     return true;
+  };
+
+  const syncLexoffice = async () => {
+    setLoading("lexoffice");
+    setError(null);
+    const res = await fetch(`/api/tickets/${ticket.id}/sync-lexoffice`, {
+      method: "POST",
+    });
+    const j = await res.json().catch(() => ({}));
+    setLoading(null);
+    if (!res.ok) {
+      setError(j.error || "Übertragung fehlgeschlagen");
+      return;
+    }
+    router.refresh();
   };
 
   const generateDocs = async () => {
@@ -203,6 +225,33 @@ export const TicketActions = ({ ticket }: { ticket: Ticket }) => {
           loading={loading === "paid"}
         />
       </div>
+
+      {lexofficeEnabled && (ticket.charge_fine || ticket.charge_fee) && (
+        <div className="mt-3">
+          {ticket.lexoffice_invoice_id ? (
+            <div className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800">
+              <Check size={14} />
+              <span className="font-medium">In LexOffice</span>
+              <span className="font-mono text-[11px] opacity-70">
+                · {ticket.lexoffice_invoice_id.slice(0, 8)}
+              </span>
+            </div>
+          ) : (
+            <button
+              onClick={syncLexoffice}
+              disabled={loading != null}
+              className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md ring-1 ring-stone-200 hover:bg-stone-50 text-stone-700 disabled:opacity-50"
+            >
+              {loading === "lexoffice" ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Calculator size={14} />
+              )}
+              An LexOffice übertragen
+            </button>
+          )}
+        </div>
+      )}
 
       {(showAuthorityField || (!ticket.authority_email && !ticket.authority_sent)) && (
         <div className="mt-3 flex items-center gap-2">

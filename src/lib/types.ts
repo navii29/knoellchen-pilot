@@ -15,6 +15,8 @@ export interface Organization {
   sender_email: string | null;
   sender_name: string | null;
   email_automation_enabled: boolean;
+  lexoffice_enabled: boolean;
+  // lexoffice_api_key absichtlich NICHT im Type — darf nie ans Frontend gelangen.
   created_at: string;
 }
 
@@ -103,6 +105,7 @@ export interface Contract {
   km_driven: number | null;
   km_excess: number | null;
   status: ContractStatus;
+  lexoffice_invoice_id: string | null;
   contract_pdf_path: string | null;
   pickup_photos: unknown[];
   return_photos: unknown[];
@@ -277,6 +280,7 @@ export interface Ticket {
   fee_vat: number | null;
   fee_gross: number | null;
   total_charge: number | null;
+  lexoffice_invoice_id: string | null;
   paid: boolean;
   reminder_level: number;
   upload_path: string | null;

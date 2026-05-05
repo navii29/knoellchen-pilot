@@ -23,6 +23,7 @@ const org: Organization = {
   sender_email: null,
   sender_name: null,
   email_automation_enabled: true,
+  lexoffice_enabled: false,
   created_at: new Date().toISOString(),
 };
 
@@ -56,6 +57,7 @@ const ticket: Ticket = {
   fee_vat: 4.75,
   fee_gross: 29.75,
   total_charge: 144.75,
+  lexoffice_invoice_id: null,
   paid: false,
   reminder_level: 0,
   upload_path: null,
@@ -109,6 +111,7 @@ const contract: Contract = {
   km_driven: null,
   km_excess: null,
   status: "aktiv",
+  lexoffice_invoice_id: null,
   contract_pdf_path: null,
   pickup_photos: [],
   return_photos: [],
