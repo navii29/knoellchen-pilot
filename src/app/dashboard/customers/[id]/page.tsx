@@ -86,7 +86,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                 </div>
               )}
             </div>
-            <CustomerActions customerId={c.id} />
+            <CustomerActions customerId={c.id} customerEmail={c.email} />
           </div>
 
           <div className="mt-6 grid sm:grid-cols-2 gap-3">
