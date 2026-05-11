@@ -74,6 +74,7 @@ export const POST = async (req: Request) => {
     inclusive_km_month: intOrNull(body.inclusive_km_month),
 
     daily_rate: numOrNull(body.daily_rate),
+    base_daily_rate: numOrNull(body.base_daily_rate),
     weekly_rate: numOrNull(body.weekly_rate),
     monthly_rate: numOrNull(body.monthly_rate),
     deposit: numOrNull(body.deposit),

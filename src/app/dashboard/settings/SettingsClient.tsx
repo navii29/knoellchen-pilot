@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Calculator,
   Check,
   ChevronDown,
+  ChevronRight,
   Copy,
   FileSignature,
   Loader2,
@@ -13,6 +15,7 @@ import {
   RotateCcw,
   Save,
   Send,
+  TrendingUp,
   Wifi,
 } from "lucide-react";
 import { DEFAULT_RENTAL_TERMS } from "@/lib/rental-terms";
@@ -198,6 +201,28 @@ export const SettingsClient = ({
             onToggle={(v) => setData((d) => ({ ...d, echoes_enabled: v }))}
           />
         </Section>
+
+        <Link
+          href="/dashboard/settings/pricing"
+          className="rounded-xl bg-white ring-1 ring-stone-200 p-6 hover:ring-stone-300 transition flex items-center gap-4 group"
+        >
+          <div className="w-11 h-11 rounded-xl bg-teal-50 ring-1 ring-teal-200 flex items-center justify-center text-teal-700 shrink-0">
+            <TrendingUp size={18} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-display font-semibold text-stone-900">
+              Preisregeln & Revenue Management
+            </div>
+            <div className="text-xs text-stone-500 mt-0.5 max-w-xl">
+              Definiere Saison-, Wochentag- und Nachfrage-Aufschläge. Die App
+              schlägt bei jedem Vertrag den optimalen Tagespreis vor.
+            </div>
+          </div>
+          <ChevronRight
+            size={16}
+            className="text-stone-400 group-hover:text-stone-700 transition shrink-0"
+          />
+        </Link>
 
         <Section
           title="Mietbedingungen (AGB)"

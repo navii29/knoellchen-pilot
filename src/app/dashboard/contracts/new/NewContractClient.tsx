@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, FileSignature, FileText, Loader2, Save, ScanText, Sparkles, UserCheck, X } from "lucide-react";
+import { ArrowLeft, Check, FileSignature, FileText, Loader2, Save, ScanText, Sparkles, TrendingUp, UserCheck, X } from "lucide-react";
 import Link from "next/link";
 import { THEME } from "@/lib/theme";
 import type { Customer, ParsedContractData } from "@/lib/types";
@@ -409,6 +409,16 @@ export const NewContractClient = ({
           </Section>
 
           <Section title="Kosten & Kilometer">
+            <div className="sm:col-span-2">
+              <PriceRecommendation
+                plate={data.plate}
+                pickupDate={data.pickup_date}
+                returnDate={data.return_date}
+                onApply={(price) =>
+                  setData((d) => ({ ...d, daily_rate: price.toFixed(2) }))
+                }
+              />
+            </div>
             <Field label="Tagespreis (€)">
               <input value={data.daily_rate} onChange={set("daily_rate")} className="input tabular-nums" />
             </Field>
@@ -532,3 +542,139 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
     {children}
   </label>
 );
+
+type CalcResponse =
+  | {
+      ok: true;
+      mode: "day";
+      recommendation: { final_price: number; total_percent: number; explanation: string };
+    }
+  | {
+      ok: true;
+      mode: "period";
+      period: { average_daily_price: number; total_price: number; days: number; explanation: string };
+    }
+  | { ok?: false; error?: string };
+
+const PriceRecommendation = ({
+  plate,
+  pickupDate,
+  returnDate,
+  onApply,
+}: {
+  plate: string;
+  pickupDate: string;
+  returnDate: string;
+  onApply: (price: number) => void;
+}) => {
+  const [data, setData] = useState<CalcResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!plate.trim() || !pickupDate || !returnDate) {
+      setData(null);
+      return;
+    }
+    let cancelled = false;
+    const handle = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const url = `/api/pricing/calculate?plate=${encodeURIComponent(
+          plate
+        )}&pickup_date=${pickupDate}&return_date=${returnDate}`;
+        const res = await fetch(url);
+        const j = (await res.json().catch(() => ({}))) as CalcResponse;
+        if (!cancelled) setData(j);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
+  }, [plate, pickupDate, returnDate]);
+
+  if (!plate.trim() || !pickupDate || !returnDate) return null;
+  if (loading && !data) {
+    return (
+      <div className="rounded-lg ring-1 ring-stone-200 bg-stone-50 px-4 py-3 text-[12.5px] text-stone-500 flex items-center gap-2">
+        <Loader2 size={13} className="animate-spin" />
+        Berechne Preisempfehlung…
+      </div>
+    );
+  }
+  if (!data) return null;
+  if (!data.ok) {
+    return (
+      <div className="rounded-lg ring-1 ring-amber-200 bg-amber-50 px-4 py-3 text-[12.5px] text-amber-800">
+        Keine Empfehlung verfügbar
+        {"error" in data && data.error ? `: ${data.error}` : "."}
+      </div>
+    );
+  }
+
+  const price =
+    data.mode === "day" ? data.recommendation.final_price : data.period.average_daily_price;
+  const explanation =
+    data.mode === "day" ? data.recommendation.explanation : data.period.explanation;
+  const totalPct =
+    data.mode === "day" ? data.recommendation.total_percent : null;
+  const periodTotal = data.mode === "period" ? data.period.total_price : null;
+  const days = data.mode === "period" ? data.period.days : 1;
+
+  return (
+    <div
+      className="rounded-lg ring-1 px-4 py-3"
+      style={{
+        background:
+          totalPct == null || totalPct === 0
+            ? "#f0fdf4"
+            : totalPct > 15
+            ? "#fef2f2"
+            : "#fefce8",
+        boxShadow: `inset 0 0 0 1px ${
+          totalPct == null || totalPct === 0
+            ? "#bbf7d0"
+            : totalPct > 15
+            ? "#fecaca"
+            : "#fde68a"
+        }`,
+      }}
+    >
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <TrendingUp size={14} className="text-stone-700 shrink-0" />
+          <div className="min-w-0">
+            <div className="text-[12px] uppercase tracking-[0.06em] font-semibold text-stone-700">
+              KI-Empfehlung
+            </div>
+            <div className="font-display text-[20px] tracking-tight font-medium text-stone-900 leading-tight">
+              {price.toLocaleString("de-DE", {
+                style: "currency",
+                currency: "EUR",
+                minimumFractionDigits: 2,
+              })}
+              <span className="text-[12px] text-stone-500 ml-1">/ Tag</span>
+            </div>
+            {periodTotal != null && (
+              <div className="text-[11.5px] text-stone-500 tabular-nums mt-0.5">
+                ≈ {periodTotal.toFixed(2).replace(".", ",")} € gesamt ({days} Tage)
+              </div>
+            )}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => onApply(price)}
+          className="inline-flex items-center gap-1 text-[12.5px] px-3 py-1.5 rounded-md bg-stone-900 text-white font-medium hover:bg-stone-800"
+        >
+          <Check size={12} /> Übernehmen
+        </button>
+      </div>
+      <div className="mt-2 text-[11.5px] text-stone-600 leading-snug">
+        {explanation}
+      </div>
+    </div>
+  );
+};

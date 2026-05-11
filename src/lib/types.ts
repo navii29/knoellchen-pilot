@@ -63,6 +63,7 @@ export interface Vehicle {
   inclusive_km_month: number | null;
 
   daily_rate: number | null;
+  base_daily_rate: number | null;
   weekly_rate: number | null;
   monthly_rate: number | null;
   deposit: number | null;
@@ -77,6 +78,22 @@ export interface Vehicle {
 
   created_at: string;
   updated_at: string;
+}
+
+export type PricingRuleType = "season" | "weekday" | "demand" | "custom";
+
+export interface PricingRule {
+  id: string;
+  org_id: string;
+  name: string;
+  type: PricingRuleType;
+  adjustment_percent: number;
+  start_date: string | null;
+  end_date: string | null;
+  weekdays: number[] | null;
+  min_fleet_available: number | null;
+  active: boolean;
+  created_at: string;
 }
 
 export type ContractStatus = "aktiv" | "abgeschlossen" | "storniert";

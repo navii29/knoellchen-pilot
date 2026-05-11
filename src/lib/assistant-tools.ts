@@ -10,6 +10,8 @@ import {
   type VehicleEvent,
   type VehicleEventType,
 } from "./vehicle-events";
+import { calculateOptimalPrice } from "./pricing";
+import type { PricingRule } from "./types";
 
 export type ToolContext = {
   org_id: string;
@@ -700,6 +702,107 @@ const processReturn: Tool = {
 };
 
 // =========================================================
+// 13) get_price_recommendation
+// =========================================================
+const getPriceRecommendation: Tool = {
+  name: "get_price_recommendation",
+  description:
+    "Berechnet den optimalen Tagespreis für ein Fahrzeug an einem bestimmten Datum. Berücksichtigt aktive Preisregeln (Saison, Wochentag, Nachfrage/Auslastung, Pauschal). Liefert Basispreis, alle angewendeten Anpassungen mit Prozent und Eurobetrag, den Endpreis und eine kurze Begründung. Verwende dieses Tool wenn der Nutzer fragt: 'Was sollte X heute kosten?', 'Was ist der beste Preis für ... am Freitag?', 'Wie viel Aufschlag bei hoher Nachfrage?', 'Welcher Preis am Wochenende für M-OL 1001?'.",
+  input_schema: {
+    type: "object",
+    properties: {
+      plate: {
+        type: "string",
+        description:
+          "Kennzeichen des Fahrzeugs, z. B. 'M-OL 1001'. Leerzeichen, Bindestriche und Groß/Kleinschreibung sind egal.",
+      },
+      date: {
+        type: "string",
+        description:
+          "Datum im Format YYYY-MM-DD. Wenn weggelassen wird das heutige Datum verwendet. Akzeptiert auch deutsche Formate wie 14.05.2026.",
+      },
+    },
+    required: ["plate"],
+  },
+  handler: async (input, ctx) => {
+    const plateRaw = input.plate;
+    if (typeof plateRaw !== "string" || !plateRaw.trim()) {
+      return { ok: false, error: "Kennzeichen fehlt." };
+    }
+    const plate = normalizePlate(plateRaw);
+    if (!plate) return { ok: false, error: `Kennzeichen ungültig: ${plateRaw}` };
+
+    const dateInput = parseDate(input.date) ?? new Date().toISOString().slice(0, 10);
+
+    const { data: vehicle, error: vErr } = await ctx.admin
+      .from("vehicles")
+      .select(
+        "id, plate, manufacturer, model, vehicle_type, daily_rate, base_daily_rate"
+      )
+      .eq("org_id", ctx.org_id)
+      .eq("plate", plate)
+      .maybeSingle();
+    if (vErr) return { ok: false, error: vErr.message };
+    if (!vehicle)
+      return { ok: false, error: `Kein Fahrzeug mit Kennzeichen ${plate} gefunden.` };
+
+    const [{ data: rulesRaw }, { count: totalFleet }, { count: bookedCount }] =
+      await Promise.all([
+        ctx.admin
+          .from("pricing_rules")
+          .select("*")
+          .eq("org_id", ctx.org_id)
+          .eq("active", true),
+        ctx.admin
+          .from("vehicles")
+          .select("*", { count: "exact", head: true })
+          .eq("org_id", ctx.org_id),
+        ctx.admin
+          .from("contracts")
+          .select("*", { count: "exact", head: true })
+          .eq("org_id", ctx.org_id)
+          .eq("status", "aktiv")
+          .lte("pickup_date", dateInput)
+          .gte("return_date", dateInput),
+      ]);
+
+    const total = totalFleet ?? 0;
+    const free = Math.max(0, total - (bookedCount ?? 0));
+
+    const recommendation = calculateOptimalPrice({
+      vehicle: vehicle as { daily_rate: number | null; base_daily_rate: number | null },
+      date: dateInput,
+      rules: (rulesRaw ?? []) as PricingRule[],
+      freeFleetCount: free,
+      totalFleetCount: total,
+    });
+
+    return {
+      ok: true,
+      data: {
+        vehicle: {
+          id: vehicle.id,
+          plate: vehicle.plate,
+          label:
+            [vehicle.manufacturer, vehicle.model].filter(Boolean).join(" ") ||
+            vehicle.vehicle_type ||
+            null,
+        },
+        date: recommendation.date,
+        base_price_eur: recommendation.base_price,
+        base_source: recommendation.base_source,
+        adjustments: recommendation.adjustments,
+        total_percent: recommendation.total_percent,
+        final_price_eur: recommendation.final_price,
+        free_fleet: free,
+        total_fleet: total,
+        explanation: recommendation.explanation,
+      },
+    };
+  },
+};
+
+// =========================================================
 // 12) get_vehicle_location
 // =========================================================
 const getVehicleLocation: Tool = {
@@ -925,6 +1028,7 @@ export const TOOLS: Tool[] = [
   processReturn,
   getVehicleHistory,
   getVehicleLocation,
+  getPriceRecommendation,
 ];
 
 export const TOOLS_FOR_API = TOOLS.map((t) => ({

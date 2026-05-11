@@ -9,6 +9,7 @@ import { ThroughputChart } from "@/components/dashboard/ThroughputChart";
 import { TicketTable } from "@/components/dashboard/TicketTable";
 import { DecommissionAlert } from "@/components/dashboard/DecommissionAlert";
 import { VehicleDueAlert, type DueAlertItem } from "@/components/dashboard/VehicleDueAlert";
+import { PricingTodayWidget } from "@/components/dashboard/PricingTodayWidget";
 import { isDecommissionAlertWindow } from "@/lib/decommission";
 import { buildVehicleType } from "@/lib/vehicle";
 import type { VehicleEventType } from "@/lib/vehicle-events";
@@ -31,6 +32,14 @@ const buildThroughput = (tickets: Ticket[]): number[] => {
 
 export default async function DashboardPage() {
   const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase.from("users").select("org_id").eq("id", user.id).single()
+    : { data: null };
+  const orgId = (profile as { org_id?: string } | null)?.org_id ?? null;
+
   const [
     { data: tickets },
     { data: org },
@@ -162,6 +171,7 @@ export default async function DashboardPage() {
 
           {decommissionAlerts.length > 0 && <DecommissionAlert vehicles={decommissionAlerts} />}
           {dueAlerts.length > 0 && <VehicleDueAlert items={dueAlerts} />}
+          {orgId && <PricingTodayWidget orgId={orgId} />}
 
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="col-span-2 lg:col-span-2">

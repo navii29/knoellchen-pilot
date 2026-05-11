@@ -57,6 +57,7 @@ const TEXT_FIELDS = [
 const NUMBER_FIELDS = [
   "extra_km_price",
   "daily_rate",
+  "base_daily_rate",
   "weekly_rate",
   "monthly_rate",
   "deposit",
