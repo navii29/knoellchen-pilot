@@ -6,13 +6,16 @@ import {
   Check,
   ChevronDown,
   Copy,
+  FileSignature,
   Loader2,
   Lock,
   MapPin,
+  RotateCcw,
   Save,
   Send,
   Wifi,
 } from "lucide-react";
+import { DEFAULT_RENTAL_TERMS } from "@/lib/rental-terms";
 import { THEME } from "@/lib/theme";
 import type { Organization } from "@/lib/types";
 
@@ -40,6 +43,7 @@ export const SettingsClient = ({
     lexoffice_enabled: org?.lexoffice_enabled || false,
     echoes_account_id: org?.echoes_account_id || "",
     echoes_enabled: org?.echoes_enabled || false,
+    rental_terms: org?.rental_terms || DEFAULT_RENTAL_TERMS,
   });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -193,6 +197,48 @@ export const SettingsClient = ({
             }
             onToggle={(v) => setData((d) => ({ ...d, echoes_enabled: v }))}
           />
+        </Section>
+
+        <Section
+          title="Mietbedingungen (AGB)"
+          subtitle="Diese Bedingungen erscheinen auf Seite 2 jedes generierten Mietvertrags."
+        >
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs text-stone-500">
+                <FileSignature size={13} />
+                {data.rental_terms.length.toLocaleString("de-DE")} Zeichen
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    data.rental_terms !== DEFAULT_RENTAL_TERMS &&
+                    !confirm(
+                      "Aktuellen Text durch Standard-AGB ersetzen? Deine Änderungen gehen verloren."
+                    )
+                  )
+                    return;
+                  setData((d) => ({ ...d, rental_terms: DEFAULT_RENTAL_TERMS }));
+                }}
+                className="inline-flex items-center gap-1 text-xs text-stone-500 hover:text-stone-900"
+              >
+                <RotateCcw size={11} /> Standard wiederherstellen
+              </button>
+            </div>
+            <textarea
+              value={data.rental_terms}
+              onChange={(e) =>
+                setData((d) => ({ ...d, rental_terms: e.target.value }))
+              }
+              rows={18}
+              className="input font-mono text-[12.5px] leading-[1.55] resize-y"
+              spellCheck={false}
+            />
+            <div className="text-[11px] text-stone-500">
+              Diese Vorlage ist ein Standard-Entwurf — bitte vor Live-Gang einmal von einem Anwalt prüfen lassen.
+            </div>
+          </div>
         </Section>
 
         {err && <div className="text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2">{err}</div>}

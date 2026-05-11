@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 const SAFE_COLUMNS =
-  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, echoes_account_id, echoes_enabled, onboarding_completed, onboarding_step, created_at";
+  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, echoes_account_id, echoes_enabled, rental_terms, onboarding_completed, onboarding_step, created_at";
 
 const stripSecrets = <T extends Record<string, unknown>>(row: T) => {
   const copy = { ...row } as T & {
@@ -45,6 +45,7 @@ export const PATCH = async (req: Request) => {
     "echoes_api_key",
     "echoes_account_id",
     "echoes_enabled",
+    "rental_terms",
   ];
   const update: Record<string, unknown> = {};
   for (const k of allowed) if (k in body) update[k] = body[k];

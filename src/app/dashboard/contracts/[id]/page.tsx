@@ -110,6 +110,47 @@ export default async function ContractDetailPage({ params }: { params: { id: str
           <h1 className="font-display font-bold text-3xl tracking-tight">{c.renter_name}</h1>
           {c.renter_address && <div className="mt-1 text-sm text-stone-500">{c.renter_address}</div>}
 
+          {c.signed_at && (
+            <div className="mt-5 rounded-xl bg-emerald-50 ring-1 ring-emerald-200 px-5 py-4 flex items-center gap-4 flex-wrap">
+              <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center shrink-0">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[12px] uppercase tracking-wider font-semibold text-emerald-800">
+                  Unterschrieben
+                </div>
+                <div className="font-display font-semibold text-emerald-900 text-lg leading-tight">
+                  {fmtDate(c.signed_at)}
+                </div>
+                {c.signed_ip && (
+                  <div className="text-[11px] text-emerald-700 font-mono mt-0.5">
+                    IP {c.signed_ip}
+                  </div>
+                )}
+              </div>
+              {c.signature_data && (
+                <div className="bg-white rounded-md px-2 py-1 ring-1 ring-emerald-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={c.signature_data}
+                    alt="Unterschrift"
+                    style={{ height: 48, maxWidth: 220, display: "block" }}
+                  />
+                </div>
+              )}
+              <a
+                href={`/api/contracts/${c.id}/contract-pdf`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md bg-white ring-1 ring-emerald-200 text-emerald-800 hover:bg-emerald-100"
+              >
+                Vertrag öffnen ↗
+              </a>
+            </div>
+          )}
+
           <div className="mt-6 grid sm:grid-cols-2 gap-3">
             <InfoCard Icon={User} title="Mieter">
               <Row label="Name" value={c.renter_name} />

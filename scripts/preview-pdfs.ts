@@ -26,6 +26,7 @@ const org: Organization = {
   lexoffice_enabled: false,
   echoes_account_id: null,
   echoes_enabled: false,
+  rental_terms: null,
   created_at: new Date().toISOString(),
 };
 
@@ -114,6 +115,10 @@ const contract: Contract = {
   km_excess: null,
   status: "aktiv",
   lexoffice_invoice_id: null,
+  signed_contract_path: null,
+  signature_data: null,
+  signed_at: null,
+  signed_ip: null,
   contract_pdf_path: null,
   pickup_photos: [],
   return_photos: [],

@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, FileText, Loader2, Save, ScanText, Sparkles, UserCheck } from "lucide-react";
+import { ArrowLeft, Check, FileSignature, FileText, Loader2, Save, ScanText, Sparkles, UserCheck, X } from "lucide-react";
 import Link from "next/link";
 import { THEME } from "@/lib/theme";
 import type { Customer, ParsedContractData } from "@/lib/types";
@@ -111,6 +111,7 @@ export const NewContractClient = ({
   const [aiConfidence, setAiConfidence] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [createdId, setCreatedId] = useState<string | null>(null);
 
   const set = (k: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setData((d) => ({ ...d, [k]: e.target.value }));
@@ -197,8 +198,14 @@ export const NewContractClient = ({
       return;
     }
     const j = (await res.json()) as { contract: { id: string } };
-    router.push(`/dashboard/contracts/${j.contract.id}`);
-    router.refresh();
+    setCreatedId(j.contract.id);
+  };
+
+  const goToSign = () => {
+    if (createdId) router.push(`/dashboard/contracts/${createdId}/sign`);
+  };
+  const goToDetail = () => {
+    if (createdId) router.push(`/dashboard/contracts/${createdId}`);
   };
 
   return (
@@ -458,6 +465,55 @@ export const NewContractClient = ({
             .input:focus { box-shadow: inset 0 0 0 1px rgb(168 162 158); }
           `}</style>
         </form>
+      )}
+
+      {createdId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <button
+            type="button"
+            onClick={goToDetail}
+            className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+            aria-label="Schließen"
+          />
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl ring-1 ring-stone-200 overflow-hidden">
+            <div className="px-6 pt-6 pb-2 flex items-start justify-between gap-3">
+              <div>
+                <div className="w-10 h-10 rounded-full bg-emerald-50 ring-1 ring-emerald-200 flex items-center justify-center mb-3">
+                  <Check size={18} className="text-emerald-700" />
+                </div>
+                <h2 className="font-display text-[22px] tracking-tight font-medium">
+                  Vertrag erstellt
+                </h2>
+                <p className="text-sm text-stone-500 mt-1 leading-snug">
+                  Möchtest du den Vertrag jetzt direkt vom Kunden unterschreiben lassen? Funktioniert auf Tablet oder Handy.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={goToDetail}
+                className="w-8 h-8 rounded-full inline-flex items-center justify-center text-stone-500 hover:bg-stone-100 -mt-1 -mr-1"
+              >
+                <X size={15} />
+              </button>
+            </div>
+            <div className="px-6 pb-6 pt-4 flex items-center justify-end gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={goToDetail}
+                className="text-sm text-stone-600 hover:text-stone-900 px-3 py-2"
+              >
+                Später
+              </button>
+              <button
+                type="button"
+                onClick={goToSign}
+                className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-stone-900 text-white text-sm font-medium hover:bg-stone-800"
+              >
+                <FileSignature size={14} /> Jetzt unterschreiben
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

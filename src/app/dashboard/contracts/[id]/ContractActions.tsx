@@ -9,6 +9,7 @@ import {
   Camera,
   Check,
   Download,
+  FileSignature,
   Loader2,
   Trash2,
   X,
@@ -99,8 +100,27 @@ export const ContractActions = ({
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-stone-200 hover:bg-stone-50"
           >
-            <Download size={14} /> Vertrags-PDF anzeigen
+            <Download size={14} /> Upload-PDF anzeigen
           </a>
+        )}
+
+        {contract.signed_at ? (
+          <a
+            href={`/api/contracts/${contract.id}/contract-pdf`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800 hover:bg-emerald-100"
+          >
+            <Download size={14} /> Unterschriebenen Vertrag öffnen
+          </a>
+        ) : (
+          <Link
+            href={`/dashboard/contracts/${contract.id}/sign`}
+            className="inline-flex items-center gap-1.5 text-sm text-white px-3 py-1.5 rounded-md font-medium"
+            style={{ background: THEME.primary }}
+          >
+            <FileSignature size={14} /> Vertrag generieren & unterschreiben
+          </Link>
         )}
 
         <Link

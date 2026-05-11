@@ -20,6 +20,7 @@ export interface Organization {
   echoes_account_id: string | null;
   echoes_enabled: boolean;
   // echoes_api_key absichtlich NICHT im Type — darf nie ans Frontend gelangen.
+  rental_terms: string | null;
   created_at: string;
 }
 
@@ -114,6 +115,10 @@ export interface Contract {
   km_excess: number | null;
   status: ContractStatus;
   lexoffice_invoice_id: string | null;
+  signed_contract_path: string | null;
+  signature_data: string | null;
+  signed_at: string | null;
+  signed_ip: string | null;
   contract_pdf_path: string | null;
   pickup_photos: unknown[];
   return_photos: unknown[];
