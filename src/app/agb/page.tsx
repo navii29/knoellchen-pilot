@@ -16,7 +16,7 @@ export default function AGBPage() {
   return (
     <LegalShell
       title="Allgemeine Geschäfts­bedingungen"
-      subtitle="Diese AGB gelten für alle Verträge zwischen der Southern Phoenix GmbH und ihren Geschäftskunden über die Nutzung der SaaS-Anwendung Knöllchen-Pilot."
+      subtitle="Diese AGB gelten für alle Verträge zwischen der Southern Phoenix GmbH und ihren Geschäftskunden über die Nutzung der SaaS-Anwendung Knöllchen-Pilot — einer Marke der Southern Phoenix GmbH."
     >
       <H2>§ 1 Geltungsbereich, Vertragspartner</H2>
       <P>

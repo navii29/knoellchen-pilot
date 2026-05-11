@@ -6,7 +6,6 @@ import {
   P,
   UL,
   Address,
-  Placeholder,
 } from "@/components/legal/LegalShell";
 
 export const metadata: Metadata = {
@@ -19,7 +18,7 @@ export default function DatenschutzPage() {
   return (
     <LegalShell
       title="Datenschutz­erklärung"
-      subtitle="Informationen zur Verarbeitung personenbezogener Daten gemäß Art. 13, 14 DSGVO."
+      subtitle="Informationen zur Verarbeitung personenbezogener Daten gemäß Art. 13, 14 DSGVO. Knöllchen-Pilot ist eine Marke der Southern Phoenix GmbH."
     >
       <H2>1. Verantwortlicher</H2>
       <P>
@@ -47,7 +46,7 @@ export default function DatenschutzPage() {
           datenschutz@knoellchen-pilot.de
         </a>
         <br />
-        Telefon: <Placeholder>[Telefonnummer wird ergänzt]</Placeholder>
+        Telefon: +49 176 11 22 33 86
       </P>
 
       <H2>2. Datenschutzbeauftragter</H2>
