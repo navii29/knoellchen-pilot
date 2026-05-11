@@ -45,17 +45,17 @@ const Item = ({
     <div className="border-b border-black/[0.08]">
       <button
         onClick={onToggle}
-        className="w-full text-left flex items-center justify-between gap-6 py-6 group"
+        className="w-full text-left flex items-center justify-between gap-4 sm:gap-6 py-5 sm:py-6 group min-h-[60px]"
       >
         <span
-          className={`text-[17px] sm:text-[19px] font-medium tracking-[-0.01em] transition-colors ${
+          className={`text-[15.5px] sm:text-[19px] font-medium tracking-[-0.01em] transition-colors leading-snug ${
             open ? "text-stone-900" : "text-stone-800 group-hover:text-stone-900"
           }`}
         >
           {q}
         </span>
         <span
-          className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+          className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-all ${
             open ? "bg-stone-900 text-white rotate-45" : "bg-stone-100 text-stone-700"
           }`}
         >
@@ -71,7 +71,7 @@ const Item = ({
         }`}
       >
         <div className="overflow-hidden">
-          <p className="pb-6 pr-12 text-[15.5px] leading-[1.6] text-stone-600">{a}</p>
+          <p className="pb-5 sm:pb-6 pr-2 sm:pr-12 text-[14.5px] sm:text-[15.5px] leading-[1.6] text-stone-600">{a}</p>
         </div>
       </div>
     </div>
@@ -81,21 +81,24 @@ const Item = ({
 export const FAQ = () => {
   const [openIdx, setOpenIdx] = useState(0);
   return (
-    <section id="faq" className="bg-stone-50 py-28 sm:py-36">
-      <div className="max-w-4xl mx-auto px-6 lg:px-10">
+    <section id="faq" className="bg-stone-50 py-20 sm:py-28 lg:py-36">
+      <div className="max-w-4xl mx-auto px-4 sm:px-8 lg:px-12">
         <FadeUp>
-          <div className="text-center mb-14">
-            <div className="inline-flex items-center gap-2 px-3 h-7 rounded-full bg-white ring-1 ring-black/[0.06] text-[12px] text-stone-600 mb-6">
+          <div className="text-center mb-10 sm:mb-14">
+            <div className="inline-flex items-center gap-2 px-3 h-7 rounded-full bg-white ring-1 ring-black/[0.06] text-[12px] text-stone-600 mb-5">
               FAQ
             </div>
-            <h2 className="font-display text-stone-900 text-[40px] sm:text-[56px] lg:text-[64px] leading-[1.05] tracking-[-0.03em] font-medium text-balance">
+            <h2
+              className="font-display text-stone-900 leading-[1.05] tracking-[-0.03em] font-medium text-balance"
+              style={{ fontSize: "clamp(32px, 8vw, 64px)" }}
+            >
               Häufige Fragen.
             </h2>
           </div>
         </FadeUp>
 
         <FadeUp delay={120}>
-          <div className="bg-white rounded-2xl ring-1 ring-black/[0.06] px-6 sm:px-8">
+          <div className="bg-white rounded-2xl ring-1 ring-black/[0.06] px-5 sm:px-8">
             {faqs.map((f, i) => (
               <Item
                 key={f.q}

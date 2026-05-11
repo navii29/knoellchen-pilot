@@ -26,18 +26,22 @@ export const FeatureSection = ({
       id={id}
       className={`${
         dark ? "bg-black text-white" : "bg-white text-stone-900"
-      } py-28 sm:py-36 overflow-hidden`}
+      } py-20 sm:py-28 lg:py-36 overflow-hidden`}
     >
-      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
+        {/*
+          Mobile: Mockup zuerst (Bild über Text). Desktop: Side-Prop entscheidet.
+          Realisiert über grid-flow + explizite order-Klassen.
+        */}
         <div
-          className={`grid lg:grid-cols-2 gap-14 lg:gap-20 items-center ${
+          className={`grid lg:grid-cols-2 gap-10 lg:gap-20 items-center ${
             side === "left" ? "lg:[&>*:first-child]:order-2" : ""
           }`}
         >
-          <FadeUp>
+          <FadeUp className="order-2 lg:order-none">
             <div className="max-w-xl">
               <div
-                className={`inline-flex items-center gap-2 px-3 h-7 rounded-full text-[12px] mb-6 ${
+                className={`inline-flex items-center gap-2 px-3 h-7 rounded-full text-[12px] mb-5 sm:mb-6 ${
                   dark
                     ? "bg-white/5 ring-1 ring-white/10 text-white/70"
                     : "bg-stone-100 ring-1 ring-black/[0.04] text-stone-600"
@@ -46,14 +50,15 @@ export const FeatureSection = ({
                 {eyebrow}
               </div>
               <h2
-                className={`font-display text-[36px] sm:text-[48px] lg:text-[58px] leading-[1.05] tracking-[-0.03em] font-medium text-balance ${
+                className={`font-display leading-[1.05] tracking-[-0.03em] font-medium text-balance ${
                   dark ? "text-white" : "text-stone-900"
                 }`}
+                style={{ fontSize: "clamp(28px, 7vw, 58px)" }}
               >
                 {title}
               </h2>
               <div
-                className={`mt-6 text-[17px] leading-[1.55] ${
+                className={`mt-5 sm:mt-6 text-[15px] sm:text-[17px] leading-[1.55] ${
                   dark ? "text-white/60" : "text-stone-600"
                 }`}
               >
@@ -81,7 +86,7 @@ export const FeatureSection = ({
             </div>
           </FadeUp>
 
-          <FadeUp delay={120}>
+          <FadeUp delay={120} className="order-1 lg:order-none">
             <div className="relative">
               {/* radial accent behind mockup */}
               <div

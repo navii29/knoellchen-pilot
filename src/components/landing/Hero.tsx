@@ -3,7 +3,7 @@ import { BrowserFrame } from "./BrowserFrame";
 import { FadeUp } from "./FadeUp";
 
 const DashboardMock = () => (
-  <div className="grid grid-cols-[170px_1fr] h-[420px] sm:h-[460px] text-[11px]">
+  <div className="grid grid-cols-[110px_1fr] sm:grid-cols-[170px_1fr] h-[360px] sm:h-[460px] text-[10px] sm:text-[11px]">
     {/* Sidebar */}
     <aside className="border-r border-black/[0.06] bg-stone-50/60 p-3 flex flex-col gap-1">
       <div className="flex items-center gap-2 mb-3 px-2">
@@ -140,14 +140,14 @@ const DashboardMock = () => (
 
 export const Hero = () => {
   return (
-    <section className="relative overflow-hidden bg-black pt-32 sm:pt-40 pb-20 sm:pb-28">
+    <section className="relative overflow-hidden bg-black pt-28 sm:pt-40 pb-16 sm:pb-28">
       {/* Radial glow */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-[34%] -translate-x-1/2 w-[1100px] h-[1100px] rounded-full bg-[radial-gradient(circle_at_center,rgba(45,212,191,0.20),rgba(45,212,191,0.05)_40%,transparent_70%)] blur-2xl" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-6 lg:px-10 text-center">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 text-center">
         <FadeUp>
           <div className="inline-flex items-center gap-2 px-3 h-7 rounded-full bg-white/5 ring-1 ring-white/10 text-[12px] text-white/70 mb-8">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -156,7 +156,10 @@ export const Hero = () => {
         </FadeUp>
 
         <FadeUp delay={80}>
-          <h1 className="font-display text-white text-[44px] sm:text-[64px] lg:text-[84px] leading-[1.02] tracking-[-0.035em] font-medium text-balance max-w-5xl mx-auto">
+          <h1
+            className="font-display text-white leading-[1.02] tracking-[-0.035em] font-medium text-balance max-w-5xl mx-auto"
+            style={{ fontSize: "clamp(34px, 9vw, 84px)" }}
+          >
             Die KI-Plattform für
             <br />
             <span className="bg-gradient-to-br from-teal-200 via-emerald-300 to-teal-500 bg-clip-text text-transparent">
@@ -166,23 +169,26 @@ export const Hero = () => {
         </FadeUp>
 
         <FadeUp delay={160}>
-          <p className="mt-6 max-w-2xl mx-auto text-[17px] sm:text-[20px] leading-[1.45] text-white/60 text-balance">
+          <p
+            className="mt-5 sm:mt-6 max-w-2xl mx-auto leading-[1.45] text-white/60 text-balance"
+            style={{ fontSize: "clamp(15px, 3.5vw, 20px)" }}
+          >
             Verträge. Flotte. Kunden. Strafzettel. Alles in einer App —
             mit künstlicher Intelligenz.
           </p>
         </FadeUp>
 
         <FadeUp delay={240}>
-          <div className="mt-10 flex flex-col sm:flex-row gap-3 items-center justify-center">
+          <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3 items-center justify-center">
             <Link
               href="/register"
-              className="inline-flex items-center justify-center h-12 px-6 rounded-full bg-white text-black text-[15px] font-medium hover:bg-white/90 transition-colors shadow-[0_8px_30px_-8px_rgba(255,255,255,0.4)]"
+              className="w-full sm:w-auto inline-flex items-center justify-center h-12 px-6 rounded-full bg-white text-black text-[15px] font-medium hover:bg-white/90 transition-colors shadow-[0_8px_30px_-8px_rgba(255,255,255,0.4)]"
             >
               Kostenlos testen
             </Link>
             <a
               href="#features"
-              className="inline-flex items-center justify-center h-12 px-6 rounded-full bg-white/5 ring-1 ring-white/10 text-white text-[15px] font-medium hover:bg-white/10 transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center h-12 px-6 rounded-full bg-white/5 ring-1 ring-white/10 text-white text-[15px] font-medium hover:bg-white/10 transition-colors"
             >
               Funktionen ansehen →
             </a>
@@ -192,20 +198,33 @@ export const Hero = () => {
           </div>
         </FadeUp>
 
-        {/* MacBook mockup */}
-        <FadeUp delay={360} className="mt-16 sm:mt-24">
-          <div className="relative max-w-5xl mx-auto">
-            {/* device frame */}
-            <div className="relative rounded-[20px] bg-gradient-to-b from-zinc-700 to-zinc-900 p-[10px] shadow-[0_50px_120px_-30px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.06)]">
+        {/* MacBook mockup — auf Mobile in Container scrollbar/nicht abgeschnitten */}
+        <FadeUp delay={360} className="mt-12 sm:mt-24">
+          <div
+            className="relative max-w-5xl mx-auto"
+            style={{ transform: "scale(min(1, 100%))" }}
+          >
+            <div className="hidden sm:block relative rounded-[20px] bg-gradient-to-b from-zinc-700 to-zinc-900 p-[10px] shadow-[0_50px_120px_-30px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.06)]">
               <div className="rounded-[12px] overflow-hidden ring-1 ring-black/40">
                 <BrowserFrame url="app.knoellchen-pilot.de/dashboard">
                   <DashboardMock />
                 </BrowserFrame>
               </div>
             </div>
-            {/* "lid hinge" / base */}
-            <div className="mx-auto h-2 w-[calc(100%+40px)] -mt-px bg-gradient-to-b from-zinc-800 to-zinc-950 rounded-b-[20px]" />
-            <div className="mx-auto h-1.5 w-24 bg-zinc-700/40 rounded-b-full" />
+            {/* "lid hinge" / base — nur Desktop */}
+            <div className="hidden sm:block mx-auto h-2 w-[calc(100%+40px)] -mt-px bg-gradient-to-b from-zinc-800 to-zinc-950 rounded-b-[20px]" />
+            <div className="hidden sm:block mx-auto h-1.5 w-24 bg-zinc-700/40 rounded-b-full" />
+
+            {/* Mobile-Variante: kompakter Browser ohne Macbook-Frame */}
+            <div className="sm:hidden -mx-2">
+              <div className="relative rounded-[14px] bg-gradient-to-b from-zinc-700 to-zinc-900 p-1 shadow-2xl ring-1 ring-white/10 overflow-hidden">
+                <div className="rounded-[10px] overflow-hidden">
+                  <BrowserFrame url="app.knoellchen-pilot.de">
+                    <DashboardMock />
+                  </BrowserFrame>
+                </div>
+              </div>
+            </div>
 
             {/* floating callouts */}
             <div className="hidden lg:flex absolute -left-8 top-20 items-center gap-2 px-3 h-9 rounded-full bg-white/5 backdrop-blur-md ring-1 ring-white/10 text-[12.5px] text-white/80">

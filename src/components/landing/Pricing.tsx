@@ -4,9 +4,9 @@ import { FadeUp } from "./FadeUp";
 const plans = [
   {
     name: "Starter",
-    price: "99",
+    price: "249",
     tagline: "Für kleine Vermietungen, die mit der Automatisierung starten.",
-    limit: "Bis zu 10 Fahrzeuge",
+    limit: "Bis zu 15 Fahrzeuge",
     features: [
       "Strafzettel-Automatisierung",
       "Vertragsverwaltung & Kalender",
@@ -19,11 +19,14 @@ const plans = [
   },
   {
     name: "Professional",
-    price: "249",
+    price: "449",
     tagline: "Für wachsende Vermietungen, die alles in einer App wollen.",
     limit: "Bis zu 50 Fahrzeuge",
     features: [
       "Alles aus Starter, plus:",
+      "Self-Service Kundenportal",
+      "Digitale Vertragsunterschrift",
+      "Dynamische Preisoptimierung",
       "KI-Sprachassistent",
       "Übergabe & Schadenerkennung",
       "Flottenkalender mit Aussteuerungs-Alerts",
@@ -36,7 +39,7 @@ const plans = [
   },
   {
     name: "Enterprise",
-    price: "499",
+    price: "699",
     tagline: "Für große Flotten mit individuellen Anforderungen.",
     limit: "Unbegrenzt Fahrzeuge",
     features: [
@@ -55,32 +58,32 @@ const plans = [
 
 export const Pricing = () => {
   return (
-    <section id="pricing" className="bg-white py-28 sm:py-36">
-      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+    <section id="pricing" className="bg-white py-20 sm:py-28 lg:py-36">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
         <FadeUp>
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-3 h-7 rounded-full bg-stone-100 ring-1 ring-black/[0.04] text-[12px] text-stone-600 mb-6">
+          <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
+            <div className="inline-flex items-center gap-2 px-3 h-7 rounded-full bg-stone-100 ring-1 ring-black/[0.04] text-[12px] text-stone-600 mb-5">
               Preise
             </div>
-            <h2 className="font-display text-stone-900 text-[40px] sm:text-[56px] lg:text-[68px] leading-[1.05] tracking-[-0.03em] font-medium text-balance">
+            <h2 className="font-display text-stone-900 text-[32px] sm:text-[48px] lg:text-[68px] leading-[1.05] tracking-[-0.03em] font-medium text-balance">
               Ein Preis. Alles inklusive.
             </h2>
-            <p className="mt-5 text-[17px] text-stone-600 leading-relaxed">
+            <p className="mt-4 text-[15px] sm:text-[17px] text-stone-600 leading-relaxed">
               Keine versteckten Kosten. Keine Setup-Gebühren. Jederzeit
               kündbar.
             </p>
           </div>
         </FadeUp>
 
-        <div className="grid lg:grid-cols-3 gap-5 lg:gap-0 lg:rounded-3xl lg:overflow-hidden lg:ring-1 lg:ring-black/[0.06]">
+        <div className="grid lg:grid-cols-3 gap-4 lg:gap-0 lg:rounded-3xl lg:overflow-hidden lg:ring-1 lg:ring-black/[0.06]">
           {plans.map((plan, i) => {
             const featured = plan.featured;
             return (
               <FadeUp key={plan.name} delay={i * 80}>
                 <div
-                  className={`h-full rounded-3xl lg:rounded-none p-8 lg:p-10 flex flex-col ${
+                  className={`h-full rounded-3xl lg:rounded-none p-6 sm:p-8 lg:p-10 flex flex-col ${
                     featured
-                      ? "bg-black text-white lg:scale-[1.02] lg:my-[-8px] lg:rounded-3xl lg:ring-1 lg:ring-white/10 relative z-10 shadow-2xl"
+                      ? "bg-black text-white order-first lg:order-none lg:scale-[1.02] lg:my-[-8px] lg:rounded-3xl lg:ring-1 lg:ring-white/10 relative z-10 shadow-2xl"
                       : "bg-stone-50 lg:bg-white text-stone-900"
                   }`}
                 >
@@ -104,7 +107,7 @@ export const Pricing = () => {
                     >
                       €
                     </span>
-                    <span className="font-display text-[64px] tracking-[-0.04em] font-medium leading-none">
+                    <span className="font-display text-[52px] sm:text-[60px] lg:text-[64px] tracking-[-0.04em] font-medium leading-none">
                       {plan.price}
                     </span>
                     <span
@@ -158,7 +161,7 @@ export const Pricing = () => {
 
                   <Link
                     href="/register"
-                    className={`mt-8 inline-flex items-center justify-center h-11 px-5 rounded-full text-[14px] font-medium transition-colors ${
+                    className={`mt-8 inline-flex w-full sm:w-auto items-center justify-center h-12 sm:h-11 px-5 rounded-full text-[14.5px] sm:text-[14px] font-medium transition-colors ${
                       featured
                         ? "bg-white text-black hover:bg-white/90"
                         : "bg-stone-900 text-white hover:bg-stone-800"
