@@ -11,6 +11,7 @@ import {
   Download,
   FileSignature,
   Loader2,
+  Send,
   Trash2,
   X,
 } from "lucide-react";
@@ -90,6 +91,28 @@ export const ContractActions = ({
     router.refresh();
   };
 
+  const [sentInfo, setSentInfo] = useState<string | null>(null);
+  const sendCheckinLink = async () => {
+    if (!confirm("Check-in-Link per E-Mail an den Kunden senden?")) return;
+    setBusy("checkin");
+    setError(null);
+    setSentInfo(null);
+    const res = await fetch(`/api/contracts/${contract.id}/checkin-link`, {
+      method: "POST",
+    });
+    const j = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      sent_to?: string;
+      error?: string;
+    };
+    setBusy(null);
+    if (!res.ok || !j.ok) {
+      setError(j.error || "Versand fehlgeschlagen");
+      return;
+    }
+    setSentInfo(`Check-in-Link an ${j.sent_to} gesendet`);
+  };
+
   return (
     <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
       <div className="flex items-center gap-2 flex-wrap">
@@ -151,6 +174,21 @@ export const ContractActions = ({
           </button>
         )}
 
+        {contract.customer_id && (
+          <button
+            onClick={sendCheckinLink}
+            disabled={busy != null}
+            className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-stone-200 hover:bg-stone-50 text-stone-700"
+          >
+            {busy === "checkin" ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Send size={14} />
+            )}
+            Check-in Link an Kunden
+          </button>
+        )}
+
         {lexofficeEnabled &&
           contract.status === "abgeschlossen" &&
           (contract.lexoffice_invoice_id ? (
@@ -190,6 +228,12 @@ export const ContractActions = ({
       {error && (
         <div className="mt-3 text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2 inline-flex items-center gap-2">
           <AlertTriangle size={14} /> {error}
+        </div>
+      )}
+
+      {sentInfo && (
+        <div className="mt-3 text-sm text-emerald-800 bg-emerald-50 ring-1 ring-emerald-200 rounded-lg px-3 py-2 inline-flex items-center gap-2">
+          <Check size={14} /> {sentInfo}
         </div>
       )}
 

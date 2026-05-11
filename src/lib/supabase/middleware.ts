@@ -4,6 +4,13 @@ import { NextResponse, type NextRequest } from "next/server";
 export const updateSession = async (request: NextRequest) => {
   let response = NextResponse.next({ request });
 
+  // Kundenportal hat eigene Auth (JWT-Cookie + Layout-Guard).
+  // Supabase-Session-Check hier komplett überspringen.
+  const path0 = request.nextUrl.pathname;
+  if (path0.startsWith("/portal") || path0.startsWith("/api/portal")) {
+    return response;
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
