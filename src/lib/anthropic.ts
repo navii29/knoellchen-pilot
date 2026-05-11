@@ -247,3 +247,76 @@ export const compareHandoverPhotos = async (
   const data = JSON.parse(jsonMatch[0]) as DamageComparisonResult;
   return { data, raw: response };
 };
+
+// =========================================================
+// CSV-Spalten-Mapping per KI
+// =========================================================
+export const mapCsvColumns = async (args: {
+  headers: string[];
+  sampleRows: Record<string, string>[];
+  targetFields: { key: string; label: string; hint?: string }[];
+}): Promise<{ mapping: Record<string, string | null>; reasoning: string }> => {
+  const { headers, sampleRows, targetFields } = args;
+
+  const sampleText = sampleRows
+    .slice(0, 5)
+    .map((r, i) => `Zeile ${i + 1}: ${JSON.stringify(r)}`)
+    .join("\n");
+
+  const fieldsText = targetFields
+    .map(
+      (f) =>
+        `- "${f.key}" (${f.label}${f.hint ? `, Format: ${f.hint}` : ""})`
+    )
+    .join("\n");
+
+  const system = `Du bist ein Experte für deutsche CSV-Importe in Datenbanken.
+Du bekommst die Spaltenüberschriften einer CSV und ein paar Beispielzeilen.
+Du sollst jede CSV-Spalte einem der Zielfelder zuordnen ODER als nicht zuordenbar markieren.
+
+WICHTIG:
+- Erkenne deutsche UND englische Spaltennamen (z. B. "Vorname" → first_name, "first name" → first_name).
+- Erkenne Abkürzungen (z. B. "Plz" → zip, "Tel" → phone, "Kfz" → plate).
+- Eine CSV-Spalte mit Vor- UND Nachname zusammen darf NICHT auf nur ein Feld gemappt werden — markiere sie als null und kommentiere im reasoning.
+- Bei Mehrdeutigkeit lieber null und ins reasoning schreiben.
+
+Antworte AUSSCHLIESSLICH mit gültigem JSON:
+{
+  "mapping": { "<csv-spalte>": "<feld-key oder null>", ... },
+  "reasoning": "Kurze deutsche Erklärung (max 2 Sätze) was du gemacht hast und ob etwas unsicher war."
+}`;
+
+  const userText = `Verfügbare Zielfelder:
+${fieldsText}
+
+CSV-Spaltenüberschriften:
+${headers.map((h) => `- "${h}"`).join("\n")}
+
+Beispieldaten:
+${sampleText}
+
+Erstelle das Mapping.`;
+
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 1500,
+    system,
+    messages: [{ role: "user", content: userText }],
+  });
+
+  const text = response.content
+    .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
+    .map((b) => b.text)
+    .join("");
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch)
+    throw new Error("Claude did not return JSON: " + text.slice(0, 200));
+  const parsed = JSON.parse(jsonMatch[0]) as {
+    mapping: Record<string, string | null>;
+    reasoning?: string;
+  };
+  // Sicherstellen, dass jede Header-Spalte einen Eintrag hat (auch wenn null)
+  const fullMapping: Record<string, string | null> = {};
+  for (const h of headers) fullMapping[h] = parsed.mapping?.[h] ?? null;
+  return { mapping: fullMapping, reasoning: parsed.reasoning ?? "" };
+};

@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Car, ChevronRight, Plus, Search, Trash2 } from "lucide-react";
+import { Car, ChevronRight, FileSpreadsheet, Plus, Search, Trash2 } from "lucide-react";
+import { CsvImportModal } from "@/components/dashboard/CsvImportModal";
 import { THEME } from "@/lib/theme";
 import { fmtDate } from "@/lib/utils";
 import { computeDecommission } from "@/lib/decommission";
@@ -23,6 +24,7 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
   const router = useRouter();
   const [filter, setFilter] = useState<VehicleStatus | "alle">("alle");
   const [q, setQ] = useState("");
+  const [importOpen, setImportOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -58,14 +60,31 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
             Stammdaten, Verfügbarkeit, Preise — alles in einem Datensatz pro Auto.
           </p>
         </div>
-        <Link
-          href="/dashboard/vehicles/new"
-          className="inline-flex items-center gap-1.5 text-sm text-white px-3.5 py-1.5 rounded-md font-medium"
-          style={{ background: THEME.primary }}
-        >
-          <Plus size={14} /> Neues Fahrzeug
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setImportOpen(true)}
+            className="inline-flex items-center gap-1.5 text-sm text-stone-700 px-3.5 py-1.5 rounded-md font-medium ring-1 ring-stone-200 bg-white hover:bg-stone-50"
+          >
+            <FileSpreadsheet size={14} /> CSV importieren
+          </button>
+          <Link
+            href="/dashboard/vehicles/new"
+            className="inline-flex items-center gap-1.5 text-sm text-white px-3.5 py-1.5 rounded-md font-medium"
+            style={{ background: THEME.primary }}
+          >
+            <Plus size={14} /> Neues Fahrzeug
+          </Link>
+        </div>
       </div>
+
+      {importOpen && (
+        <CsvImportModal
+          title="Fahrzeuge aus CSV importieren"
+          endpoint="/api/vehicles/import-csv"
+          onClose={() => setImportOpen(false)}
+        />
+      )}
 
       <div className="mt-6 flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-1 text-xs flex-wrap">

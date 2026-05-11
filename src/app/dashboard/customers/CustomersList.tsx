@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Plus, Search, Users } from "lucide-react";
+import { ChevronRight, FileSpreadsheet, Plus, Search, Users } from "lucide-react";
+import { CsvImportModal } from "@/components/dashboard/CsvImportModal";
 import { THEME } from "@/lib/theme";
 import type { Customer } from "@/lib/types";
 
@@ -19,6 +20,7 @@ const fullAddress = (c: Customer) =>
 
 export const CustomersList = ({ initial }: { initial: Customer[] }) => {
   const [q, setQ] = useState("");
+  const [importOpen, setImportOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -44,14 +46,31 @@ export const CustomersList = ({ initial }: { initial: Customer[] }) => {
             Mieterdaten zentral pflegen — bei Vertragsanlage einfach auswählen.
           </p>
         </div>
-        <Link
-          href="/dashboard/customers/new"
-          className="inline-flex items-center gap-1.5 text-sm text-white px-3.5 py-1.5 rounded-md font-medium"
-          style={{ background: THEME.primary }}
-        >
-          <Plus size={14} /> Neuer Kunde
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setImportOpen(true)}
+            className="inline-flex items-center gap-1.5 text-sm text-stone-700 px-3.5 py-1.5 rounded-md font-medium ring-1 ring-stone-200 bg-white hover:bg-stone-50"
+          >
+            <FileSpreadsheet size={14} /> CSV importieren
+          </button>
+          <Link
+            href="/dashboard/customers/new"
+            className="inline-flex items-center gap-1.5 text-sm text-white px-3.5 py-1.5 rounded-md font-medium"
+            style={{ background: THEME.primary }}
+          >
+            <Plus size={14} /> Neuer Kunde
+          </Link>
+        </div>
       </div>
+
+      {importOpen && (
+        <CsvImportModal
+          title="Kunden aus CSV importieren"
+          endpoint="/api/customers/import-csv"
+          onClose={() => setImportOpen(false)}
+        />
+      )}
 
       <div className="mt-6 flex items-center justify-end">
         <div className="relative">
