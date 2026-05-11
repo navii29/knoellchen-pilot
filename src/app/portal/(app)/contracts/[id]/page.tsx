@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Calendar, Car, Check, Coins, FileSignature } from "lucide-react";
+import { ArrowLeft, Calendar, Car, Check, Coins, FileSignature, KeyRound, LogOut } from "lucide-react";
 import { getPortalCustomer } from "@/lib/portal-auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { fmtDate, fmtEur } from "@/lib/utils";
@@ -85,6 +85,46 @@ export default async function PortalContractDetail({
             </div>
             <div className="text-[12.5px] text-white/70 mt-0.5">
               Per Finger oder Stift auf dem Display.
+            </div>
+          </div>
+        </Link>
+      )}
+
+      {c.status === "aktiv" && (c.checkin_step ?? 0) < 5 && (
+        <Link
+          href={`/portal/contracts/${c.id}/checkin`}
+          className="rounded-2xl bg-teal-600 text-white p-4 flex items-center gap-3 hover:bg-teal-700"
+        >
+          <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+            <KeyRound size={18} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-display text-[16px] font-medium leading-tight">
+              {(c.checkin_step ?? 0) > 0 ? "Check-in fortsetzen" : "Self-Check-in starten"}
+            </div>
+            <div className="text-[12.5px] text-white/80 mt-0.5">
+              {(c.checkin_step ?? 0) > 0
+                ? `Schritt ${c.checkin_step ?? 0} von 5 erledigt`
+                : "Führerschein, Ausweis, Fotos, Unterschrift — in 5 Schritten."}
+            </div>
+          </div>
+        </Link>
+      )}
+
+      {c.status === "aktiv" && c.signed_at && (c.checkin_step ?? 0) >= 5 && (
+        <Link
+          href={`/portal/contracts/${c.id}/checkout`}
+          className="rounded-2xl bg-stone-900 text-white p-4 flex items-center gap-3 hover:bg-stone-800"
+        >
+          <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+            <LogOut size={18} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-display text-[16px] font-medium leading-tight">
+              {(c.checkout_step ?? 0) > 0 ? "Check-out fortsetzen" : "Self-Check-out starten"}
+            </div>
+            <div className="text-[12.5px] text-white/70 mt-0.5">
+              Fotos · Kilometerstand · Tank — in 4 Schritten.
             </div>
           </div>
         </Link>

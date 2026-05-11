@@ -151,6 +151,15 @@ export default async function ContractDetailPage({ params }: { params: { id: str
             </div>
           )}
 
+          {(c.checkin_step ?? 0) > 0 || (c.checkout_step ?? 0) > 0 ? (
+            <SelfServiceStatus
+              checkinStep={c.checkin_step ?? 0}
+              checkoutStep={c.checkout_step ?? 0}
+              fuelPickup={c.fuel_level_pickup}
+              fuelReturn={c.fuel_level_return}
+            />
+          ) : null}
+
           <div className="mt-6 grid sm:grid-cols-2 gap-3">
             <InfoCard Icon={User} title="Mieter">
               <Row label="Name" value={c.renter_name} />
@@ -422,6 +431,134 @@ const Row = ({
     <div className={mono ? "tabular-nums text-stone-800" : "text-stone-800"}>{value}</div>
   </div>
 );
+
+const FUEL_LABEL: Record<string, string> = {
+  full: "Voll",
+  three_quarter: "3/4",
+  half: "1/2",
+  quarter: "1/4",
+  empty: "Leer",
+};
+
+const SelfServiceStatus = ({
+  checkinStep,
+  checkoutStep,
+  fuelPickup,
+  fuelReturn,
+}: {
+  checkinStep: number;
+  checkoutStep: number;
+  fuelPickup: string | null;
+  fuelReturn: string | null;
+}) => {
+  const ProgressBar = ({
+    value,
+    total,
+    color,
+  }: {
+    value: number;
+    total: number;
+    color: string;
+  }) => {
+    const pct = Math.max(0, Math.min(100, (value / total) * 100));
+    return (
+      <div className="h-1.5 rounded-full bg-stone-200 overflow-hidden mt-1.5">
+        <div
+          className="h-full rounded-full transition-[width] duration-500 ease-out"
+          style={{ width: `${pct}%`, background: color }}
+        />
+      </div>
+    );
+  };
+
+  const Block = ({
+    title,
+    step,
+    total,
+    badge,
+    color,
+    extra,
+  }: {
+    title: string;
+    step: number;
+    total: number;
+    badge: string;
+    color: string;
+    extra?: React.ReactNode;
+  }) => (
+    <div className="flex-1 min-w-[180px]">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-[12px] uppercase tracking-wider text-stone-500 font-semibold">
+          {title}
+        </div>
+        <span
+          className="inline-flex items-center px-2 h-5 rounded-full text-[11px] font-medium"
+          style={{ background: `${color}1a`, color }}
+        >
+          {badge}
+        </span>
+      </div>
+      <div className="text-[13px] text-stone-700 mt-1 tabular-nums">
+        {step} / {total} Schritte
+      </div>
+      <ProgressBar value={step} total={total} color={color} />
+      {extra}
+    </div>
+  );
+
+  const checkinBadge =
+    checkinStep === 0
+      ? "Nicht gestartet"
+      : checkinStep >= 5
+      ? "Abgeschlossen"
+      : "Läuft";
+  const checkinColor =
+    checkinStep >= 5 ? "#16a34a" : checkinStep > 0 ? "#ca8a04" : "#a8a29e";
+
+  const checkoutBadge =
+    checkoutStep === 0
+      ? "Nicht gestartet"
+      : checkoutStep >= 4
+      ? "Abgeschlossen"
+      : "Läuft";
+  const checkoutColor =
+    checkoutStep >= 4 ? "#16a34a" : checkoutStep > 0 ? "#ca8a04" : "#a8a29e";
+
+  return (
+    <div className="mt-5 rounded-xl bg-white ring-1 ring-stone-200 px-5 py-4">
+      <div className="flex flex-wrap gap-6">
+        <Block
+          title="Self-Check-in"
+          step={checkinStep}
+          total={5}
+          badge={checkinBadge}
+          color={checkinColor}
+          extra={
+            fuelPickup ? (
+              <div className="text-[11.5px] text-stone-500 mt-1">
+                Tankstand bei Übergabe: {FUEL_LABEL[fuelPickup] ?? fuelPickup}
+              </div>
+            ) : null
+          }
+        />
+        <Block
+          title="Self-Check-out"
+          step={checkoutStep}
+          total={4}
+          badge={checkoutBadge}
+          color={checkoutColor}
+          extra={
+            fuelReturn ? (
+              <div className="text-[11.5px] text-stone-500 mt-1">
+                Tankstand bei Rückgabe: {FUEL_LABEL[fuelReturn] ?? fuelReturn}
+              </div>
+            ) : null
+          }
+        />
+      </div>
+    </div>
+  );
+};
 
 const DAMAGE_STATUS_META: Record<
   DamageReport["status"],

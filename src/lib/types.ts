@@ -136,6 +136,10 @@ export interface Contract {
   signature_data: string | null;
   signed_at: string | null;
   signed_ip: string | null;
+  checkin_step: number;
+  checkout_step: number;
+  fuel_level_pickup: string | null;
+  fuel_level_return: string | null;
   contract_pdf_path: string | null;
   pickup_photos: unknown[];
   return_photos: unknown[];
