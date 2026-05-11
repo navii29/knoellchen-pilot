@@ -37,6 +37,21 @@ export const H2 = ({ children }: { children: React.ReactNode }) => (
   </h2>
 );
 
+export const NumberedH2 = ({
+  number,
+  children,
+}: {
+  number: string;
+  children: React.ReactNode;
+}) => (
+  <h2 className="font-display text-stone-900 text-[24px] sm:text-[28px] leading-[1.2] tracking-[-0.02em] font-medium mt-12 mb-4 first:mt-0 flex items-baseline gap-3">
+    <span className="font-mono text-[14px] text-teal-700 font-semibold tabular-nums">
+      {number}
+    </span>
+    <span>{children}</span>
+  </h2>
+);
+
 export const H3 = ({ children }: { children: React.ReactNode }) => (
   <h3 className="text-stone-900 text-[18px] sm:text-[20px] font-semibold mt-8 mb-3">
     {children}
