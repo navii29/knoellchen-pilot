@@ -10,10 +10,8 @@ import { TicketTable } from "@/components/dashboard/TicketTable";
 import { DecommissionAlert } from "@/components/dashboard/DecommissionAlert";
 import { VehicleDueAlert, type DueAlertItem } from "@/components/dashboard/VehicleDueAlert";
 import { PricingTodayWidget } from "@/components/dashboard/PricingTodayWidget";
-import {
-  TiresAlert,
-  buildTireAlerts,
-} from "@/components/dashboard/TiresAlert";
+import { TiresAlert } from "@/components/dashboard/TiresAlert";
+import { buildTireAlerts } from "@/lib/tire-alerts";
 import { isDecommissionAlertWindow } from "@/lib/decommission";
 import { buildVehicleType } from "@/lib/vehicle";
 import type { VehicleEventType } from "@/lib/vehicle-events";
