@@ -12,6 +12,12 @@ import {
 } from "./vehicle-events";
 import { calculateOptimalPrice } from "./pricing";
 import type { PricingRule } from "./types";
+import {
+  TIRE_TYPE_META,
+  minTread,
+  seasonMismatch,
+  type VehicleTire,
+} from "./tires";
 
 export type ToolContext = {
   org_id: string;
@@ -1015,6 +1021,238 @@ const getVehicleHistory: Tool = {
   },
 };
 
+// =========================================================
+// 14) get_tire_status — aktuelle Reifen eines Fahrzeugs
+// =========================================================
+const getTireStatus: Tool = {
+  name: "get_tire_status",
+  description:
+    "Liefert die aktuell montierten Reifen eines Fahrzeugs anhand des Kennzeichens — Typ (Sommer/Winter/Ganzjahres), Marke, Modell, Größe, Profiltiefe je Position (mm) und ob ein Wechsel empfohlen ist (< 3 mm) oder die Saison nicht passt. Verwende das Tool wenn der Nutzer fragt: 'Welche Reifen hat M-OL 1001?', 'Wie ist die Profiltiefe von ...?', 'Hat das Auto Sommer- oder Winterreifen?'.",
+  input_schema: {
+    type: "object",
+    properties: {
+      plate: {
+        type: "string",
+        description: "Kennzeichen, z. B. 'M-OL 1001'.",
+      },
+    },
+    required: ["plate"],
+  },
+  handler: async (input, ctx) => {
+    const plateRaw = input.plate;
+    if (typeof plateRaw !== "string" || !plateRaw.trim())
+      return { ok: false, error: "Kennzeichen fehlt." };
+    const plate = normalizePlate(plateRaw);
+    if (!plate) return { ok: false, error: `Kennzeichen ungültig: ${plateRaw}` };
+
+    const { data: vehicle } = await ctx.admin
+      .from("vehicles")
+      .select("id, plate, manufacturer, model, vehicle_type")
+      .eq("org_id", ctx.org_id)
+      .eq("plate", plate)
+      .maybeSingle();
+    if (!vehicle)
+      return { ok: false, error: `Kein Fahrzeug mit Kennzeichen ${plate} gefunden.` };
+
+    const { data: tire } = await ctx.admin
+      .from("vehicle_tires")
+      .select("*")
+      .eq("vehicle_id", vehicle.id)
+      .eq("org_id", ctx.org_id)
+      .eq("is_current", true)
+      .maybeSingle();
+    if (!tire) {
+      return {
+        ok: true,
+        data: {
+          plate: vehicle.plate,
+          tire_recorded: false,
+          message: "Für dieses Fahrzeug ist kein aktueller Reifensatz dokumentiert.",
+        },
+      };
+    }
+    const t = tire as VehicleTire;
+    const min = minTread(t);
+    const wrong = seasonMismatch(t.type);
+    return {
+      ok: true,
+      data: {
+        plate: vehicle.plate,
+        tire_recorded: true,
+        type: t.type,
+        type_label: TIRE_TYPE_META[t.type].label,
+        brand: t.brand,
+        model: t.model,
+        size: t.size,
+        dot_number: t.dot_number,
+        tread_depths_mm: {
+          front_left: t.tread_depth_fl,
+          front_right: t.tread_depth_fr,
+          rear_left: t.tread_depth_rl,
+          rear_right: t.tread_depth_rr,
+        },
+        min_tread_mm: min,
+        replacement_recommended: min != null && min < 3,
+        season_mismatch: wrong,
+        season_advice:
+          wrong === "summer_in_winter"
+            ? "Sommerreifen montiert in Wintermonat — Winterreifen empfohlen."
+            : wrong === "winter_in_summer"
+            ? "Winterreifen montiert in Sommermonat — Sommerreifen empfohlen."
+            : null,
+        mounted_at: t.mounted_at,
+        km_at_mount: t.km_at_mount,
+      },
+    };
+  },
+};
+
+// =========================================================
+// 15) get_low_tread_vehicles — Fahrzeuge mit Profiltiefe unter Schwelle
+// =========================================================
+const getLowTreadVehicles: Tool = {
+  name: "get_low_tread_vehicles",
+  description:
+    "Liefert die Liste aller Fahrzeuge der Flotte, bei denen mindestens ein Reifen weniger als die angegebene Profiltiefe hat (Default 3 mm). Verwende das Tool wenn der Nutzer fragt: 'Welche Autos brauchen neue Reifen?', 'Wo ist die Profiltiefe niedrig?'.",
+  input_schema: {
+    type: "object",
+    properties: {
+      threshold_mm: {
+        type: "number",
+        description: "Schwellenwert in mm (Default 3).",
+      },
+    },
+  },
+  handler: async (input, ctx) => {
+    const threshold =
+      typeof input.threshold_mm === "number" ? input.threshold_mm : 3;
+    const { data: tires } = await ctx.admin
+      .from("vehicle_tires")
+      .select("*, vehicles!inner(id, plate, manufacturer, model, vehicle_type)")
+      .eq("org_id", ctx.org_id)
+      .eq("is_current", true);
+
+    type Row = VehicleTire & {
+      vehicles:
+        | {
+            id: string;
+            plate: string;
+            manufacturer: string | null;
+            model: string | null;
+            vehicle_type: string | null;
+          }
+        | Array<{
+            id: string;
+            plate: string;
+            manufacturer: string | null;
+            model: string | null;
+            vehicle_type: string | null;
+          }>
+        | null;
+    };
+
+    const items = ((tires ?? []) as unknown as Row[])
+      .map((t) => {
+        const v = Array.isArray(t.vehicles) ? t.vehicles[0] ?? null : t.vehicles;
+        const min = minTread(t);
+        return { tire: t, vehicle: v, min };
+      })
+      .filter((x) => x.vehicle && x.min != null && x.min < threshold)
+      .map((x) => ({
+        plate: x.vehicle!.plate,
+        label:
+          [x.vehicle!.manufacturer, x.vehicle!.model].filter(Boolean).join(" ") ||
+          x.vehicle!.vehicle_type ||
+          null,
+        tire_type: x.tire.type,
+        min_tread_mm: x.min,
+      }))
+      .sort((a, b) => (a.min_tread_mm ?? 99) - (b.min_tread_mm ?? 99));
+
+    return {
+      ok: true,
+      data: {
+        threshold_mm: threshold,
+        count: items.length,
+        vehicles: items,
+      },
+    };
+  },
+};
+
+// =========================================================
+// 16) get_vehicles_by_tire_type — Filter nach aktuellem Reifentyp
+// =========================================================
+const getVehiclesByTireType: Tool = {
+  name: "get_vehicles_by_tire_type",
+  description:
+    "Liefert alle Fahrzeuge der Flotte, die aktuell den angegebenen Reifentyp montiert haben. Erlaubte Werte: 'summer' (Sommer), 'winter' (Winter), 'allseason' (Ganzjahres). Verwende das Tool wenn der Nutzer fragt: 'Welche Autos haben noch Sommerreifen?', 'Welche brauchen den Winter-Wechsel?'.",
+  input_schema: {
+    type: "object",
+    properties: {
+      tire_type: {
+        type: "string",
+        enum: ["summer", "winter", "allseason"],
+        description: "Reifentyp.",
+      },
+    },
+    required: ["tire_type"],
+  },
+  handler: async (input, ctx) => {
+    const t = input.tire_type;
+    if (t !== "summer" && t !== "winter" && t !== "allseason") {
+      return { ok: false, error: "Ungültiger Reifentyp." };
+    }
+    const { data: rows } = await ctx.admin
+      .from("vehicle_tires")
+      .select("type, vehicles!inner(id, plate, manufacturer, model, vehicle_type)")
+      .eq("org_id", ctx.org_id)
+      .eq("is_current", true)
+      .eq("type", t);
+
+    type Row = {
+      type: string;
+      vehicles:
+        | {
+            id: string;
+            plate: string;
+            manufacturer: string | null;
+            model: string | null;
+            vehicle_type: string | null;
+          }
+        | Array<{
+            id: string;
+            plate: string;
+            manufacturer: string | null;
+            model: string | null;
+            vehicle_type: string | null;
+          }>
+        | null;
+    };
+
+    const items = ((rows ?? []) as unknown as Row[])
+      .map((r) => (Array.isArray(r.vehicles) ? r.vehicles[0] ?? null : r.vehicles))
+      .filter((v): v is NonNullable<typeof v> => !!v)
+      .map((v) => ({
+        plate: v.plate,
+        label:
+          [v.manufacturer, v.model].filter(Boolean).join(" ") ||
+          v.vehicle_type ||
+          null,
+      }));
+
+    return {
+      ok: true,
+      data: {
+        tire_type: t,
+        type_label: TIRE_TYPE_META[t].label,
+        count: items.length,
+        vehicles: items,
+      },
+    };
+  },
+};
+
 export const TOOLS: Tool[] = [
   createContract,
   createVehicle,
@@ -1029,6 +1267,9 @@ export const TOOLS: Tool[] = [
   getVehicleHistory,
   getVehicleLocation,
   getPriceRecommendation,
+  getTireStatus,
+  getLowTreadVehicles,
+  getVehiclesByTireType,
 ];
 
 export const TOOLS_FOR_API = TOOLS.map((t) => ({

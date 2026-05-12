@@ -10,9 +10,14 @@ import { TicketTable } from "@/components/dashboard/TicketTable";
 import { DecommissionAlert } from "@/components/dashboard/DecommissionAlert";
 import { VehicleDueAlert, type DueAlertItem } from "@/components/dashboard/VehicleDueAlert";
 import { PricingTodayWidget } from "@/components/dashboard/PricingTodayWidget";
+import {
+  TiresAlert,
+  buildTireAlerts,
+} from "@/components/dashboard/TiresAlert";
 import { isDecommissionAlertWindow } from "@/lib/decommission";
 import { buildVehicleType } from "@/lib/vehicle";
 import type { VehicleEventType } from "@/lib/vehicle-events";
+import type { VehicleTire } from "@/lib/tires";
 
 export const dynamic = "force-dynamic";
 
@@ -122,6 +127,39 @@ export default async function DashboardPage() {
   }
   const dueAlerts = Array.from(dueByKey.values());
 
+  // Aktuelle Reifensätze inkl. Fahrzeug für Reifen-Alert
+  const { data: tireRows } = await supabase
+    .from("vehicle_tires")
+    .select(
+      "*, vehicles!inner(id, plate, manufacturer, model, vehicle_type)"
+    )
+    .eq("is_current", true);
+  type TireWithVehicle = VehicleTire & {
+    vehicles:
+      | {
+          id: string;
+          plate: string;
+          manufacturer: string | null;
+          model: string | null;
+          vehicle_type: string | null;
+        }
+      | Array<{
+          id: string;
+          plate: string;
+          manufacturer: string | null;
+          model: string | null;
+          vehicle_type: string | null;
+        }>
+      | null;
+  };
+  const tiresForAlert = ((tireRows ?? []) as unknown as TireWithVehicle[]).map(
+    (t) => ({
+      ...t,
+      vehicles: Array.isArray(t.vehicles) ? t.vehicles[0] ?? null : t.vehicles,
+    })
+  );
+  const tireAlerts = buildTireAlerts(tiresForAlert);
+
   const allTickets = (tickets ?? []) as Ticket[];
   const allLogs = (logs ?? []) as TicketLog[];
   const recentContracts = (contracts ?? []) as Contract[];
@@ -171,6 +209,7 @@ export default async function DashboardPage() {
 
           {decommissionAlerts.length > 0 && <DecommissionAlert vehicles={decommissionAlerts} />}
           {dueAlerts.length > 0 && <VehicleDueAlert items={dueAlerts} />}
+          {tireAlerts.length > 0 && <TiresAlert items={tireAlerts} />}
           {orgId && <PricingTodayWidget orgId={orgId} />}
 
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">

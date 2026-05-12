@@ -20,6 +20,8 @@ import { VehicleDeleteButton } from "./VehicleDeleteButton";
 import { VehicleEventsTimeline } from "@/components/vehicle/VehicleEventsTimeline";
 import { TuevCountdown } from "@/components/vehicle/TuevCountdown";
 import { GpsLocation } from "@/components/vehicle/GpsLocation";
+import { TiresSection, type TireWithPhotos } from "@/components/vehicle/TiresSection";
+import type { TirePhoto, VehicleTire } from "@/lib/tires";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeDecommission } from "@/lib/decommission";
 import { VEHICLE_STATUS_META, buildVehicleType } from "@/lib/vehicle";
@@ -43,7 +45,12 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
   if (!vehicle) notFound();
   const v = vehicle as Vehicle;
 
-  const [{ data: contracts }, { data: events }, { data: orgRow }] = await Promise.all([
+  const [
+    { data: contracts },
+    { data: events },
+    { data: orgRow },
+    { data: tireRows },
+  ] = await Promise.all([
     supabase
       .from("contracts")
       .select("*")
@@ -57,11 +64,38 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
       .order("date", { ascending: false })
       .order("created_at", { ascending: false }),
     supabase.from("organizations").select("echoes_enabled").single(),
+    supabase
+      .from("vehicle_tires")
+      .select("*")
+      .eq("vehicle_id", v.id)
+      .order("is_current", { ascending: false })
+      .order("mounted_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false }),
   ]);
   const linkedContracts = (contracts || []) as Contract[];
   const vehicleEvents = (events || []) as VehicleEvent[];
   const echoesEnabled = !!(orgRow as { echoes_enabled?: boolean } | null)
     ?.echoes_enabled;
+  const tires = (tireRows ?? []) as VehicleTire[];
+
+  // Fotos zu allen Reifen-Sätzen laden
+  const tireIds = tires.map((t) => t.id);
+  const photosByTire = new Map<string, TirePhoto[]>();
+  if (tireIds.length > 0) {
+    const { data: tirePhotos } = await supabase
+      .from("tire_photos")
+      .select("*")
+      .in("tire_id", tireIds);
+    for (const p of (tirePhotos ?? []) as TirePhoto[]) {
+      const arr = photosByTire.get(p.tire_id) ?? [];
+      arr.push(p);
+      photosByTire.set(p.tire_id, arr);
+    }
+  }
+  const tiresWithPhotos: TireWithPhotos[] = tires.map((t) => ({
+    ...t,
+    photos: photosByTire.get(t.id) ?? [],
+  }));
 
   const decom = computeDecommission(v);
   const status = VEHICLE_STATUS_META[v.status];
@@ -231,6 +265,10 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
               />
             </div>
           )}
+
+          <div className="mt-6">
+            <TiresSection vehicleId={v.id} tires={tiresWithPhotos} />
+          </div>
 
           <div className="mt-6">
             <VehicleEventsTimeline vehicleId={v.id} events={vehicleEvents} />
