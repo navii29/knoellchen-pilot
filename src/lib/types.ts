@@ -132,6 +132,10 @@ export interface Contract {
   km_excess: number | null;
   status: ContractStatus;
   lexoffice_invoice_id: string | null;
+  partner_id: string | null;
+  partner_purchase_price: number | null;
+  partner_selling_price: number | null;
+  partner_commission: number | null;
   signed_contract_path: string | null;
   signature_data: string | null;
   signed_at: string | null;

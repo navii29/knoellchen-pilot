@@ -18,6 +18,12 @@ import {
   seasonMismatch,
   type VehicleTire,
 } from "./tires";
+import {
+  PARTNER_TYPE_META,
+  calculateCommission,
+  contractDays,
+  type SalesPartner,
+} from "./partners";
 
 export type ToolContext = {
   org_id: string;
@@ -1253,6 +1259,234 @@ const getVehiclesByTireType: Tool = {
   },
 };
 
+// =========================================================
+// 17) get_partner_commission
+// =========================================================
+const getPartnerCommission: Tool = {
+  name: "get_partner_commission",
+  description:
+    "Liefert die Summe der Provisionen für einen Vertriebspartner in einem Zeitraum (Default: aktueller Monat). Zeigt Anzahl Verträge, Mietage, VK-Umsatz und Brutto-Provision. Verwende das Tool wenn der Nutzer fragt: 'Wie viel Provision hat Hotel X diesen Monat?', 'Welche Provision hat Check24 im Mai gemacht?'.",
+  input_schema: {
+    type: "object",
+    properties: {
+      partner_name: { type: "string", description: "Name oder Teil des Namens des Partners." },
+      from: { type: "string", description: "Startdatum YYYY-MM-DD oder dd.mm.yyyy. Default: 1. des aktuellen Monats." },
+      to: { type: "string", description: "Enddatum YYYY-MM-DD oder dd.mm.yyyy. Default: heute." },
+    },
+    required: ["partner_name"],
+  },
+  handler: async (input, ctx) => {
+    const name = String(input.partner_name ?? "").trim();
+    if (!name) return { ok: false, error: "Partnername fehlt." };
+
+    const today = new Date();
+    const defaultFrom = new Date(today.getFullYear(), today.getMonth(), 1)
+      .toISOString().slice(0, 10);
+    const from = parseDate(input.from) ?? defaultFrom;
+    const to = parseDate(input.to) ?? today.toISOString().slice(0, 10);
+
+    const { data: partners } = await ctx.admin
+      .from("sales_partners")
+      .select("*")
+      .eq("org_id", ctx.org_id)
+      .ilike("name", `%${name}%`)
+      .limit(5);
+    if (!partners || partners.length === 0)
+      return { ok: false, error: `Kein Partner mit Namen „${name}" gefunden.` };
+    const partner = partners[0] as SalesPartner;
+
+    const { data: contracts } = await ctx.admin
+      .from("contracts")
+      .select(
+        "contract_nr, plate, renter_name, pickup_date, return_date, actual_return_date, partner_purchase_price, partner_selling_price"
+      )
+      .eq("org_id", ctx.org_id)
+      .eq("partner_id", partner.id)
+      .gte("pickup_date", from)
+      .lte("pickup_date", to);
+
+    const items = (contracts ?? []).map((c) => {
+      const days = contractDays({
+        pickup_date: c.pickup_date,
+        return_date: c.return_date,
+        actual_return_date: c.actual_return_date,
+      });
+      const result = calculateCommission({
+        partner,
+        purchase_price_per_day: c.partner_purchase_price,
+        selling_price_per_day: c.partner_selling_price,
+        days,
+      });
+      return {
+        contract_nr: c.contract_nr,
+        plate: c.plate,
+        renter_name: c.renter_name,
+        days,
+        commission_eur: result.commission_eur,
+        selling_total: result.total_selling,
+      };
+    });
+
+    const totalCommission = items.reduce((s, x) => s + x.commission_eur, 0);
+    const totalSelling = items.reduce((s, x) => s + x.selling_total, 0);
+    const totalDays = items.reduce((s, x) => s + x.days, 0);
+
+    return {
+      ok: true,
+      data: {
+        partner: { id: partner.id, name: partner.name, type: partner.type },
+        period: { from, to },
+        contract_count: items.length,
+        total_days: totalDays,
+        total_selling_eur: Math.round(totalSelling * 100) / 100,
+        total_commission_eur: Math.round(totalCommission * 100) / 100,
+        contracts: items,
+      },
+    };
+  },
+};
+
+// =========================================================
+// 18) get_partner_contracts
+// =========================================================
+const getPartnerContracts: Tool = {
+  name: "get_partner_contracts",
+  description:
+    "Liefert die Liste aller Verträge die über einen bestimmten Vertriebspartner liefen, optional gefiltert nach Status. Verwende wenn der Nutzer fragt: 'Welche Verträge liefen über Check24?', 'Was hat Hotel X gebucht?'.",
+  input_schema: {
+    type: "object",
+    properties: {
+      partner_name: { type: "string", description: "Name oder Teil des Namens des Partners." },
+      status: { type: "string", description: "Optional: 'aktiv' / 'abgeschlossen' / 'storniert'." },
+      limit: { type: "number", description: "Max Anzahl (Default 20, max 100)." },
+    },
+    required: ["partner_name"],
+  },
+  handler: async (input, ctx) => {
+    const name = String(input.partner_name ?? "").trim();
+    if (!name) return { ok: false, error: "Partnername fehlt." };
+    const status = typeof input.status === "string" ? input.status : null;
+    const limit = Math.min(
+      Math.max(typeof input.limit === "number" ? input.limit : 20, 1), 100
+    );
+
+    const { data: partners } = await ctx.admin
+      .from("sales_partners")
+      .select("id, name, type")
+      .eq("org_id", ctx.org_id)
+      .ilike("name", `%${name}%`)
+      .limit(5);
+    if (!partners || partners.length === 0)
+      return { ok: false, error: `Kein Partner mit Namen „${name}" gefunden.` };
+    const partner = partners[0];
+
+    let q = ctx.admin
+      .from("contracts")
+      .select(
+        "contract_nr, plate, vehicle_type, renter_name, pickup_date, return_date, status, partner_commission"
+      )
+      .eq("org_id", ctx.org_id)
+      .eq("partner_id", partner.id)
+      .order("pickup_date", { ascending: false })
+      .limit(limit);
+    if (status) q = q.eq("status", status);
+
+    const { data } = await q;
+    return {
+      ok: true,
+      data: { partner, count: (data ?? []).length, contracts: data ?? [] },
+    };
+  },
+};
+
+// =========================================================
+// 19) get_top_partners
+// =========================================================
+const getTopPartners: Tool = {
+  name: "get_top_partners",
+  description:
+    "Liefert die umsatzstärksten Vertriebspartner sortiert nach Anzahl vermittelter Verträge oder Provisionssumme. Verwende wenn der Nutzer fragt: 'Welcher Partner bringt die meisten Kunden?', 'Wer macht die höchste Provision?'.",
+  input_schema: {
+    type: "object",
+    properties: {
+      sort_by: {
+        type: "string",
+        enum: ["count", "commission"],
+        description: "Sortierung: 'count' (Vertragsanzahl) oder 'commission' (Provisionssumme). Default count.",
+      },
+      from: { type: "string", description: "Optional Startdatum." },
+      to: { type: "string", description: "Optional Enddatum." },
+      limit: { type: "number", description: "Top N (Default 10)." },
+    },
+  },
+  handler: async (input, ctx) => {
+    const sortBy = input.sort_by === "commission" ? "commission" : "count";
+    const limit = typeof input.limit === "number" ? input.limit : 10;
+    const from = parseDate(input.from);
+    const to = parseDate(input.to);
+
+    let q = ctx.admin
+      .from("contracts")
+      .select("partner_id, partner_commission, sales_partners!inner(id, name, type)")
+      .eq("org_id", ctx.org_id)
+      .not("partner_id", "is", null);
+    if (from) q = q.gte("pickup_date", from);
+    if (to) q = q.lte("pickup_date", to);
+
+    const { data: rows } = await q;
+
+    const agg = new Map<
+      string,
+      { partner_id: string; name: string; type: string; count: number; commission: number }
+    >();
+    for (const row of (rows ?? []) as Array<{
+      partner_id: string;
+      partner_commission: number | null;
+      sales_partners:
+        | { id: string; name: string; type: string }
+        | Array<{ id: string; name: string; type: string }>
+        | null;
+    }>) {
+      const sp = Array.isArray(row.sales_partners)
+        ? row.sales_partners[0]
+        : row.sales_partners;
+      if (!sp) continue;
+      const cur = agg.get(row.partner_id) ?? {
+        partner_id: row.partner_id,
+        name: sp.name,
+        type: sp.type,
+        count: 0,
+        commission: 0,
+      };
+      cur.count += 1;
+      cur.commission += Number(row.partner_commission ?? 0);
+      agg.set(row.partner_id, cur);
+    }
+
+    const list = Array.from(agg.values())
+      .sort((a, b) =>
+        sortBy === "commission" ? b.commission - a.commission : b.count - a.count
+      )
+      .slice(0, limit)
+      .map((x) => ({
+        ...x,
+        type_label:
+          PARTNER_TYPE_META[x.type as keyof typeof PARTNER_TYPE_META]?.label ?? x.type,
+        commission: Math.round(x.commission * 100) / 100,
+      }));
+
+    return {
+      ok: true,
+      data: {
+        sort_by: sortBy,
+        period: { from, to },
+        partner_count: list.length,
+        partners: list,
+      },
+    };
+  },
+};
+
 export const TOOLS: Tool[] = [
   createContract,
   createVehicle,
@@ -1270,6 +1504,9 @@ export const TOOLS: Tool[] = [
   getTireStatus,
   getLowTreadVehicles,
   getVehiclesByTireType,
+  getPartnerCommission,
+  getPartnerContracts,
+  getTopPartners,
 ];
 
 export const TOOLS_FOR_API = TOOLS.map((t) => ({

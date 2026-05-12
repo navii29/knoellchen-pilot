@@ -2,10 +2,17 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, FileSignature, FileText, Loader2, Save, ScanText, Sparkles, TrendingUp, UserCheck, X } from "lucide-react";
+import { ArrowLeft, Check, FileSignature, FileText, Handshake, Loader2, Save, ScanText, Sparkles, TrendingUp, UserCheck, X } from "lucide-react";
 import Link from "next/link";
 import { THEME } from "@/lib/theme";
 import type { Customer, ParsedContractData } from "@/lib/types";
+import {
+  PARTNER_TYPE_META,
+  calculateCommission,
+  contractDays,
+  type SalesPartner,
+} from "@/lib/partners";
+import { fmtEur } from "@/lib/utils";
 
 type Mode = "choose" | "ai" | "manual";
 type FormState = {
@@ -32,6 +39,9 @@ type FormState = {
   km_limit: string;
   contract_pdf_path: string;
   notes: string;
+  partner_id: string;
+  partner_purchase_price: string;
+  partner_selling_price: string;
 };
 
 const empty: FormState = {
@@ -58,6 +68,9 @@ const empty: FormState = {
   km_limit: "",
   contract_pdf_path: "",
   notes: "",
+  partner_id: "",
+  partner_purchase_price: "",
+  partner_selling_price: "",
 };
 
 const customerLabel = (c: Customer) => {
@@ -86,14 +99,16 @@ const fillFromCustomer = (prev: FormState, c: Customer): FormState => {
     renter_license_nr: c.license_nr || "",
     renter_license_class: c.license_class || "",
     renter_license_expiry: c.license_expiry || "",
-  };
+  } as FormState;
 };
 
 export const NewContractClient = ({
   customers,
+  partners,
   initialCustomerId,
 }: {
   customers: Customer[];
+  partners: SalesPartner[];
   initialCustomerId: string | null;
 }) => {
   const router = useRouter();
@@ -167,6 +182,9 @@ export const NewContractClient = ({
       km_limit: "",
       contract_pdf_path: j.pdf_path || "",
       notes: "",
+      partner_id: "",
+      partner_purchase_price: "",
+      partner_selling_price: "",
     });
     setAiConfidence(j.confidence);
     setParsedFromAI(true);
@@ -178,6 +196,25 @@ export const NewContractClient = ({
     setError(null);
     setSaving(true);
     const numeric = (v: string) => (v.trim() === "" ? null : Number(v));
+    // Provision live berechnen, falls Partner zugeordnet
+    const partner = partners.find((p) => p.id === data.partner_id) ?? null;
+    const purchasePerDay = numeric(data.partner_purchase_price);
+    const sellingPerDay = numeric(data.partner_selling_price);
+    let partnerCommission: number | null = null;
+    if (partner && data.pickup_date && data.return_date) {
+      const days = contractDays({
+        pickup_date: data.pickup_date,
+        return_date: data.return_date,
+        actual_return_date: null,
+      });
+      partnerCommission = calculateCommission({
+        partner,
+        purchase_price_per_day: purchasePerDay,
+        selling_price_per_day: sellingPerDay,
+        days,
+      }).commission_eur;
+    }
+
     const payload = {
       ...data,
       daily_rate: numeric(data.daily_rate),
@@ -185,6 +222,10 @@ export const NewContractClient = ({
       deposit: numeric(data.deposit),
       km_pickup: numeric(data.km_pickup),
       km_limit: numeric(data.km_limit),
+      partner_id: data.partner_id || null,
+      partner_purchase_price: purchasePerDay,
+      partner_selling_price: sellingPerDay,
+      partner_commission: partnerCommission,
     };
     const res = await fetch("/api/contracts", {
       method: "POST",
@@ -406,6 +447,44 @@ export const NewContractClient = ({
             <Field label="Uhrzeit Rückgabe">
               <input type="time" value={data.return_time} onChange={set("return_time")} className="input tabular-nums" />
             </Field>
+          </Section>
+
+          <Section title="Vertriebspartner (optional)">
+            <div className="sm:col-span-2">
+              <PartnerPicker
+                partners={partners}
+                plate={data.plate}
+                partnerId={data.partner_id}
+                purchasePerDay={data.partner_purchase_price}
+                sellingPerDay={data.partner_selling_price}
+                pickupDate={data.pickup_date}
+                returnDate={data.return_date}
+                onPartnerChange={(id, pricing) =>
+                  setData((d) => ({
+                    ...d,
+                    partner_id: id,
+                    partner_purchase_price:
+                      pricing?.purchase_price != null ? String(pricing.purchase_price) : "",
+                    partner_selling_price:
+                      pricing?.selling_price != null ? String(pricing.selling_price) : "",
+                    daily_rate:
+                      pricing?.selling_price != null
+                        ? String(pricing.selling_price)
+                        : d.daily_rate,
+                  }))
+                }
+                onPurchaseChange={(v) =>
+                  setData((d) => ({ ...d, partner_purchase_price: v }))
+                }
+                onSellingChange={(v) =>
+                  setData((d) => ({
+                    ...d,
+                    partner_selling_price: v,
+                    daily_rate: v,
+                  }))
+                }
+              />
+            </div>
           </Section>
 
           <Section title="Kosten & Kilometer">
@@ -675,6 +754,187 @@ const PriceRecommendation = ({
       <div className="mt-2 text-[11.5px] text-stone-600 leading-snug">
         {explanation}
       </div>
+    </div>
+  );
+};
+
+// =====================================================
+// PartnerPicker — Auswahl + Auto-Pricing
+// =====================================================
+const PartnerPicker = ({
+  partners,
+  plate,
+  partnerId,
+  purchasePerDay,
+  sellingPerDay,
+  pickupDate,
+  returnDate,
+  onPartnerChange,
+  onPurchaseChange,
+  onSellingChange,
+}: {
+  partners: SalesPartner[];
+  plate: string;
+  partnerId: string;
+  purchasePerDay: string;
+  sellingPerDay: string;
+  pickupDate: string;
+  returnDate: string;
+  onPartnerChange: (
+    id: string,
+    pricing: { purchase_price: number; selling_price: number } | null
+  ) => void;
+  onPurchaseChange: (v: string) => void;
+  onSellingChange: (v: string) => void;
+}) => {
+  const partner = useMemo(
+    () => partners.find((p) => p.id === partnerId) ?? null,
+    [partners, partnerId]
+  );
+  const [loadingPricing, setLoadingPricing] = useState(false);
+  const [pricingHint, setPricingHint] = useState<string | null>(null);
+
+  // Pricing automatisch laden, wenn Partner + Kennzeichen wechseln
+  useEffect(() => {
+    if (!partnerId || !plate.trim()) return;
+    setLoadingPricing(true);
+    setPricingHint(null);
+    let cancelled = false;
+    (async () => {
+      try {
+        const url = `/api/vehicles/partner-pricing-lookup?plate=${encodeURIComponent(plate)}&partner_id=${partnerId}`;
+        const res = await fetch(url);
+        const j = (await res.json().catch(() => ({}))) as {
+          ok?: boolean;
+          vehicle_known?: boolean;
+          pricing?: { purchase_price: number; selling_price: number } | null;
+        };
+        if (cancelled) return;
+        if (!j.vehicle_known) {
+          setPricingHint("Fahrzeug noch nicht im System — Preise manuell eintragen.");
+          return;
+        }
+        if (j.pricing) {
+          onPartnerChange(partnerId, j.pricing);
+          setPricingHint("Preise aus Fahrzeug-Stammdaten übernommen.");
+        } else {
+          setPricingHint(
+            "Kein Partner-Preis für dieses Fahrzeug hinterlegt — bitte manuell eintragen."
+          );
+        }
+      } finally {
+        if (!cancelled) setLoadingPricing(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partnerId, plate]);
+
+  const days = useMemo(() => {
+    if (!pickupDate || !returnDate) return 0;
+    const ms = new Date(returnDate).getTime() - new Date(pickupDate).getTime();
+    return Math.max(1, Math.ceil(ms / 86_400_000));
+  }, [pickupDate, returnDate]);
+
+  const commission = useMemo(() => {
+    if (!partner) return null;
+    const purchase = Number(purchasePerDay.replace(",", "."));
+    const selling = Number(sellingPerDay.replace(",", "."));
+    if (!Number.isFinite(purchase) || !Number.isFinite(selling)) return null;
+    return calculateCommission({
+      partner,
+      purchase_price_per_day: purchase,
+      selling_price_per_day: selling,
+      days,
+    });
+  }, [partner, purchasePerDay, sellingPerDay, days]);
+
+  return (
+    <div>
+      <Field label="Partner">
+        <select
+          value={partnerId}
+          onChange={(e) => {
+            const id = e.target.value;
+            if (!id) {
+              onPartnerChange("", null);
+              setPricingHint(null);
+              return;
+            }
+            // Selecting a partner triggers the effect above — no immediate pricing
+            onPartnerChange(id, null);
+          }}
+          className="input"
+        >
+          <option value="">— ohne Partner —</option>
+          {partners.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name} ({PARTNER_TYPE_META[p.type].short})
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      {partner && (
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <Field label="Einstandspreis / Tag (€)">
+            <input
+              value={purchasePerDay}
+              onChange={(e) => onPurchaseChange(e.target.value)}
+              inputMode="decimal"
+              placeholder="z. B. 45,00"
+              className="input tabular-nums"
+            />
+          </Field>
+          <Field label="VK-Preis / Tag (€)">
+            <input
+              value={sellingPerDay}
+              onChange={(e) => onSellingChange(e.target.value)}
+              inputMode="decimal"
+              placeholder="z. B. 65,00"
+              className="input tabular-nums"
+            />
+          </Field>
+        </div>
+      )}
+
+      {(loadingPricing || pricingHint) && partner && (
+        <div className="mt-2 text-[11.5px] text-stone-500 inline-flex items-center gap-1.5">
+          {loadingPricing && <Loader2 size={11} className="animate-spin" />}
+          {loadingPricing ? "Lade Partner-Preise…" : pricingHint}
+        </div>
+      )}
+
+      {commission && days > 0 && (
+        <div className="mt-3 rounded-lg bg-stone-900 text-white px-4 py-3">
+          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.06em] font-semibold text-teal-300 mb-1.5">
+            <Handshake size={12} />
+            Provisionsberechnung · {days} {days === 1 ? "Tag" : "Tage"}
+          </div>
+          <div className="grid grid-cols-3 gap-3 text-[12.5px]">
+            <div>
+              <div className="text-white/50">Einstand</div>
+              <div className="font-mono tabular-nums text-white">
+                {fmtEur(commission.total_purchase)}
+              </div>
+            </div>
+            <div>
+              <div className="text-white/50">VK</div>
+              <div className="font-mono tabular-nums text-white">
+                {fmtEur(commission.total_selling)}
+              </div>
+            </div>
+            <div>
+              <div className="text-white/50">Provision</div>
+              <div className="font-display text-[18px] tracking-tight font-medium text-emerald-300 tabular-nums leading-none mt-0.5">
+                {fmtEur(commission.commission_eur)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -22,6 +22,7 @@ import { TuevCountdown } from "@/components/vehicle/TuevCountdown";
 import { GpsLocation } from "@/components/vehicle/GpsLocation";
 import { TiresSection, type TireWithPhotos } from "@/components/vehicle/TiresSection";
 import type { TirePhoto, VehicleTire } from "@/lib/tires";
+import { PartnerPricingSection } from "@/components/vehicle/PartnerPricingSection";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeDecommission } from "@/lib/decommission";
 import { VEHICLE_STATUS_META, buildVehicleType } from "@/lib/vehicle";
@@ -50,6 +51,7 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
     { data: events },
     { data: orgRow },
     { data: tireRows },
+    { data: partnerPricing },
   ] = await Promise.all([
     supabase
       .from("contracts")
@@ -71,6 +73,12 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
       .order("is_current", { ascending: false })
       .order("mounted_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false }),
+    supabase
+      .from("vehicle_partner_pricing")
+      .select(
+        "*, sales_partners!inner(name, type, commission_type, commission_value)"
+      )
+      .eq("vehicle_id", v.id),
   ]);
   const linkedContracts = (contracts || []) as Contract[];
   const vehicleEvents = (events || []) as VehicleEvent[];
@@ -268,6 +276,15 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
 
           <div className="mt-6">
             <TiresSection vehicleId={v.id} tires={tiresWithPhotos} />
+          </div>
+
+          <div className="mt-6">
+            <PartnerPricingSection
+              vehicleId={v.id}
+              initialPricing={(partnerPricing ?? []) as React.ComponentProps<
+                typeof PartnerPricingSection
+              >["initialPricing"]}
+            />
           </div>
 
           <div className="mt-6">

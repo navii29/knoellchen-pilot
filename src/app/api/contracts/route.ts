@@ -101,6 +101,10 @@ export const POST = async (req: Request) => {
     contract_pdf_path: (body.contract_pdf_path as string) ?? null,
     notes: (body.notes as string) ?? null,
     status: (body.status as string) ?? "aktiv",
+    partner_id: (body.partner_id as string) || null,
+    partner_purchase_price: numeric(body.partner_purchase_price),
+    partner_selling_price: numeric(body.partner_selling_price),
+    partner_commission: numeric(body.partner_commission),
   };
 
   const { data, error } = await admin
