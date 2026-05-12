@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Calendar,
+  Camera,
   ChevronDown,
   ChevronRight,
   Disc,
@@ -23,6 +24,7 @@ import {
   type VehicleTire,
 } from "@/lib/tires";
 import { TireChangeModal } from "./TireChangeModal";
+import { TirePhotosModal } from "./TirePhotosModal";
 
 export type TireWithPhotos = VehicleTire & { photos: TirePhoto[] };
 
@@ -35,6 +37,7 @@ export const TiresSection = ({
 }) => {
   const router = useRouter();
   const [changeOpen, setChangeOpen] = useState(false);
+  const [photosTireId, setPhotosTireId] = useState<string | null>(null);
   const [openHistoryIds, setOpenHistoryIds] = useState<Set<string>>(new Set());
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -85,7 +88,11 @@ export const TiresSection = ({
         </div>
 
         {current ? (
-          <CurrentTireCard tire={current} vehicleId={vehicleId} />
+          <CurrentTireCard
+            tire={current}
+            vehicleId={vehicleId}
+            onManagePhotos={() => setPhotosTireId(current.id)}
+          />
         ) : (
           <div className="py-7 text-center text-sm text-stone-500">
             <Disc size={18} className="mx-auto text-stone-300 mb-1.5" />
@@ -159,7 +166,15 @@ export const TiresSection = ({
                             {t.notes}
                           </div>
                         )}
-                        <div className="mt-3 flex items-center justify-end">
+                        <div className="mt-3 flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setPhotosTireId(t.id)}
+                            className="inline-flex items-center gap-1 text-[11.5px] text-stone-600 hover:text-stone-900"
+                          >
+                            <Camera size={11} />
+                            Fotos verwalten ({t.photos.length})
+                          </button>
                           <button
                             type="button"
                             onClick={() => remove(t.id)}
@@ -187,6 +202,20 @@ export const TiresSection = ({
           onClose={() => setChangeOpen(false)}
         />
       )}
+
+      {photosTireId &&
+        (() => {
+          const t = tires.find((x) => x.id === photosTireId);
+          if (!t) return null;
+          return (
+            <TirePhotosModal
+              vehicleId={vehicleId}
+              tire={t}
+              initialPhotos={t.photos}
+              onClose={() => setPhotosTireId(null)}
+            />
+          );
+        })()}
     </>
   );
 };
@@ -194,9 +223,11 @@ export const TiresSection = ({
 const CurrentTireCard = ({
   tire,
   vehicleId,
+  onManagePhotos,
 }: {
   tire: TireWithPhotos;
   vehicleId: string;
+  onManagePhotos: () => void;
 }) => {
   const meta = TIRE_TYPE_META[tire.type];
   const condMeta = TIRE_CONDITION_META[tire.condition];
@@ -266,7 +297,19 @@ const CurrentTireCard = ({
           </div>
         </div>
 
-        <PhotoGrid tire={tire} vehicleId={vehicleId} />
+        <div>
+          <PhotoGrid tire={tire} vehicleId={vehicleId} />
+          <button
+            type="button"
+            onClick={onManagePhotos}
+            className="mt-2 w-full inline-flex items-center justify-center gap-1.5 h-8 rounded-md ring-1 ring-stone-200 text-[12px] text-stone-700 font-medium hover:bg-stone-50"
+          >
+            <Camera size={12} />
+            {tire.photos.length === 0
+              ? "Fotos hinzufügen"
+              : `Fotos verwalten (${tire.photos.length}/6)`}
+          </button>
+        </div>
       </div>
     </div>
   );

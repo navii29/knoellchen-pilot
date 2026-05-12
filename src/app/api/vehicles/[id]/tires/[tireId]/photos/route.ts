@@ -92,3 +92,39 @@ export const POST = async (req: Request, { params }: Ctx) => {
 
   return NextResponse.json({ ok: true, position, path });
 };
+
+export const DELETE = async (req: Request, { params }: Ctx) => {
+  const auth = await requireAuth();
+  if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
+  const url = new URL(req.url);
+  const position = url.searchParams.get("position") as TirePhotoPosition | null;
+  if (!position || !VALID_POSITIONS.includes(position))
+    return NextResponse.json({ error: "Position fehlt" }, { status: 400 });
+
+  const admin = createAdminClient();
+  const { data: tire } = await admin
+    .from("vehicle_tires")
+    .select("id")
+    .eq("id", params.tireId)
+    .eq("vehicle_id", params.id)
+    .eq("org_id", auth.org_id)
+    .maybeSingle();
+  if (!tire)
+    return NextResponse.json({ error: "Reifensatz nicht gefunden" }, { status: 404 });
+
+  const { data: existing } = await admin
+    .from("tire_photos")
+    .select("id, photo_path")
+    .eq("tire_id", params.tireId)
+    .eq("position", position)
+    .maybeSingle();
+  if (!existing) return NextResponse.json({ ok: true, removed: false });
+
+  if (existing.photo_path) {
+    await admin.storage.from("tire-photos").remove([existing.photo_path]);
+  }
+  await admin.from("tire_photos").delete().eq("id", existing.id);
+
+  return NextResponse.json({ ok: true, removed: true });
+};
