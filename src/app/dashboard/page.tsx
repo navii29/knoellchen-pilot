@@ -10,6 +10,7 @@ import { TicketTable } from "@/components/dashboard/TicketTable";
 import { DecommissionAlert } from "@/components/dashboard/DecommissionAlert";
 import { VehicleDueAlert, type DueAlertItem } from "@/components/dashboard/VehicleDueAlert";
 import { PricingTodayWidget } from "@/components/dashboard/PricingTodayWidget";
+import { MarginWidget } from "@/components/dashboard/MarginWidget";
 import { TiresAlert } from "@/components/dashboard/TiresAlert";
 import { buildTireAlerts } from "@/lib/tire-alerts";
 import { isDecommissionAlertWindow } from "@/lib/decommission";
@@ -208,7 +209,12 @@ export default async function DashboardPage() {
           {decommissionAlerts.length > 0 && <DecommissionAlert vehicles={decommissionAlerts} />}
           {dueAlerts.length > 0 && <VehicleDueAlert items={dueAlerts} />}
           {tireAlerts.length > 0 && <TiresAlert items={tireAlerts} />}
-          {orgId && <PricingTodayWidget orgId={orgId} />}
+          {orgId && (
+            <div className="grid lg:grid-cols-2 gap-4">
+              <MarginWidget orgId={orgId} />
+              <PricingTodayWidget orgId={orgId} />
+            </div>
+          )}
 
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="col-span-2 lg:col-span-2">

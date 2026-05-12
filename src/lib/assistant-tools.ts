@@ -24,6 +24,12 @@ import {
   contractDays,
   type SalesPartner,
 } from "./partners";
+import {
+  computeFleetMargin,
+  lastNDaysIso,
+  previousPeriodIso,
+} from "./margin";
+import type { Contract } from "./types";
 
 export type ToolContext = {
   org_id: string;
@@ -1487,6 +1493,256 @@ const getTopPartners: Tool = {
   },
 };
 
+// Hilfsfunktion zum Laden der Fahrzeuge + Verträge im Zeitraum
+const loadVehiclesAndContractsForMargin = async (
+  ctx: ToolContext,
+  from: string,
+  to: string
+) => {
+  const [{ data: vehicles }, { data: contracts }] = await Promise.all([
+    ctx.admin
+      .from("vehicles")
+      .select(
+        "id, plate, manufacturer, model, vehicle_type, cost_daily, cost_monthly, target_daily_rate, daily_rate, status"
+      )
+      .eq("org_id", ctx.org_id)
+      .neq("status", "ausgesteuert"),
+    ctx.admin
+      .from("contracts")
+      .select(
+        "id, plate, vehicle_id, pickup_date, return_date, actual_return_date, daily_rate, status"
+      )
+      .eq("org_id", ctx.org_id)
+      .lte("pickup_date", to)
+      .gte("return_date", from),
+  ]);
+  return {
+    vehicles: (vehicles ?? []) as unknown as Vehicle[],
+    contracts: (contracts ?? []) as Contract[],
+  };
+};
+
+// =========================================================
+// 20) get_fleet_margin
+// =========================================================
+const getFleetMargin: Tool = {
+  name: "get_fleet_margin",
+  description:
+    "Liefert die Marge der gesamten Flotte für einen Zeitraum (Default: letzte 7 Tage). Vergleicht mit der Vorperiode. Verwende wenn der Nutzer fragt: 'Wie ist die Marge diese Woche?', 'Was haben wir diesen Monat verdient?'.",
+  input_schema: {
+    type: "object",
+    properties: {
+      days: {
+        type: "number",
+        description: "Anzahl Tage rückwärts (Default 7).",
+      },
+      from: { type: "string", description: "Startdatum YYYY-MM-DD." },
+      to: { type: "string", description: "Enddatum YYYY-MM-DD." },
+    },
+  },
+  handler: async (input, ctx) => {
+    const days = typeof input.days === "number" ? input.days : 7;
+    const def = lastNDaysIso(days);
+    const from = parseDate(input.from) ?? def.from;
+    const to = parseDate(input.to) ?? def.to;
+
+    const { vehicles, contracts } = await loadVehiclesAndContractsForMargin(
+      ctx,
+      from,
+      to
+    );
+    const current = computeFleetMargin({ vehicles, contracts, from, to });
+
+    const prev = previousPeriodIso(from, to);
+    const { contracts: prevContracts } = await loadVehiclesAndContractsForMargin(
+      ctx,
+      prev.from,
+      prev.to
+    );
+    const previous = computeFleetMargin({
+      vehicles,
+      contracts: prevContracts,
+      from: prev.from,
+      to: prev.to,
+    });
+
+    const delta = current.total_margin - previous.total_margin;
+    const deltaPct =
+      Math.abs(previous.total_margin) > 0.01
+        ? (delta / Math.abs(previous.total_margin)) * 100
+        : null;
+
+    return {
+      ok: true,
+      data: {
+        period: { from, to },
+        vehicle_count: current.vehicle_count,
+        rented_days: current.total_rented_days,
+        possible_days: current.total_possible_days,
+        ist_vk_eur: current.total_ist_vk,
+        ek_eur: current.total_ek,
+        margin_eur: current.total_margin,
+        margin_pct: current.total_margin_pct,
+        utilization_pct: current.avg_utilization_pct,
+        previous_period: {
+          from: prev.from,
+          to: prev.to,
+          margin_eur: previous.total_margin,
+        },
+        delta_eur: Math.round(delta * 100) / 100,
+        delta_pct: deltaPct != null ? Math.round(deltaPct * 10) / 10 : null,
+      },
+    };
+  },
+};
+
+// =========================================================
+// 21) get_best_margin_vehicle
+// =========================================================
+const getBestMarginVehicle: Tool = {
+  name: "get_best_margin_vehicle",
+  description:
+    "Liefert das Fahrzeug mit der höchsten Marge in einem Zeitraum. Verwende wenn der Nutzer fragt: 'Welches Auto hat die beste Marge?', 'Welcher verdient am meisten?'.",
+  input_schema: {
+    type: "object",
+    properties: {
+      days: { type: "number", description: "Anzahl Tage (Default 30)." },
+      top: { type: "number", description: "Top N (Default 5)." },
+    },
+  },
+  handler: async (input, ctx) => {
+    const days = typeof input.days === "number" ? input.days : 30;
+    const top = typeof input.top === "number" ? input.top : 5;
+    const def = lastNDaysIso(days);
+    const { vehicles, contracts } = await loadVehiclesAndContractsForMargin(
+      ctx,
+      def.from,
+      def.to
+    );
+    const margin = computeFleetMargin({
+      vehicles,
+      contracts,
+      from: def.from,
+      to: def.to,
+    });
+    const sorted = [...margin.vehicles].sort((a, b) => b.margin_eur - a.margin_eur);
+    return {
+      ok: true,
+      data: {
+        period: def,
+        vehicles: sorted.slice(0, top).map((v) => ({
+          plate: v.plate,
+          label: v.label,
+          margin_eur: v.margin_eur,
+          margin_pct: v.margin_pct,
+          utilization_pct: v.utilization_pct,
+          rented_days: v.rented_days,
+        })),
+      },
+    };
+  },
+};
+
+// =========================================================
+// 22) get_worst_margin_vehicle
+// =========================================================
+const getWorstMarginVehicle: Tool = {
+  name: "get_worst_margin_vehicle",
+  description:
+    "Liefert das Fahrzeug mit der schlechtesten Marge (am ehesten Verlustbringer). Verwende wenn der Nutzer fragt: 'Welches Auto lohnt sich nicht?', 'Welche machen Verlust?'.",
+  input_schema: {
+    type: "object",
+    properties: {
+      days: { type: "number", description: "Anzahl Tage (Default 30)." },
+      top: { type: "number", description: "Top N (Default 5)." },
+    },
+  },
+  handler: async (input, ctx) => {
+    const days = typeof input.days === "number" ? input.days : 30;
+    const top = typeof input.top === "number" ? input.top : 5;
+    const def = lastNDaysIso(days);
+    const { vehicles, contracts } = await loadVehiclesAndContractsForMargin(
+      ctx,
+      def.from,
+      def.to
+    );
+    const margin = computeFleetMargin({
+      vehicles,
+      contracts,
+      from: def.from,
+      to: def.to,
+    });
+    const eligible = margin.vehicles.filter((v) => v.cost_daily != null);
+    const sorted = eligible.sort((a, b) => a.margin_eur - b.margin_eur);
+    return {
+      ok: true,
+      data: {
+        period: def,
+        vehicles: sorted.slice(0, top).map((v) => ({
+          plate: v.plate,
+          label: v.label,
+          margin_eur: v.margin_eur,
+          margin_pct: v.margin_pct,
+          utilization_pct: v.utilization_pct,
+          rented_days: v.rented_days,
+          ek_total: v.ek_total,
+          ist_vk_total: v.ist_vk_total,
+        })),
+      },
+    };
+  },
+};
+
+// =========================================================
+// 23) get_fleet_utilization
+// =========================================================
+const getFleetUtilization: Tool = {
+  name: "get_fleet_utilization",
+  description:
+    "Liefert die Auslastung der Flotte für einen Zeitraum, plus Detail pro Fahrzeug. Verwende wenn der Nutzer fragt: 'Wie hoch ist unsere Auslastung?', 'Welche Autos stehen rum?'.",
+  input_schema: {
+    type: "object",
+    properties: {
+      days: { type: "number", description: "Anzahl Tage (Default 30)." },
+    },
+  },
+  handler: async (input, ctx) => {
+    const days = typeof input.days === "number" ? input.days : 30;
+    const def = lastNDaysIso(days);
+    const { vehicles, contracts } = await loadVehiclesAndContractsForMargin(
+      ctx,
+      def.from,
+      def.to
+    );
+    const margin = computeFleetMargin({
+      vehicles,
+      contracts,
+      from: def.from,
+      to: def.to,
+    });
+    return {
+      ok: true,
+      data: {
+        period: def,
+        avg_utilization_pct: margin.avg_utilization_pct,
+        total_rented_days: margin.total_rented_days,
+        total_possible_days: margin.total_possible_days,
+        vehicle_count: margin.vehicle_count,
+        vehicles: margin.vehicles
+          .slice()
+          .sort((a, b) => a.utilization_pct - b.utilization_pct)
+          .map((v) => ({
+            plate: v.plate,
+            label: v.label,
+            utilization_pct: v.utilization_pct,
+            rented_days: v.rented_days,
+            period_days: v.period_days,
+          })),
+      },
+    };
+  },
+};
+
 export const TOOLS: Tool[] = [
   createContract,
   createVehicle,
@@ -1507,6 +1763,10 @@ export const TOOLS: Tool[] = [
   getPartnerCommission,
   getPartnerContracts,
   getTopPartners,
+  getFleetMargin,
+  getBestMarginVehicle,
+  getWorstMarginVehicle,
+  getFleetUtilization,
 ];
 
 export const TOOLS_FOR_API = TOOLS.map((t) => ({

@@ -61,6 +61,9 @@ const NUMBER_FIELDS = [
   "weekly_rate",
   "monthly_rate",
   "deposit",
+  "cost_daily",
+  "cost_monthly",
+  "target_daily_rate",
 ] as const;
 
 const INT_FIELDS = [

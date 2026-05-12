@@ -67,6 +67,9 @@ export interface Vehicle {
   weekly_rate: number | null;
   monthly_rate: number | null;
   deposit: number | null;
+  cost_daily: number | null;
+  cost_monthly: number | null;
+  target_daily_rate: number | null;
 
   accessories: string | null;
   status: VehicleStatus;

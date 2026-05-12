@@ -51,6 +51,10 @@ export type VehicleFormState = {
   monthly_rate: string;
   deposit: string;
 
+  // Margenrechnung
+  cost_monthly: string;
+  target_daily_rate: string;
+
   // Sonstiges
   accessories: string;
   status: VehicleStatus;
@@ -83,6 +87,8 @@ const empty: VehicleFormState = {
   weekly_rate: "",
   monthly_rate: "",
   deposit: "",
+  cost_monthly: "",
+  target_daily_rate: "",
   accessories: "",
   status: "aktiv",
   echoes_device_id: "",
@@ -112,6 +118,9 @@ const fromVehicle = (v: Vehicle): VehicleFormState => ({
   weekly_rate: v.weekly_rate != null ? String(v.weekly_rate) : "",
   monthly_rate: v.monthly_rate != null ? String(v.monthly_rate) : "",
   deposit: v.deposit != null ? String(v.deposit) : "",
+  cost_monthly: v.cost_monthly != null ? String(v.cost_monthly) : "",
+  target_daily_rate:
+    v.target_daily_rate != null ? String(v.target_daily_rate) : "",
   accessories: v.accessories || "",
   status: v.status || "aktiv",
   echoes_device_id: v.echoes_device_id || "",
@@ -419,6 +428,88 @@ export const VehicleForm = ({
                 className="input pr-8 tabular-nums"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">€</span>
+            </div>
+          </Field>
+        </Card>
+
+        <Card title="Kostenrechnung">
+          <Field label="Monatliche Kosten (EK)">
+            <div className="relative">
+              <input
+                value={data.cost_monthly}
+                onChange={set("cost_monthly")}
+                placeholder="z. B. 720,00"
+                className="input pr-8 tabular-nums"
+                inputMode="decimal"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">€</span>
+            </div>
+            <div className="text-[11px] text-stone-500 mt-1">
+              Leasing + Versicherung + Wartung etc. — was das Auto pro Monat kostet, egal ob vermietet oder nicht.
+            </div>
+          </Field>
+          <Field label="Tägliche Kosten (auto-berechnet)">
+            <div className="relative">
+              <input
+                value={
+                  Number.isFinite(Number(data.cost_monthly.replace(",", ".")))
+                    ? (Number(data.cost_monthly.replace(",", ".")) / 30)
+                        .toFixed(2)
+                        .replace(".", ",")
+                    : ""
+                }
+                readOnly
+                className="input pr-8 tabular-nums bg-stone-50"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">€/Tag</span>
+            </div>
+            <div className="text-[11px] text-stone-500 mt-1">
+              Monatliche Kosten ÷ 30. Wird für die Margenrechnung pro Tag verwendet.
+            </div>
+          </Field>
+          <Field label="Soll-Tagespreis (VK)">
+            <div className="relative">
+              <input
+                value={data.target_daily_rate}
+                onChange={set("target_daily_rate")}
+                placeholder="z. B. 65,00"
+                className="input pr-8 tabular-nums"
+                inputMode="decimal"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">€/Tag</span>
+            </div>
+            <div className="text-[11px] text-stone-500 mt-1">
+              Was Sie pro Tag mindestens verlangen möchten.
+            </div>
+          </Field>
+          <Field label="Soll-Marge pro Tag">
+            {(() => {
+              const cm = Number(data.cost_monthly.replace(",", "."));
+              const tg = Number(data.target_daily_rate.replace(",", "."));
+              if (!Number.isFinite(cm) || !Number.isFinite(tg))
+                return (
+                  <div className="input bg-stone-50 text-stone-400 text-sm tabular-nums">
+                    —
+                  </div>
+                );
+              const margin = tg - cm / 30;
+              return (
+                <div
+                  className={`input bg-stone-50 text-sm tabular-nums font-semibold ${
+                    margin >= 0 ? "text-emerald-700" : "text-rose-700"
+                  }`}
+                >
+                  {margin
+                    .toFixed(2)
+                    .replace(".", ",")} €/Tag ·{" "}
+                  {tg > 0
+                    ? ((margin / tg) * 100).toFixed(1).replace(".", ",") + " %"
+                    : "—"}
+                </div>
+              );
+            })()}
+            <div className="text-[11px] text-stone-500 mt-1">
+              VK minus tägliche Kosten. So sehen Sie sofort, ob der Preis stimmt.
             </div>
           </Field>
         </Card>

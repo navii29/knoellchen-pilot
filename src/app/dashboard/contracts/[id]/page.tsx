@@ -45,12 +45,48 @@ export default async function ContractDetailPage({ params }: { params: { id: str
 
   const { data: vehicleRow } = await supabase
     .from("vehicles")
-    .select("extra_km_price, inclusive_km_month")
+    .select(
+      "extra_km_price, inclusive_km_month, cost_daily, cost_monthly, target_daily_rate"
+    )
     .eq("plate", c.plate)
     .maybeSingle();
-  const vRow = vehicleRow as Pick<Vehicle, "extra_km_price" | "inclusive_km_month"> | null;
+  const vRow = vehicleRow as Pick<
+    Vehicle,
+    | "extra_km_price"
+    | "inclusive_km_month"
+    | "cost_daily"
+    | "cost_monthly"
+    | "target_daily_rate"
+  > | null;
   const pricePerKm = vRow?.extra_km_price ?? null;
   const inclusiveKmMonth = vRow?.inclusive_km_month ?? null;
+
+  // Marge berechnen (nur wenn abgeschlossen + Kostendaten vorhanden)
+  const costDaily =
+    vRow?.cost_daily != null && Number(vRow.cost_daily) > 0
+      ? Number(vRow.cost_daily)
+      : vRow?.cost_monthly != null && Number(vRow.cost_monthly) > 0
+      ? Number(vRow.cost_monthly) / 30
+      : null;
+  const isClosed = c.status === "abgeschlossen";
+  const marginInfo =
+    isClosed && c.actual_return_date && costDaily != null && c.daily_rate
+      ? (() => {
+          const start = new Date(c.pickup_date);
+          const end = new Date(c.actual_return_date!);
+          start.setHours(0, 0, 0, 0);
+          end.setHours(0, 0, 0, 0);
+          const days = Math.max(
+            1,
+            Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1
+          );
+          const istVk = days * Number(c.daily_rate);
+          const ek = days * costDaily;
+          const margin = istVk - ek;
+          const marginPct = istVk > 0 ? (margin / istVk) * 100 : null;
+          return { days, istVk, ek, margin, marginPct };
+        })()
+      : null;
 
   const isReturned = !!c.actual_return_date;
   const km = isReturned
@@ -186,6 +222,27 @@ export default async function ContractDetailPage({ params }: { params: { id: str
               <Row label="Tagespreis" value={fmtEur(c.daily_rate)} mono />
               <Row label="Gesamtbetrag" value={fmtEur(c.total_amount)} mono />
               <Row label="Kaution" value={fmtEur(c.deposit)} mono />
+              {marginInfo && (
+                <>
+                  <div className="mt-2 pt-2 border-t border-stone-100" />
+                  <Row label="Realisierter VK" value={fmtEur(marginInfo.istVk)} mono />
+                  <Row label="EK für Zeitraum" value={fmtEur(marginInfo.ek)} mono />
+                  <Row
+                    label="Marge"
+                    value={
+                      <span
+                        className={`tabular-nums font-semibold ${
+                          marginInfo.margin >= 0 ? "text-emerald-700" : "text-rose-700"
+                        }`}
+                      >
+                        {fmtEur(marginInfo.margin)}
+                        {marginInfo.marginPct != null &&
+                          ` · ${marginInfo.marginPct.toFixed(0)}%`}
+                      </span>
+                    }
+                  />
+                </>
+              )}
             </InfoCard>
 
             <InfoCard Icon={ScrollText} title="Kilometer & Notizen">
