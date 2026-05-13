@@ -715,13 +715,7 @@ const renderPage5 = (
   `;
 };
 
-const renderPage6 = (
-  org: Organization,
-  contract: Contract,
-  _customer: Customer | null,
-  _vehicle: Vehicle | null,
-  _tires: VehicleTire | null
-): string => {
+const renderPage6 = (org: Organization, contract: Contract): string => {
   const dateStr = fmtDate(today());
 
   // 5 Felder werden bewusst leer gelassen — werden bei Übergabe per Hand
@@ -897,10 +891,12 @@ export const buildContractHtml = (args: {
     contract,
     customer,
     vehicle,
-    tires = null,
     logoDataUri = null,
     signaturePngBase64 = null,
   } = args;
+  // `tires` aktuell nicht mehr verwendet (Seite 6 ist ein Blanko-Protokoll),
+  // bleibt aber im API-Parameter für künftige Erweiterungen.
+  void args.tires;
 
   return `<!DOCTYPE html>
 <html lang="de">
@@ -915,7 +911,7 @@ ${renderPage2(org)}
 ${renderPage3(org, contract, logoDataUri)}
 ${renderPage4(org, contract, customer)}
 ${renderPage5(org, contract, customer, logoDataUri)}
-${renderPage6(org, contract, customer, vehicle, tires)}
+${renderPage6(org, contract)}
 </body>
 </html>`;
 };
