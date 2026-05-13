@@ -194,7 +194,9 @@ const drawLogo = (
 // =====================================================
 // Form-Reihe (Label links, Wert rechts auf gleicher Linie)
 // =====================================================
-type FormRow = { label: string; value: string };
+// `rightValue` sitzt — falls gesetzt — rechtsbündig in derselben Zeile
+// (für Konstruktionen wie "Haftpflicht, TK + VK     2.500,00 € SB").
+type FormRow = { label: string; value: string; rightValue?: string };
 
 const drawFormRows = (
   doc: jsPDF,
@@ -208,15 +210,22 @@ const drawFormRows = (
   valueSize = 8.5
 ): number => {
   let y = startY;
+  const rightX = startX + labelW + valueW;
   for (const r of rows) {
     drawLabel(doc, r.label, startX, y, labelSize, INK);
-    if (r.value) {
+    if (r.value || r.rightValue) {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(valueSize);
       setColor(doc, INK);
-      // Wert ggf. umbrechen
-      const lines = doc.splitTextToSize(r.value, valueW) as string[];
-      doc.text(lines, startX + labelW, y);
+      // Wert ggf. umbrechen (nur wenn keine rechte Spalte — sonst halbe Breite)
+      const effValueW = r.rightValue ? valueW * 0.55 : valueW;
+      const lines = r.value
+        ? (doc.splitTextToSize(r.value, effValueW) as string[])
+        : [];
+      if (lines.length) doc.text(lines, startX + labelW, y);
+      if (r.rightValue) {
+        doc.text(r.rightValue, rightX, y, { align: "right" });
+      }
       y += Math.max(rowH, lines.length * (rowH - 0.5));
     } else {
       y += rowH;
@@ -413,10 +422,10 @@ const drawPage1 = (
     contract.insurance_type != null
       ? INSURANCE_TYPE_LABEL[contract.insurance_type as ContractInsuranceType]
       : INSURANCE_TYPE_LABEL.full;
-  const insLabel =
+  const insRight =
     contract.insurance_deductible != null
-      ? `${insLabelBase} · ${fmtEur(Number(contract.insurance_deductible))} SB`
-      : insLabelBase;
+      ? `${fmtEur(Number(contract.insurance_deductible))} SB`
+      : undefined;
 
   drawFormRows(
     doc,
@@ -450,7 +459,7 @@ const drawPage1 = (
         label: "Kaution:",
         value: contract.deposit != null ? fmtEur(Number(contract.deposit)) : "",
       },
-      { label: "Versicherung:", value: insLabel },
+      { label: "Versicherung:", value: insLabelBase, rightValue: insRight },
       {
         label: "Preis Mehrkilometer in Euro:",
         value:
@@ -472,9 +481,14 @@ const drawPage1 = (
   const xLeft = M.left;
   const xRight = M.left + sigW + 10;
 
-  // Datum über Linie
-  drawLabel(doc, dateStr, xLeft + sigW / 2, sigY - 2, 9);
-  drawLabel(doc, dateStr, xRight + sigW / 2, sigY - 2, 9);
+  // Ort, Datum über Linie (zentriert)
+  const cityLabel = org.city?.trim();
+  const cityDate = cityLabel ? `${cityLabel}, ${dateStr}` : dateStr;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  setColor(doc, INK);
+  doc.text(cityDate, xLeft + sigW / 2, sigY - 2, { align: "center" });
+  doc.text(cityDate, xRight + sigW / 2, sigY - 2, { align: "center" });
   drawLine(doc, xLeft, sigY, xLeft + sigW, sigY, GRAY, 0.4);
   drawLine(doc, xRight, sigY, xRight + sigW, sigY, GRAY, 0.4);
   drawLabel(doc, fullName, xLeft, sigY + 4, 8);
@@ -626,10 +640,11 @@ const drawPageSpecialTerms = (
   const xL = M.left;
   const xRSig = M.left + sigW + 10;
   const dateStr = fmtDate(today());
-  const cityLabel = org.city ?? "—";
+  const cityLabel = org.city?.trim();
+  const cityDate = cityLabel ? `${cityLabel}, ${dateStr}` : dateStr;
 
-  drawLabel(doc, `${cityLabel}, ${dateStr}`, xL, sigY - 3, 9);
-  drawLabel(doc, `${cityLabel}, ${dateStr}`, xRSig, sigY - 3, 9);
+  drawLabel(doc, cityDate, xL, sigY - 3, 9);
+  drawLabel(doc, cityDate, xRSig, sigY - 3, 9);
   drawLine(doc, xL, sigY, xL + sigW, sigY, GRAY, 0.4);
   drawLine(doc, xRSig, sigY, xRSig + sigW, sigY, GRAY, 0.4);
   drawLabel(doc, contract.renter_name, xL, sigY + 4, 8);
@@ -837,10 +852,10 @@ const drawPageAGBConfirm = (
   // Ort/Datum + Unterschrift
   y += 25;
   const dateStr = fmtDate(today());
-  const cityLabel = org.city ?? "—";
-  drawLabel(doc, `${cityLabel}, `, M.left, y, 9);
-  drawLabel(doc, dateStr, M.left + 18, y, 9);
-  drawLine(doc, M.left + 18, y + 1, M.left + 70, y + 1, GRAY, 0.4);
+  const cityLabel = org.city?.trim();
+  const cityDate = cityLabel ? `${cityLabel}, ${dateStr}` : dateStr;
+  drawLabel(doc, cityDate, M.left, y, 9);
+  drawLine(doc, M.left, y + 1, M.left + 70, y + 1, GRAY, 0.4);
   drawLabel(doc, "Ort/Datum", M.left, y + 6, 8, GRAY);
 
   drawLine(doc, PAGE.w - M.right - 70, y + 1, PAGE.w - M.right, y + 1, GRAY, 0.4);
@@ -1170,8 +1185,8 @@ const drawBVR = (doc: jsPDF, x: number, y: number, label: string) => {
   drawCheckbox(doc, lx + 22.5, y, 2.8);
 };
 
-// Seitenansicht einer Limousine — erkennbarer Umriss mit Rädern, Fenstern
-// und Sektor-Boxen am Rand zum Eintragen von Schäden.
+// Draufsicht einer Limousine — Dach, Motorhaube, Kofferraum, 4 Türen,
+// 4 Räder; Sektor-Boxen rundherum zum Eintragen von Schäden.
 const drawCarTopView = (
   doc: jsPDF,
   x: number,
@@ -1179,86 +1194,91 @@ const drawCarTopView = (
   w: number,
   h: number
 ) => {
-  setDraw(doc, INK);
-  doc.setLineWidth(0.4);
-
-  const bodyPad = 4; // Abstand zu den Damage-Boxen
-  const bx = x + bodyPad;
-  const by = y + bodyPad;
-  const bw = w - 2 * bodyPad;
-  const bh = h - 2 * bodyPad;
-
-  // Untere Karosserie-Linie (Stoßstange & Schweller)
-  const beltY = by + bh * 0.55;
-  doc.line(bx + bw * 0.04, beltY, bx + bw * 0.96, beltY);
-
-  // Bodenkontur (Front-Hauben-Beginn → Dachbereich → Heck)
-  doc.lines(
-    [
-      [bw * 0.08, -bh * 0.15], // Front nach oben Richtung Haube
-      [bw * 0.12, -bh * 0.05],
-      [bw * 0.1, -bh * 0.15], // A-Säule
-      [bw * 0.36, 0], // Dach
-      [bw * 0.1, bh * 0.15], // C-Säule
-      [bw * 0.12, bh * 0.05],
-      [bw * 0.08, bh * 0.15], // Heck nach unten
-    ],
-    bx + bw * 0.02,
-    beltY
-  );
-
-  // Untere Karosseriekante (Schweller)
-  doc.line(bx + bw * 0.04, beltY + bh * 0.18, bx + bw * 0.96, beltY + bh * 0.18);
-  // Front-Stoßstange (Bogen nach unten)
-  doc.line(bx + bw * 0.02, beltY, bx + bw * 0.04, beltY + bh * 0.18);
-  // Heck-Stoßstange
-  doc.line(bx + bw * 0.98, beltY, bx + bw * 0.96, beltY + bh * 0.18);
-
-  // Räder (Kreise)
-  const wheelR = bh * 0.12;
-  const wheelY = beltY + bh * 0.18;
-  setFill(doc, [60, 60, 60]);
-  doc.circle(bx + bw * 0.2, wheelY, wheelR, "F");
-  doc.circle(bx + bw * 0.78, wheelY, wheelR, "F");
-  setFill(doc, [255, 255, 255]);
-  doc.circle(bx + bw * 0.2, wheelY, wheelR * 0.45, "F");
-  doc.circle(bx + bw * 0.78, wheelY, wheelR * 0.45, "F");
-
-  // Fenster-Trennstrich (B-Säule)
-  doc.setLineWidth(0.3);
-  doc.line(
-    bx + bw * 0.46,
-    beltY,
-    bx + bw * 0.46,
-    beltY - bh * 0.25
-  );
-
-  // Türgriff-Linien
-  doc.setLineWidth(0.2);
-  setDraw(doc, GRAY);
-  doc.line(bx + bw * 0.3, beltY + bh * 0.04, bx + bw * 0.4, beltY + bh * 0.04);
-  doc.line(bx + bw * 0.56, beltY + bh * 0.04, bx + bw * 0.66, beltY + bh * 0.04);
-
-  // Sektoren-Boxen am Rand (zum Eintragen von Schäden)
+  // Damage-Boxen am Rand (zuerst, damit Karosserie drüber liegt)
   setDraw(doc, INK);
   doc.setLineWidth(0.25);
   const boxSize = 2.8;
-  // Oben — über dem Dach
   for (let i = 0; i < 6; i++) {
     doc.rect(x + 4 + i * ((w - 8) / 6), y, boxSize, boxSize);
-  }
-  // Unten — unter den Rädern
-  for (let i = 0; i < 6; i++) {
     doc.rect(x + 4 + i * ((w - 8) / 6), y + h - boxSize, boxSize, boxSize);
   }
-  // Links (Front)
   for (let i = 0; i < 3; i++) {
     doc.rect(x, y + 6 + i * ((h - 12) / 3), boxSize, boxSize);
-  }
-  // Rechts (Heck)
-  for (let i = 0; i < 3; i++) {
     doc.rect(x + w - boxSize, y + 6 + i * ((h - 12) / 3), boxSize, boxSize);
   }
+
+  // Karosserie-Bereich (innen, mit etwas Luft zu den Damage-Boxen)
+  const padX = 5;
+  const padY = 5;
+  const bx = x + padX;
+  const by = y + padY;
+  const bw = w - 2 * padX;
+  const bh = h - 2 * padY;
+
+  // 4 Räder (Rechtecke, hauptsächlich außerhalb der Karosserie)
+  setFill(doc, INK);
+  const wheelW = bw * 0.06;
+  const wheelH = bh * 0.22;
+  // Vorderräder
+  doc.rect(bx + bw * 0.18, by - wheelH * 0.65, wheelW, wheelH, "F");
+  doc.rect(bx + bw * 0.18, by + bh - wheelH * 0.35, wheelW, wheelH, "F");
+  // Hinterräder
+  doc.rect(bx + bw * 0.74, by - wheelH * 0.65, wheelW, wheelH, "F");
+  doc.rect(bx + bw * 0.74, by + bh - wheelH * 0.35, wheelW, wheelH, "F");
+
+  // Karosserie-Außenlinie (abgerundetes Rechteck)
+  setDraw(doc, INK);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(bx, by, bw, bh, bh * 0.18, bh * 0.18);
+
+  // Motorhaube (vorne links) — Trennlinie zur Frontscheibe
+  doc.setLineWidth(0.35);
+  const hoodEnd = bx + bw * 0.26;
+  doc.line(hoodEnd, by, hoodEnd, by + bh);
+
+  // Windschutzscheibe (Schräge zur Dach-Box)
+  const roofStart = bx + bw * 0.34;
+  const roofEnd = bx + bw * 0.70;
+  const roofTopY = by + bh * 0.18;
+  const roofBotY = by + bh * 0.82;
+  doc.line(hoodEnd, by, roofStart, roofTopY);
+  doc.line(hoodEnd, by + bh, roofStart, roofBotY);
+
+  // Dach (Rechteck zwischen Wind- und Heckscheibe)
+  doc.line(roofStart, roofTopY, roofEnd, roofTopY);
+  doc.line(roofStart, roofBotY, roofEnd, roofBotY);
+  // B-Säule (zwischen vorderer und hinterer Tür)
+  doc.setLineWidth(0.3);
+  const bPillarX = bx + bw * 0.50;
+  doc.line(bPillarX, roofTopY, bPillarX, roofBotY);
+
+  // Heckscheibe (Schräge zum Kofferraum)
+  doc.setLineWidth(0.35);
+  const trunkStart = bx + bw * 0.78;
+  doc.line(roofEnd, roofTopY, trunkStart, by);
+  doc.line(roofEnd, roofBotY, trunkStart, by + bh);
+
+  // Kofferraum-Trennlinie zum Heck
+  doc.line(trunkStart, by, trunkStart, by + bh);
+
+  // Türgriff-Punkte (kleine Striche) auf Höhe ~30% / 70%
+  doc.setLineWidth(0.25);
+  setDraw(doc, GRAY);
+  // Vordere Türen (links + rechts)
+  doc.line(bx + bw * 0.36, by + bh * 0.08, bx + bw * 0.46, by + bh * 0.08);
+  doc.line(bx + bw * 0.36, by + bh * 0.92, bx + bw * 0.46, by + bh * 0.92);
+  // Hintere Türen
+  doc.line(bx + bw * 0.54, by + bh * 0.08, bx + bw * 0.64, by + bh * 0.08);
+  doc.line(bx + bw * 0.54, by + bh * 0.92, bx + bw * 0.64, by + bh * 0.92);
+
+  // Front-Scheinwerfer (zwei kleine Ellipsen vorn)
+  setDraw(doc, INK);
+  doc.setLineWidth(0.3);
+  doc.ellipse(bx + bw * 0.04, by + bh * 0.25, bw * 0.015, bh * 0.10);
+  doc.ellipse(bx + bw * 0.04, by + bh * 0.75, bw * 0.015, bh * 0.10);
+  // Rücklichter
+  doc.ellipse(bx + bw * 0.96, by + bh * 0.25, bw * 0.015, bh * 0.10);
+  doc.ellipse(bx + bw * 0.96, by + bh * 0.75, bw * 0.015, bh * 0.10);
 };
 
 // =====================================================
