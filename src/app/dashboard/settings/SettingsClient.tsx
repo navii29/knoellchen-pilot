@@ -9,13 +9,16 @@ import {
   ChevronRight,
   Copy,
   FileSignature,
+  Image as ImageIcon,
   Loader2,
   Lock,
   MapPin,
   RotateCcw,
   Save,
   Send,
+  Trash2,
   TrendingUp,
+  Upload,
   Wifi,
 } from "lucide-react";
 import { DEFAULT_RENTAL_TERMS } from "@/lib/rental-terms";
@@ -82,6 +85,10 @@ export const SettingsClient = ({
       </p>
 
       <form onSubmit={submit} className="mt-6 space-y-6">
+        <Section title="Branding" subtitle="Logo für PDFs, Briefkopf und Kundenportal">
+          <BrandingCard initialLogoPath={org.logo_path} />
+        </Section>
+
         <Section title="Stammdaten" subtitle="Briefkopf für PDFs und E-Mails">
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Firmenname *">
@@ -810,6 +817,170 @@ const InboundCard = ({ inboundEmail }: { inboundEmail: string | null }) => {
             Tipp: Nutzen Sie eine separate Weiterleitungsregel nur für Behörden-Absender, damit private
             Mails nicht aus Versehen verarbeitet werden.
           </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const publicLogoUrl = (path: string | null): string | null => {
+  if (!path) return null;
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!base) return null;
+  return `${base}/storage/v1/object/public/brand/${path}`;
+};
+
+const ACCEPTED_LOGO = "image/png,image/jpeg,image/svg+xml";
+
+const BrandingCard = ({ initialLogoPath }: { initialLogoPath: string | null }) => {
+  const [logoPath, setLogoPath] = useState<string | null>(initialLogoPath);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
+  // Cache-Buster: nach Upload neue URL trotz unveränderlichem Pfad-Format
+  const [bust, setBust] = useState(0);
+
+  const url = logoPath
+    ? `${publicLogoUrl(logoPath)}?v=${bust || initialLogoPath?.length || 0}`
+    : null;
+
+  const upload = async (file: File) => {
+    setErr(null);
+    if (file.size > 2 * 1024 * 1024) {
+      setErr("Datei zu groß — max. 2 MB.");
+      return;
+    }
+    if (!ACCEPTED_LOGO.split(",").includes(file.type)) {
+      setErr("Nur PNG, JPG oder SVG.");
+      return;
+    }
+    setBusy(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/settings/logo", { method: "POST", body: fd });
+    const j = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      logo_path?: string;
+      error?: string;
+    };
+    setBusy(false);
+    if (!res.ok || !j.ok || !j.logo_path) {
+      setErr(j.error || "Upload fehlgeschlagen.");
+      return;
+    }
+    setLogoPath(j.logo_path);
+    setBust(Date.now());
+  };
+
+  const remove = async () => {
+    setErr(null);
+    setBusy(true);
+    const res = await fetch("/api/settings/logo", { method: "DELETE" });
+    setBusy(false);
+    if (!res.ok) {
+      const j = (await res.json().catch(() => ({}))) as { error?: string };
+      setErr(j.error || "Löschen fehlgeschlagen.");
+      return;
+    }
+    setLogoPath(null);
+  };
+
+  const onDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setDragging(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) void upload(f);
+  };
+
+  return (
+    <div>
+      {url ? (
+        <div className="flex items-center gap-5 p-5 rounded-xl ring-1 ring-stone-200 bg-stone-50">
+          <div className="w-28 h-20 flex items-center justify-center bg-white rounded-lg ring-1 ring-stone-200 overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={url}
+              alt="Firmenlogo"
+              className="max-w-full max-h-full object-contain"
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-sm">Logo aktiv</div>
+            <div className="text-xs text-stone-500 mt-0.5">
+              Erscheint zentriert oben auf jeder Vertragsseite und im Kundenportal.
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <label
+              className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg ring-1 ring-stone-300 bg-white text-stone-700 hover:bg-stone-100 cursor-pointer"
+            >
+              {busy ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Upload size={13} />
+              )}
+              Ersetzen
+              <input
+                type="file"
+                accept={ACCEPTED_LOGO}
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void upload(f);
+                }}
+                disabled={busy}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => void remove()}
+              disabled={busy}
+              className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-stone-500 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+              aria-label="Logo entfernen"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <label
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+          className={`block rounded-xl border-2 border-dashed p-8 text-center cursor-pointer transition ${
+            dragging
+              ? "border-teal-500 bg-teal-50"
+              : "border-stone-300 hover:border-stone-400 bg-stone-50"
+          }`}
+        >
+          <input
+            type="file"
+            accept={ACCEPTED_LOGO}
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void upload(f);
+            }}
+            disabled={busy}
+          />
+          <div className="w-12 h-12 mx-auto rounded-xl bg-white ring-1 ring-stone-200 flex items-center justify-center text-stone-500">
+            {busy ? <Loader2 size={20} className="animate-spin" /> : <ImageIcon size={20} />}
+          </div>
+          <div className="font-medium text-sm mt-3">
+            {busy ? "Lade hoch…" : "Logo hochladen"}
+          </div>
+          <div className="text-xs text-stone-500 mt-1">
+            Drag &amp; Drop oder klicken — PNG, JPG oder SVG, max. 2 MB
+          </div>
+        </label>
+      )}
+
+      {err && (
+        <div className="mt-3 text-xs text-rose-700 bg-rose-50 ring-1 ring-rose-200 rounded-lg px-3 py-2">
+          {err}
         </div>
       )}
     </div>

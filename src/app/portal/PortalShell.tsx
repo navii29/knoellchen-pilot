@@ -19,10 +19,12 @@ const TABS = [
 
 export const PortalShell = ({
   orgName,
+  orgLogoUrl,
   customerName,
   children,
 }: {
   orgName: string;
+  orgLogoUrl?: string | null;
   customerName: string;
   children: React.ReactNode;
 }) => {
@@ -40,16 +42,31 @@ export const PortalShell = ({
       <header className="bg-white border-b border-stone-200/70">
         <div className="max-w-2xl mx-auto px-5 py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shadow shadow-teal-500/20 shrink-0">
-              <span className="text-white font-bold text-[15px]">
-                {orgName.slice(0, 1).toUpperCase()}
-              </span>
-            </div>
+            {orgLogoUrl ? (
+              <div className="h-9 max-w-[140px] flex items-center shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={orgLogoUrl}
+                  alt={orgName}
+                  className="max-h-9 max-w-full object-contain"
+                />
+              </div>
+            ) : (
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shadow shadow-teal-500/20 shrink-0">
+                <span className="text-white font-bold text-[15px]">
+                  {orgName.slice(0, 1).toUpperCase()}
+                </span>
+              </div>
+            )}
             <div className="min-w-0">
               <div className="text-[10.5px] uppercase tracking-[0.08em] text-stone-500 font-medium">
                 Kundenportal
               </div>
-              <div className="font-display text-[15px] tracking-tight font-medium text-stone-900 truncate leading-tight">
+              <div
+                className={`font-display text-[15px] tracking-tight font-medium text-stone-900 truncate leading-tight ${
+                  orgLogoUrl ? "sr-only sm:not-sr-only" : ""
+                }`}
+              >
                 {orgName}
               </div>
             </div>

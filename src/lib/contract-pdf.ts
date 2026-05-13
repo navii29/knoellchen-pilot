@@ -143,21 +143,34 @@ const drawFooterPageNr = (doc: jsPDF, page: number, total: number) => {
   doc.text(`${page} / ${total}`, PAGE.w / 2, PAGE.h - 8, { align: "center" });
 };
 
+// Aus data:image/...;base64 das Format ableiten — jsPDF kann nur PNG/JPEG.
+// SVG kann jsPDF nicht rendern → Text-Fallback.
+const detectImageFormat = (
+  dataUri: string | null
+): "PNG" | "JPEG" | null => {
+  if (!dataUri) return null;
+  if (dataUri.startsWith("data:image/png")) return "PNG";
+  if (dataUri.startsWith("data:image/jpeg")) return "JPEG";
+  if (dataUri.startsWith("data:image/jpg")) return "JPEG";
+  return null;
+};
+
 // Logo-Header (zentriert, fett) — fällt auf Text zurück wenn kein Bild da
 const drawLogo = (
   doc: jsPDF,
   org: Organization,
-  logoPngBase64: string | null,
+  logoDataUri: string | null,
   y = M.top,
   width = 60
 ) => {
-  if (logoPngBase64) {
+  const format = detectImageFormat(logoDataUri);
+  if (logoDataUri && format) {
     try {
       // Aspect ratio ~3.5:1 ist üblich; Höhe ergibt sich
       const h = width / 3.5;
       doc.addImage(
-        logoPngBase64,
-        "PNG",
+        logoDataUri,
+        format,
         (PAGE.w - width) / 2,
         y,
         width,

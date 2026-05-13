@@ -9,10 +9,17 @@ const loadLogoBase64 = async (
   logoPath: string | null | undefined
 ): Promise<string | null> => {
   if (!logoPath) return null;
+  // SVG kann jsPDF nicht rendern — gleich überspringen.
+  if (logoPath.toLowerCase().endsWith(".svg")) return null;
   const { data, error } = await admin.storage.from("brand").download(logoPath);
   if (error || !data) return null;
+  const mime =
+    logoPath.toLowerCase().endsWith(".jpg") ||
+    logoPath.toLowerCase().endsWith(".jpeg")
+      ? "image/jpeg"
+      : "image/png";
   const buf = Buffer.from(await data.arrayBuffer());
-  return `data:image/png;base64,${buf.toString("base64")}`;
+  return `data:${mime};base64,${buf.toString("base64")}`;
 };
 
 const requireAuth = async () => {

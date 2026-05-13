@@ -6,7 +6,7 @@ import type { Organization } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 const SAFE_COLUMNS =
-  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, echoes_account_id, echoes_enabled, created_at";
+  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, echoes_account_id, echoes_enabled, rental_terms, logo_path, created_at";
 
 export default async function SettingsPage() {
   const supabase = createClient();
