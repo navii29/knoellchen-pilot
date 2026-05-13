@@ -125,13 +125,16 @@ const CSS = `
   .page:last-child { page-break-after: auto; }
 
   .logo { text-align: center; padding-top: 1mm; padding-bottom: 3mm; }
+  .logo.left { text-align: left; }
   .logo img { max-height: 20mm; max-width: 90mm; object-fit: contain; }
+  .logo.left img { max-height: 18mm; max-width: 70mm; }
   .logo-fallback {
     color: #0d9488;
     font-size: 22pt;
     font-weight: 600;
     letter-spacing: -0.01em;
   }
+  .logo.left .logo-fallback { font-size: 18pt; }
 
   /* ---------- Seite 1 ---------- */
   .contract-meta { margin-top: 1mm; font-size: 9.5pt; }
@@ -171,17 +174,27 @@ const CSS = `
   }
   .agb-cols p { margin: 0 0 1.5mm 0; break-inside: avoid; }
   .agb-cols p strong { display: block; font-weight: 700; margin-bottom: 0.3mm; }
+  .agb-stand { margin-top: auto; text-align: right; font-size: 7.5pt; padding-top: 4mm; }
 
-  .special-grid {
+  .special-box {
+    border: 0.5pt solid #333;
+    margin-top: 2mm;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 6mm;
     font-size: 7.5pt;
     line-height: 1.4;
   }
-  .special-grid .heading { font-weight: 700; margin-bottom: 1.5mm; }
+  .special-box .cell { padding: 3mm 4mm; }
+  .special-box .cell + .cell { border-left: 0.5pt solid #333; }
+  .special-box .heading { font-weight: 700; margin-bottom: 2mm; }
   .special-list { margin: 0; padding-left: 4.5mm; }
   .special-list li { margin-bottom: 1mm; }
+
+  /* Schlichtere Sigs für Seite 3 — wie Ollies Original */
+  .agb-sigs { margin-top: auto; padding-top: 8mm; display: flex; gap: 12mm; }
+  .agb-sigs .col { flex: 1; }
+  .agb-sigs .date { font-size: 9pt; margin-bottom: 1mm; }
+  .agb-sigs .line { border-top: 0.5pt solid #888; padding-top: 1mm; font-size: 8.5pt; min-height: 5mm; }
 
   /* ---------- Seite 4 Datenschutz ---------- */
   .privacy-title {
@@ -402,10 +415,16 @@ const formRow = (
 
 const gapRow = (): string => `<tr class="gap"><td colspan="3"></td></tr>`;
 
-const logoBlock = (logoDataUri: string | null, orgName: string): string =>
-  logoDataUri
-    ? `<div class="logo"><img src="${logoDataUri}" alt="${esc(orgName)}" /></div>`
-    : `<div class="logo"><div class="logo-fallback">${esc(orgName)}</div></div>`;
+const logoBlock = (
+  logoDataUri: string | null,
+  orgName: string,
+  align: "center" | "left" = "center"
+): string => {
+  const cls = align === "left" ? "logo left" : "logo";
+  return logoDataUri
+    ? `<div class="${cls}"><img src="${logoDataUri}" alt="${esc(orgName)}" /></div>`
+    : `<div class="${cls}"><div class="logo-fallback">${esc(orgName)}</div></div>`;
+};
 
 const checkbox = (checked = false): string =>
   `<span class="check${checked ? " checked" : ""}"></span>`;
@@ -558,11 +577,16 @@ const renderPage2 = (org: Organization): string => {
     <div class="page">
       <div class="agb-title">ALLGEMEINE VERMIETBEDINGUNGEN ${esc(org.name)}</div>
       <div class="agb-cols">${agbHtml(terms)}</div>
+      <div class="agb-stand">Stand: ${esc(fmtDate(today()))}</div>
     </div>
   `;
 };
 
-const renderPage3 = (org: Organization, contract: Contract): string => {
+const renderPage3 = (
+  org: Organization,
+  contract: Contract,
+  logoDataUri: string | null
+): string => {
   const dateStr = fmtDate(today());
   const cityLabel = org.city?.trim() ?? "";
   const cityDate = cityLabel ? `${cityLabel}, ${dateStr}` : dateStr;
@@ -571,22 +595,26 @@ const renderPage3 = (org: Organization, contract: Contract): string => {
 
   return `
     <div class="page">
-      <div class="agb-title">ALLGEMEINE VERMIETBEDINGUNGEN ${esc(org.name)}</div>
-      <div class="special-grid">
-        <div>
+      ${logoBlock(logoDataUri, org.name, "left")}
+      <div class="special-box">
+        <div class="cell">
           <div class="heading">Sondervereinbarungen:</div>
           <div>${esc(specText).replace(/\n/g, "<br/>")}</div>
         </div>
-        <div>
+        <div class="cell">
           <ol class="special-list">
             ${STANDARD_SPECIAL_TERMS.map((t) => `<li>${esc(t)}</li>`).join("")}
           </ol>
         </div>
       </div>
-      <div class="sigs">
-        <div class="row">
-          ${sigBlock(cityDate, fullName, null)}
-          ${sigBlock(cityDate, `Vermieter - ${org.name}`, null)}
+      <div class="agb-sigs">
+        <div class="col">
+          <div class="date">${esc(cityDate)}</div>
+          <div class="line">${esc(fullName)}</div>
+        </div>
+        <div class="col">
+          <div class="date">${esc(cityDate)}</div>
+          <div class="line">&nbsp;</div>
         </div>
       </div>
     </div>
@@ -674,7 +702,7 @@ const renderPage5 = (
 
   return `
     <div class="page">
-      ${logoBlock(logoDataUri, org.name)}
+      ${logoBlock(logoDataUri, org.name, "left")}
       <div class="conf-title">
         Bestätigung der allgemeinen Vermietbedingungen und Einreisebeschränkungen
       </div>
@@ -914,7 +942,7 @@ export const buildContractHtml = (args: {
 <body>
 ${renderPage1(org, contract, customer, vehicle, logoDataUri, signaturePngBase64)}
 ${renderPage2(org)}
-${renderPage3(org, contract)}
+${renderPage3(org, contract, logoDataUri)}
 ${renderPage4(org, contract, customer)}
 ${renderPage5(org, contract, customer, logoDataUri)}
 ${renderPage6(org, contract, customer, vehicle, tires)}
