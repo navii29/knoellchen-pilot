@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   Calendar,
   Car,
+  Check,
   ChevronRight,
   Coins,
   FileSignature,
@@ -144,9 +145,17 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
               <h1 className="font-display font-bold text-2xl md:text-3xl tracking-tight">
                 {displayName}
               </h1>
-              <div className="mt-1 text-sm text-stone-500">
+              <div className="mt-1 text-sm text-stone-500 flex items-center gap-2 flex-wrap">
                 <span className="font-mono">{v.plate}</span>
-                {v.color && <span className="ml-2 font-sans">· {v.color}</span>}
+                {v.color && <span className="font-sans">· {v.color}</span>}
+                {v.lexoffice_product_id && (
+                  <span
+                    className="inline-flex items-center gap-1 text-[10.5px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800"
+                    title={`LexOffice-Artikel · ${v.lexoffice_product_id}`}
+                  >
+                    <Check size={10} /> In LexOffice
+                  </span>
+                )}
               </div>
             </div>
             <VehicleDeleteButton vehicleId={v.id} />

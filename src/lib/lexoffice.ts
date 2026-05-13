@@ -23,14 +23,28 @@ export type LxMoney = {
   taxRatePercentage: number;
 };
 
-export type LxLineItem = {
-  type: "custom";
-  name: string;
-  description?: string;
-  quantity: number;
-  unitName: string;
-  unitPrice: LxMoney;
-};
+// Line-Item kann entweder ein Freitext-Posten sein ("custom") oder eine
+// Referenz auf einen LexOffice-Artikel ("service"/"product" + id). Bei
+// Artikel-Referenz übernimmt LexOffice Titel, Beschreibung und Steuersatz
+// aus dem Artikel — wir setzen nur Menge/Einheit/Preis.
+export type LxLineItem =
+  | {
+      type: "custom";
+      name: string;
+      description?: string;
+      quantity: number;
+      unitName: string;
+      unitPrice: LxMoney;
+    }
+  | {
+      type: "service" | "product";
+      id: string;
+      name: string; // weiterhin Pflicht laut LexOffice-Validation
+      description?: string;
+      quantity: number;
+      unitName: string;
+      unitPrice: LxMoney;
+    };
 
 export type LxAddress = {
   name: string;
@@ -125,6 +139,102 @@ export const lxGetInvoice = (apiKey: string, id: string) =>
   request<LxInvoiceResponse>(apiKey, `/invoices/${id}`, { method: "GET" });
 
 // =========================================================
+// Articles (Fahrzeuge als Artikel/Produkt)
+// =========================================================
+// Docs: https://developers.lexoffice.io/docs/#articles-endpoint
+export type LxArticleSellingPrice = {
+  currency: "EUR";
+  netPrice: number;
+  taxRate: number;
+};
+
+export type LxArticle = {
+  title: string;
+  description?: string;
+  type: "PRODUCT" | "SERVICE";
+  unitName: string;
+  articleNumber?: string;
+  sellingPrices?: LxArticleSellingPrice[];
+};
+
+export type LxArticleResponse = {
+  id: string;
+  resourceUri?: string;
+  version?: number;
+};
+
+type VehicleForArticle = {
+  plate: string;
+  manufacturer: string | null;
+  model: string | null;
+  vehicle_type: string | null;
+  fin_number: string | null;
+  body_type: string | null;
+  fuel_type: string | null;
+  power_ps: number | null;
+  daily_rate: number | null;
+};
+
+export const buildVehicleArticle = (v: VehicleForArticle): LxArticle => {
+  const titleBase = [v.manufacturer, v.model].filter(Boolean).join(" ").trim();
+  const title = (titleBase || v.vehicle_type || "Fahrzeug") + ` (${v.plate})`;
+  const description =
+    [
+      v.fin_number ? `FIN: ${v.fin_number}` : null,
+      v.body_type,
+      v.fuel_type,
+      v.power_ps ? `${v.power_ps} PS` : null,
+    ]
+      .filter(Boolean)
+      .join(" · ") || undefined;
+
+  const rate = v.daily_rate != null ? Number(v.daily_rate) : null;
+  const sellingPrices: LxArticleSellingPrice[] | undefined =
+    rate != null && rate > 0
+      ? [
+          {
+            currency: "EUR",
+            // LexOffice erwartet Nettopreis. Unser daily_rate ist brutto.
+            netPrice: round2(rate / 1.19),
+            taxRate: 19,
+          },
+        ]
+      : undefined;
+
+  return {
+    title,
+    description,
+    type: "SERVICE",
+    unitName: "Tag",
+    articleNumber: v.plate,
+    sellingPrices,
+  };
+};
+
+export const lxCreateArticle = (apiKey: string, article: LxArticle) =>
+  request<LxArticleResponse>(apiKey, "/articles", {
+    method: "POST",
+    body: JSON.stringify(article),
+  });
+
+// LexOffice PUT erfordert die aktuelle `version`. Wir ziehen den Artikel
+// vorher per GET, mergen, und schicken die PUT-Payload mit Version zurück.
+export const lxUpdateArticle = async (
+  apiKey: string,
+  id: string,
+  article: LxArticle
+): Promise<LxArticleResponse> => {
+  const current = await request<LxArticleResponse>(apiKey, `/articles/${id}`, {
+    method: "GET",
+  });
+  const payload = { ...article, version: current.version ?? 0 };
+  return request<LxArticleResponse>(apiKey, `/articles/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+};
+
+// =========================================================
 // Builder: Address
 // =========================================================
 type CustomerLike = {
@@ -158,6 +268,7 @@ type VehicleLike = {
   model: string | null;
   vehicle_type: string | null;
   extra_km_price: number | null;
+  lexoffice_product_id?: string | null;
 };
 
 type TicketLike = {
@@ -236,15 +347,33 @@ export const buildContractInvoice = (
     vehicle?.vehicle_type ||
     "Fahrzeug";
 
+  const rentalName = `Fahrzeugmiete ${vehicleLabel} (${contract.plate})`;
+  const rentalDescription = `Mietzeitraum ${formatDe(contract.pickup_date)} – ${formatDe(endDate)}`;
+  const rentalUnitPrice: LxMoney = {
+    currency: "EUR",
+    netAmount: round2(dailyRate),
+    taxRatePercentage: 19,
+  };
+
   const lineItems: LxLineItem[] = [
-    {
-      type: "custom",
-      name: `Fahrzeugmiete ${vehicleLabel} (${contract.plate})`,
-      description: `Mietzeitraum ${formatDe(contract.pickup_date)} – ${formatDe(endDate)}`,
-      quantity: days,
-      unitName: days === 1 ? "Tag" : "Tage",
-      unitPrice: { currency: "EUR", netAmount: round2(dailyRate), taxRatePercentage: 19 },
-    },
+    vehicle?.lexoffice_product_id
+      ? {
+          type: "service",
+          id: vehicle.lexoffice_product_id,
+          name: rentalName,
+          description: rentalDescription,
+          quantity: days,
+          unitName: days === 1 ? "Tag" : "Tage",
+          unitPrice: rentalUnitPrice,
+        }
+      : {
+          type: "custom",
+          name: rentalName,
+          description: rentalDescription,
+          quantity: days,
+          unitName: days === 1 ? "Tag" : "Tage",
+          unitPrice: rentalUnitPrice,
+        },
   ];
 
   const kmExcess = Number(contract.km_excess ?? 0);

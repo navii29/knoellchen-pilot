@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { normalizePlate } from "@/lib/plate";
 import { VEHICLE_STATUSES, buildVehicleType } from "@/lib/vehicle";
-import type { VehicleStatus } from "@/lib/types";
+import { syncVehicleToLexoffice } from "@/lib/lexoffice-vehicle-sync";
+import type { Vehicle, VehicleStatus } from "@/lib/types";
 
 const trimOrNull = (v: unknown): string | null => {
   if (typeof v !== "string") return null;
@@ -97,7 +98,16 @@ export const POST = async (req: Request) => {
     .select("*")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, vehicle: data });
+
+  // LexOffice-Sync ist best-effort — Fehler werden geloggt aber blockieren
+  // den Vehicle-Save nicht.
+  const vehicle = data as Vehicle;
+  const lexId = await syncVehicleToLexoffice(admin, vehicle, profile.org_id);
+  if (lexId && lexId !== vehicle.lexoffice_product_id) {
+    vehicle.lexoffice_product_id = lexId;
+  }
+
+  return NextResponse.json({ ok: true, vehicle });
 };
 
 export const DELETE = async (req: Request) => {

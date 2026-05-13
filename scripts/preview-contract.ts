@@ -93,6 +93,7 @@ const vehicle: Vehicle = {
   last_gps_lat: null,
   last_gps_lng: null,
   last_gps_update: null,
+  lexoffice_product_id: null,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };

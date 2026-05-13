@@ -83,7 +83,9 @@ export const POST = async (_req: Request, { params }: Ctx) => {
     contract.vehicle_id
       ? admin
           .from("vehicles")
-          .select("manufacturer, model, vehicle_type, extra_km_price")
+          .select(
+            "manufacturer, model, vehicle_type, extra_km_price, lexoffice_product_id"
+          )
           .eq("id", contract.vehicle_id)
           .eq("org_id", auth.org_id)
           .maybeSingle()

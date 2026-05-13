@@ -547,10 +547,96 @@ const LexOfficeCard = ({
             <Calculator size={13} /> LexOffice-Übertragung aktivieren
           </div>
           <div className="text-xs text-stone-500 mt-1">
-            Wenn aktiviert: An Verträgen und Strafzetteln erscheint ein Button „An LexOffice übertragen“. Übertragene Dokumente werden in LexOffice als finalisierte Rechnungen angelegt und sind dort unveränderlich.
+            Wenn aktiviert: An Verträgen und Strafzetteln erscheint ein Button „An LexOffice übertragen“. Übertragene Dokumente werden in LexOffice als finalisierte Rechnungen angelegt und sind dort unveränderlich. Neue Fahrzeuge werden automatisch als Artikel in LexOffice angelegt.
           </div>
         </div>
       </label>
+
+      <VehicleBulkSync disabled={!hasKeyLocal || !enabled} />
+    </div>
+  );
+};
+
+const VehicleBulkSync = ({ disabled }: { disabled: boolean }) => {
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<
+    | { total: number; synced: number; failed: number; failed_plates?: string[] }
+    | null
+  >(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const run = async () => {
+    setErr(null);
+    setResult(null);
+    setRunning(true);
+    try {
+      const res = await fetch("/api/lexoffice/sync-vehicles", { method: "POST" });
+      const j = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        total?: number;
+        synced?: number;
+        failed?: number;
+        failed_plates?: string[];
+        error?: string;
+      };
+      if (!res.ok || !j.ok) {
+        setErr(j.error ?? "Synchronisation fehlgeschlagen.");
+        return;
+      }
+      setResult({
+        total: j.total ?? 0,
+        synced: j.synced ?? 0,
+        failed: j.failed ?? 0,
+        failed_plates: j.failed_plates,
+      });
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  return (
+    <div className="rounded-lg ring-1 ring-stone-200 p-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 text-sm font-medium text-stone-800">
+          <Calculator size={14} className="text-stone-500" />
+          Fahrzeuge nach LexOffice synchronisieren
+        </div>
+        <button
+          type="button"
+          onClick={run}
+          disabled={disabled || running}
+          className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md ring-1 ring-stone-200 bg-white hover:bg-stone-50 disabled:opacity-40"
+        >
+          {running ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+          Jetzt synchronisieren
+        </button>
+      </div>
+      <div className="mt-2 text-xs text-stone-500">
+        Legt alle noch nicht übertragenen aktiven Fahrzeuge als Artikel
+        (Dienstleistung „Tag“) in LexOffice an.
+      </div>
+      {result && (
+        <div className="mt-3 text-sm rounded-md px-3 py-2 bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800">
+          <div className="font-medium flex items-center gap-1.5">
+            <Check size={14} /> {result.synced} von {result.total} Fahrzeugen synchronisiert
+          </div>
+          {result.failed > 0 && result.failed_plates?.length ? (
+            <div className="mt-1 text-xs">
+              Fehlgeschlagen: {result.failed_plates.join(", ")}
+            </div>
+          ) : null}
+          {result.total === 0 && (
+            <div className="mt-1 text-xs opacity-90">
+              Keine Fahrzeuge offen — alles bereits synchronisiert.
+            </div>
+          )}
+        </div>
+      )}
+      {err && (
+        <div className="mt-3 text-sm rounded-md px-3 py-2 bg-rose-50 ring-1 ring-rose-200 text-rose-700">
+          {err}
+        </div>
+      )}
     </div>
   );
 };

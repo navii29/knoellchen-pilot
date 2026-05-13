@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { VEHICLE_STATUSES } from "@/lib/vehicle";
-import type { VehicleStatus } from "@/lib/types";
+import { syncVehicleToLexoffice } from "@/lib/lexoffice-vehicle-sync";
+import type { Vehicle, VehicleStatus } from "@/lib/types";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -122,5 +123,27 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
     .select("*")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, vehicle: data });
+
+  // LexOffice-Sync nur wenn relevante Felder geändert wurden (Title-, Preis-
+  // oder Beschreibungsfelder) ODER wenn die Article-ID noch fehlt (Backfill).
+  const SYNC_TRIGGERS = new Set([
+    "manufacturer",
+    "model",
+    "vehicle_type",
+    "fin_number",
+    "body_type",
+    "fuel_type",
+    "power_ps",
+    "daily_rate",
+  ]);
+  const vehicle = data as Vehicle;
+  const triggered = Object.keys(patch).some((k) => SYNC_TRIGGERS.has(k));
+  if (triggered || !vehicle.lexoffice_product_id) {
+    const lexId = await syncVehicleToLexoffice(admin, vehicle, auth.org_id);
+    if (lexId && lexId !== vehicle.lexoffice_product_id) {
+      vehicle.lexoffice_product_id = lexId;
+    }
+  }
+
+  return NextResponse.json({ ok: true, vehicle });
 };
