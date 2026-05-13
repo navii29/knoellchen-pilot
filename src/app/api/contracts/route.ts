@@ -105,6 +105,16 @@ export const POST = async (req: Request) => {
     partner_purchase_price: numeric(body.partner_purchase_price),
     partner_selling_price: numeric(body.partner_selling_price),
     partner_commission: numeric(body.partner_commission),
+    payment_method: (body.payment_method as string) || null,
+    insurance_type: (body.insurance_type as string) || null,
+    insurance_deductible: numeric(body.insurance_deductible),
+    special_terms: (body.special_terms as string) || null,
+    delivery_cost: numeric(body.delivery_cost),
+    pickup_cost: numeric(body.pickup_cost),
+    driver2_name: (body.driver2_name as string) || null,
+    driver2_license: (body.driver2_license as string) || null,
+    damages_at_handover: (body.damages_at_handover as string) || null,
+    keys_count: numeric(body.keys_count),
   };
 
   const { data, error } = await admin

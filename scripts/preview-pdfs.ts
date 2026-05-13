@@ -27,6 +27,7 @@ const org: Organization = {
   echoes_account_id: null,
   echoes_enabled: false,
   rental_terms: null,
+  logo_path: null,
   created_at: new Date().toISOString(),
 };
 
@@ -131,6 +132,16 @@ const contract: Contract = {
   pickup_photos: [],
   return_photos: [],
   notes: null,
+  payment_method: null,
+  insurance_type: null,
+  insurance_deductible: null,
+  special_terms: null,
+  delivery_cost: null,
+  pickup_cost: null,
+  driver2_name: null,
+  driver2_license: null,
+  damages_at_handover: null,
+  keys_count: null,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };

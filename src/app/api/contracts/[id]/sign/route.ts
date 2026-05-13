@@ -2,6 +2,18 @@ import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { generateContractPdf } from "@/lib/contract-pdf";
 import type { Contract, Customer, Organization, Vehicle } from "@/lib/types";
+import type { VehicleTire } from "@/lib/tires";
+
+const loadLogoBase64 = async (
+  admin: ReturnType<typeof createAdminClient>,
+  logoPath: string | null | undefined
+): Promise<string | null> => {
+  if (!logoPath) return null;
+  const { data, error } = await admin.storage.from("brand").download(logoPath);
+  if (error || !data) return null;
+  const buf = Buffer.from(await data.arrayBuffer());
+  return `data:image/png;base64,${buf.toString("base64")}`;
+};
 
 export const maxDuration = 30;
 
@@ -67,7 +79,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
     );
   }
 
-  const [{ data: org }, customerRes, vehicleRes] = await Promise.all([
+  const [{ data: org }, customerRes, vehicleRes, tireRes] = await Promise.all([
     admin.from("organizations").select("*").eq("id", auth.org_id).single(),
     c.customer_id
       ? admin
@@ -85,9 +97,19 @@ export const POST = async (req: Request, { params }: Ctx) => {
           .eq("org_id", auth.org_id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    c.vehicle_id
+      ? admin
+          .from("vehicle_tires")
+          .select("*")
+          .eq("vehicle_id", c.vehicle_id)
+          .eq("is_current", true)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   if (!org) return NextResponse.json({ error: "Organisation fehlt" }, { status: 500 });
+  const orgRow = org as Organization;
+  const logoPngBase64 = await loadLogoBase64(admin, orgRow.logo_path);
 
   const signedAt = new Date().toISOString();
   const signedIp = extractIp(req);
@@ -100,10 +122,12 @@ export const POST = async (req: Request, { params }: Ctx) => {
   };
 
   const pdfBuf = generateContractPdf({
-    org: org as Organization,
+    org: orgRow,
     contract: snapshot,
     customer: (customerRes.data ?? null) as Customer | null,
     vehicle: (vehicleRes.data ?? null) as Vehicle | null,
+    tires: (tireRes.data ?? null) as VehicleTire | null,
+    logoPngBase64,
     signaturePngBase64: sig,
   });
 

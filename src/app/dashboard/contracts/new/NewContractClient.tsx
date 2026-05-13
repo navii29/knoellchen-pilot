@@ -42,6 +42,16 @@ type FormState = {
   partner_id: string;
   partner_purchase_price: string;
   partner_selling_price: string;
+  payment_method: string;
+  insurance_type: string;
+  insurance_deductible: string;
+  special_terms: string;
+  delivery_cost: string;
+  pickup_cost: string;
+  driver2_name: string;
+  driver2_license: string;
+  damages_at_handover: string;
+  keys_count: string;
 };
 
 const empty: FormState = {
@@ -71,6 +81,16 @@ const empty: FormState = {
   partner_id: "",
   partner_purchase_price: "",
   partner_selling_price: "",
+  payment_method: "bank_transfer",
+  insurance_type: "full",
+  insurance_deductible: "",
+  special_terms: "",
+  delivery_cost: "0",
+  pickup_cost: "0",
+  driver2_name: "",
+  driver2_license: "",
+  damages_at_handover: "Keine",
+  keys_count: "1",
 };
 
 const customerLabel = (c: Customer) => {
@@ -185,6 +205,16 @@ export const NewContractClient = ({
       partner_id: "",
       partner_purchase_price: "",
       partner_selling_price: "",
+      payment_method: "bank_transfer",
+      insurance_type: "full",
+      insurance_deductible: "",
+      special_terms: "",
+      delivery_cost: "0",
+      pickup_cost: "0",
+      driver2_name: "",
+      driver2_license: "",
+      damages_at_handover: "Keine",
+      keys_count: "1",
     });
     setAiConfidence(j.confidence);
     setParsedFromAI(true);
@@ -226,6 +256,16 @@ export const NewContractClient = ({
       partner_purchase_price: purchasePerDay,
       partner_selling_price: sellingPerDay,
       partner_commission: partnerCommission,
+      payment_method: data.payment_method || null,
+      insurance_type: data.insurance_type || null,
+      insurance_deductible: numeric(data.insurance_deductible),
+      special_terms: data.special_terms || null,
+      delivery_cost: numeric(data.delivery_cost),
+      pickup_cost: numeric(data.pickup_cost),
+      driver2_name: data.driver2_name || null,
+      driver2_license: data.driver2_license || null,
+      damages_at_handover: data.damages_at_handover || null,
+      keys_count: numeric(data.keys_count),
     };
     const res = await fetch("/api/contracts", {
       method: "POST",
@@ -515,6 +555,99 @@ export const NewContractClient = ({
                 value={data.km_limit}
                 onChange={set("km_limit")}
                 placeholder="z.B. 1500 (leer = unbegrenzt)"
+                className="input tabular-nums"
+              />
+            </Field>
+          </Section>
+
+          <Section title="Zahlung & Versicherung">
+            <Field label="Zahlungsart">
+              <select
+                value={data.payment_method}
+                onChange={set("payment_method")}
+                className="input"
+              >
+                <option value="bank_transfer">Vorabüberweisung</option>
+                <option value="cash">Bar</option>
+                <option value="credit_card">Kreditkarte</option>
+                <option value="paypal">PayPal</option>
+                <option value="invoice">Rechnung</option>
+              </select>
+            </Field>
+            <Field label="Versicherung">
+              <select
+                value={data.insurance_type}
+                onChange={set("insurance_type")}
+                className="input"
+              >
+                <option value="full">Haftpflicht, TK + VK</option>
+                <option value="basic">Haftpflicht</option>
+                <option value="none">Keine</option>
+              </select>
+            </Field>
+            <Field label="Selbstbeteiligung (€)">
+              <input
+                value={data.insurance_deductible}
+                onChange={set("insurance_deductible")}
+                placeholder="z.B. 1000"
+                className="input tabular-nums"
+              />
+            </Field>
+            <Field label="Sondervereinbarungen">
+              <textarea
+                value={data.special_terms}
+                onChange={set("special_terms")}
+                rows={2}
+                placeholder="z.B. Auslandsfahrten nur innerhalb DACH-Verband"
+                className="input"
+              />
+            </Field>
+          </Section>
+
+          <Section title="Übergabe-Details">
+            <Field label="Lieferkosten (€)">
+              <input
+                value={data.delivery_cost}
+                onChange={set("delivery_cost")}
+                className="input tabular-nums"
+              />
+            </Field>
+            <Field label="Abholkosten (€)">
+              <input
+                value={data.pickup_cost}
+                onChange={set("pickup_cost")}
+                className="input tabular-nums"
+              />
+            </Field>
+            <Field label="Anzahl Schlüssel">
+              <input
+                value={data.keys_count}
+                onChange={set("keys_count")}
+                className="input tabular-nums"
+              />
+            </Field>
+            <Field label="Schäden bei Übergabe">
+              <input
+                value={data.damages_at_handover}
+                onChange={set("damages_at_handover")}
+                placeholder="Keine / Neuwagen"
+                className="input"
+              />
+            </Field>
+          </Section>
+
+          <Section title="Zweiter Fahrer (optional)">
+            <Field label="Name Fahrer 2">
+              <input
+                value={data.driver2_name}
+                onChange={set("driver2_name")}
+                className="input"
+              />
+            </Field>
+            <Field label="Führerschein-Nr. Fahrer 2">
+              <input
+                value={data.driver2_license}
+                onChange={set("driver2_license")}
                 className="input tabular-nums"
               />
             </Field>

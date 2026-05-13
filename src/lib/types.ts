@@ -21,6 +21,7 @@ export interface Organization {
   echoes_enabled: boolean;
   // echoes_api_key absichtlich NICHT im Type — darf nie ans Frontend gelangen.
   rental_terms: string | null;
+  logo_path: string | null;
   created_at: string;
 }
 
@@ -100,6 +101,27 @@ export interface PricingRule {
 }
 
 export type ContractStatus = "aktiv" | "abgeschlossen" | "storniert";
+export type ContractPaymentMethod =
+  | "bank_transfer"
+  | "cash"
+  | "credit_card"
+  | "paypal"
+  | "invoice";
+export type ContractInsuranceType = "full" | "basic" | "none";
+
+export const PAYMENT_METHOD_LABEL: Record<ContractPaymentMethod, string> = {
+  bank_transfer: "Vorabüberweisung",
+  cash: "Bar",
+  credit_card: "Kreditkarte",
+  paypal: "PayPal",
+  invoice: "Rechnung",
+};
+
+export const INSURANCE_TYPE_LABEL: Record<ContractInsuranceType, string> = {
+  full: "Haftpflicht, TK + VK",
+  basic: "Haftpflicht",
+  none: "Keine",
+};
 
 export interface Contract {
   id: string;
@@ -151,6 +173,19 @@ export interface Contract {
   pickup_photos: unknown[];
   return_photos: unknown[];
   notes: string | null;
+
+  // Erweiterte Vertragsfelder (Migration 023)
+  payment_method: ContractPaymentMethod | null;
+  insurance_type: ContractInsuranceType | null;
+  insurance_deductible: number | null;
+  special_terms: string | null;
+  delivery_cost: number | null;
+  pickup_cost: number | null;
+  driver2_name: string | null;
+  driver2_license: string | null;
+  damages_at_handover: string | null;
+  keys_count: number | null;
+
   created_at: string;
   updated_at: string;
 }

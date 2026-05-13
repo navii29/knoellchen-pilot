@@ -48,6 +48,16 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
     "status",
     "notes",
     "contract_pdf_path",
+    "payment_method",
+    "insurance_type",
+    "insurance_deductible",
+    "special_terms",
+    "delivery_cost",
+    "pickup_cost",
+    "driver2_name",
+    "driver2_license",
+    "damages_at_handover",
+    "keys_count",
   ];
   const update: Record<string, unknown> = {};
   for (const k of allowed) if (k in body) update[k] = body[k];
