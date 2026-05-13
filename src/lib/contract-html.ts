@@ -284,6 +284,24 @@ const CSS = `
   .dokumente .row { display: flex; align-items: center; }
   .dokumente .row .name { flex: 1; }
 
+  /* Dokumente in 3 Spalten — wie Ollies Original */
+  .dokumente-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.2mm 5mm;
+    font-size: 8pt;
+  }
+  .dokumente-3 .row { display: flex; align-items: center; }
+  .dokumente-3 .row .name { flex: 1; }
+
+  .ho-divider { border-top: 0.4pt solid #888; margin: 4mm 0 3mm 0; }
+
+  .ho-foot-fields { display: flex; gap: 10mm; font-size: 7.5pt; color: #666; }
+  .ho-foot-fields > div { flex: 1; display: flex; align-items: flex-end; gap: 2mm; }
+  .ho-foot-fields .ln { flex: 1; border-top: 0.4pt solid #888; padding-top: 1mm; min-height: 4mm; }
+  .ho-foot-fields .ln-uhr { display: inline-block; min-width: 22mm; border-top: 0.4pt solid #888; padding-top: 1mm; min-height: 4mm; }
+  .ho-foot-fields .lbl { font-size: 7.5pt; color: #666; }
+
   .check {
     display: inline-block;
     width: 3mm;
@@ -315,79 +333,46 @@ const CSS = `
 `;
 
 // =====================================================
-// SVG: Sedan-Draufsicht mit Damage-Boxen
+// SVG: Sedan-Seitenansicht mit Damage-Boxen — wie Ollies Original
 // =====================================================
 const carSvg = (): string => `
-  <svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+  <svg viewBox="0 0 200 90" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+    <!-- Damage-Boxen oben -->
     <g fill="none" stroke="#1e1e1e" stroke-width="0.4">
-      <!-- Damage-Boxen oben -->
-      ${Array.from({ length: 6 }, (_, i) => {
-        const x = 18 + i * 28;
-        return `<rect x="${x}" y="0" width="6" height="6" />`;
-      }).join("")}
-      <!-- Damage-Boxen unten -->
-      ${Array.from({ length: 6 }, (_, i) => {
-        const x = 18 + i * 28;
-        return `<rect x="${x}" y="74" width="6" height="6" />`;
-      }).join("")}
-      <!-- Damage-Boxen links -->
-      ${Array.from({ length: 3 }, (_, i) => {
-        const y = 14 + i * 18;
-        return `<rect x="0" y="${y}" width="6" height="6" />`;
-      }).join("")}
-      <!-- Damage-Boxen rechts -->
-      ${Array.from({ length: 3 }, (_, i) => {
-        const y = 14 + i * 18;
-        return `<rect x="194" y="${y}" width="6" height="6" />`;
-      }).join("")}
+      ${Array.from({ length: 8 }, (_, i) => `<rect x="${10 + i * 23}" y="0" width="6" height="6" />`).join("")}
+      ${Array.from({ length: 8 }, (_, i) => `<rect x="${10 + i * 23}" y="84" width="6" height="6" />`).join("")}
+      <rect x="0" y="42" width="6" height="6" />
+      <rect x="0" y="58" width="6" height="6" />
+      <rect x="194" y="42" width="6" height="6" />
+      <rect x="194" y="58" width="6" height="6" />
     </g>
 
-    <!-- Räder (4 schwarze Rechtecke außerhalb der Karosserie) -->
-    <g fill="#1e1e1e">
-      <rect x="52" y="9" width="9" height="11" rx="1" />
-      <rect x="52" y="60" width="9" height="11" rx="1" />
-      <rect x="138" y="9" width="9" height="11" rx="1" />
-      <rect x="138" y="60" width="9" height="11" rx="1" />
+    <!-- Räder (zwei dunkle Kreise, weiß im Kern) -->
+    <g>
+      <circle cx="48" cy="68" r="9" fill="#1e1e1e" />
+      <circle cx="48" cy="68" r="4" fill="#fff" />
+      <circle cx="152" cy="68" r="9" fill="#1e1e1e" />
+      <circle cx="152" cy="68" r="4" fill="#fff" />
     </g>
 
-    <!-- Karosserie -->
-    <g fill="#fff" stroke="#1e1e1e" stroke-width="0.7">
-      <rect x="10" y="12" width="180" height="56" rx="10" ry="10" />
+    <!-- Karosserie-Profil: Unterboden, Hauben-/Kofferraumlinie, Dach -->
+    <g fill="none" stroke="#1e1e1e" stroke-width="0.8">
+      <!-- Unterboden + Stoßstangen -->
+      <path d="M 14 68 L 22 60 L 30 58 L 36 58
+               M 60 58 L 140 58
+               M 164 58 L 170 58 L 178 60 L 186 68" />
+      <!-- Front-Schweller bis Heck-Schweller -->
+      <path d="M 14 68 L 186 68" />
+      <!-- Motorhaube → Windschutzscheibe → Dach → Heckscheibe → Kofferraum -->
+      <path d="M 22 60 L 65 60 L 78 38 L 130 38 L 145 60 L 178 60" />
     </g>
 
-    <!-- Innen-Konturen (Motorhaube, Windschutzscheibe, Dach, Heckscheibe, Kofferraum) -->
+    <!-- Fenster (Trennlinien) und B-Säule -->
     <g fill="none" stroke="#1e1e1e" stroke-width="0.5">
-      <!-- Motorhauben-Trennlinie -->
-      <line x1="55" y1="12" x2="55" y2="68" />
-      <!-- Windschutzscheibe -->
-      <line x1="55" y1="12" x2="68" y2="22" />
-      <line x1="55" y1="68" x2="68" y2="58" />
-      <!-- Dach-Box -->
-      <line x1="68" y1="22" x2="132" y2="22" />
-      <line x1="68" y1="58" x2="132" y2="58" />
-      <!-- B-Säule -->
-      <line x1="100" y1="22" x2="100" y2="58" stroke-width="0.4" />
-      <!-- Heckscheibe -->
-      <line x1="132" y1="22" x2="145" y2="12" />
-      <line x1="132" y1="58" x2="145" y2="68" />
-      <!-- Kofferraum-Trennlinie -->
-      <line x1="145" y1="12" x2="145" y2="68" />
-    </g>
-
-    <!-- Türgriffe (kleine Striche) -->
-    <g stroke="#999" stroke-width="0.4">
-      <line x1="72" y1="17" x2="80" y2="17" />
-      <line x1="72" y1="63" x2="80" y2="63" />
-      <line x1="104" y1="17" x2="112" y2="17" />
-      <line x1="104" y1="63" x2="112" y2="63" />
-    </g>
-
-    <!-- Scheinwerfer + Rücklichter -->
-    <g fill="none" stroke="#1e1e1e" stroke-width="0.4">
-      <ellipse cx="14" cy="22" rx="2" ry="4" />
-      <ellipse cx="14" cy="58" rx="2" ry="4" />
-      <ellipse cx="186" cy="22" rx="2" ry="4" />
-      <ellipse cx="186" cy="58" rx="2" ry="4" />
+      <line x1="100" y1="38" x2="100" y2="60" />
+      <!-- Türgriffe -->
+      <line x1="80" y1="48" x2="92" y2="48" stroke="#999" stroke-width="0.4" />
+      <line x1="108" y1="48" x2="120" y2="48" stroke="#999" stroke-width="0.4" />
     </g>
   </svg>
 `;
@@ -733,50 +718,14 @@ const renderPage5 = (
 const renderPage6 = (
   org: Organization,
   contract: Contract,
-  customer: Customer | null,
-  vehicle: Vehicle | null,
-  tires: VehicleTire | null
+  _customer: Customer | null,
+  _vehicle: Vehicle | null,
+  _tires: VehicleTire | null
 ): string => {
   const dateStr = fmtDate(today());
-  const zipCity = [customer?.zip, customer?.city].filter(Boolean).join(" ");
 
-  // Reifen-Profiltiefen aufbereiten
-  const tireType = tires?.type;
-  const summerTread = tireType === "summer" ? tires : null;
-  const winterTread = tireType === "winter" ? tires : null;
-  const treadCell = (t: VehicleTire | null) =>
-    t
-      ? `vl ${t.tread_depth_fl ?? "____"} &nbsp; vr ${t.tread_depth_fr ?? "____"} &nbsp; hl ${t.tread_depth_rl ?? "____"} &nbsp; hr ${t.tread_depth_rr ?? "____"}`
-      : `vl ____ &nbsp; vr ____ &nbsp; hl ____ &nbsp; hr ____`;
-
-  const techRows: Array<[string, string]> = [
-    ["Unfall-Vorschäden", "Motorölstand in Ordnung"],
-    ["Technische Mängel", "Kühlmittelstand in Ordnung"],
-    ["Austauschmotor", "Tankfüllung"],
-    ["Austauschgetriebe", "Warnanzeigen aktiv"],
-    ["Austauschtacho", "Letzter Kundendienst bei Km"],
-  ];
-
-  const interiorRows: Array<[string, string]> = [
-    ["Vordersitze", "Rücksitze"],
-    ["Teppichboden", "Dachhimmel"],
-    ["Kofferraum/Ladefläche", "Armaturentafel/Mittelkonsole"],
-  ];
-
-  const docRows: Array<[string, string]> = [
-    ["Fahrzeugschein/ZB Teil I", "Kundendienst-/Serviceheft"],
-    ["EWG Übereinst.erklärung/CoC", "Bedienungsanleitung"],
-    ["Letzte HU/AU-Bescheinigung", "Original-/Navigationsgerät"],
-    ["Original-Navigations-DVD/CD", "Gepäckraumabdeckung"],
-    ["Reserverad/Kompressor", "Bordwerkzeug"],
-    ["Anhängerkupplung/Schlüssel", "Radio + Code-Card"],
-  ];
-
-  const bvr = `
-    <span class="check-label">B</span>${checkbox()}
-    <span class="check-label" style="margin-left:1.5mm">V</span>${checkbox()}
-    <span class="check-label" style="margin-left:1.5mm">R</span>${checkbox()}
-  `;
+  // 5 Felder werden bewusst leer gelassen — werden bei Übergabe per Hand
+  // ausgefüllt: Leasingnehmer, Kennzeichen, Tachostand, Herst./Typ, Fzg.-Ident-Nr.
 
   return `
     <div class="page">
@@ -787,26 +736,26 @@ const renderPage6 = (
         <tr>
           <td class="lbl">Vertrags-Nr.:</td>
           <td class="val">${esc(contract.contract_nr)} / ${esc(dateStr)}</td>
-          <td class="lbl" style="padding-left:5mm">Tachostand b. Übernahme:</td>
-          <td class="val">${esc(contract.km_pickup != null ? `${fmtNum(contract.km_pickup)} Km` : "")}</td>
+          <td class="lbl" style="padding-left:5mm">Tachostand bei Übernahme:</td>
+          <td class="val"></td>
         </tr>
         <tr>
           <td class="lbl">Leasingnehmer:</td>
-          <td class="val">${esc(contract.renter_name)}</td>
+          <td class="val"></td>
           <td class="lbl" style="padding-left:5mm">Kennzeichen:</td>
-          <td class="val">${esc(contract.plate)}</td>
+          <td class="val"></td>
         </tr>
         <tr>
           <td class="lbl">PLZ, Ort:</td>
-          <td class="val">${esc(zipCity)}</td>
+          <td class="val"></td>
           <td class="lbl" style="padding-left:5mm">Herst., Typ:</td>
-          <td class="val">${esc(vehicleModel(vehicle, contract.vehicle_type))}</td>
+          <td class="val"></td>
         </tr>
         <tr>
           <td class="lbl">Nutzer:</td>
-          <td class="val">${esc(contract.renter_name)}</td>
+          <td class="val"></td>
           <td class="lbl" style="padding-left:5mm">Fzg.-Ident-Nr.:</td>
-          <td class="val">${esc(vehicle?.fin_number ?? "")}</td>
+          <td class="val"></td>
         </tr>
       </table>
 
@@ -834,81 +783,102 @@ const renderPage6 = (
       <div class="ho-section-title">Technik-Check</div>
       <div class="ho-subnote">Ist dem Übergebenden Folgendes bekannt?</div>
       <div class="tech-check">
-        ${techRows
-          .map(
-            ([l, r]) => `
-          <div class="row"><span class="name">${esc(l)}</span><span class="opts">${jaNein()}</span></div>
-          <div class="row"><span class="name">${esc(r)}</span><span class="opts">${jaNein()}</span></div>
-        `
-          )
-          .join("")}
+        <div class="row"><span class="name">Unfall-Vorschäden</span><span class="opts">${jaNein()}</span></div>
+        <div class="row"><span class="name">Motorölstand in Ordnung</span><span class="opts">${jaNein()}</span></div>
+        <div class="row"><span class="name">Technische Mängel</span><span class="opts">${jaNein()}</span></div>
+        <div class="row"><span class="name">Kühlmittelstand in Ordnung</span><span class="opts">${jaNein()}</span></div>
+        <div class="row"><span class="name">Austauschmotor</span><span class="opts">${jaNein()}</span></div>
+        <div class="row"><span class="name">Tankfüllung</span><span class="opts">
+          <span class="check-label">leer</span>${checkbox()}
+          <span class="check-label" style="margin-left:1.5mm">1/4</span>${checkbox()}
+          <span class="check-label" style="margin-left:1.5mm">1/2</span>${checkbox()}
+          <span class="check-label" style="margin-left:1.5mm">3/4</span>${checkbox()}
+          <span class="check-label" style="margin-left:1.5mm">voll</span>${checkbox()}
+        </span></div>
+        <div class="row"><span class="name">Austauschgetriebe</span><span class="opts">${jaNein()}</span></div>
+        <div class="row"><span class="name">Warnanzeigen aktiv</span><span class="opts">${jaNein()}<span style="margin-left:2mm">Welche?</span><span style="display:inline-block;border-bottom:0.4pt solid #888;min-width:18mm;margin-left:1mm">&nbsp;</span></span></div>
+        <div class="row"><span class="name">Austauschtacho</span><span class="opts">${jaNein()}</span></div>
+        <div class="row"><span class="name">Letzter Kundendienst bei Km</span><span class="opts">
+          <span style="display:inline-block;border-bottom:0.4pt solid #888;min-width:14mm">&nbsp;</span>
+          <span style="margin-left:2mm">Datum</span>
+          <span style="display:inline-block;border-bottom:0.4pt solid #888;min-width:14mm;margin-left:1mm">&nbsp;</span>
+        </span></div>
       </div>
 
       <div class="ho-section-title">Bereifung</div>
       <div class="bereifung">
         <span>vorhanden</span>
-        <span class="item">${checkbox(!!summerTread)}<span>Sommerreifen</span></span>
+        <span class="item">${checkbox()}<span>Sommerreifen</span></span>
         <span class="item">${checkbox()}<span>auf Stahlfelgen</span></span>
         <span class="item">${checkbox()}<span>auf Alufelgen</span></span>
-        <span class="tread">Profiltiefe ${treadCell(summerTread)} &nbsp; Res ____</span>
+        <span class="tread">Profiltiefe vl ____ &nbsp; vr ____ &nbsp; hl ____ &nbsp; hr ____ &nbsp; Res ____</span>
         <span>vorhanden</span>
-        <span class="item">${checkbox(!!winterTread)}<span>Winterreifen</span></span>
+        <span class="item">${checkbox()}<span>Winterreifen</span></span>
         <span class="item">${checkbox()}<span>auf Stahlfelgen</span></span>
         <span class="item">${checkbox()}<span>auf Alufelgen</span></span>
-        <span class="tread">Profiltiefe ${treadCell(winterTread)}</span>
+        <span class="tread">Profiltiefe vl ____ &nbsp; vr ____ &nbsp; hl ____ &nbsp; hr ____</span>
       </div>
 
       <div class="ho-section-title">Innenraum <span style="font-weight:400;font-size:7.5pt;color:#555;margin-left:2mm">B = Beschädigung &nbsp; V = Verschmutzung &nbsp; R = Riss</span></div>
       <div class="innenraum">
-        ${interiorRows
-          .map(
-            ([l, r]) => `
-          <div class="row"><span class="name">${esc(l)}</span><span class="bvr">${bvr}</span></div>
-          <div class="row"><span class="name">${esc(r)}</span><span class="bvr">${bvr}</span></div>
-        `
-          )
-          .join("")}
+        <div class="row"><span class="name">Vordersitze</span><span class="bvr">${bvrRow()}</span></div>
+        <div class="row"><span class="name">Rücksitze</span><span class="bvr">${bvrRow()}<span style="margin-left:4mm">Anzahl Sitze ____</span></span></div>
+        <div class="row"><span class="name">Teppichboden</span><span class="bvr">${bvrRow()}</span></div>
+        <div class="row"><span class="name">Dachhimmel</span><span class="bvr">${bvrRow()}</span></div>
+        <div class="row"><span class="name">Kofferraum/Ladefläche</span><span class="bvr">${bvrRow()}</span></div>
+        <div class="row"><span class="name">Armaturentafel/Mittelkonsole</span><span class="bvr">${bvrRow()}</span></div>
       </div>
 
       <div class="ho-section-title">Dokumente, Ausstattung, Anzeigen</div>
-      <div class="dokumente">
-        ${docRows
-          .map(
-            ([l, r]) => `
-          <div class="row"><span class="name">${esc(l)}</span><span>${jaNein()}</span></div>
-          <div class="row"><span class="name">${esc(r)}</span><span>${jaNein()}</span></div>
-        `
-          )
-          .join("")}
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:8pt;margin-top:1.5mm">
-        <span>Anzahl Schlüssel: ${esc(String(contract.keys_count ?? 1))}</span>
-        <span>Anzahl Sitze: ____</span>
+      <div class="dokumente-3">
+        <div class="row"><span class="name">Fahrzeugschein oder ZB Teil I</span><span class="opts">${jaNein()}</span></div>
+        <div class="row"><span class="name">Kundendienst-/Serviceheft</span><span class="opts">${jaNein()}</span></div>
+        <div class="row"><span class="name">Gepäckraumabdeckung</span><span class="opts">${jaNein()}</span></div>
+        <div class="row"><span class="name">EWG Übereinst.erklärung/CoC</span><span class="opts">${jaNein()}</span></div>
+        <div class="row"><span class="name">Bedienungsanleitung</span><span class="opts">${jaNein()}</span></div>
+        <div class="row"><span class="name">Reserverad/Kompressor</span><span class="opts">${jaNein()}</span></div>
+        <div class="row"><span class="name">Letzte HU/AU-Bescheinigung</span><span class="opts">${jaNein()}</span></div>
+        <div class="row"><span class="name">Original-/Navigationsgerät</span><span class="opts">${jaNein()}</span></div>
+        <div class="row"><span class="name">Bordwerkzeug</span><span class="opts">${jaNein()}</span></div>
+        <div class="row"><span class="name">gültig bis: <span style="display:inline-block;border-bottom:0.4pt solid #888;min-width:20mm;margin-left:1mm">&nbsp;</span></span><span></span></div>
+        <div class="row"><span class="name">Original-Navigations-DVD/CD</span><span class="opts">${jaNein()}</span></div>
+        <div class="row"><span class="name">Anhängerkupplung/Schlüssel</span><span class="opts">${jaNein()}</span></div>
+        <div class="row"><span class="name">Radio</span><span class="opts">${jaNein()}<span style="margin-left:2mm">Code-Card, Nr.</span><span style="display:inline-block;border-bottom:0.4pt solid #888;min-width:14mm;margin-left:1mm">&nbsp;</span></span></div>
+        <div class="row"><span class="name">Anzahl, Marken:</span><span class="opts"><span style="display:inline-block;border-bottom:0.4pt solid #888;min-width:24mm">&nbsp;</span></span></div>
+        <div class="row"><span class="name">Anzahl Schlüssel:</span><span class="opts"><span style="display:inline-block;border-bottom:0.4pt solid #888;min-width:14mm">&nbsp;</span></span></div>
       </div>
 
-      <div class="ho-bottom">
-        <div class="field"><div class="ln"></div><div class="lbl">Übernahmeort</div></div>
-        <div class="field"><div class="ln"></div><div class="lbl">Datum</div></div>
-        <div class="field"><div class="ln"></div><div class="lbl">Uhrzeit</div></div>
-      </div>
+      <div class="ho-divider"></div>
 
       <div class="ho-sigs">
         <div class="col">
           <div class="heading">Bevollmächtigter</div>
           <div class="subnote">Name des Abholers (in Druckschrift)</div>
-          <div class="name">${esc(contract.renter_name)}</div>
+          <div class="name"></div>
           <div class="line">Unterschrift des Abholers</div>
         </div>
         <div class="col">
           <div class="heading">Bevollmächtigter / Kunde</div>
           <div class="subnote">Name des Bevollmächtigten (in Druckschrift)</div>
-          <div class="name">${esc(org.name)}</div>
+          <div class="name"></div>
           <div class="line">Unterschrift des Bevollmächtigten</div>
         </div>
+      </div>
+
+      <div class="ho-foot-fields">
+        <div><div class="ln"></div><div class="lbl">Übernahmeort</div></div>
+        <div><div class="ln"></div><div class="lbl">Datum</div><span class="ln-uhr"></span><div class="lbl">Uhrzeit</div></div>
       </div>
     </div>
   `;
 };
+
+// Helper für BVR-Reihe
+const bvrRow = (): string => `
+  <span class="check-label">B</span>${checkbox()}
+  <span class="check-label" style="margin-left:1.5mm">V</span>${checkbox()}
+  <span class="check-label" style="margin-left:1.5mm">R</span>${checkbox()}
+`;
 
 // =====================================================
 // Public
