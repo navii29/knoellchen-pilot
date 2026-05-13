@@ -2,6 +2,8 @@
 // contract-pdf.ts zu einem A4-PDF gerendert wird. Inline-CSS, keine
 // externen Assets. Logo + Signatur kommen als Data-URI rein.
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type {
   Contract,
   ContractInsuranceType,
@@ -123,6 +125,20 @@ const CSS = `
     min-height: 263mm;
   }
   .page:last-child { page-break-after: auto; }
+
+  /* Seite, die nur ein Vollbild zeigt (Übergabeprotokoll-Template) */
+  .page.page-image {
+    padding: 0;
+    margin: 0;
+    display: block;
+    min-height: 0;
+  }
+  .page.page-image img {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin: 0;
+  }
 
   .logo { text-align: center; padding-top: 1mm; padding-bottom: 3mm; }
   .logo.left { text-align: left; }
@@ -332,50 +348,6 @@ const CSS = `
 
 `;
 
-// =====================================================
-// SVG: Sedan-Seitenansicht mit Damage-Boxen — wie Ollies Original
-// =====================================================
-const carSvg = (): string => `
-  <svg viewBox="0 0 200 90" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-    <!-- Damage-Boxen oben -->
-    <g fill="none" stroke="#1e1e1e" stroke-width="0.4">
-      ${Array.from({ length: 8 }, (_, i) => `<rect x="${10 + i * 23}" y="0" width="6" height="6" />`).join("")}
-      ${Array.from({ length: 8 }, (_, i) => `<rect x="${10 + i * 23}" y="84" width="6" height="6" />`).join("")}
-      <rect x="0" y="42" width="6" height="6" />
-      <rect x="0" y="58" width="6" height="6" />
-      <rect x="194" y="42" width="6" height="6" />
-      <rect x="194" y="58" width="6" height="6" />
-    </g>
-
-    <!-- Räder (zwei dunkle Kreise, weiß im Kern) -->
-    <g>
-      <circle cx="48" cy="68" r="9" fill="#1e1e1e" />
-      <circle cx="48" cy="68" r="4" fill="#fff" />
-      <circle cx="152" cy="68" r="9" fill="#1e1e1e" />
-      <circle cx="152" cy="68" r="4" fill="#fff" />
-    </g>
-
-    <!-- Karosserie-Profil: Unterboden, Hauben-/Kofferraumlinie, Dach -->
-    <g fill="none" stroke="#1e1e1e" stroke-width="0.8">
-      <!-- Unterboden + Stoßstangen -->
-      <path d="M 14 68 L 22 60 L 30 58 L 36 58
-               M 60 58 L 140 58
-               M 164 58 L 170 58 L 178 60 L 186 68" />
-      <!-- Front-Schweller bis Heck-Schweller -->
-      <path d="M 14 68 L 186 68" />
-      <!-- Motorhaube → Windschutzscheibe → Dach → Heckscheibe → Kofferraum -->
-      <path d="M 22 60 L 65 60 L 78 38 L 130 38 L 145 60 L 178 60" />
-    </g>
-
-    <!-- Fenster (Trennlinien) und B-Säule -->
-    <g fill="none" stroke="#1e1e1e" stroke-width="0.5">
-      <line x1="100" y1="38" x2="100" y2="60" />
-      <!-- Türgriffe -->
-      <line x1="80" y1="48" x2="92" y2="48" stroke="#999" stroke-width="0.4" />
-      <line x1="108" y1="48" x2="120" y2="48" stroke="#999" stroke-width="0.4" />
-    </g>
-  </svg>
-`;
 
 // =====================================================
 // Wiederverwendbare Bausteine
@@ -413,9 +385,6 @@ const logoBlock = (
 
 const checkbox = (checked = false): string =>
   `<span class="check${checked ? " checked" : ""}"></span>`;
-
-const jaNein = (): string =>
-  `<span class="check-label">ja</span>${checkbox()}<span class="check-label" style="margin-left:2mm">nein</span>${checkbox()}`;
 
 const sigBlock = (
   date: string,
@@ -715,164 +684,37 @@ const renderPage5 = (
   `;
 };
 
-const renderPage6 = (org: Organization, contract: Contract): string => {
-  const dateStr = fmtDate(today());
-
-  // 5 Felder werden bewusst leer gelassen — werden bei Übergabe per Hand
-  // ausgefüllt: Leasingnehmer, Kennzeichen, Tachostand, Herst./Typ, Fzg.-Ident-Nr.
-
-  return `
-    <div class="page">
-      <div class="ho-header"></div>
-      <div class="ho-title">ÜBERGABEPROTOKOLL</div>
-
-      <table class="ho-meta">
-        <tr>
-          <td class="lbl">Vertrags-Nr.:</td>
-          <td class="val">${esc(contract.contract_nr)} / ${esc(dateStr)}</td>
-          <td class="lbl" style="padding-left:5mm">Tachostand bei Übernahme:</td>
-          <td class="val"></td>
-        </tr>
-        <tr>
-          <td class="lbl">Leasingnehmer:</td>
-          <td class="val"></td>
-          <td class="lbl" style="padding-left:5mm">Kennzeichen:</td>
-          <td class="val"></td>
-        </tr>
-        <tr>
-          <td class="lbl">PLZ, Ort:</td>
-          <td class="val"></td>
-          <td class="lbl" style="padding-left:5mm">Herst., Typ:</td>
-          <td class="val"></td>
-        </tr>
-        <tr>
-          <td class="lbl">Nutzer:</td>
-          <td class="val"></td>
-          <td class="lbl" style="padding-left:5mm">Fzg.-Ident-Nr.:</td>
-          <td class="val"></td>
-        </tr>
-      </table>
-
-      <div class="ho-intro">
-        Der Fahrzeug-Abholer hat die Aufgabe, das o. g. Fahrzeug mit allen zugehörigen Schlüsseln, Unterlagen und Zubehör in Empfang zu nehmen. Er ist beauftragt, den Zustand des Fahrzeuges auf diesem Protokoll zu dokumentieren. Der Abholer ist nicht autorisiert Kostenbeträge festzulegen oder zu beurteilen, ob die Beschädigungen am Fahrzeug laufleistungsanalog sind.
-      </div>
-
-      <div style="display:flex;align-items:center">
-        <span class="ho-fzg-label">Fahrzeugbild</span>
-        <span class="ho-legend">B = Beschädigung &nbsp;&nbsp; D = Delle &nbsp;&nbsp; K = Kratzer &nbsp;&nbsp; R = Rost &nbsp;&nbsp; S = Steinschlag/Rissbildung</span>
-      </div>
-
-      <div class="car-row">
-        ${carSvg()}
-        ${carSvg()}
-      </div>
-
-      <div class="erschwert">
-        <span class="lbl">Erschwerte Übernahmebedingungen durch</span>
-        ${["Verschmutzung", "Regen/Nässe", "Dunkelheit", "Parkhaus", "Schnee/Eis"]
-          .map((c) => `<span class="item">${checkbox()}<span>${esc(c)}</span></span>`)
-          .join("")}
-      </div>
-
-      <div class="ho-section-title">Technik-Check</div>
-      <div class="ho-subnote">Ist dem Übergebenden Folgendes bekannt?</div>
-      <div class="tech-check">
-        <div class="row"><span class="name">Unfall-Vorschäden</span><span class="opts">${jaNein()}</span></div>
-        <div class="row"><span class="name">Motorölstand in Ordnung</span><span class="opts">${jaNein()}</span></div>
-        <div class="row"><span class="name">Technische Mängel</span><span class="opts">${jaNein()}</span></div>
-        <div class="row"><span class="name">Kühlmittelstand in Ordnung</span><span class="opts">${jaNein()}</span></div>
-        <div class="row"><span class="name">Austauschmotor</span><span class="opts">${jaNein()}</span></div>
-        <div class="row"><span class="name">Tankfüllung</span><span class="opts">
-          <span class="check-label">leer</span>${checkbox()}
-          <span class="check-label" style="margin-left:1.5mm">1/4</span>${checkbox()}
-          <span class="check-label" style="margin-left:1.5mm">1/2</span>${checkbox()}
-          <span class="check-label" style="margin-left:1.5mm">3/4</span>${checkbox()}
-          <span class="check-label" style="margin-left:1.5mm">voll</span>${checkbox()}
-        </span></div>
-        <div class="row"><span class="name">Austauschgetriebe</span><span class="opts">${jaNein()}</span></div>
-        <div class="row"><span class="name">Warnanzeigen aktiv</span><span class="opts">${jaNein()}<span style="margin-left:2mm">Welche?</span><span style="display:inline-block;border-bottom:0.4pt solid #888;min-width:18mm;margin-left:1mm">&nbsp;</span></span></div>
-        <div class="row"><span class="name">Austauschtacho</span><span class="opts">${jaNein()}</span></div>
-        <div class="row"><span class="name">Letzter Kundendienst bei Km</span><span class="opts">
-          <span style="display:inline-block;border-bottom:0.4pt solid #888;min-width:14mm">&nbsp;</span>
-          <span style="margin-left:2mm">Datum</span>
-          <span style="display:inline-block;border-bottom:0.4pt solid #888;min-width:14mm;margin-left:1mm">&nbsp;</span>
-        </span></div>
-      </div>
-
-      <div class="ho-section-title">Bereifung</div>
-      <div class="bereifung">
-        <span>vorhanden</span>
-        <span class="item">${checkbox()}<span>Sommerreifen</span></span>
-        <span class="item">${checkbox()}<span>auf Stahlfelgen</span></span>
-        <span class="item">${checkbox()}<span>auf Alufelgen</span></span>
-        <span class="tread">Profiltiefe vl ____ &nbsp; vr ____ &nbsp; hl ____ &nbsp; hr ____ &nbsp; Res ____</span>
-        <span>vorhanden</span>
-        <span class="item">${checkbox()}<span>Winterreifen</span></span>
-        <span class="item">${checkbox()}<span>auf Stahlfelgen</span></span>
-        <span class="item">${checkbox()}<span>auf Alufelgen</span></span>
-        <span class="tread">Profiltiefe vl ____ &nbsp; vr ____ &nbsp; hl ____ &nbsp; hr ____</span>
-      </div>
-
-      <div class="ho-section-title">Innenraum <span style="font-weight:400;font-size:7.5pt;color:#555;margin-left:2mm">B = Beschädigung &nbsp; V = Verschmutzung &nbsp; R = Riss</span></div>
-      <div class="innenraum">
-        <div class="row"><span class="name">Vordersitze</span><span class="bvr">${bvrRow()}</span></div>
-        <div class="row"><span class="name">Rücksitze</span><span class="bvr">${bvrRow()}<span style="margin-left:4mm">Anzahl Sitze ____</span></span></div>
-        <div class="row"><span class="name">Teppichboden</span><span class="bvr">${bvrRow()}</span></div>
-        <div class="row"><span class="name">Dachhimmel</span><span class="bvr">${bvrRow()}</span></div>
-        <div class="row"><span class="name">Kofferraum/Ladefläche</span><span class="bvr">${bvrRow()}</span></div>
-        <div class="row"><span class="name">Armaturentafel/Mittelkonsole</span><span class="bvr">${bvrRow()}</span></div>
-      </div>
-
-      <div class="ho-section-title">Dokumente, Ausstattung, Anzeigen</div>
-      <div class="dokumente-3">
-        <div class="row"><span class="name">Fahrzeugschein oder ZB Teil I</span><span class="opts">${jaNein()}</span></div>
-        <div class="row"><span class="name">Kundendienst-/Serviceheft</span><span class="opts">${jaNein()}</span></div>
-        <div class="row"><span class="name">Gepäckraumabdeckung</span><span class="opts">${jaNein()}</span></div>
-        <div class="row"><span class="name">EWG Übereinst.erklärung/CoC</span><span class="opts">${jaNein()}</span></div>
-        <div class="row"><span class="name">Bedienungsanleitung</span><span class="opts">${jaNein()}</span></div>
-        <div class="row"><span class="name">Reserverad/Kompressor</span><span class="opts">${jaNein()}</span></div>
-        <div class="row"><span class="name">Letzte HU/AU-Bescheinigung</span><span class="opts">${jaNein()}</span></div>
-        <div class="row"><span class="name">Original-/Navigationsgerät</span><span class="opts">${jaNein()}</span></div>
-        <div class="row"><span class="name">Bordwerkzeug</span><span class="opts">${jaNein()}</span></div>
-        <div class="row"><span class="name">gültig bis: <span style="display:inline-block;border-bottom:0.4pt solid #888;min-width:20mm;margin-left:1mm">&nbsp;</span></span><span></span></div>
-        <div class="row"><span class="name">Original-Navigations-DVD/CD</span><span class="opts">${jaNein()}</span></div>
-        <div class="row"><span class="name">Anhängerkupplung/Schlüssel</span><span class="opts">${jaNein()}</span></div>
-        <div class="row"><span class="name">Radio</span><span class="opts">${jaNein()}<span style="margin-left:2mm">Code-Card, Nr.</span><span style="display:inline-block;border-bottom:0.4pt solid #888;min-width:14mm;margin-left:1mm">&nbsp;</span></span></div>
-        <div class="row"><span class="name">Anzahl, Marken:</span><span class="opts"><span style="display:inline-block;border-bottom:0.4pt solid #888;min-width:24mm">&nbsp;</span></span></div>
-        <div class="row"><span class="name">Anzahl Schlüssel:</span><span class="opts"><span style="display:inline-block;border-bottom:0.4pt solid #888;min-width:14mm">&nbsp;</span></span></div>
-      </div>
-
-      <div class="ho-divider"></div>
-
-      <div class="ho-sigs">
-        <div class="col">
-          <div class="heading">Bevollmächtigter</div>
-          <div class="subnote">Name des Abholers (in Druckschrift)</div>
-          <div class="name"></div>
-          <div class="line">Unterschrift des Abholers</div>
-        </div>
-        <div class="col">
-          <div class="heading">Bevollmächtigter / Kunde</div>
-          <div class="subnote">Name des Bevollmächtigten (in Druckschrift)</div>
-          <div class="name"></div>
-          <div class="line">Unterschrift des Bevollmächtigten</div>
-        </div>
-      </div>
-
-      <div class="ho-foot-fields">
-        <div><div class="ln"></div><div class="lbl">Übernahmeort</div></div>
-        <div><div class="ln"></div><div class="lbl">Datum</div><span class="ln-uhr"></span><div class="lbl">Uhrzeit</div></div>
-      </div>
-    </div>
-  `;
+// Übergabeprotokoll-Template als statisches Image (Ollies Original-Scan mit
+// händisch geweißten Kundendaten). Wird einmal beim Modulladen in Memory
+// gehalten, danach pro Request als Data-URI eingebettet.
+let HANDOVER_TEMPLATE_DATA_URI: string | null = null;
+const loadHandoverTemplate = (): string => {
+  if (HANDOVER_TEMPLATE_DATA_URI) return HANDOVER_TEMPLATE_DATA_URI;
+  try {
+    const path = join(process.cwd(), "src/lib/assets/handover-template.jpg");
+    const buf = readFileSync(path);
+    HANDOVER_TEMPLATE_DATA_URI = `data:image/jpeg;base64,${buf.toString("base64")}`;
+    return HANDOVER_TEMPLATE_DATA_URI;
+  } catch {
+    return "";
+  }
 };
 
-// Helper für BVR-Reihe
-const bvrRow = (): string => `
-  <span class="check-label">B</span>${checkbox()}
-  <span class="check-label" style="margin-left:1.5mm">V</span>${checkbox()}
-  <span class="check-label" style="margin-left:1.5mm">R</span>${checkbox()}
-`;
+const renderPage6 = (org: Organization, contract: Contract): string => {
+  const dateStr = fmtDate(today());
+  void org; void contract; void dateStr;
+  const tplUri = loadHandoverTemplate();
+  if (tplUri) {
+    return `
+      <div class="page page-image">
+        <img src="${tplUri}" alt="Übergabeprotokoll" />
+      </div>
+    `;
+  }
+  // Fallback ohne Template — sollte in Production nie greifen
+  return `<div class="page"><div style="padding:20mm">Übergabeprotokoll-Template fehlt.</div></div>`;
+};
+
 
 // =====================================================
 // Public
