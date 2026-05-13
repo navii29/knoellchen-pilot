@@ -1,0 +1,923 @@
+// HTML-Template für den 6-seitigen Mietvertrag, das von Puppeteer in
+// contract-pdf.ts zu einem A4-PDF gerendert wird. Inline-CSS, keine
+// externen Assets. Logo + Signatur kommen als Data-URI rein.
+
+import type {
+  Contract,
+  ContractInsuranceType,
+  ContractPaymentMethod,
+  Customer,
+  Organization,
+  Vehicle,
+} from "./types";
+import { INSURANCE_TYPE_LABEL, PAYMENT_METHOD_LABEL } from "./types";
+import type { VehicleTire } from "./tires";
+import { fmtDate, fmtEur } from "./utils";
+import { DEFAULT_RENTAL_TERMS } from "./rental-terms";
+
+// =====================================================
+// Hilfsfunktionen
+// =====================================================
+const esc = (s: string | number | null | undefined): string => {
+  if (s == null) return "";
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+};
+
+const fmtNum = (v: number | null | undefined): string =>
+  v == null ? "" : v.toLocaleString("de-DE");
+
+const today = () => new Date().toISOString();
+
+const customerFullName = (c: Customer | null, fallback: string): string => {
+  if (!c) return fallback;
+  const parts = [c.title, c.first_name, c.last_name].filter(Boolean);
+  return parts.length > 0 ? parts.join(" ") : c.last_name || fallback;
+};
+
+const customerStreet = (c: Customer | null, fallback: string | null): string => {
+  if (!c) return fallback ?? "";
+  return [c.street, c.house_nr].filter(Boolean).join(" ");
+};
+
+const vehicleModel = (v: Vehicle | null, fallback: string | null): string => {
+  if (v) {
+    const make = [v.manufacturer, v.model].filter(Boolean).join(" ");
+    if (make) return make;
+    if (v.vehicle_type) return v.vehicle_type;
+  }
+  return fallback ?? "";
+};
+
+const computeDays = (pickup: string, returnDate: string): number => {
+  const a = new Date(pickup);
+  const b = new Date(returnDate);
+  if (isNaN(a.getTime()) || isNaN(b.getTime())) return 0;
+  const ms = b.setHours(0, 0, 0, 0) - a.setHours(0, 0, 0, 0);
+  return Math.max(1, Math.ceil(ms / 86_400_000));
+};
+
+const grossToNet = (gross: number): { net: number; vat: number } => {
+  const net = Math.round((gross / 1.19) * 100) / 100;
+  const vat = Math.round((gross - net) * 100) / 100;
+  return { net, vat };
+};
+
+const dateTimeLabel = (date: string | null, time: string | null): string => {
+  if (!date) return "";
+  const d = fmtDate(date);
+  return time ? `${d}, ${time} Uhr` : d;
+};
+
+// Standard-Sondervereinbarungen (immer auf Seite 3 rechts gelistet)
+const STANDARD_SPECIAL_TERMS = [
+  "Nichtraucherfahrzeug",
+  "Versicherungsschutz bei Diebstahl nur bei Vorhandensein des übergebenen original Fahrzeugschlüssels",
+  "Im Falle einer Unterschlagung haftet der Mieter mit dem ursprünglichen Listenpreis",
+  "Bei einer gewerblichen Miete haftet der Geschäftsführer der Mieterin für sämtliche Schäden, offene Zahlungen oder sonstige Ansprüche selbstschuldnerisch",
+  "Der Mieter verpflichtet sich das Fahrzeug sorgfältig und gewissenhaft zu behandeln, dies bedeutet, dass er das Fahrzeug bei Fahrten im Ausland möglichst ausschließlich in gesicherten Garagen abstellen darf",
+  "Versicherungsschutz nur in den Ländern gemäß Einreisebeschränkung",
+  "Fahrzeugschein im Original übergeben",
+  "Glasschäden fallen ausdrücklich in die Haftung des Mieters",
+  "Der Mieter trägt die Pflicht zur Verwendung von einer der Witterung angepassten Bereifung",
+  "Eine Verlängerung ist nur nach schriftlicher Vereinbarung möglich",
+  "Mit der Verwendung von Launch-Control erlischt die Garantie und der Mieter haftet in vollem Umfang",
+  "Nutzung ausschließlich auf öffentlichen Straßen, keine Rennstrecke (Rennstrecke = Vollhaftung)",
+  "Eine Überlassung/Vermietung an Dritte ist untersagt",
+  "Fahrzeug muss bei Rückgabe gereinigt sein",
+  "Das Führen des Fahrzeuges ist ausschließlich im Vorhandensein der vollen Fahrtauglichkeit erlaubt. Das Führen unter Rauschmitteln ist ausdrücklich untersagt. Bei Missachtung haftet der Mieter in Höhe des vollen Listenpreises",
+  "Der Vermieter behält sich das Recht vor, je nach Verfügbarkeit einen Tausch des Fahrzeuges durchzuführen",
+  "Ich akzeptiere die ALLGEMEINEN VERMIETBEDINGUNGEN, sowie die Geschäftsbedingungen der Kreditkarteninstitute und verbundener Partner, Übergabeprotokoll sind Bestandteile des Mietvertrages",
+  "Ich stimme zu, alle Kosten (Mietpreis, Zusatzleistungen, Kaution, Schäden, etc.) die durch diesen Vertrag entstehen über die oben aufgeführte Kreditkarte zu garantieren",
+  "Der Vermieter ist berechtigt auch etwaige Kosten (z.B. Strafzettel, Schäden, Mautkosten, Mehrkilometer, Zusatzleistungen etc.) erhebliche Zeit nach der Rückgabe des Fahrzeuges über die Kreditkarte des Mieters einzuziehen",
+  "Hinweis: Maut nicht im Mietpreis inkludiert",
+  "Der Mieter leistet eine Sicherheit für die vertragsmäßige Behandlung des Fahrzeuges",
+];
+
+// =====================================================
+// CSS
+// =====================================================
+const CSS = `
+  @page {
+    size: A4;
+    margin: 14mm 16mm 16mm 16mm;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    font-family: 'Helvetica Neue', 'Helvetica', Arial, sans-serif;
+    color: #1e1e1e;
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body { font-size: 8.5pt; line-height: 1.3; }
+  .page {
+    page-break-after: always;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 263mm;
+  }
+  .page:last-child { page-break-after: auto; }
+
+  .logo { text-align: center; padding-top: 1mm; padding-bottom: 3mm; }
+  .logo img { max-height: 20mm; max-width: 90mm; object-fit: contain; }
+  .logo-fallback {
+    color: #0d9488;
+    font-size: 22pt;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /* ---------- Seite 1 ---------- */
+  .contract-meta { margin-top: 1mm; font-size: 9.5pt; }
+  .contract-meta b { font-weight: 700; margin-right: 10mm; }
+  .subtitle { margin-top: 0.5mm; font-size: 8.5pt; color: #1e1e1e; }
+
+  .form { width: 100%; border-collapse: collapse; margin-top: 3mm; }
+  .form tr td { padding: 0.55mm 0; vertical-align: top; font-size: 8.5pt; line-height: 1.25; }
+  .form td.label { width: 55mm; color: #1e1e1e; }
+  .form td.value { color: #1e1e1e; }
+  .form td.right { text-align: right; padding-left: 4mm; white-space: nowrap; }
+  .form .gap td { padding-top: 1.8mm; padding-bottom: 0; }
+
+  .sigs { margin-top: auto; padding-top: 4mm; }
+  .sigs .row { display: flex; justify-content: space-between; gap: 10mm; }
+  .sig-block { flex: 1; }
+  .sig-block .date { font-size: 9pt; padding-bottom: 1mm; min-height: 5mm; text-align: center; }
+  .sig-block .line { border-top: 0.5pt solid #888; height: 0; margin-bottom: 1.5mm; }
+  .sig-block .name { font-size: 8.5pt; }
+  .sig-block .signature-img { height: 13mm; display: flex; align-items: flex-end; justify-content: center; }
+  .sig-block .signature-img img { max-height: 13mm; max-width: 60mm; }
+
+  /* ---------- Seite 2/3 AGB ---------- */
+  .agb-title {
+    font-style: italic;
+    font-weight: 700;
+    font-size: 13pt;
+    text-align: center;
+    margin: 0 0 4mm 0;
+  }
+  .agb-cols {
+    column-count: 2;
+    column-gap: 6mm;
+    font-size: 7.5pt;
+    line-height: 1.35;
+    text-align: justify;
+  }
+  .agb-cols p { margin: 0 0 1.5mm 0; break-inside: avoid; }
+  .agb-cols p strong { display: block; font-weight: 700; margin-bottom: 0.3mm; }
+
+  .special-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6mm;
+    font-size: 7.5pt;
+    line-height: 1.4;
+  }
+  .special-grid .heading { font-weight: 700; margin-bottom: 1.5mm; }
+  .special-list { margin: 0; padding-left: 4.5mm; }
+  .special-list li { margin-bottom: 1mm; }
+
+  /* ---------- Seite 4 Datenschutz ---------- */
+  .privacy-title {
+    font-weight: 700;
+    font-size: 14pt;
+    text-align: center;
+    margin: 4mm 0 6mm 0;
+  }
+  .privacy-intro { font-size: 9pt; margin-bottom: 6mm; }
+  .privacy-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5mm 8mm;
+    font-size: 9pt;
+    margin-bottom: 6mm;
+  }
+  .privacy-grid .row { display: flex; gap: 3mm; align-items: baseline; }
+  .privacy-grid .row .lbl { font-weight: 600; min-width: 22mm; }
+  .privacy-grid .row .val {
+    flex: 1;
+    border-bottom: 0.4pt solid #aaa;
+    padding-bottom: 0.5mm;
+    min-height: 4.5mm;
+  }
+  .privacy-body { font-size: 9pt; margin-bottom: 4mm; }
+  .privacy-bullets { font-size: 9pt; margin: 1mm 0 4mm 0; padding-left: 6mm; }
+  .privacy-bullets li { margin-bottom: 0.6mm; }
+
+  /* ---------- Seite 5 AGB-Bestätigung ---------- */
+  .conf-title { font-weight: 700; font-size: 11.5pt; margin: 12mm 0 8mm 0; }
+  .conf-body { font-size: 10pt; margin-bottom: 35mm; }
+  .conf-field { display: flex; flex-direction: column; max-width: 90mm; margin-bottom: 18mm; }
+  .conf-field .val { min-height: 5mm; padding-bottom: 1mm; border-bottom: 0.5pt solid #888; font-size: 10pt; }
+  .conf-field .lbl { font-size: 8pt; color: #666; margin-top: 1mm; }
+  .conf-bottom { display: flex; justify-content: space-between; gap: 10mm; }
+  .conf-bottom .field { flex: 1; }
+  .conf-bottom .field .val { min-height: 5mm; padding-bottom: 1mm; border-bottom: 0.5pt solid #888; font-size: 10pt; }
+  .conf-bottom .field .lbl { font-size: 8pt; color: #666; margin-top: 1mm; }
+
+  /* ---------- Seite 6 Übergabeprotokoll ---------- */
+  .ho-header { border-top: 1.2pt solid #cc2828; padding-top: 1mm; margin-bottom: 4mm; }
+  .ho-title {
+    text-align: right;
+    font-weight: 700;
+    font-size: 17pt;
+    letter-spacing: 0.02em;
+  }
+  .ho-meta { width: 100%; border-collapse: collapse; margin-bottom: 3mm; }
+  .ho-meta td { font-size: 8.5pt; padding: 1mm 0; vertical-align: bottom; }
+  .ho-meta .lbl { font-weight: 700; padding-right: 2mm; width: 30mm; }
+  .ho-meta .val {
+    border-bottom: 0.4pt solid #bbb;
+    min-width: 50mm;
+    padding-bottom: 0.5mm;
+  }
+  .ho-intro { font-size: 7pt; color: #555; margin-bottom: 3mm; }
+
+  .ho-fzg-label { font-weight: 700; font-size: 9pt; margin-right: 3mm; }
+  .ho-legend { font-size: 7.5pt; color: #333; }
+
+  .car-row { display: flex; gap: 4mm; margin: 1mm 0 4mm 0; }
+  .car-row svg { flex: 1; height: 36mm; }
+
+  .ho-section-title { font-weight: 700; font-size: 9.5pt; margin: 3mm 0 1mm 0; }
+  .ho-subnote { font-size: 7pt; color: #555; margin-bottom: 1mm; }
+
+  .erschwert { display: flex; align-items: center; gap: 4mm; font-size: 8pt; }
+  .erschwert .lbl { font-weight: 700; }
+  .erschwert .item { display: inline-flex; align-items: center; gap: 1.2mm; }
+
+  .tech-check { display: grid; grid-template-columns: 1fr 1fr; gap: 1mm 6mm; font-size: 8pt; }
+  .tech-check .row { display: flex; align-items: center; }
+  .tech-check .row .name { flex: 1; }
+  .tech-check .row .opts { display: flex; gap: 1.5mm; align-items: center; }
+
+  .bereifung { display: grid; grid-template-columns: 15mm auto auto auto 1fr; gap: 1mm 3mm; font-size: 8pt; align-items: center; }
+  .bereifung .row { display: contents; }
+  .bereifung .item { display: inline-flex; align-items: center; gap: 1.2mm; }
+  .bereifung .tread { font-size: 7.5pt; white-space: nowrap; }
+
+  .innenraum { display: grid; grid-template-columns: 1fr 1fr; gap: 1mm 6mm; font-size: 8pt; }
+  .innenraum .row { display: flex; align-items: center; gap: 2mm; }
+  .innenraum .row .name { flex: 1; }
+  .innenraum .row .bvr { display: inline-flex; gap: 2.5mm; }
+
+  .dokumente { display: grid; grid-template-columns: 1fr 1fr; gap: 1mm 6mm; font-size: 8pt; }
+  .dokumente .row { display: flex; align-items: center; }
+  .dokumente .row .name { flex: 1; }
+
+  .check {
+    display: inline-block;
+    width: 3mm;
+    height: 3mm;
+    border: 0.5pt solid #333;
+    background: #fff;
+    vertical-align: -0.4mm;
+  }
+  .check.checked { background: #1e1e1e; }
+  .check-label { font-size: 8pt; }
+
+  .ho-bottom {
+    margin-top: 4mm;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0 5mm;
+  }
+  .ho-bottom .field { display: flex; flex-direction: column; }
+  .ho-bottom .field .ln { border-top: 0.4pt solid #888; padding-top: 1mm; }
+  .ho-bottom .field .lbl { font-size: 7.5pt; color: #666; }
+
+  .ho-sigs { display: flex; gap: 10mm; margin-top: 6mm; }
+  .ho-sigs .col { flex: 1; }
+  .ho-sigs .heading { font-weight: 700; font-size: 9.5pt; margin-bottom: 1mm; }
+  .ho-sigs .subnote { font-size: 7.5pt; color: #666; margin-bottom: 1mm; }
+  .ho-sigs .name { font-size: 9pt; margin-bottom: 1.5mm; min-height: 5mm; }
+  .ho-sigs .line { border-top: 0.5pt solid #888; padding-top: 1mm; font-size: 7.5pt; color: #666; }
+
+`;
+
+// =====================================================
+// SVG: Sedan-Draufsicht mit Damage-Boxen
+// =====================================================
+const carSvg = (): string => `
+  <svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+    <g fill="none" stroke="#1e1e1e" stroke-width="0.4">
+      <!-- Damage-Boxen oben -->
+      ${Array.from({ length: 6 }, (_, i) => {
+        const x = 18 + i * 28;
+        return `<rect x="${x}" y="0" width="6" height="6" />`;
+      }).join("")}
+      <!-- Damage-Boxen unten -->
+      ${Array.from({ length: 6 }, (_, i) => {
+        const x = 18 + i * 28;
+        return `<rect x="${x}" y="74" width="6" height="6" />`;
+      }).join("")}
+      <!-- Damage-Boxen links -->
+      ${Array.from({ length: 3 }, (_, i) => {
+        const y = 14 + i * 18;
+        return `<rect x="0" y="${y}" width="6" height="6" />`;
+      }).join("")}
+      <!-- Damage-Boxen rechts -->
+      ${Array.from({ length: 3 }, (_, i) => {
+        const y = 14 + i * 18;
+        return `<rect x="194" y="${y}" width="6" height="6" />`;
+      }).join("")}
+    </g>
+
+    <!-- Räder (4 schwarze Rechtecke außerhalb der Karosserie) -->
+    <g fill="#1e1e1e">
+      <rect x="52" y="9" width="9" height="11" rx="1" />
+      <rect x="52" y="60" width="9" height="11" rx="1" />
+      <rect x="138" y="9" width="9" height="11" rx="1" />
+      <rect x="138" y="60" width="9" height="11" rx="1" />
+    </g>
+
+    <!-- Karosserie -->
+    <g fill="#fff" stroke="#1e1e1e" stroke-width="0.7">
+      <rect x="10" y="12" width="180" height="56" rx="10" ry="10" />
+    </g>
+
+    <!-- Innen-Konturen (Motorhaube, Windschutzscheibe, Dach, Heckscheibe, Kofferraum) -->
+    <g fill="none" stroke="#1e1e1e" stroke-width="0.5">
+      <!-- Motorhauben-Trennlinie -->
+      <line x1="55" y1="12" x2="55" y2="68" />
+      <!-- Windschutzscheibe -->
+      <line x1="55" y1="12" x2="68" y2="22" />
+      <line x1="55" y1="68" x2="68" y2="58" />
+      <!-- Dach-Box -->
+      <line x1="68" y1="22" x2="132" y2="22" />
+      <line x1="68" y1="58" x2="132" y2="58" />
+      <!-- B-Säule -->
+      <line x1="100" y1="22" x2="100" y2="58" stroke-width="0.4" />
+      <!-- Heckscheibe -->
+      <line x1="132" y1="22" x2="145" y2="12" />
+      <line x1="132" y1="58" x2="145" y2="68" />
+      <!-- Kofferraum-Trennlinie -->
+      <line x1="145" y1="12" x2="145" y2="68" />
+    </g>
+
+    <!-- Türgriffe (kleine Striche) -->
+    <g stroke="#999" stroke-width="0.4">
+      <line x1="72" y1="17" x2="80" y2="17" />
+      <line x1="72" y1="63" x2="80" y2="63" />
+      <line x1="104" y1="17" x2="112" y2="17" />
+      <line x1="104" y1="63" x2="112" y2="63" />
+    </g>
+
+    <!-- Scheinwerfer + Rücklichter -->
+    <g fill="none" stroke="#1e1e1e" stroke-width="0.4">
+      <ellipse cx="14" cy="22" rx="2" ry="4" />
+      <ellipse cx="14" cy="58" rx="2" ry="4" />
+      <ellipse cx="186" cy="22" rx="2" ry="4" />
+      <ellipse cx="186" cy="58" rx="2" ry="4" />
+    </g>
+  </svg>
+`;
+
+// =====================================================
+// Wiederverwendbare Bausteine
+// =====================================================
+const formRow = (
+  label: string,
+  value: string,
+  rightValue?: string
+): string => {
+  if (rightValue) {
+    return `<tr>
+      <td class="label">${esc(label)}</td>
+      <td class="value">${esc(value)}</td>
+      <td class="right">${esc(rightValue)}</td>
+    </tr>`;
+  }
+  return `<tr>
+    <td class="label">${esc(label)}</td>
+    <td class="value" colspan="2">${esc(value)}</td>
+  </tr>`;
+};
+
+const gapRow = (): string => `<tr class="gap"><td colspan="3"></td></tr>`;
+
+const logoBlock = (logoDataUri: string | null, orgName: string): string =>
+  logoDataUri
+    ? `<div class="logo"><img src="${logoDataUri}" alt="${esc(orgName)}" /></div>`
+    : `<div class="logo"><div class="logo-fallback">${esc(orgName)}</div></div>`;
+
+const checkbox = (checked = false): string =>
+  `<span class="check${checked ? " checked" : ""}"></span>`;
+
+const jaNein = (): string =>
+  `<span class="check-label">ja</span>${checkbox()}<span class="check-label" style="margin-left:2mm">nein</span>${checkbox()}`;
+
+const sigBlock = (
+  date: string,
+  name: string,
+  signatureImg: string | null
+): string => `
+  <div class="sig-block">
+    ${signatureImg ? `<div class="signature-img"><img src="${signatureImg}" alt="Signatur" /></div>` : ""}
+    <div class="date">${esc(date)}</div>
+    <div class="line"></div>
+    <div class="name">${esc(name)}</div>
+  </div>
+`;
+
+// =====================================================
+// Seiten
+// =====================================================
+const renderPage1 = (
+  org: Organization,
+  contract: Contract,
+  customer: Customer | null,
+  vehicle: Vehicle | null,
+  logoDataUri: string | null,
+  signaturePngBase64: string | null
+): string => {
+  const dateStr = fmtDate(today());
+  const fullName = customerFullName(customer, contract.renter_name);
+  const street = customerStreet(customer, contract.renter_address);
+  const days = computeDays(contract.pickup_date, contract.return_date);
+  const kmInclusive =
+    contract.km_limit ??
+    (vehicle?.inclusive_km_month
+      ? Math.round((vehicle.inclusive_km_month * days) / 30)
+      : null);
+  const returnLocation =
+    [org.street, [org.zip, org.city].filter(Boolean).join(" ")]
+      .filter(Boolean)
+      .join(", ") || "";
+
+  const gross =
+    contract.total_amount != null
+      ? Number(contract.total_amount)
+      : contract.daily_rate != null
+      ? Number(contract.daily_rate) * days
+      : 0;
+  const { net: priceNet, vat: priceVat } = grossToNet(gross);
+  const paymentLabel =
+    contract.payment_method != null
+      ? PAYMENT_METHOD_LABEL[contract.payment_method as ContractPaymentMethod]
+      : "—";
+  const insBase =
+    contract.insurance_type != null
+      ? INSURANCE_TYPE_LABEL[contract.insurance_type as ContractInsuranceType]
+      : INSURANCE_TYPE_LABEL.full;
+  const insRight =
+    contract.insurance_deductible != null
+      ? `${fmtEur(Number(contract.insurance_deductible))} SB`
+      : "";
+
+  const cityLabel = org.city?.trim() ?? "";
+  const cityDate = cityLabel ? `${cityLabel}, ${dateStr}` : dateStr;
+
+  return `
+    <div class="page">
+      ${logoBlock(logoDataUri, org.name)}
+      <div class="contract-meta">
+        <b>Mietvertrag-Nr.:</b>${esc(contract.contract_nr)} / ${esc(dateStr)}
+      </div>
+      <div class="subtitle">Langzeitmiete/Dauermiete/Langzeitüberlassung</div>
+
+      <table class="form">
+        ${formRow("Mieter - Name, Vorname:", fullName)}
+        ${formRow("Straße:", street)}
+        ${formRow("Postleitzahl:", customer?.zip ?? "")}
+        ${formRow("Ort:", customer?.city ?? "")}
+        ${formRow("Land:", customer?.country ?? "")}
+        ${formRow("Telefonnummer:", customer?.phone ?? contract.renter_phone ?? "")}
+        ${formRow("E-Mail:", customer?.email ?? contract.renter_email ?? "")}
+        ${gapRow()}
+        ${formRow("Fahrer:", fullName)}
+        ${formRow("Führerschein-Nr.:", customer?.license_nr ?? contract.renter_license_nr ?? "")}
+        ${formRow("Ausweisnummer:", customer?.id_card_nr ?? "")}
+        ${formRow("Fahrer 2:", contract.driver2_name ?? "")}
+        ${formRow("Führerschein-Nr. Fahrer 2:", contract.driver2_license ?? "")}
+        ${gapRow()}
+        ${formRow("Mietobjekt:", vehicleModel(vehicle, contract.vehicle_type))}
+        ${formRow("Leistung:", vehicle?.power_ps != null ? `${vehicle.power_ps} PS` : "")}
+        ${formRow("Treibstoff:", vehicle?.fuel_type ?? "")}
+        ${formRow("FIN:", vehicle?.fin_number ?? "")}
+        ${formRow("Amtl. Kennzeichen:", contract.plate)}
+        ${formRow("Zubehör:", vehicle?.accessories ?? "")}
+        ${gapRow()}
+        ${formRow("Lieferkosten:", fmtEur(Number(contract.delivery_cost ?? 0)))}
+        ${formRow("Abholkosten:", fmtEur(Number(contract.pickup_cost ?? 0)))}
+        ${formRow("Fahrzeugschlüssel:", `${contract.keys_count ?? 1} Fahrzeugschlüssel`)}
+        ${formRow("Schäden bei Übergabe:", contract.damages_at_handover ?? "Keine")}
+        ${formRow("KM-Stand bei Übergabe:", contract.km_pickup != null ? `${fmtNum(contract.km_pickup)} Km` : "")}
+        ${formRow("Tankfüllstand bei Übergabe:", contract.fuel_level_pickup ?? "")}
+        ${formRow("Übergabe an Mieter:", dateTimeLabel(contract.pickup_date, contract.pickup_time))}
+        ${formRow("Mietdauer:", `${days} ${days === 1 ? "Tag" : "Tage"}`)}
+        ${formRow("Rückgabe an Vermieter:", dateTimeLabel(contract.return_date, contract.return_time))}
+        ${formRow("Rückgabeort:", returnLocation)}
+        ${formRow("Vereinbarte Laufleistung / KM:", kmInclusive != null ? `${fmtNum(kmInclusive)} Km` : "")}
+        ${gapRow()}
+        ${formRow("Vertragsbedingungen:", `AGB vom ${dateStr}`)}
+        ${formRow("Preis Zusatztage:", contract.daily_rate != null ? fmtEur(Number(contract.daily_rate)) : "")}
+        ${formRow("Sondervereinbarungen:", contract.special_terms ?? "—")}
+        ${formRow("Einzelmietpreis netto:", gross > 0 ? fmtEur(priceNet) : "")}
+        ${formRow("zzgl. 19% MwSt.:", gross > 0 ? fmtEur(priceVat) : "")}
+        ${formRow("Einzelmietpreis brutto:", gross > 0 ? fmtEur(gross) : "")}
+        ${formRow("Zahlungsart:", paymentLabel)}
+        ${formRow("Kaution:", contract.deposit != null ? fmtEur(Number(contract.deposit)) : "")}
+        ${formRow("Versicherung:", insBase, insRight)}
+        ${formRow("Preis Mehrkilometer in Euro:", vehicle?.extra_km_price != null ? fmtEur(Number(vehicle.extra_km_price)) : "")}
+      </table>
+
+      <div class="sigs">
+        <div class="row">
+          ${sigBlock(cityDate, fullName, signaturePngBase64)}
+          ${sigBlock(cityDate, `Vermieter - ${org.name}`, null)}
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+// AGB-Text in HTML-Paragraphen umwandeln. Jeder Block: heading line (fett),
+// danach optional rest. Doppelte Newlines trennen Blöcke.
+const agbHtml = (terms: string): string => {
+  const paragraphs = terms.trim().split(/\n\s*\n/);
+  return paragraphs
+    .map((p) => {
+      const lines = p.split("\n");
+      const heading = lines[0].trim();
+      const rest = lines.slice(1).join(" ").trim();
+      return `<p><strong>${esc(heading)}</strong>${rest ? esc(rest) : ""}</p>`;
+    })
+    .join("");
+};
+
+const renderPage2 = (org: Organization): string => {
+  const terms = org.rental_terms?.trim() || DEFAULT_RENTAL_TERMS.trim();
+  return `
+    <div class="page">
+      <div class="agb-title">ALLGEMEINE VERMIETBEDINGUNGEN ${esc(org.name)}</div>
+      <div class="agb-cols">${agbHtml(terms)}</div>
+    </div>
+  `;
+};
+
+const renderPage3 = (org: Organization, contract: Contract): string => {
+  const dateStr = fmtDate(today());
+  const cityLabel = org.city?.trim() ?? "";
+  const cityDate = cityLabel ? `${cityLabel}, ${dateStr}` : dateStr;
+  const fullName = contract.renter_name;
+  const specText = contract.special_terms?.trim() || "—";
+
+  return `
+    <div class="page">
+      <div class="agb-title">ALLGEMEINE VERMIETBEDINGUNGEN ${esc(org.name)}</div>
+      <div class="special-grid">
+        <div>
+          <div class="heading">Sondervereinbarungen:</div>
+          <div>${esc(specText).replace(/\n/g, "<br/>")}</div>
+        </div>
+        <div>
+          <ol class="special-list">
+            ${STANDARD_SPECIAL_TERMS.map((t) => `<li>${esc(t)}</li>`).join("")}
+          </ol>
+        </div>
+      </div>
+      <div class="sigs">
+        <div class="row">
+          ${sigBlock(cityDate, fullName, null)}
+          ${sigBlock(cityDate, `Vermieter - ${org.name}`, null)}
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+const renderPage4 = (
+  org: Organization,
+  contract: Contract,
+  customer: Customer | null
+): string => {
+  const dateStr = fmtDate(today());
+  const street = customerStreet(customer, contract.renter_address);
+  const zipCity = [customer?.zip, customer?.city].filter(Boolean).join(" ");
+  const email = customer?.email ?? contract.renter_email ?? "";
+  const phone = customer?.phone ?? contract.renter_phone ?? "";
+
+  const bullets = [
+    "Finanzierungsanfragen",
+    "Leasinganfragen",
+    "Kaufverträge",
+    "Angebote",
+    "Kundenbetreuung",
+    "Kundeninformationen",
+    "Werbung",
+    "Mietverträge",
+    "Sonstige vertragliche Unterlagen",
+  ];
+
+  return `
+    <div class="page">
+      <div class="privacy-title">Datenschutzrechtliche Einwilligungserklärung</div>
+      <div class="privacy-intro">
+        Die nachstehende Einwilligungserklärung erfolgt freiwillig und kann jederzeit für die Zukunft geändert oder widerrufen werden.
+      </div>
+
+      <div class="privacy-grid">
+        <div class="row"><div class="lbl">Name:</div><div class="val">${esc(customer?.last_name ?? contract.renter_name)}</div></div>
+        <div class="row"><div class="lbl">Vorname:</div><div class="val">${esc(customer?.first_name ?? "")}</div></div>
+        <div class="row"><div class="lbl">Straße:</div><div class="val">${esc(street)}</div></div>
+        <div class="row"><div class="lbl">PLZ, Ort:</div><div class="val">${esc(zipCity)}</div></div>
+        <div class="row"><div class="lbl">E-Mail:</div><div class="val">${esc(email)}</div></div>
+        <div class="row"><div class="lbl">Telefon:</div><div class="val">${esc(phone)}</div></div>
+        <div class="row"><div class="lbl">Mobilfunk:</div><div class="val">${esc(phone)}</div></div>
+        <div class="row"><div class="lbl">Telefax:</div><div class="val"></div></div>
+      </div>
+
+      <div class="privacy-body">
+        Sämtliche Personen- und Vertragsdaten aus diesem Vertrag und den mit diesem Vertrag zusammenhängenden Verträgen und Vereinbarungen werden zur Erfüllung und Abwicklung der Verträge und Vereinbarungen (z.B. Finanzierung, Mieten, Leasing, Einplanung und Produktion des Fahrzeuges, Sicherstellung des Preisschutzes, Garantieabwicklung, Kauf und Verkauf) verwendet.
+      </div>
+
+      <div class="privacy-body">Unter der Nutzung der Daten ist folgendes zu verstehen:</div>
+      <div class="privacy-body">Schriftliche, elektronische und telefonische Kontaktaufnahme im Rahmen der</div>
+      <ul class="privacy-bullets">
+        ${bullets.map((b) => `<li>${esc(b)}</li>`).join("")}
+      </ul>
+
+      <div class="privacy-body">Ich willige für obige Zwecke in die Kontaktaufnahme über folgende Kontaktwege ein:</div>
+      <div class="privacy-body" style="margin-bottom:1mm">Post, E-Mail, Telefon, Telefax, Whats-App, SMS</div>
+      <div class="privacy-body">nicht gewünschtes bitte streichen.</div>
+
+      <div class="sigs">
+        <div style="display:flex;gap:6mm;align-items:flex-end">
+          <div><span style="font-size:9pt">Datum:</span> <span style="font-size:9pt">${esc(dateStr)}</span></div>
+          <div style="flex:1;display:flex;gap:3mm;align-items:flex-end">
+            <span style="font-size:9pt">Unterschrift:</span>
+            <span style="flex:1;border-bottom:0.5pt solid #888;min-height:5mm"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+const renderPage5 = (
+  org: Organization,
+  contract: Contract,
+  customer: Customer | null,
+  logoDataUri: string | null
+): string => {
+  const dateStr = fmtDate(today());
+  const cityLabel = org.city?.trim() ?? "";
+  const cityDate = cityLabel ? `${cityLabel}, ${dateStr}` : dateStr;
+  const fullName = customerFullName(customer, contract.renter_name);
+
+  return `
+    <div class="page">
+      ${logoBlock(logoDataUri, org.name)}
+      <div class="conf-title">
+        Bestätigung der allgemeinen Vermietbedingungen und Einreisebeschränkungen
+      </div>
+      <div class="conf-body">
+        Hiermit bestätige ich, dass ich die allgemeinen Vermietbedingungen sowie die Einreisebeschränkungen der ${esc(org.name)} vollständig erhalten und gelesen habe und diese vollumfänglich akzeptiere.
+      </div>
+
+      <div class="conf-field">
+        <div class="val">${esc(fullName)}</div>
+        <div class="lbl">Name in Druckbuchstaben</div>
+      </div>
+
+      <div class="conf-bottom">
+        <div class="field">
+          <div class="val">${esc(cityDate)}</div>
+          <div class="lbl">Ort/Datum</div>
+        </div>
+        <div class="field">
+          <div class="val">&nbsp;</div>
+          <div class="lbl">Unterschrift</div>
+        </div>
+      </div>
+
+    </div>
+  `;
+};
+
+const renderPage6 = (
+  org: Organization,
+  contract: Contract,
+  customer: Customer | null,
+  vehicle: Vehicle | null,
+  tires: VehicleTire | null
+): string => {
+  const dateStr = fmtDate(today());
+  const zipCity = [customer?.zip, customer?.city].filter(Boolean).join(" ");
+
+  // Reifen-Profiltiefen aufbereiten
+  const tireType = tires?.type;
+  const summerTread = tireType === "summer" ? tires : null;
+  const winterTread = tireType === "winter" ? tires : null;
+  const treadCell = (t: VehicleTire | null) =>
+    t
+      ? `vl ${t.tread_depth_fl ?? "____"} &nbsp; vr ${t.tread_depth_fr ?? "____"} &nbsp; hl ${t.tread_depth_rl ?? "____"} &nbsp; hr ${t.tread_depth_rr ?? "____"}`
+      : `vl ____ &nbsp; vr ____ &nbsp; hl ____ &nbsp; hr ____`;
+
+  const techRows: Array<[string, string]> = [
+    ["Unfall-Vorschäden", "Motorölstand in Ordnung"],
+    ["Technische Mängel", "Kühlmittelstand in Ordnung"],
+    ["Austauschmotor", "Tankfüllung"],
+    ["Austauschgetriebe", "Warnanzeigen aktiv"],
+    ["Austauschtacho", "Letzter Kundendienst bei Km"],
+  ];
+
+  const interiorRows: Array<[string, string]> = [
+    ["Vordersitze", "Rücksitze"],
+    ["Teppichboden", "Dachhimmel"],
+    ["Kofferraum/Ladefläche", "Armaturentafel/Mittelkonsole"],
+  ];
+
+  const docRows: Array<[string, string]> = [
+    ["Fahrzeugschein/ZB Teil I", "Kundendienst-/Serviceheft"],
+    ["EWG Übereinst.erklärung/CoC", "Bedienungsanleitung"],
+    ["Letzte HU/AU-Bescheinigung", "Original-/Navigationsgerät"],
+    ["Original-Navigations-DVD/CD", "Gepäckraumabdeckung"],
+    ["Reserverad/Kompressor", "Bordwerkzeug"],
+    ["Anhängerkupplung/Schlüssel", "Radio + Code-Card"],
+  ];
+
+  const bvr = `
+    <span class="check-label">B</span>${checkbox()}
+    <span class="check-label" style="margin-left:1.5mm">V</span>${checkbox()}
+    <span class="check-label" style="margin-left:1.5mm">R</span>${checkbox()}
+  `;
+
+  return `
+    <div class="page">
+      <div class="ho-header"></div>
+      <div class="ho-title">ÜBERGABEPROTOKOLL</div>
+
+      <table class="ho-meta">
+        <tr>
+          <td class="lbl">Vertrags-Nr.:</td>
+          <td class="val">${esc(contract.contract_nr)} / ${esc(dateStr)}</td>
+          <td class="lbl" style="padding-left:5mm">Tachostand b. Übernahme:</td>
+          <td class="val">${esc(contract.km_pickup != null ? `${fmtNum(contract.km_pickup)} Km` : "")}</td>
+        </tr>
+        <tr>
+          <td class="lbl">Leasingnehmer:</td>
+          <td class="val">${esc(contract.renter_name)}</td>
+          <td class="lbl" style="padding-left:5mm">Kennzeichen:</td>
+          <td class="val">${esc(contract.plate)}</td>
+        </tr>
+        <tr>
+          <td class="lbl">PLZ, Ort:</td>
+          <td class="val">${esc(zipCity)}</td>
+          <td class="lbl" style="padding-left:5mm">Herst., Typ:</td>
+          <td class="val">${esc(vehicleModel(vehicle, contract.vehicle_type))}</td>
+        </tr>
+        <tr>
+          <td class="lbl">Nutzer:</td>
+          <td class="val">${esc(contract.renter_name)}</td>
+          <td class="lbl" style="padding-left:5mm">Fzg.-Ident-Nr.:</td>
+          <td class="val">${esc(vehicle?.fin_number ?? "")}</td>
+        </tr>
+      </table>
+
+      <div class="ho-intro">
+        Der Fahrzeug-Abholer hat die Aufgabe, das o. g. Fahrzeug mit allen zugehörigen Schlüsseln, Unterlagen und Zubehör in Empfang zu nehmen. Er ist beauftragt, den Zustand des Fahrzeuges auf diesem Protokoll zu dokumentieren. Der Abholer ist nicht autorisiert Kostenbeträge festzulegen oder zu beurteilen, ob die Beschädigungen am Fahrzeug laufleistungsanalog sind.
+      </div>
+
+      <div style="display:flex;align-items:center">
+        <span class="ho-fzg-label">Fahrzeugbild</span>
+        <span class="ho-legend">B = Beschädigung &nbsp;&nbsp; D = Delle &nbsp;&nbsp; K = Kratzer &nbsp;&nbsp; R = Rost &nbsp;&nbsp; S = Steinschlag/Rissbildung</span>
+      </div>
+
+      <div class="car-row">
+        ${carSvg()}
+        ${carSvg()}
+      </div>
+
+      <div class="erschwert">
+        <span class="lbl">Erschwerte Übernahmebedingungen durch</span>
+        ${["Verschmutzung", "Regen/Nässe", "Dunkelheit", "Parkhaus", "Schnee/Eis"]
+          .map((c) => `<span class="item">${checkbox()}<span>${esc(c)}</span></span>`)
+          .join("")}
+      </div>
+
+      <div class="ho-section-title">Technik-Check</div>
+      <div class="ho-subnote">Ist dem Übergebenden Folgendes bekannt?</div>
+      <div class="tech-check">
+        ${techRows
+          .map(
+            ([l, r]) => `
+          <div class="row"><span class="name">${esc(l)}</span><span class="opts">${jaNein()}</span></div>
+          <div class="row"><span class="name">${esc(r)}</span><span class="opts">${jaNein()}</span></div>
+        `
+          )
+          .join("")}
+      </div>
+
+      <div class="ho-section-title">Bereifung</div>
+      <div class="bereifung">
+        <span>vorhanden</span>
+        <span class="item">${checkbox(!!summerTread)}<span>Sommerreifen</span></span>
+        <span class="item">${checkbox()}<span>auf Stahlfelgen</span></span>
+        <span class="item">${checkbox()}<span>auf Alufelgen</span></span>
+        <span class="tread">Profiltiefe ${treadCell(summerTread)} &nbsp; Res ____</span>
+        <span>vorhanden</span>
+        <span class="item">${checkbox(!!winterTread)}<span>Winterreifen</span></span>
+        <span class="item">${checkbox()}<span>auf Stahlfelgen</span></span>
+        <span class="item">${checkbox()}<span>auf Alufelgen</span></span>
+        <span class="tread">Profiltiefe ${treadCell(winterTread)}</span>
+      </div>
+
+      <div class="ho-section-title">Innenraum <span style="font-weight:400;font-size:7.5pt;color:#555;margin-left:2mm">B = Beschädigung &nbsp; V = Verschmutzung &nbsp; R = Riss</span></div>
+      <div class="innenraum">
+        ${interiorRows
+          .map(
+            ([l, r]) => `
+          <div class="row"><span class="name">${esc(l)}</span><span class="bvr">${bvr}</span></div>
+          <div class="row"><span class="name">${esc(r)}</span><span class="bvr">${bvr}</span></div>
+        `
+          )
+          .join("")}
+      </div>
+
+      <div class="ho-section-title">Dokumente, Ausstattung, Anzeigen</div>
+      <div class="dokumente">
+        ${docRows
+          .map(
+            ([l, r]) => `
+          <div class="row"><span class="name">${esc(l)}</span><span>${jaNein()}</span></div>
+          <div class="row"><span class="name">${esc(r)}</span><span>${jaNein()}</span></div>
+        `
+          )
+          .join("")}
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:8pt;margin-top:1.5mm">
+        <span>Anzahl Schlüssel: ${esc(String(contract.keys_count ?? 1))}</span>
+        <span>Anzahl Sitze: ____</span>
+      </div>
+
+      <div class="ho-bottom">
+        <div class="field"><div class="ln"></div><div class="lbl">Übernahmeort</div></div>
+        <div class="field"><div class="ln"></div><div class="lbl">Datum</div></div>
+        <div class="field"><div class="ln"></div><div class="lbl">Uhrzeit</div></div>
+      </div>
+
+      <div class="ho-sigs">
+        <div class="col">
+          <div class="heading">Bevollmächtigter</div>
+          <div class="subnote">Name des Abholers (in Druckschrift)</div>
+          <div class="name">${esc(contract.renter_name)}</div>
+          <div class="line">Unterschrift des Abholers</div>
+        </div>
+        <div class="col">
+          <div class="heading">Bevollmächtigter / Kunde</div>
+          <div class="subnote">Name des Bevollmächtigten (in Druckschrift)</div>
+          <div class="name">${esc(org.name)}</div>
+          <div class="line">Unterschrift des Bevollmächtigten</div>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+// =====================================================
+// Public
+// =====================================================
+export const buildContractHtml = (args: {
+  org: Organization;
+  contract: Contract;
+  customer: Customer | null;
+  vehicle: Vehicle | null;
+  tires?: VehicleTire | null;
+  logoDataUri?: string | null;
+  signaturePngBase64?: string | null;
+}): string => {
+  const {
+    org,
+    contract,
+    customer,
+    vehicle,
+    tires = null,
+    logoDataUri = null,
+    signaturePngBase64 = null,
+  } = args;
+
+  return `<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<title>Mietvertrag ${esc(contract.contract_nr)}</title>
+<style>${CSS}</style>
+</head>
+<body>
+${renderPage1(org, contract, customer, vehicle, logoDataUri, signaturePngBase64)}
+${renderPage2(org)}
+${renderPage3(org, contract)}
+${renderPage4(org, contract, customer)}
+${renderPage5(org, contract, customer, logoDataUri)}
+${renderPage6(org, contract, customer, vehicle, tires)}
+</body>
+</html>`;
+};

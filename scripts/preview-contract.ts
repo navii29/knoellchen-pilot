@@ -184,14 +184,15 @@ const tire: VehicleTire = {
   created_at: new Date().toISOString(),
 };
 
-const buf = generateContractPdf({
-  org,
-  contract,
-  customer,
-  vehicle,
-  tires: tire,
-  logoPngBase64: null,
-});
-
-writeFileSync("/tmp/preview-contract.pdf", Buffer.from(buf));
-console.log("→ /tmp/preview-contract.pdf");
+(async () => {
+  const buf = await generateContractPdf({
+    org,
+    contract,
+    customer,
+    vehicle,
+    tires: tire,
+    logoPngBase64: null,
+  });
+  writeFileSync("/tmp/preview-contract.pdf", buf);
+  console.log("→ /tmp/preview-contract.pdf");
+})();

@@ -5,6 +5,8 @@ import { generateContractPdf } from "@/lib/contract-pdf";
 import type { Contract, Customer, Organization, Vehicle } from "@/lib/types";
 import type { VehicleTire } from "@/lib/tires";
 
+export const maxDuration = 30;
+
 const loadLogoBase64 = async (
   admin: ReturnType<typeof createAdminClient>,
   logoPath: string | null | undefined
@@ -78,7 +80,7 @@ export const GET = async (_req: Request, { params }: Ctx) => {
   const orgRow = org as Organization;
   const logoPngBase64 = await loadLogoBase64(admin, orgRow.logo_path);
 
-  const buf = generateContractPdf({
+  const buf = await generateContractPdf({
     org: orgRow,
     contract: c,
     customer: (customer ?? null) as Customer | null,
@@ -87,7 +89,7 @@ export const GET = async (_req: Request, { params }: Ctx) => {
     logoPngBase64,
   });
 
-  return new NextResponse(Buffer.from(buf), {
+  return new NextResponse(new Uint8Array(buf), {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",

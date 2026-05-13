@@ -90,7 +90,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
 
   const snapshot: Contract = { ...c, signed_at: signedAt, signed_ip: signedIp };
 
-  const pdfBuf = generateContractPdf({
+  const pdfBuf = await generateContractPdf({
     org: orgRow,
     contract: snapshot,
     customer: (customer ?? null) as Customer | null,
@@ -104,7 +104,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
   const path = `${session.org_id}/${c.id}/${stamp}.pdf`;
   const { error: upErr } = await admin.storage
     .from("generated-docs")
-    .upload(path, Buffer.from(pdfBuf), {
+    .upload(path, pdfBuf, {
       contentType: "application/pdf",
       upsert: true,
     });
