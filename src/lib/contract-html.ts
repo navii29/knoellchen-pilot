@@ -383,8 +383,6 @@ const logoBlock = (
     : `<div class="${cls}"><div class="logo-fallback">${esc(orgName)}</div></div>`;
 };
 
-const checkbox = (checked = false): string =>
-  `<span class="check${checked ? " checked" : ""}"></span>`;
 
 const sigBlock = (
   date: string,
