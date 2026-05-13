@@ -58,6 +58,8 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
     "driver2_license",
     "damages_at_handover",
     "keys_count",
+    "selected_special_terms",
+    "custom_special_terms",
   ];
   const update: Record<string, unknown> = {};
   for (const k of allowed) if (k in body) update[k] = body[k];

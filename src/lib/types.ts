@@ -185,9 +185,37 @@ export interface Contract {
   driver2_license: string | null;
   damages_at_handover: string | null;
   keys_count: number | null;
+  selected_special_terms: string[];
+  custom_special_terms: string | null;
 
   created_at: string;
   updated_at: string;
+}
+
+export type SpecialTermsCategory =
+  | "general"
+  | "sportscars"
+  | "longterm"
+  | "international"
+  | "damage";
+
+export const SPECIAL_TERMS_CATEGORY_LABEL: Record<SpecialTermsCategory, string> = {
+  general: "Allgemein",
+  sportscars: "Sportwagen",
+  longterm: "Langzeitmiete",
+  international: "International",
+  damage: "Schäden",
+};
+
+export interface SpecialTermsTemplate {
+  id: string;
+  org_id: string;
+  title: string;
+  text: string;
+  category: SpecialTermsCategory;
+  sort_order: number;
+  active: boolean;
+  created_at: string;
 }
 
 export interface ParsedContractData {

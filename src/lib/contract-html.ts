@@ -10,6 +10,7 @@ import type {
   ContractPaymentMethod,
   Customer,
   Organization,
+  SpecialTermsTemplate,
   Vehicle,
 } from "./types";
 import { INSURANCE_TYPE_LABEL, PAYMENT_METHOD_LABEL } from "./types";
@@ -74,30 +75,6 @@ const dateTimeLabel = (date: string | null, time: string | null): string => {
   return time ? `${d}, ${time} Uhr` : d;
 };
 
-// Standard-Sondervereinbarungen (immer auf Seite 3 rechts gelistet)
-const STANDARD_SPECIAL_TERMS = [
-  "Nichtraucherfahrzeug",
-  "Versicherungsschutz bei Diebstahl nur bei Vorhandensein des übergebenen original Fahrzeugschlüssels",
-  "Im Falle einer Unterschlagung haftet der Mieter mit dem ursprünglichen Listenpreis",
-  "Bei einer gewerblichen Miete haftet der Geschäftsführer der Mieterin für sämtliche Schäden, offene Zahlungen oder sonstige Ansprüche selbstschuldnerisch",
-  "Der Mieter verpflichtet sich das Fahrzeug sorgfältig und gewissenhaft zu behandeln, dies bedeutet, dass er das Fahrzeug bei Fahrten im Ausland möglichst ausschließlich in gesicherten Garagen abstellen darf",
-  "Versicherungsschutz nur in den Ländern gemäß Einreisebeschränkung",
-  "Fahrzeugschein im Original übergeben",
-  "Glasschäden fallen ausdrücklich in die Haftung des Mieters",
-  "Der Mieter trägt die Pflicht zur Verwendung von einer der Witterung angepassten Bereifung",
-  "Eine Verlängerung ist nur nach schriftlicher Vereinbarung möglich",
-  "Mit der Verwendung von Launch-Control erlischt die Garantie und der Mieter haftet in vollem Umfang",
-  "Nutzung ausschließlich auf öffentlichen Straßen, keine Rennstrecke (Rennstrecke = Vollhaftung)",
-  "Eine Überlassung/Vermietung an Dritte ist untersagt",
-  "Fahrzeug muss bei Rückgabe gereinigt sein",
-  "Das Führen des Fahrzeuges ist ausschließlich im Vorhandensein der vollen Fahrtauglichkeit erlaubt. Das Führen unter Rauschmitteln ist ausdrücklich untersagt. Bei Missachtung haftet der Mieter in Höhe des vollen Listenpreises",
-  "Der Vermieter behält sich das Recht vor, je nach Verfügbarkeit einen Tausch des Fahrzeuges durchzuführen",
-  "Ich akzeptiere die ALLGEMEINEN VERMIETBEDINGUNGEN, sowie die Geschäftsbedingungen der Kreditkarteninstitute und verbundener Partner, Übergabeprotokoll sind Bestandteile des Mietvertrages",
-  "Ich stimme zu, alle Kosten (Mietpreis, Zusatzleistungen, Kaution, Schäden, etc.) die durch diesen Vertrag entstehen über die oben aufgeführte Kreditkarte zu garantieren",
-  "Der Vermieter ist berechtigt auch etwaige Kosten (z.B. Strafzettel, Schäden, Mautkosten, Mehrkilometer, Zusatzleistungen etc.) erhebliche Zeit nach der Rückgabe des Fahrzeuges über die Kreditkarte des Mieters einzuziehen",
-  "Hinweis: Maut nicht im Mietpreis inkludiert",
-  "Der Mieter leistet eine Sicherheit für die vertragsmäßige Behandlung des Fahrzeuges",
-];
 
 // =====================================================
 // CSS
@@ -132,6 +109,7 @@ const CSS = `
     margin: 0;
     display: block;
     min-height: 0;
+    position: relative;
   }
   .page.page-image img {
     display: block;
@@ -139,6 +117,23 @@ const CSS = `
     height: auto;
     margin: 0;
   }
+
+  /* Overlay-Callout für Schäden + Foto-Hinweis auf Seite 6.
+     Top: 51% landet exakt im freien Streifen zwischen Fahrzeugskizze und
+     "Erschwerte Übernahmebedingungen". */
+  .ho-overlay {
+    position: absolute;
+    left: 6%;
+    right: 6%;
+    top: 38%;
+    background: #fff8e1;
+    border: 0.6pt solid #d4a017;
+    padding: 0.8mm 2.5mm;
+    font-size: 7pt;
+    line-height: 1.3;
+    box-shadow: 0 0 1mm rgba(0,0,0,0.08);
+  }
+  .ho-overlay b { color: #8a5a00; margin-right: 0.5mm; }
 
   .logo { text-align: center; padding-top: 1mm; padding-bottom: 3mm; }
   .logo.left { text-align: left; }
@@ -203,8 +198,24 @@ const CSS = `
   .special-box .cell { padding: 3mm 4mm; }
   .special-box .cell + .cell { border-left: 0.5pt solid #333; }
   .special-box .heading { font-weight: 700; margin-bottom: 2mm; }
-  .special-list { margin: 0; padding-left: 4.5mm; }
-  .special-list li { margin-bottom: 1mm; }
+  .special-list { margin: 0; padding-left: 5mm; }
+  .special-list li { margin-bottom: 1.5mm; }
+
+  /* Einzelne Spalte für die Sondervereinbarungen (statt 2-spaltiger Box) */
+  .special-single {
+    margin-top: 4mm;
+    font-size: 8.5pt;
+    line-height: 1.4;
+    column-count: 2;
+    column-gap: 8mm;
+  }
+  .special-single .heading {
+    font-weight: 700;
+    margin-bottom: 2mm;
+    column-span: all;
+  }
+  .special-single .special-list { padding-left: 5mm; }
+  .special-single .special-list li { break-inside: avoid; margin-bottom: 1.5mm; }
 
   /* Schlichtere Sigs für Seite 3 — wie Ollies Original */
   .agb-sigs { margin-top: auto; padding-top: 8mm; display: flex; gap: 12mm; }
@@ -537,27 +548,37 @@ const renderPage2 = (org: Organization): string => {
 const renderPage3 = (
   org: Organization,
   contract: Contract,
-  logoDataUri: string | null
+  logoDataUri: string | null,
+  specialTerms: SpecialTermsTemplate[]
 ): string => {
   const dateStr = fmtDate(today());
   const cityLabel = org.city?.trim() ?? "";
   const cityDate = cityLabel ? `${cityLabel}, ${dateStr}` : dateStr;
   const fullName = contract.renter_name;
-  const specText = contract.special_terms?.trim() || "—";
+  const customText = contract.custom_special_terms?.trim() ?? "";
+
+  // Liste: erst alle ausgewählten Templates, danach Freitext-Vereinbarungen
+  // als zusätzliche nummerierte Einträge.
+  const items: string[] = specialTerms.map((t) => t.text.trim());
+  if (customText) {
+    // Mehrere durch Zeilenumbruch getrennte Freitext-Einträge separat zählen
+    const customLines = customText
+      .split(/\n+/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    items.push(...customLines);
+  }
+
+  const listHtml = items.length
+    ? items.map((t) => `<li>${esc(t)}</li>`).join("")
+    : `<li style="list-style:none;color:#888">Keine Sondervereinbarungen.</li>`;
 
   return `
     <div class="page">
       ${logoBlock(logoDataUri, org.name, "left")}
-      <div class="special-box">
-        <div class="cell">
-          <div class="heading">Sondervereinbarungen:</div>
-          <div>${esc(specText).replace(/\n/g, "<br/>")}</div>
-        </div>
-        <div class="cell">
-          <ol class="special-list">
-            ${STANDARD_SPECIAL_TERMS.map((t) => `<li>${esc(t)}</li>`).join("")}
-          </ol>
-        </div>
+      <div class="special-single">
+        <div class="heading">Sondervereinbarungen:</div>
+        <ol class="special-list">${listHtml}</ol>
       </div>
       <div class="agb-sigs">
         <div class="col">
@@ -699,17 +720,36 @@ const loadHandoverTemplate = (): string => {
 };
 
 const renderPage6 = (org: Organization, contract: Contract): string => {
-  const dateStr = fmtDate(today());
-  void org; void contract; void dateStr;
+  void org;
   const tplUri = loadHandoverTemplate();
+
+  // Overlay-Hinweis: nur wenn Schäden gemeldet ODER Fotos vorhanden sind.
+  const damages = contract.damages_at_handover?.trim() ?? "";
+  const hasDamages = damages && damages.toLowerCase() !== "keine";
+  const photoCount = Array.isArray(contract.pickup_photos)
+    ? contract.pickup_photos.length
+    : 0;
+  const hasOverlay = hasDamages || photoCount > 0;
+
+  const overlayParts: string[] = [];
+  if (hasDamages)
+    overlayParts.push(`<b>Schäden bei Übergabe:</b> ${esc(damages)}`);
+  if (photoCount > 0)
+    overlayParts.push(
+      `<b>Foto-Doku:</b> ${photoCount} ${photoCount === 1 ? "Foto" : "Fotos"} im System`
+    );
+  const overlay = hasOverlay
+    ? `<div class="ho-overlay">${overlayParts.join(" &nbsp;·&nbsp; ")}</div>`
+    : "";
+
   if (tplUri) {
     return `
       <div class="page page-image">
         <img src="${tplUri}" alt="Übergabeprotokoll" />
+        ${overlay}
       </div>
     `;
   }
-  // Fallback ohne Template — sollte in Production nie greifen
   return `<div class="page"><div style="padding:20mm">Übergabeprotokoll-Template fehlt.</div></div>`;
 };
 
@@ -725,6 +765,7 @@ export const buildContractHtml = (args: {
   tires?: VehicleTire | null;
   logoDataUri?: string | null;
   signaturePngBase64?: string | null;
+  specialTerms?: SpecialTermsTemplate[];
 }): string => {
   const {
     org,
@@ -733,6 +774,7 @@ export const buildContractHtml = (args: {
     vehicle,
     logoDataUri = null,
     signaturePngBase64 = null,
+    specialTerms = [],
   } = args;
   // `tires` aktuell nicht mehr verwendet (Seite 6 ist ein Blanko-Protokoll),
   // bleibt aber im API-Parameter für künftige Erweiterungen.
@@ -748,7 +790,7 @@ export const buildContractHtml = (args: {
 <body>
 ${renderPage1(org, contract, customer, vehicle, logoDataUri, signaturePngBase64)}
 ${renderPage2(org)}
-${renderPage3(org, contract, logoDataUri)}
+${renderPage3(org, contract, logoDataUri, specialTerms)}
 ${renderPage4(org, contract, customer)}
 ${renderPage5(org, contract, customer, logoDataUri)}
 ${renderPage6(org, contract)}

@@ -157,6 +157,8 @@ const contract: Contract = {
   driver2_license: null,
   damages_at_handover: "Keine/Neuwagen",
   keys_count: 1,
+  selected_special_terms: [],
+  custom_special_terms: null,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
@@ -184,14 +186,53 @@ const tire: VehicleTire = {
   created_at: new Date().toISOString(),
 };
 
+const sampleTerms = [
+  {
+    id: "t1",
+    org_id: org.id,
+    title: "Nichtraucherfahrzeug",
+    text: "Das Fahrzeug ist ein Nichtraucherfahrzeug. Bei Zuwiderhandlung gegen das Rauchverbot berechnen wir pauschal 250€ für eine Innenreinigung inkl. erforderlicher Ozonbehandlung.",
+    category: "general" as const,
+    sort_order: 10,
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "t2",
+    org_id: org.id,
+    title: "Auslandsfahrten DACH",
+    text: "Auslandsfahrten sind nur innerhalb des DACH-Verbandes zulässig.",
+    category: "international" as const,
+    sort_order: 50,
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "t3",
+    org_id: org.id,
+    title: "Launch-Control",
+    text: "Mit der Verwendung von Launch-Control erlischt die Garantie und der Mieter haftet in vollem Umfang.",
+    category: "sportscars" as const,
+    sort_order: 90,
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+];
+
 (async () => {
   const buf = await generateContractPdf({
     org,
-    contract,
+    contract: {
+      ...contract,
+      custom_special_terms:
+        "Fahrzeug bitte nur an Premium-Tankstellen tanken.\nKein Carsharing-Subleasing.",
+      damages_at_handover: "Steinschlag rechte Seitenscheibe, Kratzer linke Heckstoßstange",
+    },
     customer,
     vehicle,
     tires: tire,
     logoPngBase64: null,
+    specialTerms: sampleTerms,
   });
   writeFileSync("/tmp/preview-contract.pdf", buf);
   console.log("→ /tmp/preview-contract.pdf");

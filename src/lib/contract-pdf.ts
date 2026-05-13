@@ -10,9 +10,10 @@ import type {
   Contract,
   Customer,
   Organization,
+  SpecialTermsTemplate,
+  Vehicle,
 } from "./types";
 import type { VehicleTire } from "./tires";
-import type { Vehicle } from "./types";
 import { buildContractHtml } from "./contract-html";
 
 const isServerless =
@@ -57,6 +58,7 @@ export const generateContractPdf = async (args: {
   tires?: VehicleTire | null;
   logoPngBase64?: string | null; // Param-Name aus Kompat zu alten Aufrufen — akzeptiert auch JPG/SVG-Data-URI
   signaturePngBase64?: string | null;
+  specialTerms?: SpecialTermsTemplate[];
 }): Promise<Buffer> => {
   const html = buildContractHtml({
     org: args.org,
@@ -66,6 +68,7 @@ export const generateContractPdf = async (args: {
     tires: args.tires ?? null,
     logoDataUri: args.logoPngBase64 ?? null,
     signaturePngBase64: args.signaturePngBase64 ?? null,
+    specialTerms: args.specialTerms ?? [],
   });
 
   const browser = await puppeteer.launch(await launchOptions());

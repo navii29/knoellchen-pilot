@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, FileSignature, FileText, Handshake, Loader2, Save, ScanText, Sparkles, TrendingUp, UserCheck, X } from "lucide-react";
 import Link from "next/link";
 import { THEME } from "@/lib/theme";
-import type { Customer, ParsedContractData } from "@/lib/types";
+import type {
+  Customer,
+  ParsedContractData,
+  SpecialTermsCategory,
+  SpecialTermsTemplate,
+} from "@/lib/types";
+import { SPECIAL_TERMS_CATEGORY_LABEL } from "@/lib/types";
 import {
   PARTNER_TYPE_META,
   calculateCommission,
@@ -122,13 +128,28 @@ const fillFromCustomer = (prev: FormState, c: Customer): FormState => {
   } as FormState;
 };
 
+// Default-Vorauswahl-Titel — passend zu den ersten 16 Standard-Templates.
+// Beim Mount werden alle Templates mit diesen Titeln vorausgewählt.
+const DEFAULT_SELECTED_TITLES = new Set([
+  "Nichtraucherfahrzeug",
+  "Versicherungsschutz Diebstahl",
+  "Reifenpflicht",
+  "Fahrzeug gereinigt zurückgeben",
+  "Keine Drittvermietung",
+  "Fahrtauglichkeit",
+  "Fahrzeugtausch",
+  "Maut nicht inkludiert",
+]);
+
 export const NewContractClient = ({
   customers,
   partners,
+  specialTerms,
   initialCustomerId,
 }: {
   customers: Customer[];
   partners: SalesPartner[];
+  specialTerms: SpecialTermsTemplate[];
   initialCustomerId: string | null;
 }) => {
   const router = useRouter();
@@ -147,6 +168,33 @@ export const NewContractClient = ({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
+  const [selectedTerms, setSelectedTerms] = useState<Set<string>>(() => {
+    const set = new Set<string>();
+    for (const t of specialTerms) {
+      if (DEFAULT_SELECTED_TITLES.has(t.title)) set.add(t.id);
+    }
+    return set;
+  });
+  const toggleTerm = (id: string) => {
+    setSelectedTerms((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const groupedTerms = useMemo(() => {
+    const groups = new Map<SpecialTermsCategory, SpecialTermsTemplate[]>();
+    for (const t of specialTerms) {
+      const arr = groups.get(t.category) ?? [];
+      arr.push(t);
+      groups.set(t.category, arr);
+    }
+    return Array.from(groups.entries()).sort((a, b) => {
+      const order = ["general", "international", "sportscars", "damage", "longterm"];
+      return order.indexOf(a[0]) - order.indexOf(b[0]);
+    });
+  }, [specialTerms]);
 
   const set = (k: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setData((d) => ({ ...d, [k]: e.target.value }));
@@ -260,6 +308,8 @@ export const NewContractClient = ({
       insurance_type: data.insurance_type || null,
       insurance_deductible: numeric(data.insurance_deductible),
       special_terms: data.special_terms || null,
+      custom_special_terms: data.special_terms || null,
+      selected_special_terms: Array.from(selectedTerms),
       delivery_cost: numeric(data.delivery_cost),
       pickup_cost: numeric(data.pickup_cost),
       driver2_name: data.driver2_name || null,
@@ -593,15 +643,70 @@ export const NewContractClient = ({
                 className="input tabular-nums"
               />
             </Field>
-            <Field label="Sondervereinbarungen">
-              <textarea
-                value={data.special_terms}
-                onChange={set("special_terms")}
-                rows={2}
-                placeholder="z.B. Auslandsfahrten nur innerhalb DACH-Verband"
-                className="input"
-              />
-            </Field>
+          </Section>
+
+          <Section title="Sondervereinbarungen">
+            <div className="sm:col-span-2 space-y-4">
+              <p className="text-xs text-stone-500 leading-relaxed">
+                Wähle die Textbausteine, die auf Seite 3 des Mietvertrags
+                erscheinen sollen. Eigene Vereinbarungen kannst du unten als
+                Freitext ergänzen.{" "}
+                <Link
+                  href="/dashboard/settings/special-terms"
+                  className="text-teal-700 hover:underline"
+                >
+                  Textbausteine verwalten →
+                </Link>
+              </p>
+              {groupedTerms.length === 0 && (
+                <div className="text-xs text-stone-500 bg-stone-50 ring-1 ring-stone-200 rounded-lg p-3">
+                  Noch keine Textbausteine angelegt — lege sie in den
+                  Einstellungen an.
+                </div>
+              )}
+              {groupedTerms.map(([cat, items]) => (
+                <div key={cat}>
+                  <div className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-2">
+                    {SPECIAL_TERMS_CATEGORY_LABEL[cat]}
+                  </div>
+                  <div className="rounded-lg ring-1 ring-stone-200 bg-white divide-y divide-stone-100">
+                    {items.map((t) => {
+                      const checked = selectedTerms.has(t.id);
+                      return (
+                        <label
+                          key={t.id}
+                          className="flex items-start gap-3 p-2.5 cursor-pointer hover:bg-stone-50"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleTerm(t.id)}
+                            className="mt-0.5 w-4 h-4 accent-teal-600 shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-stone-900">
+                              {t.title}
+                            </div>
+                            <div className="text-[11px] text-stone-500 mt-0.5 leading-snug">
+                              {t.text}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              <Field label="Zusätzliche Vereinbarungen (Freitext)">
+                <textarea
+                  value={data.special_terms}
+                  onChange={set("special_terms")}
+                  rows={3}
+                  placeholder="Ein Eintrag pro Zeile — wird als zusätzlicher Punkt auf Seite 3 nummeriert."
+                  className="input"
+                />
+              </Field>
+            </div>
           </Section>
 
           <Section title="Übergabe-Details">

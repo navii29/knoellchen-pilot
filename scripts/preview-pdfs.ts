@@ -142,6 +142,8 @@ const contract: Contract = {
   driver2_license: null,
   damages_at_handover: null,
   keys_count: null,
+  selected_special_terms: [],
+  custom_special_terms: null,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };

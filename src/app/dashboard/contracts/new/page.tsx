@@ -1,7 +1,7 @@
 import { Topbar } from "@/components/dashboard/Topbar";
 import { createClient } from "@/lib/supabase/server";
 import { NewContractClient } from "./NewContractClient";
-import type { Customer } from "@/lib/types";
+import type { Customer, SpecialTermsTemplate } from "@/lib/types";
 import type { SalesPartner } from "@/lib/partners";
 
 export const dynamic = "force-dynamic";
@@ -12,14 +12,20 @@ export default async function NewContractPage({
   searchParams: { customer_id?: string };
 }) {
   const supabase = createClient();
-  const [{ data: customers }, { data: partners }] = await Promise.all([
-    supabase.from("customers").select("*").order("last_name", { ascending: true }),
-    supabase
-      .from("sales_partners")
-      .select("*")
-      .eq("active", true)
-      .order("name", { ascending: true }),
-  ]);
+  const [{ data: customers }, { data: partners }, { data: specialTerms }] =
+    await Promise.all([
+      supabase.from("customers").select("*").order("last_name", { ascending: true }),
+      supabase
+        .from("sales_partners")
+        .select("*")
+        .eq("active", true)
+        .order("name", { ascending: true }),
+      supabase
+        .from("special_terms_templates")
+        .select("*")
+        .eq("active", true)
+        .order("sort_order", { ascending: true }),
+    ]);
 
   return (
     <>
@@ -29,6 +35,7 @@ export default async function NewContractPage({
           <NewContractClient
             customers={(customers || []) as Customer[]}
             partners={(partners || []) as SalesPartner[]}
+            specialTerms={(specialTerms || []) as SpecialTermsTemplate[]}
             initialCustomerId={searchParams.customer_id || null}
           />
         </div>

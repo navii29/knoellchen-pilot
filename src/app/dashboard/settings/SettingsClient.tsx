@@ -231,6 +231,29 @@ export const SettingsClient = ({
           />
         </Link>
 
+        <Link
+          href="/dashboard/settings/special-terms"
+          className="rounded-xl bg-white ring-1 ring-stone-200 p-6 hover:ring-stone-300 transition flex items-center gap-4 group"
+        >
+          <div className="w-11 h-11 rounded-xl bg-amber-50 ring-1 ring-amber-200 flex items-center justify-center text-amber-700 shrink-0">
+            <FileSignature size={18} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-display font-semibold text-stone-900">
+              Sondervereinbarungen-Textbausteine
+            </div>
+            <div className="text-xs text-stone-500 mt-0.5 max-w-xl">
+              Vordefinierte Vereinbarungen, die bei der Vertragsanlage per
+              Checkbox ausgewählt werden und auf Seite 3 des Mietvertrags
+              erscheinen.
+            </div>
+          </div>
+          <ChevronRight
+            size={16}
+            className="text-stone-400 group-hover:text-stone-700 transition shrink-0"
+          />
+        </Link>
+
         <Section
           title="Mietbedingungen (AGB)"
           subtitle="Diese Bedingungen erscheinen auf Seite 2 jedes generierten Mietvertrags."

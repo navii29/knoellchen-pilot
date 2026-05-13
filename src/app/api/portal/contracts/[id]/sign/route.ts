@@ -4,6 +4,22 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { generateContractPdf } from "@/lib/contract-pdf";
 import type { Contract, Customer, Organization, Vehicle } from "@/lib/types";
 import type { VehicleTire } from "@/lib/tires";
+import type { SpecialTermsTemplate } from "@/lib/types";
+
+const loadSpecialTerms = async (
+  admin: ReturnType<typeof createAdminClient>,
+  orgId: string,
+  selectedIds: string[] | null | undefined
+): Promise<SpecialTermsTemplate[]> => {
+  if (!selectedIds || selectedIds.length === 0) return [];
+  const { data } = await admin
+    .from("special_terms_templates")
+    .select("*")
+    .eq("org_id", orgId)
+    .in("id", selectedIds)
+    .order("sort_order", { ascending: true });
+  return (data ?? []) as SpecialTermsTemplate[];
+};
 
 const loadLogoBase64 = async (
   admin: ReturnType<typeof createAdminClient>,
@@ -83,7 +99,10 @@ export const POST = async (req: Request, { params }: Ctx) => {
   if (!org)
     return NextResponse.json({ error: "Organisation fehlt" }, { status: 500 });
   const orgRow = org as Organization;
-  const logoPngBase64 = await loadLogoBase64(admin, orgRow.logo_path);
+  const [logoPngBase64, specialTerms] = await Promise.all([
+    loadLogoBase64(admin, orgRow.logo_path),
+    loadSpecialTerms(admin, session.org_id, c.selected_special_terms),
+  ]);
 
   const signedAt = new Date().toISOString();
   const signedIp = ipFromHeaders();
@@ -98,6 +117,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
     tires: (tire ?? null) as VehicleTire | null,
     logoPngBase64,
     signaturePngBase64: sig,
+    specialTerms,
   });
 
   const stamp = Date.now().toString(36);

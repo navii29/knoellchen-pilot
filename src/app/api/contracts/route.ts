@@ -115,6 +115,10 @@ export const POST = async (req: Request) => {
     driver2_license: (body.driver2_license as string) || null,
     damages_at_handover: (body.damages_at_handover as string) || null,
     keys_count: numeric(body.keys_count),
+    selected_special_terms: Array.isArray(body.selected_special_terms)
+      ? (body.selected_special_terms as string[])
+      : [],
+    custom_special_terms: (body.custom_special_terms as string) || null,
   };
 
   const { data, error } = await admin
