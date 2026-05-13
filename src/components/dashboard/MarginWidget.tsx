@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { ChevronRight, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronRight,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
   computeFleetMargin,
@@ -44,13 +50,32 @@ export const MarginWidget = async ({ orgId }: { orgId: string }) => {
   const vs = (vehicles ?? []) as unknown as Vehicle[];
   if (vs.length === 0) return null;
 
-  // Sind überhaupt Kosten gepflegt? Sonst Widget ausblenden — sonst zeigt es 100% irreführende Margen.
+  // Sind überhaupt Kosten gepflegt? Sonst Empty-State-CTA — sonst zeigt das Widget irreführende 100%-Margen.
   const hasCosts = vs.some(
     (v) =>
       (v.cost_daily != null && Number(v.cost_daily) > 0) ||
       (v.cost_monthly != null && Number(v.cost_monthly) > 0)
   );
-  if (!hasCosts) return null;
+  if (!hasCosts) {
+    return (
+      <Link
+        href="/dashboard/vehicles"
+        className="group block rounded-xl bg-white ring-1 ring-stone-200 p-5 hover:ring-stone-300 transition"
+      >
+        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2">
+          <Wallet size={13} />
+          Margen-Tracking
+        </div>
+        <div className="font-display text-[20px] tracking-tight text-stone-900 leading-snug">
+          EK-Kosten pflegen, um Margen zu sehen.
+        </div>
+        <div className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-emerald-700 group-hover:text-emerald-800">
+          Fahrzeuge öffnen
+          <ArrowRight size={13} />
+        </div>
+      </Link>
+    );
+  }
 
   const current = computeFleetMargin({
     vehicles: vs,
