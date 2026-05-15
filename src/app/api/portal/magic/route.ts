@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
+  PORTAL_COOKIE,
   portalBaseUrl,
-  setSessionCookie,
+  portalCookieOptions,
   signSessionToken,
 } from "@/lib/portal-auth";
 
@@ -43,7 +44,8 @@ export const GET = async (req: Request) => {
     org_id: login.org_id,
     email: login.email,
   });
-  setSessionCookie(sessionToken);
 
-  return NextResponse.redirect(`${portalBaseUrl()}/portal/dashboard`);
+  const res = NextResponse.redirect(`${portalBaseUrl()}/portal/dashboard`);
+  res.cookies.set(PORTAL_COOKIE, sessionToken, portalCookieOptions());
+  return res;
 };

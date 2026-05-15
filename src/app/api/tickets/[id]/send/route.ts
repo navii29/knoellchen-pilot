@@ -62,6 +62,16 @@ export const POST = async (
     : { data: null };
   const contract = (contractData as Contract | null) ?? null;
 
+  const { data: customerData } = contract?.customer_id
+    ? await admin
+        .from("customers")
+        .select("salutation")
+        .eq("id", contract.customer_id)
+        .eq("org_id", profile.org_id)
+        .maybeSingle()
+    : { data: null };
+  const customer = (customerData as { salutation: string | null } | null) ?? null;
+
   const fromAddress =
     org.sender_email && org.sender_name
       ? `${org.sender_name} <${org.sender_email}>`
@@ -94,7 +104,7 @@ export const POST = async (
     if (!letterB64 || !invoiceB64) {
       return NextResponse.json({ error: "PDFs konnten nicht geladen werden" }, { status: 500 });
     }
-    const tpl = renterEmail(org, ticket, contract);
+    const tpl = renterEmail(org, ticket, contract, customer);
     const originalRecipient = ticket.renter_email;
     const actualRecipient = override ?? originalRecipient;
     try {

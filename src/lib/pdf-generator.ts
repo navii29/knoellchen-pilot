@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 import type { Contract, Organization, Ticket } from "./types";
-import { fmtDate, fmtEur } from "./utils";
+import { fmtDate, fmtEur, formatSalutation } from "./utils";
 import { chargeFromTicket, VAT_RATE } from "./charge";
 
 // ============================================
@@ -291,7 +291,8 @@ const finalize = (doc: jsPDF): Uint8Array => new Uint8Array(doc.output("arraybuf
 export const generateLetterPdf = (
   org: Organization,
   ticket: Ticket,
-  contract: Contract | null
+  contract: Contract | null,
+  customer: { salutation: string | null } | null = null
 ): Uint8Array => {
   const doc = newDoc();
   const renterName = contract?.renter_name || ticket.renter_name || "[Mieter:in]";
@@ -338,7 +339,7 @@ export const generateLetterPdf = (
     `Da Sie das Fahrzeug zum Tatzeitpunkt im Rahmen Ihres Mietvertrags geführt haben, leiten wir Ihre Daten an die Behörde weiter und ${introClause}:`,
   ];
 
-  let y = drawBody(doc, `Sehr geehrte:r ${surname},`, paragraphsBefore);
+  let y = drawBody(doc, `${formatSalutation(customer?.salutation, surname)},`, paragraphsBefore);
 
   // Aufstellung — nur aktivierte Positionen, mit MwSt-Aufschlüsselung
   const summaryRows: Array<{ label: string; amount: number; bold?: boolean }> = [];

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
+  PORTAL_COOKIE,
   checkRateLimit,
   ipFromHeaders,
+  portalCookieOptions,
   resetRateLimit,
-  setSessionCookie,
   signSessionToken,
   verifyPassword,
 } from "@/lib/portal-auth";
@@ -56,12 +57,15 @@ export const POST = async (req: Request) => {
     org_id: login.org_id,
     email: login.email,
   });
-  setSessionCookie(token);
 
   await admin
     .from("customer_logins")
     .update({ last_login: new Date().toISOString() })
     .eq("id", login.id);
 
-  return NextResponse.json({ ok: true });
+  // Cookie direkt auf der Response setzen — zuverlässiger als cookies().set()
+  // in Route-Handlern unter Next 14 (vermeidet Race mit Streaming).
+  const res = NextResponse.json({ ok: true });
+  res.cookies.set(PORTAL_COOKIE, token, portalCookieOptions());
+  return res;
 };

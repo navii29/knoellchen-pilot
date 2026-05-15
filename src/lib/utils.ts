@@ -47,3 +47,20 @@ export const initials = (name: string): string =>
 
 export const nextTicketNr = (): string =>
   `KP-${Date.now().toString().slice(-6)}`;
+
+// Höfliche Briefanrede aus customer.salutation ableiten. Fällt sauber auf
+// "Sehr geehrte/r Frau/Herr {Name}" zurück, wenn salutation unbekannt —
+// vermeidet "Sehr geehrte:r"-Doppelpunktform.
+export const formatSalutation = (
+  salutation: string | null | undefined,
+  surname: string | null | undefined
+): string => {
+  const name = (surname ?? "").trim();
+  const s = (salutation ?? "").trim().toLowerCase();
+  if (s === "herr")
+    return name ? `Sehr geehrter Herr ${name}` : "Sehr geehrter Herr";
+  if (s === "frau")
+    return name ? `Sehr geehrte Frau ${name}` : "Sehr geehrte Frau";
+  if (name) return `Sehr geehrte/r Frau/Herr ${name}`;
+  return "Sehr geehrte Damen und Herren";
+};

@@ -1,5 +1,5 @@
 import type { Contract, Organization, Ticket } from "./types";
-import { fmtDate, fmtEur } from "./utils";
+import { fmtDate, fmtEur, formatSalutation } from "./utils";
 
 const escape = (s: string | null | undefined): string =>
   (s ?? "")
@@ -35,9 +35,12 @@ const orgFooterHtml = (org: Organization): string => `
 export const renterEmail = (
   org: Organization,
   ticket: Ticket,
-  contract: Contract | null
+  contract: Contract | null,
+  customer: { salutation: string | null } | null = null
 ): { subject: string; html: string; text: string } => {
-  const renterName = contract?.renter_name || ticket.renter_name || "Sehr geehrte:r Mieter:in";
+  const renterName = contract?.renter_name || ticket.renter_name || "Mieter:in";
+  const surname = renterName.split(" ").slice(-1)[0] || "";
+  const salutationLine = formatSalutation(customer?.salutation, surname);
   const total = (ticket.fine_amount || 0) + Number(ticket.processing_fee || 0);
   const subject = `Weiterbelastung Ordnungswidrigkeit ${ticket.plate || ""} — ${ticket.ticket_nr}`;
 
@@ -51,7 +54,7 @@ export const renterEmail = (
       ticket.plate
     )}</h1>
 
-    <p style="margin:0 0 16px;line-height:1.65;">Sehr geehrte:r ${escape(renterName)},</p>
+    <p style="margin:0 0 16px;line-height:1.65;">${escape(salutationLine)},</p>
 
     <p style="margin:0 0 16px;line-height:1.65;">bezugnehmend auf den Ihnen überlassenen Mietwagen liegt uns folgender Bußgeldvorgang vor:</p>
 
@@ -96,7 +99,7 @@ export const renterEmail = (
     orgFooterHtml(org)
   );
 
-  const text = `Sehr geehrte:r ${renterName},
+  const text = `${salutationLine},
 
 bezugnehmend auf den Ihnen überlassenen Mietwagen (Kennzeichen ${ticket.plate || "—"}${
     contract?.contract_nr ? ", Vertrag " + contract.contract_nr : ""

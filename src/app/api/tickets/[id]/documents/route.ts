@@ -5,7 +5,7 @@ import {
   generateLetterPdf,
   generateQuestionnairePdf,
 } from "@/lib/pdf-generator";
-import type { Contract, Organization, Ticket } from "@/lib/types";
+import type { Contract, Customer, Organization, Ticket } from "@/lib/types";
 
 export const POST = async (
   _req: Request,
@@ -41,7 +41,17 @@ export const POST = async (
     : { data: null };
   const contract = (contractData as Contract | null) ?? null;
 
-  const letter = generateLetterPdf(o, t, contract);
+  const { data: customerData } = contract?.customer_id
+    ? await admin
+        .from("customers")
+        .select("salutation, first_name, last_name")
+        .eq("id", contract.customer_id)
+        .eq("org_id", profile.org_id)
+        .maybeSingle()
+    : { data: null };
+  const customer = (customerData as Pick<Customer, "salutation"> | null) ?? null;
+
+  const letter = generateLetterPdf(o, t, contract, customer);
   const invoice = generateInvoicePdf(o, t, contract);
   const questionnaire = generateQuestionnairePdf(o, t, contract);
 

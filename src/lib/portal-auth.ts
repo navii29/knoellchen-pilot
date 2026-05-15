@@ -80,14 +80,16 @@ export const verifySessionToken = async (
 // =====================================================
 // Cookie-Helpers
 // =====================================================
+export const portalCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/",
+  maxAge: TOKEN_TTL_DAYS * 24 * 60 * 60,
+});
+
 export const setSessionCookie = (token: string) => {
-  cookies().set(PORTAL_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: TOKEN_TTL_DAYS * 24 * 60 * 60,
-  });
+  cookies().set(PORTAL_COOKIE, token, portalCookieOptions());
 };
 
 export const clearSessionCookie = () => {
