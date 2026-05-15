@@ -80,13 +80,30 @@ export const verifySessionToken = async (
 // =====================================================
 // Cookie-Helpers
 // =====================================================
-export const portalCookieOptions = () => ({
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax" as const,
-  path: "/",
-  maxAge: TOKEN_TTL_DAYS * 24 * 60 * 60,
-});
+// Optionale Cookie-Domain — gesetzt via PORTAL_COOKIE_DOMAIN env var,
+// z.B. ".knoellchen-pilot.de" (mit führendem Punkt), damit das Cookie für
+// www.knoellchen-pilot.de UND knoellchen-pilot.de gilt. Ohne env var
+// bleibt das Cookie host-only auf dem Server, der es ausstellt — gut für
+// Vercel-Preview-URLs und localhost.
+export const portalCookieOptions = (): {
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: "lax";
+  path: string;
+  maxAge: number;
+  domain?: string;
+} => {
+  const opts: ReturnType<typeof portalCookieOptions> = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: TOKEN_TTL_DAYS * 24 * 60 * 60,
+  };
+  const domain = process.env.PORTAL_COOKIE_DOMAIN?.trim();
+  if (domain) opts.domain = domain;
+  return opts;
+};
 
 export const setSessionCookie = (token: string) => {
   cookies().set(PORTAL_COOKIE, token, portalCookieOptions());

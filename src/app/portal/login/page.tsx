@@ -1,5 +1,10 @@
 import { redirect } from "next/navigation";
-import { getPortalSession } from "@/lib/portal-auth";
+import { cookies } from "next/headers";
+import {
+  PORTAL_COOKIE,
+  getPortalCustomer,
+  portalCookieOptions,
+} from "@/lib/portal-auth";
 import { LoginClient } from "./LoginClient";
 
 export const dynamic = "force-dynamic";
@@ -9,8 +14,17 @@ export default async function PortalLoginPage({
 }: {
   searchParams: { error?: string };
 }) {
-  const session = await getPortalSession();
-  if (session) redirect("/portal/dashboard");
+  // Symmetrisch zum (app)/layout.tsx prüfen: Session + Customer müssen
+  // BEIDE existieren. Sonst gibt's Redirect-Loops, wenn ein gültiger JWT-
+  // Cookie auf einen gelöschten/inaktiven Customer zeigt — Layout würde
+  // dann zu /portal/login redirecten, login zu /portal/dashboard, endlos.
+  const ctx = await getPortalCustomer();
+  if (ctx) redirect("/portal/dashboard");
+  // Falls Cookie existiert aber Customer-Lookup leer war: stales Cookie
+  // mit denselben Optionen (insb. domain) löschen wie beim Set.
+  if (cookies().get(PORTAL_COOKIE)?.value) {
+    cookies().set(PORTAL_COOKIE, "", { ...portalCookieOptions(), maxAge: 0 });
+  }
 
   const errorMap: Record<string, string> = {
     invalid: "Ungültiger Login-Link.",
