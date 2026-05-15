@@ -1,10 +1,5 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import {
-  PORTAL_COOKIE,
-  getPortalCustomer,
-  portalCookieOptions,
-} from "@/lib/portal-auth";
+import { getPortalCustomer } from "@/lib/portal-auth";
 import { LoginClient } from "./LoginClient";
 
 export const dynamic = "force-dynamic";
@@ -18,13 +13,11 @@ export default async function PortalLoginPage({
   // BEIDE existieren. Sonst gibt's Redirect-Loops, wenn ein gültiger JWT-
   // Cookie auf einen gelöschten/inaktiven Customer zeigt — Layout würde
   // dann zu /portal/login redirecten, login zu /portal/dashboard, endlos.
+  // Stale Cookies können wir hier nicht löschen (Next 14 verbietet
+  // cookies().set() in Server-Components); sie werden beim nächsten Login
+  // überschrieben oder laufen nach 30 Tagen aus.
   const ctx = await getPortalCustomer();
   if (ctx) redirect("/portal/dashboard");
-  // Falls Cookie existiert aber Customer-Lookup leer war: stales Cookie
-  // mit denselben Optionen (insb. domain) löschen wie beim Set.
-  if (cookies().get(PORTAL_COOKIE)?.value) {
-    cookies().set(PORTAL_COOKIE, "", { ...portalCookieOptions(), maxAge: 0 });
-  }
 
   const errorMap: Record<string, string> = {
     invalid: "Ungültiger Login-Link.",
