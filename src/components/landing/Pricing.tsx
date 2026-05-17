@@ -5,14 +5,15 @@ const plans = [
   {
     name: "Starter",
     price: "249",
-    tagline: "Für kleine Vermietungen, die mit der Automatisierung starten.",
+    tagline: "Für Vermietungen, die zuerst Strafzettel und Verträge automatisieren wollen.",
     limit: "Bis zu 15 Fahrzeuge",
     features: [
-      "Strafzettel-Automatisierung",
+      "Strafzettel-Automatisierung (KI-Auslesen, Anschreiben, Rechnung)",
       "Vertragsverwaltung & Kalender",
       "Kunden- und Führerschein-Scan",
       "5.000 KI-Auslesungen / Monat",
       "E-Mail Support",
+      "— Schaden-Vergleich, Tablet-Sign und Kundenportal erst ab Professional",
     ],
     cta: "Starter wählen",
     featured: false,

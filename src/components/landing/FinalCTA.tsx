@@ -15,33 +15,34 @@ export const FinalCTA = () => {
             className="font-display text-white leading-[1.02] tracking-[-0.035em] font-medium text-balance"
             style={{ fontSize: "clamp(34px, 9vw, 84px)" }}
           >
-            Bereit für die Zukunft
+            Sehen Sie es,
             <br />
             <span className="bg-gradient-to-br from-teal-200 via-emerald-300 to-teal-500 bg-clip-text text-transparent">
-              Ihrer Vermietung?
+              statt es zu lesen.
             </span>
           </h2>
         </FadeUp>
 
         <FadeUp delay={120}>
           <p className="mt-5 sm:mt-7 text-[15px] sm:text-[20px] text-white/60 max-w-xl mx-auto leading-[1.5]">
-            30 Tage kostenlos. Keine Kreditkarte. Volle Funktionalität.
+            15-Minuten-Call mit dem Gründer. Wir zeigen Knöllchen-Pilot
+            an Ihrem konkreten Fall — kein Sales-Pitch, kein Funnel.
           </p>
         </FadeUp>
 
         <FadeUp delay={200}>
           <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3 items-center justify-center">
-            <Link
-              href="/register"
+            <a
+              href="mailto:hallo@knoellchen-pilot.de?subject=15-Min%20Demo"
               className="w-full sm:w-auto inline-flex items-center justify-center h-13 px-7 rounded-full bg-white text-black text-[15px] font-medium hover:bg-white/90 transition-colors shadow-[0_8px_30px_-8px_rgba(255,255,255,0.4)] min-h-[52px]"
             >
-              Jetzt starten
-            </Link>
+              15-Min-Call buchen
+            </a>
             <Link
-              href="/login"
+              href="/register"
               className="w-full sm:w-auto inline-flex items-center justify-center h-13 px-7 rounded-full bg-white/5 ring-1 ring-white/10 text-white text-[15px] font-medium hover:bg-white/10 transition-colors min-h-[52px]"
             >
-              Demo anfragen
+              Oder gleich gratis testen →
             </Link>
           </div>
         </FadeUp>

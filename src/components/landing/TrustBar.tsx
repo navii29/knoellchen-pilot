@@ -2,8 +2,8 @@ import { FadeUp } from "./FadeUp";
 
 const stats: Array<[string, string]> = [
   ["30 Sek.", "pro Strafzettel — vom Foto zum versandfertigen PDF."],
-  ["95 %", "KI-Genauigkeit beim Auslesen deutscher Bußgeldbescheide."],
-  ["2 Cent", "pro Auslesung. Mehr kostet die KI-Verarbeitung nicht."],
+  ["20 Fotos", `Vorher/Nachher per Computer Vision. Streit um „war das schon vorher?" entfällt.`],
+  ["1 App", "für Verträge, Übergaben, Flotte und Strafzettel — statt fünf Excel-Tabellen."],
 ];
 
 export const TrustBar = () => {

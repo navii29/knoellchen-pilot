@@ -55,7 +55,7 @@ export const Nav = () => {
             href="/register"
             className="inline-flex items-center px-4 h-9 rounded-full bg-white text-black text-[13.5px] font-medium hover:bg-white/90 transition-colors"
           >
-            Kostenlos testen
+            30 Tage gratis testen
           </Link>
           <button
             aria-label="Menü"

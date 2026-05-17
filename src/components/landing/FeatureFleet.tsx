@@ -150,7 +150,7 @@ export const FeatureFleet = () => (
         <span className="text-white/40">Auf einen Blick.</span>
       </>
     }
-    description="Eine einzige Ansicht für deine ganze Flotte: Wer fährt was, was ist frei, was steht in der Werkstatt. Knöllchen-Pilot warnt bei nahenden Inspektionen, schlägt Aussteuerungen vor und macht aus Excel-Chaos ein Cockpit."
+    description="Eine einzige Ansicht für Ihre ganze Flotte: Wer fährt was, was ist frei, was steht in der Werkstatt. Knöllchen-Pilot warnt bei nahenden Inspektionen, schlägt Aussteuerungen vor und macht aus Excel-Chaos ein Cockpit."
     bullets={[
       "Live-Kalender für alle Fahrzeuge — Tag, Woche, Monat",
       "Statusübersicht: Vermietet, frei, Wartung, Reklamation",

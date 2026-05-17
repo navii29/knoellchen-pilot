@@ -97,15 +97,15 @@ export const FeatureAssistant = () => (
       <>
         Einfach sagen,
         <br />
-        <span className="text-white/40">was du brauchst.</span>
+        <span className="text-white/40">was Sie brauchen.</span>
       </>
     }
-    description="Lege Verträge an, frage Kennzahlen ab, finde verfügbare Fahrzeuge — alles per Spracheingabe oder Chat. Der Knöllchen-Pilot Assistent kennt deine ganze Flotte, deine Buchungen und alle Strafzettel und antwortet in Sekunden."
+    description="Verträge anlegen, Kennzahlen abfragen, freie Fahrzeuge finden — alles per Spracheingabe oder Chat. Der Knöllchen-Pilot Assistent kennt Ihre ganze Flotte, Ihre Buchungen und alle Strafzettel und antwortet in Sekunden."
     bullets={[
       "Spracheingabe in natürlichem Deutsch — kein Kommando-Stil nötig",
       "„Welcher BMW ist nächste Woche frei?“ — sofort die Antwort",
       "Aktionen per Sprache: Vertrag anlegen, E-Mail senden, Termin merken",
-      "Lernt deine Vermietung kennen und gibt proaktive Vorschläge",
+      "Lernt Ihre Vermietung kennen und gibt proaktive Vorschläge",
     ]}
     mockup={<Mock />}
     side="right"

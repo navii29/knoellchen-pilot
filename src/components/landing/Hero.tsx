@@ -151,7 +151,7 @@ export const Hero = () => {
         <FadeUp>
           <div className="inline-flex items-center gap-2 px-3 h-7 rounded-full bg-white/5 ring-1 ring-white/10 text-[12px] text-white/70 mb-8">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Neu — KI-Sprachassistent ist live
+            Aktuell in Pilotphase mit Vermietungen aus DACH
           </div>
         </FadeUp>
 
@@ -160,10 +160,10 @@ export const Hero = () => {
             className="font-display text-white leading-[1.02] tracking-[-0.035em] font-medium text-balance max-w-5xl mx-auto"
             style={{ fontSize: "clamp(34px, 9vw, 84px)" }}
           >
-            Die KI-Plattform für
+            Mehr als nur Knöllchen.
             <br />
             <span className="bg-gradient-to-br from-teal-200 via-emerald-300 to-teal-500 bg-clip-text text-transparent">
-              Autovermietungen.
+              Die KI-Plattform für Autovermietungen.
             </span>
           </h1>
         </FadeUp>
@@ -173,8 +173,9 @@ export const Hero = () => {
             className="mt-5 sm:mt-6 max-w-2xl mx-auto leading-[1.45] text-white/60 text-balance"
             style={{ fontSize: "clamp(15px, 3.5vw, 20px)" }}
           >
-            Verträge. Flotte. Kunden. Strafzettel. Alles in einer App —
-            mit künstlicher Intelligenz.
+            Verträge unterschreiben am Tablet. Schäden per Computer Vision
+            vergleichen. Strafzettel in 30 Sekunden weiterbelasten —
+            statt 30 Minuten.
           </p>
         </FadeUp>
 
@@ -184,7 +185,7 @@ export const Hero = () => {
               href="/register"
               className="w-full sm:w-auto inline-flex items-center justify-center h-12 px-6 rounded-full bg-white text-black text-[15px] font-medium hover:bg-white/90 transition-colors shadow-[0_8px_30px_-8px_rgba(255,255,255,0.4)]"
             >
-              Kostenlos testen
+              30 Tage gratis testen
             </Link>
             <a
               href="#features"
@@ -194,7 +195,7 @@ export const Hero = () => {
             </a>
           </div>
           <div className="mt-4 text-[12.5px] text-white/40">
-            30 Tage kostenlos. Keine Kreditkarte nötig.
+            Keine Kreditkarte. Keine Setup-Gebühr. Monatlich kündbar.
           </div>
         </FadeUp>
 

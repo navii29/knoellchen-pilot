@@ -1,12 +1,13 @@
 import { Nav } from "@/components/landing/Nav";
 import { Hero } from "@/components/landing/Hero";
 import { TrustBar } from "@/components/landing/TrustBar";
-import { FeatureTickets } from "@/components/landing/FeatureTickets";
-import { FeatureContracts } from "@/components/landing/FeatureContracts";
-import { FeatureSign } from "@/components/landing/FeatureSign";
-import { FeatureAssistant } from "@/components/landing/FeatureAssistant";
+import { Problem } from "@/components/landing/Problem";
 import { FeatureHandover } from "@/components/landing/FeatureHandover";
+import { FeatureTickets } from "@/components/landing/FeatureTickets";
+import { FeatureSign } from "@/components/landing/FeatureSign";
+import { FeatureContracts } from "@/components/landing/FeatureContracts";
 import { FeatureFleet } from "@/components/landing/FeatureFleet";
+import { FeatureAssistant } from "@/components/landing/FeatureAssistant";
 import { FeatureDynamicPricing } from "@/components/landing/FeatureDynamicPricing";
 import { FeatureCustomers } from "@/components/landing/FeatureCustomers";
 import { FeaturePortal } from "@/components/landing/FeaturePortal";
@@ -23,12 +24,16 @@ export default function Home() {
       <Nav />
       <Hero />
       <TrustBar />
-      <FeatureTickets />
-      <FeatureContracts />
-      <FeatureSign />
-      <FeatureAssistant />
+      <Problem />
+      {/* Top-3 Differenziatoren zuerst (Schaden-Vergleich = unique,
+          Strafzettel = Original-DNA, Sign = wichtigste Convenience). */}
       <FeatureHandover />
+      <FeatureTickets />
+      <FeatureSign />
+      {/* Restliche Features danach, nach Kaufentscheidungs-Schmerz sortiert. */}
+      <FeatureContracts />
       <FeatureFleet />
+      <FeatureAssistant />
       <FeatureDynamicPricing />
       <FeatureCustomers />
       <FeaturePortal />
