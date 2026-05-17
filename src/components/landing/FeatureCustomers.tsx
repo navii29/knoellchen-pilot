@@ -1,6 +1,100 @@
 import { FeatureSection } from "./FeatureSection";
 import { BrowserFrame } from "./BrowserFrame";
 
+// Stilisierter EU-Führerschein (Karte 85.6 × 54 mm → Aspect 1.585).
+// Pure CSS, kein externes Bild — passt zu Anna Bauer (rechte Form).
+const LicenseCard = () => (
+  <div className="relative aspect-[1.585/1] rounded-xl overflow-hidden ring-1 ring-black/10 shadow-md bg-gradient-to-br from-rose-200 via-pink-100 to-amber-50">
+    {/* Wasserzeichen-Streifen */}
+    <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent_0,transparent_8px,rgba(255,255,255,0.25)_8px,rgba(255,255,255,0.25)_9px)]" />
+    {/* Header */}
+    <div className="absolute top-1.5 left-2 right-2 flex items-center justify-between">
+      <div className="text-[7.5px] font-semibold tracking-wide text-stone-700 leading-tight">
+        FÜHRERSCHEIN
+        <div className="text-[6px] font-normal opacity-70">
+          BUNDESREPUBLIK DEUTSCHLAND
+        </div>
+      </div>
+      {/* EU-Flagge: blauer Kreis + Sterne + D */}
+      <div className="relative w-7 h-7 rounded-full bg-[#003399] flex items-center justify-center shrink-0">
+        {Array.from({ length: 12 }).map((_, i) => {
+          const angle = (i * 30 - 90) * (Math.PI / 180);
+          const r = 11;
+          const x = Math.cos(angle) * r + 14;
+          const y = Math.sin(angle) * r + 14;
+          return (
+            <span
+              key={i}
+              className="absolute text-[5px] text-[#FFCC00] leading-none"
+              style={{ left: x - 2, top: y - 2 }}
+            >
+              ★
+            </span>
+          );
+        })}
+        <span className="text-white text-[7.5px] font-bold relative z-10">D</span>
+      </div>
+    </div>
+
+    {/* Foto-Slot + Felder */}
+    <div className="absolute top-7 left-2 right-2 bottom-2 grid grid-cols-[28%_1fr] gap-2">
+      {/* Foto */}
+      <div className="rounded-md bg-stone-200/80 ring-1 ring-stone-300/80 flex items-center justify-center overflow-hidden">
+        <svg viewBox="0 0 32 40" className="w-8 h-10 text-stone-400">
+          <circle cx="16" cy="13" r="6.5" fill="currentColor" />
+          <path
+            d="M 4 38 Q 4 24 16 24 Q 28 24 28 38 Z"
+            fill="currentColor"
+          />
+        </svg>
+      </div>
+
+      {/* Felder mit nummerierten Labels */}
+      <div className="text-[6.5px] leading-[1.25] text-stone-800 space-y-[1px] font-mono">
+        <div>
+          <span className="opacity-50">1.</span>{" "}
+          <span className="font-semibold tracking-wide">BAUER</span>
+        </div>
+        <div>
+          <span className="opacity-50">2.</span> Anna
+        </div>
+        <div>
+          <span className="opacity-50">3.</span> 14.07.1989 · München
+        </div>
+        <div className="flex gap-2">
+          <span>
+            <span className="opacity-50">4a.</span> 12.03.2008
+          </span>
+          <span>
+            <span className="opacity-50">4b.</span> 11.03.2023
+          </span>
+        </div>
+        <div>
+          <span className="opacity-50">5.</span> K07HHX9MZ4
+        </div>
+        <div className="flex gap-2 pt-0.5">
+          <span>
+            <span className="opacity-50">9.</span>{" "}
+            <span className="font-semibold">B</span>
+          </span>
+          <span>
+            <span className="opacity-50">10.</span> 12.03.2008
+          </span>
+        </div>
+      </div>
+    </div>
+
+    {/* OCR-Highlights: dezent über den erkannten Feldern */}
+    <div className="absolute top-[40%] left-[32%] w-[40%] h-[10%] rounded-sm ring-2 ring-teal-500/80 bg-teal-400/15" />
+    <div className="absolute top-[52%] left-[32%] w-[28%] h-[10%] rounded-sm ring-2 ring-teal-500/80 bg-teal-400/15" />
+    <div className="absolute top-[64%] left-[32%] w-[55%] h-[10%] rounded-sm ring-2 ring-teal-500/80 bg-teal-400/15" />
+
+    <div className="absolute bottom-1 right-1.5 px-1.5 h-4 rounded bg-black/70 text-white text-[7.5px] flex items-center font-mono">
+      0,8s OCR
+    </div>
+  </div>
+);
+
 const Mock = () => (
   <BrowserFrame url="app.knoellchen-pilot.de/customers/new">
     <div className="p-5 text-[11px]">
@@ -20,26 +114,8 @@ const Mock = () => (
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {/* License preview */}
-        <div className="aspect-[4/3] rounded-lg overflow-hidden ring-1 ring-black/[0.08] relative bg-gradient-to-br from-pink-100 via-amber-50 to-stone-100">
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542362567-b07e54358753?w=500&q=70')] bg-cover bg-center opacity-40" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-          <div className="absolute top-2 left-2 right-2 flex justify-between items-start text-[8.5px]">
-            <span className="px-1.5 h-4 rounded bg-white/90 text-stone-700 font-medium flex items-center">
-              FÜHRERSCHEIN · DE
-            </span>
-            <span className="px-1.5 h-4 rounded bg-emerald-500 text-white font-medium flex items-center">
-              ✓ erkannt
-            </span>
-          </div>
-          {/* OCR overlay highlights */}
-          <div className="absolute top-[55%] left-[10%] w-[40%] h-3 rounded-sm ring-2 ring-teal-400 bg-teal-400/10" />
-          <div className="absolute top-[68%] left-[10%] w-[55%] h-3 rounded-sm ring-2 ring-teal-400 bg-teal-400/10" />
-          <div className="absolute top-[80%] left-[10%] w-[35%] h-3 rounded-sm ring-2 ring-teal-400 bg-teal-400/10" />
-          <div className="absolute bottom-2 right-2 px-1.5 h-4 rounded bg-black/70 text-white text-[8.5px] flex items-center font-mono">
-            0,8s OCR
-          </div>
-        </div>
+        {/* Echter EU-Führerschein-Mockup */}
+        <LicenseCard />
 
         {/* Extracted form */}
         <div className="space-y-2.5">
