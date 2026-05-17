@@ -141,7 +141,26 @@ const DashboardMock = () => (
 export const Hero = () => {
   return (
     <section className="relative overflow-hidden bg-black pt-28 sm:pt-40 pb-16 sm:pb-28">
-      {/* Radial glow */}
+      {/* Background video — nur auf sm+ (mobile spart Datenvolumen).
+          Datei in public/hero-video.mp4 ablegen. Fallback: schwarzer Bg. */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+        poster="/hero-poster.jpg"
+        aria-hidden="true"
+        className="hidden sm:block absolute inset-0 w-full h-full object-cover opacity-40"
+      >
+        <source src="/hero-video.mp4" type="video/mp4" />
+      </video>
+
+      {/* Dark-Vignetten-Overlay: oben weicher, unten satter, damit
+          Headline lesbar bleibt und der Übergang zum nächsten Block sauber ist. */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.45)_0%,rgba(0,0,0,0.75)_55%,rgba(0,0,0,0.95)_100%)]" />
+
+      {/* Radial glow obenauf — wie vorher, gibt der Page den Teal-Akzent */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-[34%] -translate-x-1/2 w-[1100px] h-[1100px] rounded-full bg-[radial-gradient(circle_at_center,rgba(45,212,191,0.20),rgba(45,212,191,0.05)_40%,transparent_70%)] blur-2xl" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
