@@ -141,8 +141,8 @@ const DashboardMock = () => (
 export const Hero = () => {
   return (
     <section className="relative overflow-hidden bg-black pt-28 sm:pt-40 pb-16 sm:pb-28">
-      {/* Background video — nur auf sm+ (mobile spart Datenvolumen).
-          Datei in public/hero-video.mp4 ablegen. Fallback: schwarzer Bg. */}
+      {/* Background video — auch auf Mobile. preload="metadata" lädt nur
+          den Header, das Video startet erst beim Decoden. */}
       <video
         autoPlay
         loop
@@ -151,7 +151,7 @@ export const Hero = () => {
         preload="metadata"
         poster="/hero-poster.jpg"
         aria-hidden="true"
-        className="hidden sm:block absolute inset-0 w-full h-full object-cover opacity-40"
+        className="absolute inset-0 w-full h-full object-cover opacity-40"
       >
         <source src="/hero-video.mp4" type="video/mp4" />
       </video>
