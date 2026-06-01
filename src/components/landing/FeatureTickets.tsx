@@ -82,11 +82,11 @@ export const FeatureTickets = () => (
           <span className="text-white/40">KI erledigt den Rest.</span>
         </>
       }
-      description="Bußgeldbescheid abfotografieren oder per E-Mail weiterleiten — Knöllchen-Pilot liest alle Daten aus, ordnet den Mieter zu, generiert Anschreiben, Rechnung und Zeugenfragebogen, und versendet alles automatisch. Was vorher 30 Minuten dauerte, dauert jetzt 30 Sekunden."
+      description="Bußgeldbescheid abfotografieren oder per E-Mail weiterleiten — Knöllchen-Pilot liest alle Daten aus, ordnet den Mieter zu, generiert Anschreiben, Rechnung und Zeugenfragebogen und legt alles versandfertig zu Ihrer Freigabe bereit. Was vorher eine halbe Stunde Handarbeit war, prüfen Sie jetzt in unter einer Minute."
       bullets={[
         "Claude Vision liest Aktenzeichen, Kennzeichen, Tatort und Betrag",
         "Automatischer Mieter-Match anhand Buchung und Tatzeitpunkt",
-        "PDFs nach §31a StVG-Standard, rechtssicher formatiert",
+        "Anschreiben zur Fahrerermittlung, Rechnung und Zeugenfragebogen sauber formatiert",
         "Zahlungsstatus und Mahnstufen werden automatisch getrackt",
       ]}
       mockup={<Mock />}

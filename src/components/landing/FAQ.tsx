@@ -6,7 +6,7 @@ import { FadeUp } from "./FadeUp";
 const faqs = [
   {
     q: "Wie genau ist die KI beim Auslesen von Strafzetteln?",
-    a: "Knöllchen-Pilot setzt auf Claude Sonnet 4.6 mit Vision-Capabilities. Bei deutschen Bußgeldbescheiden und Anhörungsbögen erreichen wir Erkennungsraten von durchschnittlich 95 %. Bei Unsicherheit zeigt das System einen Confidence-Wert an, sodass Sie unklare Fälle gezielt prüfen können.",
+    a: "Knöllchen-Pilot setzt auf Claude Sonnet 4.6 mit Vision-Capabilities. Bei deutschen Bußgeldbescheiden und Anhörungsbögen erreichen wir in unseren Tests Erkennungsraten von rund 95 %. Jedes ausgelesene Dokument bekommt einen Confidence-Wert, und vor dem Versand geben Sie es frei — unklare Fälle prüfen Sie also gezielt, bevor etwas rausgeht.",
   },
   {
     q: "Was passiert mit meinen Daten? Ist das DSGVO-konform?",
