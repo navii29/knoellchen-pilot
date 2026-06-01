@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BrowserFrame } from "./BrowserFrame";
 import { FadeUp } from "./FadeUp";
+import { BOOKING_URL } from "@/lib/links";
 
 const DashboardMock = () => (
   <div className="grid grid-cols-[110px_1fr] sm:grid-cols-[170px_1fr] h-[360px] sm:h-[460px] text-[10px] sm:text-[11px]">
@@ -207,10 +208,12 @@ export const Hero = () => {
               30 Tage gratis testen
             </Link>
             <a
-              href="#features"
+              href={BOOKING_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="w-full sm:w-auto inline-flex items-center justify-center h-12 px-6 rounded-full bg-white/5 ring-1 ring-white/10 text-white text-[15px] font-medium hover:bg-white/10 transition-colors"
             >
-              Funktionen ansehen →
+              Live-Demo mit dem Gründer
             </a>
           </div>
           <div className="mt-4 text-[12.5px] text-white/40">

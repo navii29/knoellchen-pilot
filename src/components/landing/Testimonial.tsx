@@ -1,4 +1,5 @@
 import { FadeUp } from "./FadeUp";
+import { BOOKING_URL } from "@/lib/links";
 
 export const Testimonial = () => {
   return (
@@ -37,7 +38,9 @@ export const Testimonial = () => {
         <FadeUp delay={240}>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
             <a
-              href="mailto:hallo@knoellchen-pilot.de?subject=Pilotphase%20Anfrage"
+              href={BOOKING_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center justify-center h-11 px-6 rounded-full bg-white text-black text-[14.5px] font-medium hover:bg-white/90 transition-colors"
             >
               Pilot werden
