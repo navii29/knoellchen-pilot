@@ -99,7 +99,7 @@ export const FeatureHandover = () => (
     }
     description="10 Fotos bei der Übergabe, 10 bei der Rückgabe — der Rest passiert von selbst. Knöllchen-Pilot vergleicht jedes Detail per Computer Vision und meldet jede Beule, jeden Kratzer, jede Verschmutzung. Kein Streit mehr darüber, was vorher schon da war."
     bullets={[
-      "Computer Vision erkennt Schäden mit über 90 % Genauigkeit",
+      "Computer Vision vergleicht jedes Detail und markiert neue Schäden zur Prüfung",
       "Automatisches Schadensprotokoll inkl. Lokalisierung am Fahrzeug",
       "Beweissicheres Foto-Archiv für jeden Mietvorgang",
       "Direkte Übernahme in Versicherungs- und Reparaturworkflows",
