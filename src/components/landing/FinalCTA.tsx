@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FadeUp } from "./FadeUp";
+import { BOOKING_URL } from "@/lib/links";
 
 export const FinalCTA = () => {
   return (
@@ -25,7 +26,7 @@ export const FinalCTA = () => {
 
         <FadeUp delay={120}>
           <p className="mt-5 sm:mt-7 text-[15px] sm:text-[20px] text-white/60 max-w-xl mx-auto leading-[1.5]">
-            15-Minuten-Call mit dem Gründer. Wir zeigen Knöllchen-Pilot
+            30-Minuten-Call mit dem Gründer. Wir zeigen Knöllchen-Pilot
             an Ihrem konkreten Fall — kein Sales-Pitch, kein Funnel.
           </p>
         </FadeUp>
@@ -33,10 +34,12 @@ export const FinalCTA = () => {
         <FadeUp delay={200}>
           <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3 items-center justify-center">
             <a
-              href="mailto:hallo@knoellchen-pilot.de?subject=15-Min%20Demo"
+              href={BOOKING_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="w-full sm:w-auto inline-flex items-center justify-center h-13 px-7 rounded-full bg-white text-black text-[15px] font-medium hover:bg-white/90 transition-colors shadow-[0_8px_30px_-8px_rgba(255,255,255,0.4)] min-h-[52px]"
             >
-              15-Min-Call buchen
+              30-Min-Call buchen
             </a>
             <Link
               href="/register"
