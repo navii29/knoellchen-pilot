@@ -10,7 +10,7 @@ const PhotoTile = ({
 }) => (
   <div
     className={`relative aspect-[4/3] rounded-md overflow-hidden ring-1 ${
-      flagged ? "ring-red-500" : "ring-black/[0.08]"
+      flagged ? "ring-red-500" : "ring-zinc-200"
     } bg-gradient-to-br from-zinc-300 to-zinc-500`}
   >
     <div className="absolute inset-0 bg-[url('/handover-demo.jpg')] bg-cover bg-center opacity-90" />

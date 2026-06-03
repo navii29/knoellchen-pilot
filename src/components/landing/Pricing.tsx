@@ -110,7 +110,7 @@ export const Pricing = () => {
             return (
               <FadeUp key={plan.name} delay={i * 70}>
                 <div
-                  className={`h-full rounded-2xl bg-white p-7 sm:p-8 flex flex-col ${
+                  className={`h-full rounded-xl bg-white p-7 sm:p-8 flex flex-col ${
                     featured
                       ? "ring-2 ring-indigo-600 shadow-[0_24px_60px_-30px_rgba(79,70,229,0.45)]"
                       : "ring-1 ring-zinc-200"

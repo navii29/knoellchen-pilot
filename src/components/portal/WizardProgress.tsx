@@ -22,7 +22,7 @@ export const WizardProgress = ({
       </div>
       <div className="h-1.5 rounded-full bg-zinc-200 overflow-hidden">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-emerald-500 transition-[width] duration-500 ease-out"
+          className="h-full rounded-full bg-indigo-600 transition-[width] duration-500 ease-out"
           style={{ width: `${pct}%` }}
         />
       </div>

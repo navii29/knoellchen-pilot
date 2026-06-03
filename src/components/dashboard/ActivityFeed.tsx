@@ -129,7 +129,7 @@ export const ActivityFeed = ({
             <div
               className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
                 it.tone === "accent"
-                  ? "bg-gradient-to-br from-indigo-50 to-emerald-50 text-indigo-700 ring-1 ring-indigo-100"
+                  ? "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100"
                   : "bg-zinc-100 text-zinc-600"
               }`}
             >

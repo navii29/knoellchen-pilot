@@ -36,7 +36,13 @@ const Mock = () => (
                   : "bg-white/10 text-white/60 ring-1 ring-white/15"
               }`}
             >
-              {done ? "✓" : i + 1}
+              {done ? (
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : (
+                i + 1
+              )}
             </div>
             <div className="flex-1">
               <div className={`text-[11px] ${done ? "text-white" : "text-white/60"}`}>
