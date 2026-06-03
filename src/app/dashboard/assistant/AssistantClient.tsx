@@ -26,9 +26,9 @@ type ChatMsg = { role: "user" | "assistant"; content: string; toolCalls?: ToolCa
 
 const SUGGESTIONS = [
   "Wie viele aktive Verträge haben wir?",
-  "Welche Autos sind am 28. April frei?",
-  "Rückgabe für MV-2026-8541: Kilometerstand 5890",
-  "Wer hatte M-AV 5678 am 21. April?",
+  "Welche Fahrzeuge sind aktuell frei?",
+  "Zeig mir die offenen Strafzettel.",
+  "Welche Verträge enden diese Woche?",
 ];
 
 export const AssistantClient = () => {
