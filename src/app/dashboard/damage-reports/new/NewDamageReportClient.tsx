@@ -155,17 +155,17 @@ export const NewDamageReportClient = ({
     <>
       <Link
         href="/dashboard/damage-reports"
-        className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 mb-4"
       >
         <ArrowLeft size={14} /> Zurück zur Liste
       </Link>
 
       <div className="font-display font-bold text-2xl tracking-tight">Neuer Schadensbericht</div>
-      <p className="text-sm text-stone-500 mt-1">
+      <p className="text-sm text-zinc-500 mt-1">
         Datum, Ort, Beschreibung und Fotos. Optional: Vertrag/Fahrzeug zuordnen + Gegnerdaten.
       </p>
 
-      <form onSubmit={submit} className="mt-6 rounded-2xl bg-white ring-1 ring-stone-200 p-6 space-y-6">
+      <form onSubmit={submit} className="mt-6 rounded-2xl bg-white ring-1 ring-zinc-200 p-6 space-y-6">
         <Section title="Zuordnung">
           <Field label="Vertrag (optional)">
             <select value={data.contract_id} onChange={(e) => pickContract(e.target.value)} className="input">
@@ -280,14 +280,14 @@ export const NewDamageReportClient = ({
               {stagedPreviews.map((src, i) => (
                 <div
                   key={i}
-                  className="relative aspect-square rounded-lg overflow-hidden bg-stone-100"
+                  className="relative aspect-square rounded-lg overflow-hidden bg-zinc-100"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={src} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => removeStaged(i)}
-                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white/90 backdrop-blur text-stone-700 hover:text-red-600 flex items-center justify-center shadow"
+                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white/90 backdrop-blur text-zinc-700 hover:text-red-600 flex items-center justify-center shadow"
                   >
                     <Trash2 size={11} />
                   </button>
@@ -296,7 +296,7 @@ export const NewDamageReportClient = ({
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                className="aspect-square rounded-lg border-2 border-dashed border-stone-200 flex flex-col items-center justify-center gap-1.5 text-stone-400 hover:text-teal-700 hover:border-teal-300 hover:bg-teal-50/40 transition"
+                className="aspect-square rounded-lg border-2 border-dashed border-zinc-200 flex flex-col items-center justify-center gap-1.5 text-zinc-400 hover:text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50/40 transition"
               >
                 <Camera size={20} />
                 <span className="text-[11px] font-medium">Foto hinzufügen</span>
@@ -311,7 +311,7 @@ export const NewDamageReportClient = ({
               />
             </div>
             {stagedPhotos.length === 0 && (
-              <div className="text-xs text-stone-500 mt-2">
+              <div className="text-xs text-zinc-500 mt-2">
                 Du kannst auch nach dem Speichern noch Fotos im Detail hinzufügen.
               </div>
             )}
@@ -355,14 +355,14 @@ export const NewDamageReportClient = ({
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div>
-    <div className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-3">{title}</div>
+    <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold mb-3">{title}</div>
     <div className="grid sm:grid-cols-2 gap-4">{children}</div>
   </div>
 );
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <label className="block">
-    <div className="text-[11px] uppercase tracking-wider text-stone-500 font-medium mb-1">{label}</div>
+    <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-medium mb-1">{label}</div>
     {children}
   </label>
 );

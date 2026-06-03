@@ -140,7 +140,7 @@ const CSS = `
   .logo img { max-height: 20mm; max-width: 90mm; object-fit: contain; }
   .logo.left img { max-height: 18mm; max-width: 70mm; }
   .logo-fallback {
-    color: #0d9488;
+    color: #4f46e5;
     font-size: 22pt;
     font-weight: 600;
     letter-spacing: -0.01em;

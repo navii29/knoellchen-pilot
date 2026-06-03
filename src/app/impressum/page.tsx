@@ -37,7 +37,7 @@ export default function ImpressumPage() {
         E-Mail:{" "}
         <a
           href="mailto:kontakt@knoellchen-pilot.de"
-          className="text-teal-700 hover:underline"
+          className="text-indigo-700 hover:underline"
         >
           kontakt@knoellchen-pilot.de
         </a>
@@ -113,7 +113,7 @@ export default function ImpressumPage() {
       </P>
 
       <P>
-        <span className="text-stone-500 text-[13.5px]">Stand: Juni 2026</span>
+        <span className="text-zinc-500 text-[13.5px]">Stand: Juni 2026</span>
       </P>
     </LegalShell>
   );

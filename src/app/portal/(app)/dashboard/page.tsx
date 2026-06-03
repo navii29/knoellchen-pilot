@@ -74,7 +74,7 @@ export default async function PortalDashboardPage() {
           {past.length > 6 && (
             <Link
               href="/portal/contracts"
-              className="block text-center text-[13px] text-teal-700 hover:underline pt-2"
+              className="block text-center text-[13px] text-indigo-700 hover:underline pt-2"
             >
               Alle {past.length} Verträge anzeigen
             </Link>
@@ -95,11 +95,11 @@ const Section = ({
   children: React.ReactNode;
 }) => (
   <div>
-    <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-2 px-1">
+    <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-zinc-500 font-semibold mb-2 px-1">
       <Icon size={12} />
       {title}
     </div>
-    <div className="rounded-2xl bg-white ring-1 ring-stone-200 divide-y divide-stone-100 overflow-hidden">
+    <div className="rounded-2xl bg-white ring-1 ring-zinc-200 divide-y divide-zinc-100 overflow-hidden">
       {children}
     </div>
   </div>
@@ -120,11 +120,11 @@ type Row = {
 const ContractRow = ({ c }: { c: Row }) => (
   <Link
     href={`/portal/contracts/${c.id}`}
-    className="flex items-center gap-3 px-4 py-3 hover:bg-stone-50"
+    className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-50"
   >
     <div className="flex-1 min-w-0">
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-mono text-[12.5px] text-stone-700">{c.plate}</span>
+        <span className="font-mono text-[12.5px] text-zinc-700">{c.plate}</span>
         {c.signed_at && (
           <span className="inline-flex items-center px-1.5 h-4 rounded bg-emerald-50 ring-1 ring-emerald-200 text-emerald-700 text-[10.5px] font-medium">
             unterschrieben
@@ -136,20 +136,20 @@ const ContractRow = ({ c }: { c: Row }) => (
           </span>
         )}
       </div>
-      <div className="text-[14px] text-stone-900 font-medium truncate mt-0.5">
+      <div className="text-[14px] text-zinc-900 font-medium truncate mt-0.5">
         {c.vehicle_type || "Fahrzeug"}
       </div>
-      <div className="text-[12px] text-stone-500 mt-0.5 tabular-nums">
+      <div className="text-[12px] text-zinc-500 mt-0.5 tabular-nums">
         {fmtDate(c.pickup_date)} → {fmtDate(c.return_date)}
         {c.total_amount != null && (
           <span className="ml-2">· {fmtEur(c.total_amount)}</span>
         )}
       </div>
     </div>
-    <ChevronRight size={14} className="text-stone-300 shrink-0" />
+    <ChevronRight size={14} className="text-zinc-300 shrink-0" />
   </Link>
 );
 
 const Empty = ({ text }: { text: string }) => (
-  <div className="px-4 py-6 text-center text-sm text-stone-500">{text}</div>
+  <div className="px-4 py-6 text-center text-sm text-zinc-500">{text}</div>
 );

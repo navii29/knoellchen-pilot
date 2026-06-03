@@ -65,11 +65,11 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
   return (
     <>
       <Topbar section={`Kunde · ${fullName(c)}`} />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
+      <div className="flex-1 overflow-auto scroll-thin bg-zinc-50">
         <div className="max-w-4xl mx-auto p-4 md:p-10">
           <Link
             href="/dashboard/customers"
-            className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+            className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 mb-4"
           >
             <ArrowLeft size={14} /> Zurück zu Kunden
           </Link>
@@ -77,11 +77,11 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
               {c.salutation && (
-                <div className="text-xs text-stone-500 mb-1">{c.salutation}</div>
+                <div className="text-xs text-zinc-500 mb-1">{c.salutation}</div>
               )}
               <h1 className="font-display font-bold text-3xl tracking-tight">{fullName(c)}</h1>
               {c.birthday && (
-                <div className="mt-1 text-sm text-stone-500">
+                <div className="mt-1 text-sm text-zinc-500">
                   geb. {fmtDate(c.birthday)}
                 </div>
               )}
@@ -110,7 +110,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                   href={licenseUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs text-teal-700 hover:underline mt-2"
+                  className="inline-flex items-center gap-1.5 text-xs text-indigo-700 hover:underline mt-2"
                 >
                   Foto öffnen <ChevronRight size={12} />
                 </a>
@@ -124,7 +124,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                   href={idCardUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs text-teal-700 hover:underline mt-2"
+                  className="inline-flex items-center gap-1.5 text-xs text-indigo-700 hover:underline mt-2"
                 >
                   Foto öffnen <ChevronRight size={12} />
                 </a>
@@ -133,8 +133,8 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
           </div>
 
           {c.notes && (
-            <div className="mt-3 rounded-xl bg-white ring-1 ring-stone-200 p-5">
-              <div className="text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2">
+            <div className="mt-3 rounded-xl bg-white ring-1 ring-zinc-200 p-5">
+              <div className="text-xs uppercase tracking-wider text-zinc-500 font-semibold mb-2">
                 Notizen
               </div>
               <div className="text-sm whitespace-pre-wrap">{c.notes}</div>
@@ -142,18 +142,18 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
           )}
 
           <div className="mt-6">
-            <div className="text-xs uppercase tracking-wider text-stone-500 font-medium mb-2 flex items-center gap-2">
+            <div className="text-xs uppercase tracking-wider text-zinc-500 font-medium mb-2 flex items-center gap-2">
               <FileSignature size={12} />
               Verträge dieses Kunden ({linkedContracts.length})
             </div>
-            <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+            <div className="rounded-xl bg-white ring-1 ring-zinc-200 overflow-hidden">
               {linkedContracts.length === 0 && (
-                <div className="px-5 py-8 text-center text-sm text-stone-500">
+                <div className="px-5 py-8 text-center text-sm text-zinc-500">
                   Noch keine Verträge mit diesem Kunden verknüpft.
                   <br />
                   <Link
                     href={`/dashboard/contracts/new?customer_id=${c.id}`}
-                    className="inline-block mt-2 text-teal-700 hover:underline"
+                    className="inline-block mt-2 text-indigo-700 hover:underline"
                   >
                     Vertrag mit diesem Kunden anlegen →
                   </Link>
@@ -163,16 +163,16 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                 <Link
                   key={ct.id}
                   href={`/dashboard/contracts/${ct.id}`}
-                  className="grid grid-cols-[140px_100px_1fr_120px_120px_24px] items-center gap-3 px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+                  className="grid grid-cols-[140px_100px_1fr_120px_120px_24px] items-center gap-3 px-5 py-3 border-b border-zinc-50 last:border-0 text-sm hover:bg-zinc-50"
                 >
                   <span className="font-mono text-xs">{ct.contract_nr}</span>
                   <span className="font-mono font-semibold">{ct.plate}</span>
-                  <span className="text-stone-700 truncate">{ct.vehicle_type || "—"}</span>
-                  <span className="text-xs text-stone-500 tabular-nums">
+                  <span className="text-zinc-700 truncate">{ct.vehicle_type || "—"}</span>
+                  <span className="text-xs text-zinc-500 tabular-nums">
                     {fmtDate(ct.pickup_date)} → {fmtDate(ct.return_date)}
                   </span>
                   <ContractStatusBadge status={ct.status} />
-                  <ChevronRight size={14} className="text-stone-300" />
+                  <ChevronRight size={14} className="text-zinc-300" />
                 </Link>
               ))}
             </div>
@@ -192,8 +192,8 @@ const InfoCard = ({
   Icon: typeof User;
   children: React.ReactNode;
 }) => (
-  <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
-    <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold mb-3">
+  <div className="rounded-xl bg-white ring-1 ring-zinc-200 p-5">
+    <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-zinc-500 font-semibold mb-3">
       <Icon size={13} />
       {title}
     </div>
@@ -211,7 +211,7 @@ const Row = ({
   mono?: boolean;
 }) => (
   <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-    <div className="text-stone-500 text-xs">{label}</div>
-    <div className={mono ? "tabular-nums text-stone-800" : "text-stone-800"}>{value}</div>
+    <div className="text-zinc-500 text-xs">{label}</div>
+    <div className={mono ? "tabular-nums text-zinc-800" : "text-zinc-800"}>{value}</div>
   </div>
 );

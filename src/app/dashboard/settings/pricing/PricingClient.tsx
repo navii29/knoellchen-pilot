@@ -135,7 +135,7 @@ export const PricingClient = ({ initialRules }: { initialRules: PricingRule[] })
     <>
       <Link
         href="/dashboard/settings"
-        className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 mb-4"
       >
         <ArrowLeft size={14} /> Zurück zu Einstellungen
       </Link>
@@ -143,7 +143,7 @@ export const PricingClient = ({ initialRules }: { initialRules: PricingRule[] })
       <div className="flex items-end justify-between gap-4 flex-wrap mb-6">
         <div>
           <div className="font-display font-bold text-2xl tracking-tight">Preisregeln</div>
-          <p className="text-sm text-stone-500 mt-1 max-w-xl">
+          <p className="text-sm text-zinc-500 mt-1 max-w-xl">
             Revenue Management für deine Flotte. Definiere Aufschläge oder Rabatte
             nach Saison, Wochentag oder Auslastung — die App schlägt bei jedem
             neuen Vertrag den optimalen Tagespreis vor.
@@ -152,29 +152,29 @@ export const PricingClient = ({ initialRules }: { initialRules: PricingRule[] })
         <button
           type="button"
           onClick={() => setEditing("new")}
-          className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-stone-900 text-white text-[14px] font-medium hover:bg-stone-800"
+          className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-zinc-900 text-white text-[14px] font-medium hover:bg-zinc-800"
         >
           <Plus size={14} /> Neue Regel
         </button>
       </div>
 
       {rules.length === 0 ? (
-        <div className="rounded-xl bg-white ring-1 ring-stone-200 p-10 text-center">
-          <CalendarRange size={28} className="mx-auto text-stone-300 mb-2" />
-          <div className="text-sm text-stone-600">
+        <div className="rounded-xl bg-white ring-1 ring-zinc-200 p-10 text-center">
+          <CalendarRange size={28} className="mx-auto text-zinc-300 mb-2" />
+          <div className="text-sm text-zinc-600">
             Noch keine Regeln definiert. Lege eine erste an, z.&nbsp;B. „Hochsaison
             Sommer +20%“.
           </div>
         </div>
       ) : (
-        <div className="rounded-xl bg-white ring-1 ring-stone-200 divide-y divide-stone-100 overflow-hidden">
+        <div className="rounded-xl bg-white ring-1 ring-zinc-200 divide-y divide-zinc-100 overflow-hidden">
           {rules.map((r) => {
             const meta = TYPE_META[r.type];
             const Icon = meta.icon;
             return (
               <div
                 key={r.id}
-                className="px-5 py-4 grid grid-cols-[40px_1fr_auto] items-center gap-3 hover:bg-stone-50 transition-colors"
+                className="px-5 py-4 grid grid-cols-[40px_1fr_auto] items-center gap-3 hover:bg-zinc-50 transition-colors"
               >
                 <div
                   className="w-9 h-9 rounded-lg flex items-center justify-center"
@@ -184,7 +184,7 @@ export const PricingClient = ({ initialRules }: { initialRules: PricingRule[] })
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[15px] font-medium text-stone-900 truncate">
+                    <span className="text-[15px] font-medium text-zinc-900 truncate">
                       {r.name}
                     </span>
                     <span
@@ -205,25 +205,25 @@ export const PricingClient = ({ initialRules }: { initialRules: PricingRule[] })
                       {fmtPct(r.adjustment_percent)}
                     </span>
                   </div>
-                  <div className="text-[12.5px] text-stone-500 mt-0.5 truncate">
+                  <div className="text-[12.5px] text-zinc-500 mt-0.5 truncate">
                     {ruleSummary(r)}
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <label className="inline-flex items-center gap-2 text-[12.5px] text-stone-500 cursor-pointer">
+                  <label className="inline-flex items-center gap-2 text-[12.5px] text-zinc-500 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={r.active}
                       disabled={busyId === r.id}
                       onChange={() => toggleActive(r)}
-                      className="w-4 h-4 accent-teal-600"
+                      className="w-4 h-4 accent-indigo-600"
                     />
                     {r.active ? "Aktiv" : "Inaktiv"}
                   </label>
                   <button
                     type="button"
                     onClick={() => setEditing(r)}
-                    className="text-[12.5px] text-stone-500 hover:text-stone-900 px-2 py-1"
+                    className="text-[12.5px] text-zinc-500 hover:text-zinc-900 px-2 py-1"
                   >
                     Bearbeiten
                   </button>
@@ -231,7 +231,7 @@ export const PricingClient = ({ initialRules }: { initialRules: PricingRule[] })
                     type="button"
                     onClick={() => remove(r)}
                     disabled={busyId === r.id}
-                    className="p-1.5 text-stone-400 hover:text-rose-600 disabled:opacity-30"
+                    className="p-1.5 text-zinc-400 hover:text-rose-600 disabled:opacity-30"
                     title="Löschen"
                   >
                     <Trash2 size={13} />
@@ -267,7 +267,7 @@ export const PricingClient = ({ initialRules }: { initialRules: PricingRule[] })
 };
 
 const inputCls =
-  "w-full h-10 px-3 rounded-lg bg-white ring-1 ring-stone-200 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500 transition-shadow";
+  "w-full h-10 px-3 rounded-lg bg-white ring-1 ring-zinc-200 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-shadow";
 
 const RuleModal = ({
   initial,
@@ -362,14 +362,14 @@ const RuleModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <button
-        className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
         onClick={onClose}
         aria-label="Schließen"
       />
-      <div className="relative w-full sm:max-w-lg max-h-[90vh] flex flex-col bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl ring-1 ring-stone-200 overflow-hidden">
-        <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100">
+      <div className="relative w-full sm:max-w-lg max-h-[90vh] flex flex-col bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl ring-1 ring-zinc-200 overflow-hidden">
+        <div className="px-6 py-4 flex items-center justify-between border-b border-zinc-100">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] font-semibold text-teal-700">
+            <div className="text-[11px] uppercase tracking-[0.08em] font-semibold text-indigo-700">
               Preisregel
             </div>
             <h2 className="font-display text-xl tracking-tight font-medium mt-0.5">
@@ -378,7 +378,7 @@ const RuleModal = ({
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full inline-flex items-center justify-center text-stone-500 hover:bg-stone-100"
+            className="w-9 h-9 rounded-full inline-flex items-center justify-center text-zinc-500 hover:bg-zinc-100"
           >
             <X size={16} />
           </button>
@@ -422,7 +422,7 @@ const RuleModal = ({
                 inputMode="decimal"
                 placeholder="z. B. 20 oder -10"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[14px] text-stone-400">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[14px] text-zinc-400">
                 %
               </span>
             </div>
@@ -461,8 +461,8 @@ const RuleModal = ({
                       onClick={() => toggleWeekday(w.iso)}
                       className={`h-10 rounded-lg text-sm font-medium transition-all ${
                         on
-                          ? "bg-stone-900 text-white"
-                          : "bg-white text-stone-600 ring-1 ring-stone-200 hover:ring-stone-300"
+                          ? "bg-zinc-900 text-white"
+                          : "bg-white text-zinc-600 ring-1 ring-zinc-200 hover:ring-zinc-300"
                       }`}
                     >
                       {w.label}
@@ -490,14 +490,14 @@ const RuleModal = ({
             </Field>
           )}
 
-          <label className="flex items-start gap-3 p-3 rounded-lg ring-1 ring-stone-200 cursor-pointer">
+          <label className="flex items-start gap-3 p-3 rounded-lg ring-1 ring-zinc-200 cursor-pointer">
             <input
               type="checkbox"
               checked={active}
               onChange={(e) => setActive(e.target.checked)}
-              className="mt-0.5 w-4 h-4 accent-teal-600"
+              className="mt-0.5 w-4 h-4 accent-indigo-600"
             />
-            <div className="text-sm text-stone-700">
+            <div className="text-sm text-zinc-700">
               Regel ist <strong>aktiv</strong> — wird bei der Preisberechnung berücksichtigt.
             </div>
           </label>
@@ -509,11 +509,11 @@ const RuleModal = ({
           )}
         </div>
 
-        <div className="px-6 py-4 flex items-center justify-end gap-3 border-t border-stone-100">
+        <div className="px-6 py-4 flex items-center justify-end gap-3 border-t border-zinc-100">
           <button
             type="button"
             onClick={onClose}
-            className="text-sm text-stone-500 hover:text-stone-800 px-3"
+            className="text-sm text-zinc-500 hover:text-zinc-800 px-3"
           >
             Abbrechen
           </button>
@@ -521,7 +521,7 @@ const RuleModal = ({
             type="button"
             onClick={submit}
             disabled={saving}
-            className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-40"
+            className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-800 disabled:opacity-40"
           >
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
             {initial ? "Speichern" : "Regel anlegen"}
@@ -545,11 +545,11 @@ const Field = ({
 }) => (
   <label className="block">
     <div className="flex items-baseline justify-between mb-1">
-      <span className="text-[12px] font-medium text-stone-700">
+      <span className="text-[12px] font-medium text-zinc-700">
         {label}
         {required && <span className="text-rose-500 ml-0.5">*</span>}
       </span>
-      {hint && <span className="text-[11px] text-stone-400">{hint}</span>}
+      {hint && <span className="text-[11px] text-zinc-400">{hint}</span>}
     </div>
     {children}
   </label>

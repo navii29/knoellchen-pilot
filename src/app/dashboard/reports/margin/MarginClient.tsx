@@ -92,7 +92,7 @@ export const MarginClient = () => {
     <>
       <Link
         href="/dashboard/reports"
-        className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 mb-4"
       >
         <ArrowLeft size={14} /> Zurück zur Auswertung
       </Link>
@@ -102,7 +102,7 @@ export const MarginClient = () => {
           <div className="font-display font-bold text-2xl tracking-tight">
             Margenrechnung
           </div>
-          <p className="text-sm text-stone-500 mt-1 max-w-xl">
+          <p className="text-sm text-zinc-500 mt-1 max-w-xl">
             Welche Fahrzeuge verdienen Geld, welche nicht? EK-Kosten laufen
             jeden Tag — auch wenn das Auto steht.
           </p>
@@ -111,21 +111,21 @@ export const MarginClient = () => {
           href={`/api/reports/margin/pdf?from=${from}&to=${to}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-md bg-stone-900 text-white font-medium hover:bg-stone-800"
+          className="inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-md bg-zinc-900 text-white font-medium hover:bg-zinc-800"
         >
           <Download size={13} /> Als PDF
         </a>
       </div>
 
       {/* Period Selector */}
-      <div className="mt-6 rounded-xl bg-white ring-1 ring-stone-200 p-4 sm:p-5">
+      <div className="mt-6 rounded-xl bg-white ring-1 ring-zinc-200 p-4 sm:p-5">
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           {presets.map((p) => (
             <button
               key={p.days}
               type="button"
               onClick={() => setPreset(p.days)}
-              className="text-[12.5px] px-3 h-8 rounded-full bg-stone-100 text-stone-700 font-medium hover:bg-stone-200"
+              className="text-[12.5px] px-3 h-8 rounded-full bg-zinc-100 text-zinc-700 font-medium hover:bg-zinc-200"
             >
               {p.label}
             </button>
@@ -133,32 +133,32 @@ export const MarginClient = () => {
         </div>
         <div className="grid grid-cols-[1fr_1fr_auto] gap-3 items-end">
           <label className="block">
-            <div className="text-[11.5px] uppercase tracking-wider text-stone-500 font-medium mb-1 inline-flex items-center gap-1.5">
+            <div className="text-[11.5px] uppercase tracking-wider text-zinc-500 font-medium mb-1 inline-flex items-center gap-1.5">
               <Calendar size={11} /> Von
             </div>
             <input
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg bg-white ring-1 ring-stone-200 text-sm outline-none focus:ring-2 focus:ring-teal-500/40"
+              className="w-full h-10 px-3 rounded-lg bg-white ring-1 ring-zinc-200 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40"
             />
           </label>
           <label className="block">
-            <div className="text-[11.5px] uppercase tracking-wider text-stone-500 font-medium mb-1 inline-flex items-center gap-1.5">
+            <div className="text-[11.5px] uppercase tracking-wider text-zinc-500 font-medium mb-1 inline-flex items-center gap-1.5">
               <Calendar size={11} /> Bis
             </div>
             <input
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg bg-white ring-1 ring-stone-200 text-sm outline-none focus:ring-2 focus:ring-teal-500/40"
+              className="w-full h-10 px-3 rounded-lg bg-white ring-1 ring-zinc-200 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40"
             />
           </label>
           <button
             type="button"
             onClick={() => load(from, to)}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 text-sm px-3 h-10 rounded-lg ring-1 ring-stone-200 hover:bg-stone-50 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 text-sm px-3 h-10 rounded-lg ring-1 ring-zinc-200 hover:bg-zinc-50 disabled:opacity-50"
           >
             {loading ? <Loader2 size={13} className="animate-spin" /> : null}
             Aktualisieren
@@ -207,14 +207,14 @@ export const MarginClient = () => {
 
       {/* Per-vehicle table */}
       {m && (
-        <div className="mt-6 rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+        <div className="mt-6 rounded-xl bg-white ring-1 ring-zinc-200 overflow-hidden">
           {m.vehicles.length === 0 ? (
-            <div className="px-5 py-12 text-center text-sm text-stone-500">
+            <div className="px-5 py-12 text-center text-sm text-zinc-500">
               Keine Fahrzeuge in der Flotte.
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-[110px_1fr_70px_90px_90px_90px_100px_70px] items-center gap-3 px-5 py-2.5 bg-stone-50 border-b border-stone-100 text-[10.5px] uppercase tracking-wider text-stone-500 font-semibold">
+              <div className="grid grid-cols-[110px_1fr_70px_90px_90px_90px_100px_70px] items-center gap-3 px-5 py-2.5 bg-zinc-50 border-b border-zinc-100 text-[10.5px] uppercase tracking-wider text-zinc-500 font-semibold">
                 <span>Kennzeichen</span>
                 <span>Fahrzeug</span>
                 <span className="text-right">Tage</span>
@@ -232,24 +232,24 @@ export const MarginClient = () => {
                   <Link
                     key={v.vehicle_id}
                     href={`/dashboard/vehicles/${v.vehicle_id}`}
-                    className="grid grid-cols-[110px_1fr_70px_90px_90px_90px_100px_70px] items-center gap-3 px-5 py-2.5 hover:bg-stone-50 border-b border-stone-100 last:border-0"
+                    className="grid grid-cols-[110px_1fr_70px_90px_90px_90px_100px_70px] items-center gap-3 px-5 py-2.5 hover:bg-zinc-50 border-b border-zinc-100 last:border-0"
                   >
-                    <span className="font-mono text-sm font-semibold text-stone-900">
+                    <span className="font-mono text-sm font-semibold text-zinc-900">
                       {v.plate}
                     </span>
-                    <span className="text-sm text-stone-700 truncate">
+                    <span className="text-sm text-zinc-700 truncate">
                       {v.label}
                     </span>
-                    <span className="text-sm tabular-nums text-right text-stone-700">
+                    <span className="text-sm tabular-nums text-right text-zinc-700">
                       {v.rented_days}/{v.period_days}
                     </span>
-                    <span className="text-sm tabular-nums text-right text-stone-500">
+                    <span className="text-sm tabular-nums text-right text-zinc-500">
                       {fmtEur(v.ek_total)}
                     </span>
-                    <span className="text-sm tabular-nums text-right text-stone-500">
+                    <span className="text-sm tabular-nums text-right text-zinc-500">
                       {v.target_daily_rate != null ? fmtEur(v.soll_vk_total) : "—"}
                     </span>
-                    <span className="text-sm tabular-nums text-right text-stone-900 font-medium">
+                    <span className="text-sm tabular-nums text-right text-zinc-900 font-medium">
                       {fmtEur(v.ist_vk_total)}
                     </span>
                     <span
@@ -277,21 +277,21 @@ export const MarginClient = () => {
                 );
               })}
               {/* Totals row */}
-              <div className="grid grid-cols-[110px_1fr_70px_90px_90px_90px_100px_70px] items-center gap-3 px-5 py-3 bg-stone-50 border-t border-stone-200 text-[12.5px] font-medium">
-                <span className="text-stone-500 uppercase tracking-wider text-[10.5px]">
+              <div className="grid grid-cols-[110px_1fr_70px_90px_90px_90px_100px_70px] items-center gap-3 px-5 py-3 bg-zinc-50 border-t border-zinc-200 text-[12.5px] font-medium">
+                <span className="text-zinc-500 uppercase tracking-wider text-[10.5px]">
                   Summe
                 </span>
                 <span></span>
-                <span className="text-right tabular-nums text-stone-700">
+                <span className="text-right tabular-nums text-zinc-700">
                   {m.total_rented_days}/{m.total_possible_days}
                 </span>
-                <span className="text-right tabular-nums text-stone-700">
+                <span className="text-right tabular-nums text-zinc-700">
                   {fmtEur(m.total_ek)}
                 </span>
-                <span className="text-right tabular-nums text-stone-700">
+                <span className="text-right tabular-nums text-zinc-700">
                   {fmtEur(m.total_soll_vk)}
                 </span>
-                <span className="text-right tabular-nums text-stone-900">
+                <span className="text-right tabular-nums text-zinc-900">
                   {fmtEur(m.total_ist_vk)}
                 </span>
                 <span
@@ -300,7 +300,7 @@ export const MarginClient = () => {
                 >
                   {fmtEur(m.total_margin)}
                 </span>
-                <span className="text-right tabular-nums text-stone-700">
+                <span className="text-right tabular-nums text-zinc-700">
                   {m.avg_utilization_pct.toFixed(0)}%
                 </span>
               </div>
@@ -334,7 +334,7 @@ const SummaryCard = ({
       ? "bg-amber-50 ring-amber-200"
       : highlight === "bad"
       ? "bg-rose-50 ring-rose-200"
-      : "bg-white ring-stone-200";
+      : "bg-white ring-zinc-200";
   const valColor =
     highlight === "good"
       ? "text-emerald-700"
@@ -342,12 +342,12 @@ const SummaryCard = ({
       ? "text-amber-700"
       : highlight === "bad"
       ? "text-rose-700"
-      : "text-stone-900";
+      : "text-zinc-900";
   return (
     <div className={`rounded-xl ring-1 p-4 ${bg}`}>
       <div
         className={`text-[11px] uppercase tracking-wider font-semibold ${
-          muted ? "text-stone-400" : "text-stone-500"
+          muted ? "text-zinc-400" : "text-zinc-500"
         }`}
       >
         {label}
@@ -364,7 +364,7 @@ const SummaryCard = ({
               ? "text-emerald-700"
               : deltaDirection === "down"
               ? "text-rose-700"
-              : "text-stone-500"
+              : "text-zinc-500"
           }`}
         >
           {deltaDirection === "up" ? (

@@ -37,7 +37,7 @@ export default async function CalendarPage({
   return (
     <>
       <Topbar section="Kalender" />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
+      <div className="flex-1 overflow-auto scroll-thin bg-zinc-50">
         <div className="px-4 md:px-8 py-4 md:py-8">
           <CalendarClient
             vehicles={(vehicles || []) as Vehicle[]}

@@ -113,11 +113,11 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
   return (
     <>
       <Topbar section={`Fahrzeug · ${v.plate}`} />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
+      <div className="flex-1 overflow-auto scroll-thin bg-zinc-50">
         <div className="max-w-4xl mx-auto p-4 md:p-10">
           <Link
             href="/dashboard/vehicles"
-            className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+            className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 mb-4"
           >
             <ArrowLeft size={14} /> Zurück zu Fahrzeugen
           </Link>
@@ -137,7 +137,7 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
                   {status.label}
                 </span>
                 {v.category && (
-                  <span className="text-[11px] uppercase tracking-wider text-stone-400 font-medium">
+                  <span className="text-[11px] uppercase tracking-wider text-zinc-400 font-medium">
                     {v.category}
                   </span>
                 )}
@@ -145,7 +145,7 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
               <h1 className="font-display font-bold text-2xl md:text-3xl tracking-tight">
                 {displayName}
               </h1>
-              <div className="mt-1 text-sm text-stone-500 flex items-center gap-2 flex-wrap">
+              <div className="mt-1 text-sm text-zinc-500 flex items-center gap-2 flex-wrap">
                 <span className="font-mono">{v.plate}</span>
                 {v.color && <span className="font-sans">· {v.color}</span>}
                 {v.lexoffice_product_id && (
@@ -262,8 +262,8 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
             </InfoCard>
 
             {v.accessories && (
-              <div className="sm:col-span-2 rounded-xl bg-white ring-1 ring-stone-200 p-5">
-                <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2">
+              <div className="sm:col-span-2 rounded-xl bg-white ring-1 ring-zinc-200 p-5">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-zinc-500 font-semibold mb-2">
                   <Sparkles size={13} /> Zubehör
                 </div>
                 <div className="text-sm whitespace-pre-wrap">{v.accessories}</div>
@@ -301,7 +301,7 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
           </div>
 
           <details className="mt-6 group">
-            <summary className="cursor-pointer text-sm font-medium text-stone-700 hover:text-stone-900 inline-flex items-center gap-1.5">
+            <summary className="cursor-pointer text-sm font-medium text-zinc-700 hover:text-zinc-900 inline-flex items-center gap-1.5">
               <ChevronRight size={14} className="group-open:rotate-90 transition-transform" />
               Daten bearbeiten
             </summary>
@@ -311,14 +311,14 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
           </details>
 
           <div className="mt-6">
-            <div className="text-xs uppercase tracking-wider text-stone-500 font-medium mb-2 flex items-center gap-2">
+            <div className="text-xs uppercase tracking-wider text-zinc-500 font-medium mb-2 flex items-center gap-2">
               <FileSignature size={12} />
               Verträge mit diesem Kennzeichen ({linkedContracts.length})
             </div>
-            <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+            <div className="rounded-xl bg-white ring-1 ring-zinc-200 overflow-hidden">
               {linkedContracts.length === 0 && (
-                <div className="px-5 py-8 text-center text-sm text-stone-500">
-                  <Car size={24} className="mx-auto text-stone-300" />
+                <div className="px-5 py-8 text-center text-sm text-zinc-500">
+                  <Car size={24} className="mx-auto text-zinc-300" />
                   <div className="mt-2">Noch keine Verträge mit diesem Fahrzeug.</div>
                 </div>
               )}
@@ -326,15 +326,15 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
                 <Link
                   key={ct.id}
                   href={`/dashboard/contracts/${ct.id}`}
-                  className="grid grid-cols-[140px_1fr_180px_120px_24px] items-center gap-3 px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+                  className="grid grid-cols-[140px_1fr_180px_120px_24px] items-center gap-3 px-5 py-3 border-b border-zinc-50 last:border-0 text-sm hover:bg-zinc-50"
                 >
                   <span className="font-mono text-xs">{ct.contract_nr}</span>
-                  <span className="text-stone-700 truncate">{ct.renter_name}</span>
-                  <span className="text-xs text-stone-500 tabular-nums">
+                  <span className="text-zinc-700 truncate">{ct.renter_name}</span>
+                  <span className="text-xs text-zinc-500 tabular-nums">
                     {fmtDate(ct.pickup_date)} → {fmtDate(ct.return_date)}
                   </span>
                   <ContractStatusBadge status={ct.status} />
-                  <ChevronRight size={14} className="text-stone-300" />
+                  <ChevronRight size={14} className="text-zinc-300" />
                 </Link>
               ))}
             </div>
@@ -354,8 +354,8 @@ const InfoCard = ({
   Icon: LucideIcon;
   children: React.ReactNode;
 }) => (
-  <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
-    <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold mb-3">
+  <div className="rounded-xl bg-white ring-1 ring-zinc-200 p-5">
+    <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-zinc-500 font-semibold mb-3">
       <Icon size={13} />
       {title}
     </div>
@@ -373,7 +373,7 @@ const Row = ({
   mono?: boolean;
 }) => (
   <div className="grid grid-cols-[140px_1fr] gap-2 text-sm">
-    <div className="text-stone-500 text-xs">{label}</div>
-    <div className={mono ? "tabular-nums text-stone-800" : "text-stone-800"}>{value}</div>
+    <div className="text-zinc-500 text-xs">{label}</div>
+    <div className={mono ? "tabular-nums text-zinc-800" : "text-zinc-800"}>{value}</div>
   </div>
 );

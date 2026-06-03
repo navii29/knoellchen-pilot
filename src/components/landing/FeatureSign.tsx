@@ -6,33 +6,33 @@ const SignMock = () => (
     <div className="p-5 text-[11px]">
       <div className="grid grid-cols-[1fr_180px] gap-4 items-start">
         {/* PDF preview side */}
-        <div className="rounded-lg ring-1 ring-stone-200 bg-stone-50 px-3 py-3">
-          <div className="text-[8.5px] uppercase tracking-wider text-stone-500 font-semibold mb-2">
+        <div className="rounded-lg ring-1 ring-zinc-200 bg-zinc-50 px-3 py-3">
+          <div className="text-[8.5px] uppercase tracking-wider text-zinc-500 font-semibold mb-2">
             Vertragsvorschau
           </div>
-          <div className="bg-white rounded ring-1 ring-stone-200 px-3 py-3 space-y-2">
+          <div className="bg-white rounded ring-1 ring-zinc-200 px-3 py-3 space-y-2">
             <div className="text-[10px] font-bold text-zinc-900">
               Mietwagen Müller GmbH
             </div>
-            <div className="text-[12px] font-bold text-stone-900 leading-tight">
+            <div className="text-[12px] font-bold text-zinc-900 leading-tight">
               Mietvertrag MV-2026-0184
             </div>
             <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[8.5px] mt-2">
-              <div className="text-stone-400">Mieter</div>
-              <div className="text-stone-700 font-medium">Lukas Becker</div>
-              <div className="text-stone-400">Fahrzeug</div>
-              <div className="text-stone-700">VW Polo · M-AV 5678</div>
-              <div className="text-stone-400">Mietzeitraum</div>
-              <div className="text-stone-700 font-mono">20.04. → 23.04.</div>
-              <div className="text-stone-400">Tagespreis</div>
-              <div className="text-stone-700 font-mono">49,00 €</div>
-              <div className="text-stone-400">Gesamt</div>
-              <div className="text-stone-900 font-semibold font-mono">
+              <div className="text-zinc-400">Mieter</div>
+              <div className="text-zinc-700 font-medium">Lukas Becker</div>
+              <div className="text-zinc-400">Fahrzeug</div>
+              <div className="text-zinc-700">VW Polo · M-AV 5678</div>
+              <div className="text-zinc-400">Mietzeitraum</div>
+              <div className="text-zinc-700 font-mono">20.04. → 23.04.</div>
+              <div className="text-zinc-400">Tagespreis</div>
+              <div className="text-zinc-700 font-mono">49,00 €</div>
+              <div className="text-zinc-400">Gesamt</div>
+              <div className="text-zinc-900 font-semibold font-mono">
                 147,00 €
               </div>
             </div>
             <div className="h-1.5" />
-            <div className="text-[8px] text-stone-400 leading-tight">
+            <div className="text-[8px] text-zinc-400 leading-tight">
               § 1 Vertragsgegenstand · § 2 Übergabe und Rückgabe · § 3 Mietzeit
               und Mietzins · § 4 Kilometerregelung · § 5 Tankregelung · § 6
               Versicherung und Selbstbeteiligung · § 7 Pflichten des Mieters …
@@ -41,14 +41,14 @@ const SignMock = () => (
         </div>
 
         {/* Signature pad */}
-        <div className="rounded-lg ring-1 ring-stone-200 bg-white p-3">
+        <div className="rounded-lg ring-1 ring-zinc-200 bg-white p-3">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-[8.5px] uppercase tracking-wider text-stone-500 font-semibold">
+            <div className="text-[8.5px] uppercase tracking-wider text-zinc-500 font-semibold">
               Unterschrift
             </div>
-            <div className="text-[8.5px] text-stone-400">Löschen</div>
+            <div className="text-[8.5px] text-zinc-400">Löschen</div>
           </div>
-          <div className="rounded ring-1 ring-stone-200 bg-stone-50 h-24 relative overflow-hidden">
+          <div className="rounded ring-1 ring-zinc-200 bg-zinc-50 h-24 relative overflow-hidden">
             {/* Stylized signature curve */}
             <svg
               viewBox="0 0 160 96"
@@ -78,11 +78,11 @@ const SignMock = () => (
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
-            <div className="text-[8.5px] text-stone-600 leading-tight">
+            <div className="text-[8.5px] text-zinc-600 leading-tight">
               Ich akzeptiere die Mietbedingungen.
             </div>
           </div>
-          <div className="mt-3 h-7 rounded-full bg-stone-900 text-white text-[9.5px] font-medium flex items-center justify-center gap-1">
+          <div className="mt-3 h-7 rounded-full bg-zinc-900 text-white text-[9.5px] font-medium flex items-center justify-center gap-1">
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
@@ -111,7 +111,7 @@ export const FeatureSign = () => (
       <>
         Vertrag unterschreiben.
         <br />
-        <span className="text-stone-400">Am Tablet. In 5 Sekunden.</span>
+        <span className="text-zinc-400">Am Tablet. In 5 Sekunden.</span>
       </>
     }
     description="Knöllchen-Pilot generiert den kompletten Mietvertrag als PDF — mit allen Daten, AGB und Konditionen. Der Kunde unterschreibt digital auf dem Tablet oder Handy. Kein Drucker, kein Scanner, kein Papier."

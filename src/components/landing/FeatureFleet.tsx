@@ -19,7 +19,7 @@ const Mock = () => (
               key={kw}
               className={`px-2 h-6 rounded text-[10px] flex items-center ${
                 i === 1
-                  ? "bg-teal-500 text-black font-medium"
+                  ? "bg-indigo-500 text-black font-medium"
                   : "bg-white/[0.06] text-white/60 ring-1 ring-white/[0.08]"
               }`}
             >
@@ -72,7 +72,7 @@ const Mock = () => (
             <div
               key={d}
               className={`text-center flex items-center justify-center ${
-                i === 2 ? "text-teal-400 bg-teal-500/[0.06]" : ""
+                i === 2 ? "text-indigo-400 bg-indigo-500/[0.06]" : ""
               }`}
             >
               {d}
@@ -112,7 +112,7 @@ const Mock = () => (
                       : row[5] === "emerald"
                       ? "bg-emerald-500"
                       : row[5] === "teal"
-                      ? "bg-teal-500 text-black"
+                      ? "bg-indigo-500 text-black"
                       : "bg-amber-500"
                   }`}
                   style={{

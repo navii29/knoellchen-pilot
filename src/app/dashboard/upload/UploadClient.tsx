@@ -90,14 +90,14 @@ export const UploadClient = ({ inboundEmail }: { inboundEmail: string | null }) 
   return (
     <>
       <Topbar section="Strafzettel hochladen" />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
+      <div className="flex-1 overflow-auto scroll-thin bg-zinc-50">
         <div className="max-w-2xl mx-auto p-6 md:p-10">
           <div className="font-display font-bold text-2xl tracking-tight">Strafzettel hochladen</div>
-          <p className="text-sm text-stone-500 mt-1">
+          <p className="text-sm text-zinc-500 mt-1">
             PDF, JPG oder PNG. KI liest die Daten aus und ordnet automatisch dem richtigen Mieter zu.
           </p>
 
-          <div className="mt-8 rounded-2xl bg-white ring-1 ring-stone-200 p-6 md:p-8">
+          <div className="mt-8 rounded-2xl bg-white ring-1 ring-zinc-200 p-6 md:p-8">
             {phase === "idle" && (
               <>
                 <input
@@ -109,10 +109,10 @@ export const UploadClient = ({ inboundEmail }: { inboundEmail: string | null }) 
                 />
                 <DropZone onFile={onChoose} onClick={() => inputRef.current?.click()} />
                 {inboundEmail && (
-                  <div className="mt-5 flex items-center gap-2 text-xs text-stone-500">
+                  <div className="mt-5 flex items-center gap-2 text-xs text-zinc-500">
                     <Mail size={13} />
                     Oder direkt weiterleiten an{" "}
-                    <span className="font-mono text-stone-700">{inboundEmail}</span>
+                    <span className="font-mono text-zinc-700">{inboundEmail}</span>
                   </div>
                 )}
                 {error && (
@@ -164,7 +164,7 @@ const DropZone = ({ onFile, onClick }: { onFile: (f: File) => void; onClick: () 
         if (f) onFile(f);
       }}
       className={`border-2 border-dashed rounded-xl py-12 px-6 text-center cursor-pointer transition ${
-        over ? "border-stone-500 bg-stone-50" : "border-stone-300 hover:border-stone-400 hover:bg-stone-50"
+        over ? "border-zinc-500 bg-zinc-50" : "border-zinc-300 hover:border-zinc-400 hover:bg-zinc-50"
       }`}
     >
       <div
@@ -174,8 +174,8 @@ const DropZone = ({ onFile, onClick }: { onFile: (f: File) => void; onClick: () 
         <UploadCloud size={22} />
       </div>
       <div className="mt-4 font-display font-semibold">PDF, JPG oder PNG hier ablegen</div>
-      <div className="text-sm text-stone-500 mt-1">oder klicken, um Datei auszuwählen</div>
-      <div className="text-xs text-stone-400 mt-4">Max. 12 MB · Behördliche Zeugenfragebögen bevorzugt</div>
+      <div className="text-sm text-zinc-500 mt-1">oder klicken, um Datei auszuwählen</div>
+      <div className="text-xs text-zinc-400 mt-4">Max. 12 MB · Behördliche Zeugenfragebögen bevorzugt</div>
     </div>
   );
 };
@@ -202,11 +202,11 @@ const ProgressView = ({
   const isError = phase === "error";
   return (
     <>
-      <div className="flex items-center gap-3 p-3 rounded-lg bg-stone-50">
-        <FileText size={18} className="text-stone-500" />
+      <div className="flex items-center gap-3 p-3 rounded-lg bg-zinc-50">
+        <FileText size={18} className="text-zinc-500" />
         <div className="flex-1 text-sm min-w-0">
           <div className="font-medium truncate">{file?.name || "Strafzettel"}</div>
-          <div className="text-xs text-stone-500">{file ? `${Math.round(file.size / 1024)} KB` : ""}</div>
+          <div className="text-xs text-zinc-500">{file ? `${Math.round(file.size / 1024)} KB` : ""}</div>
         </div>
         {isDone ? (
           <Check size={18} className="text-emerald-600" />
@@ -214,7 +214,7 @@ const ProgressView = ({
           <X size={18} className="text-red-600" />
         ) : (
           <div
-            className="w-5 h-5 rounded-full border-2 border-stone-200"
+            className="w-5 h-5 rounded-full border-2 border-zinc-200"
             style={{ borderTopColor: THEME.primary, animation: "spin .7s linear infinite" }}
           />
         )}
@@ -227,21 +227,21 @@ const ProgressView = ({
           return (
             <div
               key={p.key}
-              className={`flex items-center gap-3 p-2.5 rounded-lg ${active ? "bg-white ring-1 ring-stone-200" : ""}`}
+              className={`flex items-center gap-3 p-2.5 rounded-lg ${active ? "bg-white ring-1 ring-zinc-200" : ""}`}
             >
               <div
                 className={`w-7 h-7 rounded-full flex items-center justify-center ${
-                  done ? "bg-emerald-100 text-emerald-700" : active ? "text-white" : "bg-stone-100 text-stone-400"
+                  done ? "bg-emerald-100 text-emerald-700" : active ? "text-white" : "bg-zinc-100 text-zinc-400"
                 }`}
                 style={active ? { background: THEME.primary } : {}}
               >
                 {done ? <Check size={13} /> : <p.Icon size={13} />}
               </div>
-              <div className={`text-sm flex-1 ${done ? "text-stone-500" : active ? "font-medium" : "text-stone-400"}`}>
+              <div className={`text-sm flex-1 ${done ? "text-zinc-500" : active ? "font-medium" : "text-zinc-400"}`}>
                 {p.label}
               </div>
               {active && (
-                <div className="w-16 h-1 bg-stone-100 rounded-full overflow-hidden">
+                <div className="w-16 h-1 bg-zinc-100 rounded-full overflow-hidden">
                   <div className="h-full shimmer" style={{ background: THEME.primary, width: "60%" }} />
                 </div>
               )}
@@ -249,16 +249,16 @@ const ProgressView = ({
           );
         })}
         <div
-          className={`flex items-center gap-3 p-2.5 rounded-lg ${isDone ? "bg-white ring-1 ring-stone-200" : ""}`}
+          className={`flex items-center gap-3 p-2.5 rounded-lg ${isDone ? "bg-white ring-1 ring-zinc-200" : ""}`}
         >
           <div
             className={`w-7 h-7 rounded-full flex items-center justify-center ${
-              isDone ? "bg-emerald-100 text-emerald-700" : "bg-stone-100 text-stone-400"
+              isDone ? "bg-emerald-100 text-emerald-700" : "bg-zinc-100 text-zinc-400"
             }`}
           >
             {isDone ? <Check size={13} /> : <FileStack size={13} />}
           </div>
-          <div className={`text-sm flex-1 ${isDone ? "text-stone-500" : "text-stone-400"}`}>
+          <div className={`text-sm flex-1 ${isDone ? "text-zinc-500" : "text-zinc-400"}`}>
             Bereit für Dokumenten-Erstellung
           </div>
         </div>
@@ -287,7 +287,7 @@ const ProgressView = ({
       )}
 
       <div className="mt-6 flex items-center justify-end gap-2">
-        <button onClick={onCancel} className="text-sm px-3 py-1.5 rounded-md hover:bg-stone-100">
+        <button onClick={onCancel} className="text-sm px-3 py-1.5 rounded-md hover:bg-zinc-100">
           Neuer Upload
         </button>
         <button

@@ -20,7 +20,7 @@ import {
 } from "@/lib/tires";
 
 const inputCls =
-  "w-full h-10 px-3 rounded-lg bg-white ring-1 ring-stone-200 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500 transition-shadow";
+  "w-full h-10 px-3 rounded-lg bg-white ring-1 ring-zinc-200 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-shadow";
 
 const TIRE_TYPES: TireType[] = ["summer", "winter", "allseason"];
 const CONDITIONS: TireCondition[] = ["new", "good", "worn", "replace"];
@@ -121,14 +121,14 @@ export const TireChangeModal = ({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 sm:px-4">
       <button
         type="button"
-        className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
         onClick={onClose}
         aria-label="Schließen"
       />
-      <div className="relative w-full sm:max-w-2xl max-h-[92vh] flex flex-col bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl ring-1 ring-stone-200 overflow-hidden">
-        <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100 shrink-0">
+      <div className="relative w-full sm:max-w-2xl max-h-[92vh] flex flex-col bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl ring-1 ring-zinc-200 overflow-hidden">
+        <div className="px-6 py-4 flex items-center justify-between border-b border-zinc-100 shrink-0">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] font-semibold text-teal-700">
+            <div className="text-[11px] uppercase tracking-[0.08em] font-semibold text-indigo-700">
               Reifen
             </div>
             <h2 className="font-display text-xl tracking-tight font-medium mt-0.5">
@@ -141,7 +141,7 @@ export const TireChangeModal = ({
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full inline-flex items-center justify-center text-stone-500 hover:bg-stone-100"
+            className="w-9 h-9 rounded-full inline-flex items-center justify-center text-zinc-500 hover:bg-zinc-100"
           >
             <X size={16} />
           </button>
@@ -171,7 +171,7 @@ export const TireChangeModal = ({
                         className={`h-12 rounded-lg text-[13px] font-medium flex items-center justify-center gap-1.5 transition-all ${
                           active
                             ? "ring-1"
-                            : "ring-1 ring-stone-200 bg-white text-stone-600 hover:ring-stone-300"
+                            : "ring-1 ring-zinc-200 bg-white text-zinc-600 hover:ring-zinc-300"
                         }`}
                         style={
                           active
@@ -236,7 +236,7 @@ export const TireChangeModal = ({
                     { label: "Hinten rechts", v: rr, setV: setRr },
                   ].map((f) => (
                     <label key={f.label} className="block">
-                      <div className="text-[11.5px] text-stone-500 mb-1">{f.label}</div>
+                      <div className="text-[11.5px] text-zinc-500 mb-1">{f.label}</div>
                       <div className="relative">
                         <input
                           className={`${inputCls} pr-8`}
@@ -245,14 +245,14 @@ export const TireChangeModal = ({
                           inputMode="decimal"
                           placeholder="0,0"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-stone-400">
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-zinc-400">
                           mm
                         </span>
                       </div>
                     </label>
                   ))}
                 </div>
-                <div className="mt-1.5 text-[11px] text-stone-500">
+                <div className="mt-1.5 text-[11px] text-zinc-500">
                   Grün ≥ 4 mm · Gelb 3–4 mm · Rot &lt; 3 mm (Wechsel empfohlen)
                 </div>
               </div>
@@ -318,13 +318,13 @@ export const TireChangeModal = ({
           )}
         </div>
 
-        <div className="px-6 py-4 flex items-center justify-end gap-3 border-t border-stone-100 shrink-0">
+        <div className="px-6 py-4 flex items-center justify-end gap-3 border-t border-zinc-100 shrink-0">
           {!createdTireId ? (
             <>
               <button
                 type="button"
                 onClick={onClose}
-                className="text-sm text-stone-500 hover:text-stone-800 px-3"
+                className="text-sm text-zinc-500 hover:text-zinc-800 px-3"
               >
                 Abbrechen
               </button>
@@ -332,7 +332,7 @@ export const TireChangeModal = ({
                 type="button"
                 onClick={submit}
                 disabled={submitting}
-                className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-40"
+                className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-800 disabled:opacity-40"
               >
                 {submitting ? (
                   <Loader2 size={14} className="animate-spin" />
@@ -346,7 +346,7 @@ export const TireChangeModal = ({
             <button
               type="button"
               onClick={finish}
-              className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-stone-900 text-white text-sm font-medium hover:bg-stone-800"
+              className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-800"
             >
               Fertig
             </button>
@@ -424,7 +424,7 @@ const PhotoUploadStep = ({
                   ? "bg-emerald-50 ring-emerald-200"
                   : err
                   ? "bg-rose-50 ring-rose-200"
-                  : "bg-white ring-stone-200 hover:ring-stone-300"
+                  : "bg-white ring-zinc-200 hover:ring-zinc-300"
               } disabled:opacity-60`}
             >
               <input
@@ -447,7 +447,7 @@ const PhotoUploadStep = ({
                       ? "bg-emerald-100 text-emerald-700"
                       : err
                       ? "bg-rose-100 text-rose-700"
-                      : "bg-stone-100 text-stone-600"
+                      : "bg-zinc-100 text-zinc-600"
                   }`}
                 >
                   {isBusy ? (
@@ -459,12 +459,12 @@ const PhotoUploadStep = ({
                   )}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-[13.5px] font-medium text-stone-900 leading-tight">
+                  <div className="text-[13.5px] font-medium text-zinc-900 leading-tight">
                     {p.label}
                   </div>
                   <div
                     className={`text-[11px] mt-0.5 leading-tight truncate ${
-                      err ? "text-rose-700" : "text-stone-500"
+                      err ? "text-rose-700" : "text-zinc-500"
                     }`}
                   >
                     {err
@@ -481,7 +481,7 @@ const PhotoUploadStep = ({
           );
         })}
       </div>
-      <div className="mt-3 text-[11.5px] text-stone-500 flex items-center gap-1.5">
+      <div className="mt-3 text-[11.5px] text-zinc-500 flex items-center gap-1.5">
         <Upload size={11} />
         Fotos können auch später ergänzt werden.
       </div>
@@ -497,7 +497,7 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
 );
 
 const Label = ({ children }: { children: React.ReactNode }) => (
-  <div className="text-[11.5px] uppercase tracking-wider text-stone-500 font-medium mb-1.5">
+  <div className="text-[11.5px] uppercase tracking-wider text-zinc-500 font-medium mb-1.5">
     {children}
   </div>
 );

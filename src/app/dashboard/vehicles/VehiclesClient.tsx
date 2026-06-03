@@ -56,7 +56,7 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
           <div className="font-display font-bold text-2xl tracking-tight">Fahrzeuge</div>
-          <p className="text-sm text-stone-500 mt-1">
+          <p className="text-sm text-zinc-500 mt-1">
             Stammdaten, Verfügbarkeit, Preise — alles in einem Datensatz pro Auto.
           </p>
         </div>
@@ -64,7 +64,7 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
           <button
             type="button"
             onClick={() => setImportOpen(true)}
-            className="inline-flex items-center gap-1.5 text-sm text-stone-700 px-3.5 py-1.5 rounded-md font-medium ring-1 ring-stone-200 bg-white hover:bg-stone-50"
+            className="inline-flex items-center gap-1.5 text-sm text-zinc-700 px-3.5 py-1.5 rounded-md font-medium ring-1 ring-zinc-200 bg-white hover:bg-zinc-50"
           >
             <FileSpreadsheet size={14} /> CSV importieren
           </button>
@@ -93,7 +93,7 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
               key={f}
               onClick={() => setFilter(f)}
               className={`px-2.5 py-1.5 rounded-md ${
-                filter === f ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-100"
+                filter === f ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"
               }`}
             >
               {FILTER_LABELS[f]}
@@ -101,20 +101,20 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
           ))}
         </div>
         <div className="relative">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400" />
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Kennzeichen, Modell, FIN…"
-            className="pl-8 pr-3 py-2 bg-white rounded-md text-sm ring-1 ring-stone-200 w-72 outline-none focus:ring-stone-400"
+            className="pl-8 pr-3 py-2 bg-white rounded-md text-sm ring-1 ring-zinc-200 w-72 outline-none focus:ring-zinc-400"
           />
         </div>
       </div>
 
-      <div className="mt-4 rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+      <div className="mt-4 rounded-xl bg-white ring-1 ring-zinc-200 overflow-hidden">
         {/* Desktop */}
         <div className="hidden md:block">
-          <div className="grid grid-cols-[120px_1fr_140px_120px_140px_120px_70px] gap-3 px-5 py-2.5 text-[11px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
+          <div className="grid grid-cols-[120px_1fr_140px_120px_140px_120px_70px] gap-3 px-5 py-2.5 text-[11px] uppercase tracking-wider text-zinc-400 border-b border-zinc-100">
             <span>Kennzeichen</span>
             <span>Hersteller / Modell</span>
             <span>Karosserie</span>
@@ -130,32 +130,32 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
             return (
               <div
                 key={v.id}
-                className="grid grid-cols-[120px_1fr_140px_120px_140px_120px_70px] gap-3 items-center px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+                className="grid grid-cols-[120px_1fr_140px_120px_140px_120px_70px] gap-3 items-center px-5 py-3 border-b border-zinc-50 last:border-0 text-sm hover:bg-zinc-50"
               >
                 <Link href={`/dashboard/vehicles/${v.id}`} className="font-mono font-semibold">
                   {v.plate}
                 </Link>
-                <Link href={`/dashboard/vehicles/${v.id}`} className="text-stone-700 truncate">
+                <Link href={`/dashboard/vehicles/${v.id}`} className="text-zinc-700 truncate">
                   {name}
                   {v.color && (
-                    <span className="text-stone-400 text-xs ml-2">· {v.color}</span>
+                    <span className="text-zinc-400 text-xs ml-2">· {v.color}</span>
                   )}
                 </Link>
-                <Link href={`/dashboard/vehicles/${v.id}`} className="text-xs text-stone-500 truncate">
+                <Link href={`/dashboard/vehicles/${v.id}`} className="text-xs text-zinc-500 truncate">
                   {v.body_type || "—"}
                   {v.category && (
-                    <span className="text-stone-400 ml-1">· {v.category}</span>
+                    <span className="text-zinc-400 ml-1">· {v.category}</span>
                   )}
                 </Link>
                 <Link
                   href={`/dashboard/vehicles/${v.id}`}
-                  className="text-xs text-stone-500 text-right tabular-nums"
+                  className="text-xs text-zinc-500 text-right tabular-nums"
                 >
                   {v.km_at_intake != null ? v.km_at_intake.toLocaleString("de-DE") : "—"}
                 </Link>
                 <Link
                   href={`/dashboard/vehicles/${v.id}`}
-                  className="text-xs text-stone-500 tabular-nums"
+                  className="text-xs text-zinc-500 tabular-nums"
                 >
                   {v.first_registration ? fmtDate(v.first_registration) : "—"}
                   {v.decommission_date && (
@@ -178,14 +178,14 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
                 <div className="flex items-center justify-end gap-1">
                   <Link
                     href={`/dashboard/vehicles/${v.id}`}
-                    className="text-stone-400 hover:text-stone-700 p-1.5"
+                    className="text-zinc-400 hover:text-zinc-700 p-1.5"
                     title="Detail"
                   >
                     <ChevronRight size={14} />
                   </Link>
                   <button
                     onClick={() => remove(v.id)}
-                    className="text-stone-400 hover:text-red-600 p-1.5"
+                    className="text-zinc-400 hover:text-red-600 p-1.5"
                     title="Löschen"
                   >
                     <Trash2 size={14} />
@@ -197,7 +197,7 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
         </div>
 
         {/* Mobile */}
-        <div className="md:hidden divide-y divide-stone-100">
+        <div className="md:hidden divide-y divide-zinc-100">
           {filtered.map((v) => {
             const meta = VEHICLE_STATUS_META[v.status];
             const name = buildVehicleType(v.manufacturer, v.model) || v.vehicle_type || "—";
@@ -205,9 +205,9 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
               <div key={v.id} className="flex items-start gap-3 px-4 py-3">
                 <Link
                   href={`/dashboard/vehicles/${v.id}`}
-                  className="flex-1 min-w-0 flex items-start gap-3 active:bg-stone-100 -mx-4 -my-3 px-4 py-3"
+                  className="flex-1 min-w-0 flex items-start gap-3 active:bg-zinc-100 -mx-4 -my-3 px-4 py-3"
                 >
-                  <div className="w-9 h-9 rounded-lg bg-stone-100 text-stone-700 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-lg bg-zinc-100 text-zinc-700 flex items-center justify-center shrink-0">
                     <Car size={16} />
                   </div>
                   <div className="flex-1 min-w-0 space-y-0.5">
@@ -225,8 +225,8 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
                         {meta.label}
                       </span>
                     </div>
-                    <div className="text-xs text-stone-700 truncate">{name}</div>
-                    <div className="text-[11px] text-stone-400 truncate">
+                    <div className="text-xs text-zinc-700 truncate">{name}</div>
+                    <div className="text-[11px] text-zinc-400 truncate">
                       {[v.body_type, v.color, v.first_registration && fmtDate(v.first_registration)]
                         .filter(Boolean)
                         .join(" · ") || "—"}
@@ -235,7 +235,7 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
                 </Link>
                 <button
                   onClick={() => remove(v.id)}
-                  className="touch-target flex items-center justify-center text-stone-400 hover:text-red-600"
+                  className="touch-target flex items-center justify-center text-zinc-400 hover:text-red-600"
                   title="Löschen"
                 >
                   <Trash2 size={16} />
@@ -246,8 +246,8 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
         </div>
 
         {filtered.length === 0 && (
-          <div className="px-5 py-12 text-center text-sm text-stone-500">
-            <Car size={28} className="mx-auto text-stone-300" />
+          <div className="px-5 py-12 text-center text-sm text-zinc-500">
+            <Car size={28} className="mx-auto text-zinc-300" />
             <div className="mt-3">
               {q ? "Keine Fahrzeuge gefunden." : "Noch keine Fahrzeuge."}
             </div>

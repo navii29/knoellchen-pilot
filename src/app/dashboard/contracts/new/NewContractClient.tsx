@@ -343,13 +343,13 @@ export const NewContractClient = ({
     <>
       <Link
         href="/dashboard/contracts"
-        className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 mb-4"
       >
         <ArrowLeft size={14} /> Zurück zu Verträgen
       </Link>
 
       <div className="font-display font-bold text-2xl tracking-tight">Neuer Vertrag</div>
-      <p className="text-sm text-stone-500 mt-1">
+      <p className="text-sm text-zinc-500 mt-1">
         Vertrag-PDF hochladen — KI füllt das Formular automatisch — oder manuell anlegen.
       </p>
 
@@ -357,7 +357,7 @@ export const NewContractClient = ({
         <div className="mt-8 grid sm:grid-cols-2 gap-4">
           <button
             onClick={() => fileRef.current?.click()}
-            className="rounded-2xl bg-white ring-1 ring-stone-200 p-6 text-left hover:ring-stone-400 transition"
+            className="rounded-2xl bg-white ring-1 ring-zinc-200 p-6 text-left hover:ring-zinc-400 transition"
           >
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center"
@@ -366,19 +366,19 @@ export const NewContractClient = ({
               <Sparkles size={22} />
             </div>
             <div className="font-display font-semibold text-lg mt-4">PDF hochladen</div>
-            <div className="text-sm text-stone-500 mt-1">
+            <div className="text-sm text-zinc-500 mt-1">
               Unterschriebenen Mietvertrag als PDF — Claude liest die Daten aus.
             </div>
           </button>
           <button
             onClick={() => setMode("manual")}
-            className="rounded-2xl bg-white ring-1 ring-stone-200 p-6 text-left hover:ring-stone-400 transition"
+            className="rounded-2xl bg-white ring-1 ring-zinc-200 p-6 text-left hover:ring-zinc-400 transition"
           >
-            <div className="w-12 h-12 rounded-xl bg-stone-100 text-stone-700 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-zinc-100 text-zinc-700 flex items-center justify-center">
               <FileText size={22} />
             </div>
             <div className="font-display font-semibold text-lg mt-4">Manuell anlegen</div>
-            <div className="text-sm text-stone-500 mt-1">Alle Felder direkt in das Formular eintragen.</div>
+            <div className="text-sm text-zinc-500 mt-1">Alle Felder direkt in das Formular eintragen.</div>
           </button>
 
           <input
@@ -399,7 +399,7 @@ export const NewContractClient = ({
       )}
 
       {mode === "ai" && parsing && (
-        <div className="mt-8 rounded-2xl bg-white ring-1 ring-stone-200 p-8 flex items-center gap-4">
+        <div className="mt-8 rounded-2xl bg-white ring-1 ring-zinc-200 p-8 flex items-center gap-4">
           <div
             className="w-12 h-12 rounded-xl flex items-center justify-center"
             style={{ background: THEME.primaryTint, color: THEME.primary }}
@@ -408,7 +408,7 @@ export const NewContractClient = ({
           </div>
           <div>
             <div className="font-display font-semibold">Claude liest den Vertrag aus…</div>
-            <div className="text-xs text-stone-500 mt-1">Das dauert meist 5–15 Sekunden.</div>
+            <div className="text-xs text-zinc-500 mt-1">Das dauert meist 5–15 Sekunden.</div>
           </div>
         </div>
       )}
@@ -421,7 +421,7 @@ export const NewContractClient = ({
       )}
 
       {mode === "manual" && (
-        <form onSubmit={submit} className="mt-6 rounded-2xl bg-white ring-1 ring-stone-200 p-6 space-y-6">
+        <form onSubmit={submit} className="mt-6 rounded-2xl bg-white ring-1 ring-zinc-200 p-6 space-y-6">
           {parsedFromAI && (
             <div
               className="flex items-center gap-3 p-3 rounded-lg"
@@ -440,15 +440,15 @@ export const NewContractClient = ({
           )}
 
           {customers.length > 0 && (
-            <div className="rounded-lg bg-stone-50 ring-1 ring-stone-200 p-4">
+            <div className="rounded-lg bg-zinc-50 ring-1 ring-zinc-200 p-4">
               <label className="block">
-                <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-2">
+                <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-zinc-500 font-semibold mb-2">
                   <UserCheck size={12} /> Bestehender Kunde
                 </div>
                 <select
                   value={data.customer_id}
                   onChange={(e) => pickCustomer(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg bg-white outline-none ring-1 ring-stone-200 focus:ring-stone-400"
+                  className="w-full px-3 py-2 text-sm rounded-lg bg-white outline-none ring-1 ring-zinc-200 focus:ring-zinc-400"
                 >
                   <option value="">— Neuer Mieter (Daten unten eintragen) —</option>
                   {customers.map((c) => (
@@ -458,20 +458,20 @@ export const NewContractClient = ({
                   ))}
                 </select>
                 {data.customer_id && (
-                  <div className="mt-2 text-xs text-stone-500">
+                  <div className="mt-2 text-xs text-zinc-500">
                     Mieterdaten unten wurden automatisch übernommen — du kannst sie für diesen Vertrag noch anpassen.{" "}
                     <Link
                       href={`/dashboard/customers/${data.customer_id}`}
-                      className="text-teal-700 hover:underline"
+                      className="text-indigo-700 hover:underline"
                     >
                       Kundendaten dauerhaft ändern →
                     </Link>
                   </div>
                 )}
                 {!data.customer_id && (
-                  <div className="mt-2 text-xs text-stone-500">
+                  <div className="mt-2 text-xs text-zinc-500">
                     Noch nicht angelegt?{" "}
-                    <Link href="/dashboard/customers/new" className="text-teal-700 hover:underline">
+                    <Link href="/dashboard/customers/new" className="text-indigo-700 hover:underline">
                       Kunden zuerst anlegen →
                     </Link>
                   </div>
@@ -647,47 +647,47 @@ export const NewContractClient = ({
 
           <Section title="Sondervereinbarungen">
             <div className="sm:col-span-2 space-y-4">
-              <p className="text-xs text-stone-500 leading-relaxed">
+              <p className="text-xs text-zinc-500 leading-relaxed">
                 Wähle die Textbausteine, die auf Seite 3 des Mietvertrags
                 erscheinen sollen. Eigene Vereinbarungen kannst du unten als
                 Freitext ergänzen.{" "}
                 <Link
                   href="/dashboard/settings/special-terms"
-                  className="text-teal-700 hover:underline"
+                  className="text-indigo-700 hover:underline"
                 >
                   Textbausteine verwalten →
                 </Link>
               </p>
               {groupedTerms.length === 0 && (
-                <div className="text-xs text-stone-500 bg-stone-50 ring-1 ring-stone-200 rounded-lg p-3">
+                <div className="text-xs text-zinc-500 bg-zinc-50 ring-1 ring-zinc-200 rounded-lg p-3">
                   Noch keine Textbausteine angelegt — lege sie in den
                   Einstellungen an.
                 </div>
               )}
               {groupedTerms.map(([cat, items]) => (
                 <div key={cat}>
-                  <div className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-2">
+                  <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold mb-2">
                     {SPECIAL_TERMS_CATEGORY_LABEL[cat]}
                   </div>
-                  <div className="rounded-lg ring-1 ring-stone-200 bg-white divide-y divide-stone-100">
+                  <div className="rounded-lg ring-1 ring-zinc-200 bg-white divide-y divide-zinc-100">
                     {items.map((t) => {
                       const checked = selectedTerms.has(t.id);
                       return (
                         <label
                           key={t.id}
-                          className="flex items-start gap-3 p-2.5 cursor-pointer hover:bg-stone-50"
+                          className="flex items-start gap-3 p-2.5 cursor-pointer hover:bg-zinc-50"
                         >
                           <input
                             type="checkbox"
                             checked={checked}
                             onChange={() => toggleTerm(t.id)}
-                            className="mt-0.5 w-4 h-4 accent-teal-600 shrink-0"
+                            className="mt-0.5 w-4 h-4 accent-indigo-600 shrink-0"
                           />
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium text-stone-900">
+                            <div className="text-sm font-medium text-zinc-900">
                               {t.title}
                             </div>
-                            <div className="text-[11px] text-stone-500 mt-0.5 leading-snug">
+                            <div className="text-[11px] text-zinc-500 mt-0.5 leading-snug">
                               {t.text}
                             </div>
                           </div>
@@ -766,7 +766,7 @@ export const NewContractClient = ({
             <button
               type="button"
               onClick={() => setMode("choose")}
-              className="text-sm text-stone-500 hover:text-stone-900"
+              className="text-sm text-zinc-500 hover:text-zinc-900"
             >
               Eingabe abbrechen
             </button>
@@ -799,10 +799,10 @@ export const NewContractClient = ({
           <button
             type="button"
             onClick={goToDetail}
-            className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
             aria-label="Schließen"
           />
-          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl ring-1 ring-stone-200 overflow-hidden">
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl ring-1 ring-zinc-200 overflow-hidden">
             <div className="px-6 pt-6 pb-2 flex items-start justify-between gap-3">
               <div>
                 <div className="w-10 h-10 rounded-full bg-emerald-50 ring-1 ring-emerald-200 flex items-center justify-center mb-3">
@@ -811,14 +811,14 @@ export const NewContractClient = ({
                 <h2 className="font-display text-[22px] tracking-tight font-medium">
                   Vertrag erstellt
                 </h2>
-                <p className="text-sm text-stone-500 mt-1 leading-snug">
+                <p className="text-sm text-zinc-500 mt-1 leading-snug">
                   Möchtest du den Vertrag jetzt direkt vom Kunden unterschreiben lassen? Funktioniert auf Tablet oder Handy.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={goToDetail}
-                className="w-8 h-8 rounded-full inline-flex items-center justify-center text-stone-500 hover:bg-stone-100 -mt-1 -mr-1"
+                className="w-8 h-8 rounded-full inline-flex items-center justify-center text-zinc-500 hover:bg-zinc-100 -mt-1 -mr-1"
               >
                 <X size={15} />
               </button>
@@ -827,14 +827,14 @@ export const NewContractClient = ({
               <button
                 type="button"
                 onClick={goToDetail}
-                className="text-sm text-stone-600 hover:text-stone-900 px-3 py-2"
+                className="text-sm text-zinc-600 hover:text-zinc-900 px-3 py-2"
               >
                 Später
               </button>
               <button
                 type="button"
                 onClick={goToSign}
-                className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-stone-900 text-white text-sm font-medium hover:bg-stone-800"
+                className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-800"
               >
                 <FileSignature size={14} /> Jetzt unterschreiben
               </button>
@@ -848,14 +848,14 @@ export const NewContractClient = ({
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div>
-    <div className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-3">{title}</div>
+    <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold mb-3">{title}</div>
     <div className="grid sm:grid-cols-2 gap-4">{children}</div>
   </div>
 );
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <label className="block">
-    <div className="text-[11px] uppercase tracking-wider text-stone-500 font-medium mb-1">{label}</div>
+    <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-medium mb-1">{label}</div>
     {children}
   </label>
 );
@@ -915,7 +915,7 @@ const PriceRecommendation = ({
   if (!plate.trim() || !pickupDate || !returnDate) return null;
   if (loading && !data) {
     return (
-      <div className="rounded-lg ring-1 ring-stone-200 bg-stone-50 px-4 py-3 text-[12.5px] text-stone-500 flex items-center gap-2">
+      <div className="rounded-lg ring-1 ring-zinc-200 bg-zinc-50 px-4 py-3 text-[12.5px] text-zinc-500 flex items-center gap-2">
         <Loader2 size={13} className="animate-spin" />
         Berechne Preisempfehlung…
       </div>
@@ -961,21 +961,21 @@ const PriceRecommendation = ({
     >
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2.5 min-w-0">
-          <TrendingUp size={14} className="text-stone-700 shrink-0" />
+          <TrendingUp size={14} className="text-zinc-700 shrink-0" />
           <div className="min-w-0">
-            <div className="text-[12px] uppercase tracking-[0.06em] font-semibold text-stone-700">
+            <div className="text-[12px] uppercase tracking-[0.06em] font-semibold text-zinc-700">
               KI-Empfehlung
             </div>
-            <div className="font-display text-[20px] tracking-tight font-medium text-stone-900 leading-tight">
+            <div className="font-display text-[20px] tracking-tight font-medium text-zinc-900 leading-tight">
               {price.toLocaleString("de-DE", {
                 style: "currency",
                 currency: "EUR",
                 minimumFractionDigits: 2,
               })}
-              <span className="text-[12px] text-stone-500 ml-1">/ Tag</span>
+              <span className="text-[12px] text-zinc-500 ml-1">/ Tag</span>
             </div>
             {periodTotal != null && (
-              <div className="text-[11.5px] text-stone-500 tabular-nums mt-0.5">
+              <div className="text-[11.5px] text-zinc-500 tabular-nums mt-0.5">
                 ≈ {periodTotal.toFixed(2).replace(".", ",")} € gesamt ({days} Tage)
               </div>
             )}
@@ -984,12 +984,12 @@ const PriceRecommendation = ({
         <button
           type="button"
           onClick={() => onApply(price)}
-          className="inline-flex items-center gap-1 text-[12.5px] px-3 py-1.5 rounded-md bg-stone-900 text-white font-medium hover:bg-stone-800"
+          className="inline-flex items-center gap-1 text-[12.5px] px-3 py-1.5 rounded-md bg-zinc-900 text-white font-medium hover:bg-zinc-800"
         >
           <Check size={12} /> Übernehmen
         </button>
       </div>
-      <div className="mt-2 text-[11.5px] text-stone-600 leading-snug">
+      <div className="mt-2 text-[11.5px] text-zinc-600 leading-snug">
         {explanation}
       </div>
     </div>
@@ -1139,15 +1139,15 @@ const PartnerPicker = ({
       )}
 
       {(loadingPricing || pricingHint) && partner && (
-        <div className="mt-2 text-[11.5px] text-stone-500 inline-flex items-center gap-1.5">
+        <div className="mt-2 text-[11.5px] text-zinc-500 inline-flex items-center gap-1.5">
           {loadingPricing && <Loader2 size={11} className="animate-spin" />}
           {loadingPricing ? "Lade Partner-Preise…" : pricingHint}
         </div>
       )}
 
       {commission && days > 0 && (
-        <div className="mt-3 rounded-lg bg-stone-900 text-white px-4 py-3">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.06em] font-semibold text-teal-300 mb-1.5">
+        <div className="mt-3 rounded-lg bg-zinc-900 text-white px-4 py-3">
+          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.06em] font-semibold text-indigo-300 mb-1.5">
             <Handshake size={12} />
             Provisionsberechnung · {days} {days === 1 ? "Tag" : "Tage"}
           </div>

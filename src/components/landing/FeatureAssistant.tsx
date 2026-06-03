@@ -5,7 +5,7 @@ const Mock = () => (
   <BrowserFrame url="app.knoellchen-pilot.de/assistant" variant="dark">
     <div className="p-5 text-[11px] h-[460px] flex flex-col">
       <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/[0.06]">
-        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center">
+        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-400 to-emerald-500 flex items-center justify-center">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polygon points="12 2 15 8.5 22 9.3 17 14 18.2 21 12 17.8 5.8 21 7 14 2 9.3 9 8.5 12 2" />
           </svg>
@@ -23,7 +23,7 @@ const Mock = () => (
       {/* Chat */}
       <div className="space-y-3 flex-1 overflow-hidden">
         <div className="flex justify-end">
-          <div className="max-w-[85%] px-3 py-2 rounded-2xl rounded-br-sm bg-teal-600 text-white text-[11px] leading-snug">
+          <div className="max-w-[85%] px-3 py-2 rounded-2xl rounded-br-sm bg-indigo-600 text-white text-[11px] leading-snug">
             Lege einen neuen Mietvertrag für Frau Bauer an — Tesla Model 3, vom 2. bis 9. Mai.
           </div>
         </div>
@@ -57,7 +57,7 @@ const Mock = () => (
           </div>
         </div>
         <div className="flex justify-end">
-          <div className="max-w-[85%] px-3 py-2 rounded-2xl rounded-br-sm bg-teal-600 text-white text-[11px] leading-snug">
+          <div className="max-w-[85%] px-3 py-2 rounded-2xl rounded-br-sm bg-indigo-600 text-white text-[11px] leading-snug">
             Wie viele Tesla-Verträge hatten wir letzten Monat?
           </div>
         </div>
@@ -69,7 +69,7 @@ const Mock = () => (
           {[3, 6, 4, 8, 5, 7, 4, 6, 3].map((h, i) => (
             <span
               key={i}
-              className="w-[2.5px] bg-teal-400 rounded-full"
+              className="w-[2.5px] bg-indigo-400 rounded-full"
               style={{ height: `${h * 1.5}px` }}
             />
           ))}
@@ -77,7 +77,7 @@ const Mock = () => (
         <span className="text-[10.5px] text-white/50 italic flex-1">
           „Zeig mir alle offenen Strafzettel von letzter Woche…“
         </span>
-        <div className="w-7 h-7 rounded-full bg-teal-500 flex items-center justify-center">
+        <div className="w-7 h-7 rounded-full bg-indigo-500 flex items-center justify-center">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
             <path d="M19 10v2a7 7 0 0 1-14 0v-2" />

@@ -62,18 +62,18 @@ export const VehicleEventsTimeline = ({
 
   return (
     <>
-      <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
+      <div className="rounded-xl bg-white ring-1 ring-zinc-200 p-5">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-zinc-500 font-semibold">
             <Wrench size={13} />
             Historie
-            <span className="ml-1 text-stone-400 font-normal normal-case tracking-normal">
+            <span className="ml-1 text-zinc-400 font-normal normal-case tracking-normal">
               ({events.length})
             </span>
           </div>
           <button
             onClick={() => setOpen(true)}
-            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-stone-900 text-white text-[12.5px] font-medium hover:bg-stone-800"
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-zinc-900 text-white text-[12.5px] font-medium hover:bg-zinc-800"
           >
             <Plus size={13} />
             Eintrag hinzufügen
@@ -81,15 +81,15 @@ export const VehicleEventsTimeline = ({
         </div>
 
         {events.length === 0 ? (
-          <div className="py-8 text-center text-sm text-stone-500">
-            <div className="w-10 h-10 mx-auto rounded-full bg-stone-100 flex items-center justify-center mb-2">
-              <Wrench size={16} className="text-stone-400" />
+          <div className="py-8 text-center text-sm text-zinc-500">
+            <div className="w-10 h-10 mx-auto rounded-full bg-zinc-100 flex items-center justify-center mb-2">
+              <Wrench size={16} className="text-zinc-400" />
             </div>
             Noch keine Einträge. Service-, Reifen- und TÜV-Termine erscheinen hier.
           </div>
         ) : (
           <ol className="relative">
-            <span className="absolute left-[15px] top-1 bottom-1 w-px bg-stone-200" />
+            <span className="absolute left-[15px] top-1 bottom-1 w-px bg-zinc-200" />
             {events.map((ev) => {
               const meta = EVENT_TYPE_META[ev.type];
               const Icon = TYPE_ICON[ev.type];
@@ -107,7 +107,7 @@ export const VehicleEventsTimeline = ({
                     <Icon size={14} />
                   </span>
 
-                  <div className="rounded-lg ring-1 ring-stone-100 px-4 py-3 group">
+                  <div className="rounded-lg ring-1 ring-zinc-100 px-4 py-3 group">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline gap-2 flex-wrap">
@@ -121,21 +121,21 @@ export const VehicleEventsTimeline = ({
                           >
                             {meta.short}
                           </span>
-                          <span className="text-[13px] text-stone-500 tabular-nums">
+                          <span className="text-[13px] text-zinc-500 tabular-nums">
                             {fmtDate(ev.date)}
                           </span>
                           {ev.km_at_event != null && (
-                            <span className="text-[12px] text-stone-400 tabular-nums">
+                            <span className="text-[12px] text-zinc-400 tabular-nums">
                               · {ev.km_at_event.toLocaleString("de-DE")} km
                             </span>
                           )}
                         </div>
                         {ev.description && (
-                          <div className="mt-1.5 text-[14px] text-stone-800 leading-snug">
+                          <div className="mt-1.5 text-[14px] text-zinc-800 leading-snug">
                             {ev.description}
                           </div>
                         )}
-                        <div className="mt-1 text-[12.5px] text-stone-500 flex items-center gap-3 flex-wrap">
+                        <div className="mt-1 text-[12.5px] text-zinc-500 flex items-center gap-3 flex-wrap">
                           {ev.provider && <span>{ev.provider}</span>}
                           {ev.cost != null && (
                             <span className="tabular-nums">{fmtEur(ev.cost)}</span>
@@ -145,7 +145,7 @@ export const VehicleEventsTimeline = ({
                               href={`/api/vehicles/${ev.vehicle_id}/events/${ev.id}/document`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-stone-600 hover:text-stone-900"
+                              className="inline-flex items-center gap-1 text-zinc-600 hover:text-zinc-900"
                             >
                               <Paperclip size={12} />
                               Beleg
@@ -174,7 +174,7 @@ export const VehicleEventsTimeline = ({
                         <button
                           onClick={() => onDelete(ev.id)}
                           disabled={busyId === ev.id}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-stone-400 hover:text-rose-600 disabled:opacity-30"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-zinc-400 hover:text-rose-600 disabled:opacity-30"
                           title="Löschen"
                         >
                           <Trash2 size={13} />

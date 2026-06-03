@@ -18,11 +18,11 @@ export default async function SpecialTermsSettingsPage() {
   return (
     <>
       <Topbar section="Einstellungen · Sondervereinbarungen" />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50 p-4 md:p-10">
+      <div className="flex-1 overflow-auto scroll-thin bg-zinc-50 p-4 md:p-10">
         <div className="max-w-3xl mx-auto">
           <Link
             href="/dashboard/settings"
-            className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+            className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 mb-4"
           >
             <ArrowLeft size={14} /> Zurück zu Einstellungen
           </Link>

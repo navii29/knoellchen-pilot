@@ -84,7 +84,7 @@ export const renterEmail = (
       <tr><td style="padding:14px 18px;color:#78716c;font-size:13px;border-top:1px solid #f5f5f4;">Bearbeitungsgebühr</td><td style="padding:14px 18px;text-align:right;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:14px;border-top:1px solid #f5f5f4;">${fmtEur(
         Number(ticket.processing_fee)
       )}</td></tr>
-      <tr><td style="padding:14px 18px;font-weight:600;border-top:1px solid #e7e5e4;">Gesamtbetrag</td><td style="padding:14px 18px;text-align:right;font-family:'JetBrains Mono',ui-monospace,monospace;font-weight:700;font-size:16px;border-top:1px solid #e7e5e4;color:#0d9488;">${fmtEur(
+      <tr><td style="padding:14px 18px;font-weight:600;border-top:1px solid #e7e5e4;">Gesamtbetrag</td><td style="padding:14px 18px;text-align:right;font-family:'JetBrains Mono',ui-monospace,monospace;font-weight:700;font-size:16px;border-top:1px solid #e7e5e4;color:#4f46e5;">${fmtEur(
         total
       )}</td></tr>
     </table>

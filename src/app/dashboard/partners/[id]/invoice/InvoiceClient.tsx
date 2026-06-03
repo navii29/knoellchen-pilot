@@ -96,7 +96,7 @@ export const InvoiceClient = ({ partner }: { partner: SalesPartner }) => {
     <>
       <Link
         href={`/dashboard/partners/${partner.id}`}
-        className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 mb-4"
       >
         <ArrowLeft size={14} /> Zurück zum Partner
       </Link>
@@ -104,24 +104,24 @@ export const InvoiceClient = ({ partner }: { partner: SalesPartner }) => {
       <div className="font-display font-bold text-2xl tracking-tight">
         Provisionsabrechnung
       </div>
-      <p className="text-sm text-stone-500 mt-1">
-        Partner: <span className="font-medium text-stone-700">{partner.name}</span>
+      <p className="text-sm text-zinc-500 mt-1">
+        Partner: <span className="font-medium text-zinc-700">{partner.name}</span>
       </p>
 
       {/* Period selector */}
-      <div className="mt-6 rounded-xl bg-white ring-1 ring-stone-200 p-4 sm:p-5">
+      <div className="mt-6 rounded-xl bg-white ring-1 ring-zinc-200 p-4 sm:p-5">
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <button
             type="button"
             onClick={() => setMonth(0)}
-            className="text-[12.5px] px-3 h-8 rounded-full bg-stone-100 text-stone-700 font-medium hover:bg-stone-200"
+            className="text-[12.5px] px-3 h-8 rounded-full bg-zinc-100 text-zinc-700 font-medium hover:bg-zinc-200"
           >
             Diesen Monat
           </button>
           <button
             type="button"
             onClick={() => setMonth(-1)}
-            className="text-[12.5px] px-3 h-8 rounded-full bg-stone-100 text-stone-700 font-medium hover:bg-stone-200"
+            className="text-[12.5px] px-3 h-8 rounded-full bg-zinc-100 text-zinc-700 font-medium hover:bg-zinc-200"
           >
             Letzten Monat
           </button>
@@ -135,32 +135,32 @@ export const InvoiceClient = ({ partner }: { partner: SalesPartner }) => {
               setTo(t);
               void load(f, t);
             }}
-            className="text-[12.5px] px-3 h-8 rounded-full bg-stone-100 text-stone-700 font-medium hover:bg-stone-200"
+            className="text-[12.5px] px-3 h-8 rounded-full bg-zinc-100 text-zinc-700 font-medium hover:bg-zinc-200"
           >
             Dieses Jahr
           </button>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
-            <div className="text-[11.5px] uppercase tracking-wider text-stone-500 font-medium mb-1 inline-flex items-center gap-1.5">
+            <div className="text-[11.5px] uppercase tracking-wider text-zinc-500 font-medium mb-1 inline-flex items-center gap-1.5">
               <Calendar size={11} /> Von
             </div>
             <input
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg bg-white ring-1 ring-stone-200 text-sm outline-none focus:ring-2 focus:ring-teal-500/40"
+              className="w-full h-10 px-3 rounded-lg bg-white ring-1 ring-zinc-200 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40"
             />
           </label>
           <label className="block">
-            <div className="text-[11.5px] uppercase tracking-wider text-stone-500 font-medium mb-1 inline-flex items-center gap-1.5">
+            <div className="text-[11.5px] uppercase tracking-wider text-zinc-500 font-medium mb-1 inline-flex items-center gap-1.5">
               <Calendar size={11} /> Bis
             </div>
             <input
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg bg-white ring-1 ring-stone-200 text-sm outline-none focus:ring-2 focus:ring-teal-500/40"
+              className="w-full h-10 px-3 rounded-lg bg-white ring-1 ring-zinc-200 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40"
             />
           </label>
         </div>
@@ -169,7 +169,7 @@ export const InvoiceClient = ({ partner }: { partner: SalesPartner }) => {
             type="button"
             onClick={() => load(from, to)}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md ring-1 ring-stone-200 hover:bg-stone-50 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md ring-1 ring-zinc-200 hover:bg-zinc-50 disabled:opacity-50"
           >
             {loading ? <Loader2 size={13} className="animate-spin" /> : null}
             Aktualisieren
@@ -178,7 +178,7 @@ export const InvoiceClient = ({ partner }: { partner: SalesPartner }) => {
             href={`/api/partners/${partner.id}/invoice/pdf?from=${from}&to=${to}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-md bg-stone-900 text-white font-medium hover:bg-stone-800"
+            className="inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-md bg-zinc-900 text-white font-medium hover:bg-zinc-800"
           >
             <Download size={13} /> PDF generieren
           </a>
@@ -192,15 +192,15 @@ export const InvoiceClient = ({ partner }: { partner: SalesPartner }) => {
       )}
 
       {/* Items table */}
-      <div className="mt-6 rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+      <div className="mt-6 rounded-xl bg-white ring-1 ring-zinc-200 overflow-hidden">
         {items.length === 0 && !loading ? (
-          <div className="px-5 py-12 text-center text-sm text-stone-500">
-            <Receipt size={24} className="mx-auto text-stone-300 mb-2" />
+          <div className="px-5 py-12 text-center text-sm text-zinc-500">
+            <Receipt size={24} className="mx-auto text-zinc-300 mb-2" />
             Keine Verträge im gewählten Zeitraum.
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-[120px_1fr_140px_140px_60px_100px_100px] items-center gap-3 px-5 py-2.5 bg-stone-50 border-b border-stone-100 text-[10.5px] uppercase tracking-wider text-stone-500 font-semibold">
+            <div className="grid grid-cols-[120px_1fr_140px_140px_60px_100px_100px] items-center gap-3 px-5 py-2.5 bg-zinc-50 border-b border-zinc-100 text-[10.5px] uppercase tracking-wider text-zinc-500 font-semibold">
               <span>Vertrag</span>
               <span>Mieter</span>
               <span>Kennzeichen</span>
@@ -213,24 +213,24 @@ export const InvoiceClient = ({ partner }: { partner: SalesPartner }) => {
               <Link
                 key={it.contract_id}
                 href={`/dashboard/contracts/${it.contract_id}`}
-                className="grid grid-cols-[120px_1fr_140px_140px_60px_100px_100px] items-center gap-3 px-5 py-2.5 border-b border-stone-100 last:border-0 hover:bg-stone-50"
+                className="grid grid-cols-[120px_1fr_140px_140px_60px_100px_100px] items-center gap-3 px-5 py-2.5 border-b border-zinc-100 last:border-0 hover:bg-zinc-50"
               >
-                <span className="font-mono text-xs text-stone-700">
+                <span className="font-mono text-xs text-zinc-700">
                   {it.contract_nr}
                 </span>
-                <span className="text-sm text-stone-700 truncate">
+                <span className="text-sm text-zinc-700 truncate">
                   {it.renter_name}
                 </span>
-                <span className="font-mono text-xs text-stone-500">
+                <span className="font-mono text-xs text-zinc-500">
                   {it.plate}
                 </span>
-                <span className="text-xs text-stone-500 tabular-nums">
+                <span className="text-xs text-zinc-500 tabular-nums">
                   {fmtDate(it.pickup_date)} – {fmtDate(it.return_date)}
                 </span>
-                <span className="text-xs text-stone-500 text-right tabular-nums">
+                <span className="text-xs text-zinc-500 text-right tabular-nums">
                   {it.days}
                 </span>
-                <span className="text-xs text-stone-500 text-right tabular-nums">
+                <span className="text-xs text-zinc-500 text-right tabular-nums">
                   {it.purchase_price_per_day != null
                     ? fmtEur(it.purchase_price_per_day)
                     : "—"}
@@ -241,17 +241,17 @@ export const InvoiceClient = ({ partner }: { partner: SalesPartner }) => {
               </Link>
             ))}
             {totals && items.length > 0 && (
-              <div className="grid grid-cols-[120px_1fr_140px_140px_60px_100px_100px] items-center gap-3 px-5 py-3 bg-stone-50 border-t border-stone-200 text-[12.5px] font-medium">
+              <div className="grid grid-cols-[120px_1fr_140px_140px_60px_100px_100px] items-center gap-3 px-5 py-3 bg-zinc-50 border-t border-zinc-200 text-[12.5px] font-medium">
                 <span></span>
                 <span></span>
                 <span></span>
-                <span className="text-stone-500 text-right uppercase tracking-wider text-[10.5px]">
+                <span className="text-zinc-500 text-right uppercase tracking-wider text-[10.5px]">
                   Summe
                 </span>
-                <span className="text-right tabular-nums text-stone-700">
+                <span className="text-right tabular-nums text-zinc-700">
                   {totals.total_days}
                 </span>
-                <span className="text-right tabular-nums text-stone-700">
+                <span className="text-right tabular-nums text-zinc-700">
                   {fmtEur(totals.total_purchase)}
                 </span>
                 <span className="text-right tabular-nums text-emerald-700 font-bold">

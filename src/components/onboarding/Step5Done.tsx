@@ -15,14 +15,14 @@ const Stat = ({
   <div
     className={`px-5 py-4 rounded-2xl ring-1 ${
       zero
-        ? "bg-stone-50 ring-stone-200/70"
-        : "bg-gradient-to-br from-teal-50 to-emerald-50 ring-teal-200/60"
+        ? "bg-zinc-50 ring-zinc-200/70"
+        : "bg-gradient-to-br from-indigo-50 to-emerald-50 ring-indigo-200/60"
     }`}
   >
-    <div className="font-display text-[36px] leading-none tracking-[-0.02em] font-medium text-stone-900">
+    <div className="font-display text-[36px] leading-none tracking-[-0.02em] font-medium text-zinc-900">
       {value}
     </div>
-    <div className="mt-1 text-[12.5px] uppercase tracking-[0.08em] text-stone-500 font-medium">
+    <div className="mt-1 text-[12.5px] uppercase tracking-[0.08em] text-zinc-500 font-medium">
       {label}
     </div>
   </div>
@@ -59,10 +59,10 @@ export const Step5Done = ({
         <Stat value={contractCount} label="Vertrag/Verträge" zero={contractCount === 0} />
       </div>
 
-      <div className="rounded-2xl bg-stone-900 text-white p-6 sm:p-7 relative overflow-hidden">
-        <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-teal-400/20 to-emerald-500/20 blur-3xl rounded-full" />
+      <div className="rounded-2xl bg-zinc-900 text-white p-6 sm:p-7 relative overflow-hidden">
+        <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-indigo-400/20 to-emerald-500/20 blur-3xl rounded-full" />
         <div className="relative">
-          <div className="text-[12px] uppercase tracking-[0.1em] font-semibold text-teal-300 mb-2">
+          <div className="text-[12px] uppercase tracking-[0.1em] font-semibold text-indigo-300 mb-2">
             Tipp
           </div>
           <h3 className="font-display text-[22px] sm:text-[26px] leading-[1.15] tracking-[-0.01em] font-medium">

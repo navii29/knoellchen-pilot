@@ -200,7 +200,7 @@ export const VehicleForm = ({
       {mode === "create" && (
         <Link
           href="/dashboard/vehicles"
-          className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+          className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 mb-4"
         >
           <ArrowLeft size={14} /> Zurück zu Fahrzeugen
         </Link>
@@ -209,7 +209,7 @@ export const VehicleForm = ({
       {mode === "create" && (
         <>
           <div className="font-display font-bold text-2xl tracking-tight">Neues Fahrzeug</div>
-          <p className="text-sm text-stone-500 mt-1">
+          <p className="text-sm text-zinc-500 mt-1">
             Vollständige Stammdaten — kannst auch jederzeit später ergänzen.
           </p>
         </>
@@ -318,7 +318,7 @@ export const VehicleForm = ({
             </select>
           </Field>
           <Field label="Anzeige-Name (auto)">
-            <div className="input bg-stone-50 text-stone-500 tabular-nums">
+            <div className="input bg-zinc-50 text-zinc-500 tabular-nums">
               {previewType || "wird aus Hersteller + Modell erstellt"}
             </div>
           </Field>
@@ -350,7 +350,7 @@ export const VehicleForm = ({
             />
           </Field>
           <Field label="Aussteuerung (auto)">
-            <div className="input bg-stone-50 text-stone-500 tabular-nums">
+            <div className="input bg-zinc-50 text-zinc-500 tabular-nums">
               {decommissionPreview ? fmtDate(decommissionPreview) + " (+ 180 Tage)" : "—"}
             </div>
           </Field>
@@ -378,7 +378,7 @@ export const VehicleForm = ({
                 placeholder="0.29"
                 className="input pr-10 tabular-nums"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
                 €/km
               </span>
             </div>
@@ -394,7 +394,7 @@ export const VehicleForm = ({
                 placeholder="49.00"
                 className="input pr-8 tabular-nums"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">€</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">€</span>
             </div>
           </Field>
           <Field label="Wochenmiete (€)">
@@ -405,7 +405,7 @@ export const VehicleForm = ({
                 placeholder="299.00"
                 className="input pr-8 tabular-nums"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">€</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">€</span>
             </div>
           </Field>
           <Field label="Monatsmiete (€)">
@@ -416,7 +416,7 @@ export const VehicleForm = ({
                 placeholder="999.00"
                 className="input pr-8 tabular-nums"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">€</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">€</span>
             </div>
           </Field>
           <Field label="Kaution (€)">
@@ -427,7 +427,7 @@ export const VehicleForm = ({
                 placeholder="500.00"
                 className="input pr-8 tabular-nums"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">€</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">€</span>
             </div>
           </Field>
         </Card>
@@ -442,9 +442,9 @@ export const VehicleForm = ({
                 className="input pr-8 tabular-nums"
                 inputMode="decimal"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">€</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">€</span>
             </div>
-            <div className="text-[11px] text-stone-500 mt-1">
+            <div className="text-[11px] text-zinc-500 mt-1">
               Leasing + Versicherung + Wartung etc. — was das Auto pro Monat kostet, egal ob vermietet oder nicht.
             </div>
           </Field>
@@ -459,11 +459,11 @@ export const VehicleForm = ({
                     : ""
                 }
                 readOnly
-                className="input pr-8 tabular-nums bg-stone-50"
+                className="input pr-8 tabular-nums bg-zinc-50"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">€/Tag</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">€/Tag</span>
             </div>
-            <div className="text-[11px] text-stone-500 mt-1">
+            <div className="text-[11px] text-zinc-500 mt-1">
               Monatliche Kosten ÷ 30. Wird für die Margenrechnung pro Tag verwendet.
             </div>
           </Field>
@@ -476,9 +476,9 @@ export const VehicleForm = ({
                 className="input pr-8 tabular-nums"
                 inputMode="decimal"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">€/Tag</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">€/Tag</span>
             </div>
-            <div className="text-[11px] text-stone-500 mt-1">
+            <div className="text-[11px] text-zinc-500 mt-1">
               Was Sie pro Tag mindestens verlangen möchten.
             </div>
           </Field>
@@ -488,14 +488,14 @@ export const VehicleForm = ({
               const tg = Number(data.target_daily_rate.replace(",", "."));
               if (!Number.isFinite(cm) || !Number.isFinite(tg))
                 return (
-                  <div className="input bg-stone-50 text-stone-400 text-sm tabular-nums">
+                  <div className="input bg-zinc-50 text-zinc-400 text-sm tabular-nums">
                     —
                   </div>
                 );
               const margin = tg - cm / 30;
               return (
                 <div
-                  className={`input bg-stone-50 text-sm tabular-nums font-semibold ${
+                  className={`input bg-zinc-50 text-sm tabular-nums font-semibold ${
                     margin >= 0 ? "text-emerald-700" : "text-rose-700"
                   }`}
                 >
@@ -508,7 +508,7 @@ export const VehicleForm = ({
                 </div>
               );
             })()}
-            <div className="text-[11px] text-stone-500 mt-1">
+            <div className="text-[11px] text-zinc-500 mt-1">
               VK minus tägliche Kosten. So sehen Sie sofort, ob der Preis stimmt.
             </div>
           </Field>
@@ -549,7 +549,7 @@ export const VehicleForm = ({
           <div className="text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2">{error}</div>
         )}
 
-        <div className="flex items-center justify-end gap-3 sticky bottom-0 bg-stone-50 py-3 -mx-4 md:-mx-0 md:py-0 md:bg-transparent px-4 md:px-0">
+        <div className="flex items-center justify-end gap-3 sticky bottom-0 bg-zinc-50 py-3 -mx-4 md:-mx-0 md:py-0 md:bg-transparent px-4 md:px-0">
           {saved && (
             <span className="inline-flex items-center gap-1 text-xs text-emerald-700">
               <CheckCircle2 size={13} /> Gespeichert
@@ -587,8 +587,8 @@ export const VehicleForm = ({
 };
 
 const Card = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <div className="rounded-xl bg-white ring-1 ring-stone-200 p-4 md:p-5">
-    <div className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-3">
+  <div className="rounded-xl bg-white ring-1 ring-zinc-200 p-4 md:p-5">
+    <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold mb-3">
       {title}
     </div>
     <div className="grid sm:grid-cols-2 gap-4">{children}</div>
@@ -597,7 +597,7 @@ const Card = ({ title, children }: { title: string; children: React.ReactNode })
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <label className="block">
-    <div className="text-[11px] uppercase tracking-wider text-stone-500 font-medium mb-1">
+    <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-medium mb-1">
       {label}
     </div>
     {children}

@@ -129,22 +129,22 @@ export default async function ContractDetailPage({ params }: { params: { id: str
   return (
     <>
       <Topbar section={`Vertrag · ${c.contract_nr}`} />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
+      <div className="flex-1 overflow-auto scroll-thin bg-zinc-50">
         <div className="max-w-4xl mx-auto p-4 md:p-10">
           <Link
             href="/dashboard/contracts"
-            className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+            className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 mb-4"
           >
             <ArrowLeft size={14} /> Zurück zu Verträgen
           </Link>
 
           <div className="flex items-center gap-3 mb-2 flex-wrap">
-            <span className="font-mono text-xs text-stone-500">{c.contract_nr}</span>
+            <span className="font-mono text-xs text-zinc-500">{c.contract_nr}</span>
             <ContractStatusBadge status={c.status} />
-            <span className="font-mono text-xs text-stone-500">· {c.plate}</span>
+            <span className="font-mono text-xs text-zinc-500">· {c.plate}</span>
           </div>
           <h1 className="font-display font-bold text-3xl tracking-tight">{c.renter_name}</h1>
-          {c.renter_address && <div className="mt-1 text-sm text-stone-500">{c.renter_address}</div>}
+          {c.renter_address && <div className="mt-1 text-sm text-zinc-500">{c.renter_address}</div>}
 
           {c.signed_at && (
             <div className="mt-5 rounded-xl bg-emerald-50 ring-1 ring-emerald-200 px-5 py-4 flex items-center gap-4 flex-wrap">
@@ -224,7 +224,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
               <Row label="Kaution" value={fmtEur(c.deposit)} mono />
               {marginInfo && (
                 <>
-                  <div className="mt-2 pt-2 border-t border-stone-100" />
+                  <div className="mt-2 pt-2 border-t border-zinc-100" />
                   <Row label="Realisierter VK" value={fmtEur(marginInfo.istVk)} mono />
                   <Row label="EK für Zeitraum" value={fmtEur(marginInfo.ek)} mono />
                   <Row
@@ -323,13 +323,13 @@ export default async function ContractDetailPage({ params }: { params: { id: str
 
           <div className="mt-6">
             <div className="flex items-end justify-between mb-2">
-              <div className="text-xs uppercase tracking-wider text-stone-500 font-medium flex items-center gap-1.5">
+              <div className="text-xs uppercase tracking-wider text-zinc-500 font-medium flex items-center gap-1.5">
                 <Camera size={12} />
                 Fahrzeugzustand · {pickupCount}/10 Übergabe · {returnCount}/10 Rücknahme
               </div>
               <Link
                 href={`/dashboard/contracts/${c.id}/handover`}
-                className="text-xs text-teal-700 hover:underline inline-flex items-center gap-1"
+                className="text-xs text-indigo-700 hover:underline inline-flex items-center gap-1"
               >
                 Fotos verwalten <ChevronRight size={12} />
               </Link>
@@ -337,14 +337,14 @@ export default async function ContractDetailPage({ params }: { params: { id: str
             {handoverPhotos.length === 0 ? (
               <Link
                 href={`/dashboard/contracts/${c.id}/handover`}
-                className="block rounded-xl bg-white ring-1 ring-stone-200 hover:ring-stone-400 transition px-5 py-8 text-center text-sm text-stone-500"
+                className="block rounded-xl bg-white ring-1 ring-zinc-200 hover:ring-zinc-400 transition px-5 py-8 text-center text-sm text-zinc-500"
               >
-                <Camera size={24} className="mx-auto text-stone-300" />
+                <Camera size={24} className="mx-auto text-zinc-300" />
                 <div className="mt-2">Noch keine Übergabe-Fotos</div>
-                <div className="text-xs text-teal-700 mt-1">Fotos jetzt aufnehmen →</div>
+                <div className="text-xs text-indigo-700 mt-1">Fotos jetzt aufnehmen →</div>
               </Link>
             ) : (
-              <div className="rounded-xl bg-white ring-1 ring-stone-200 p-4">
+              <div className="rounded-xl bg-white ring-1 ring-zinc-200 p-4">
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   {POSITIONS.map((pos) => {
                     const pickup = handoverPhotos.find(
@@ -355,7 +355,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
                     );
                     return (
                       <div key={pos.key} className="space-y-1">
-                        <div className="text-[10px] uppercase tracking-wider text-stone-500 font-medium">
+                        <div className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium">
                           {pos.label}
                         </div>
                         <div className="grid grid-cols-2 gap-1">
@@ -372,36 +372,36 @@ export default async function ContractDetailPage({ params }: { params: { id: str
 
           <div className="mt-6">
             <div className="flex items-end justify-between mb-2">
-              <div className="text-xs uppercase tracking-wider text-stone-500 font-medium flex items-center gap-1.5">
+              <div className="text-xs uppercase tracking-wider text-zinc-500 font-medium flex items-center gap-1.5">
                 <AlertOctagon size={12} />
                 Schadensberichte ({damageReports.length})
               </div>
               <Link
                 href={`/dashboard/damage-reports/new?contract_id=${c.id}`}
-                className="text-xs text-teal-700 hover:underline inline-flex items-center gap-1"
+                className="text-xs text-indigo-700 hover:underline inline-flex items-center gap-1"
               >
                 <Plus size={12} /> Neuer Bericht
               </Link>
             </div>
             {damageReports.length === 0 ? (
-              <div className="rounded-xl bg-white ring-1 ring-stone-200 px-5 py-6 text-center text-xs text-stone-500">
+              <div className="rounded-xl bg-white ring-1 ring-zinc-200 px-5 py-6 text-center text-xs text-zinc-500">
                 Keine Schäden zu diesem Vertrag dokumentiert.
               </div>
             ) : (
-              <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+              <div className="rounded-xl bg-white ring-1 ring-zinc-200 overflow-hidden">
                 {damageReports.map((d) => {
                   const meta = DAMAGE_STATUS_META[d.status];
                   return (
                     <Link
                       key={d.id}
                       href={`/dashboard/damage-reports/${d.id}`}
-                      className="grid grid-cols-[100px_1fr_120px_24px] items-center gap-3 px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+                      className="grid grid-cols-[100px_1fr_120px_24px] items-center gap-3 px-5 py-3 border-b border-zinc-50 last:border-0 text-sm hover:bg-zinc-50"
                     >
                       <span className="tabular-nums text-xs">{fmtDate(d.date)}</span>
                       <span className="truncate">
                         {d.location || d.description || "—"}
                         {d.photos && d.photos.length > 0 && (
-                          <span className="text-stone-400 ml-2 text-xs">
+                          <span className="text-zinc-400 ml-2 text-xs">
                             · {d.photos.length} {d.photos.length === 1 ? "Foto" : "Fotos"}
                           </span>
                         )}
@@ -417,7 +417,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
                         <span className="w-1.5 h-1.5 rounded-full" style={{ background: meta.color }} />
                         {meta.label}
                       </span>
-                      <ChevronRight size={14} className="text-stone-300" />
+                      <ChevronRight size={14} className="text-zinc-300" />
                     </Link>
                   );
                 })}
@@ -426,12 +426,12 @@ export default async function ContractDetailPage({ params }: { params: { id: str
           </div>
 
           <div className="mt-6">
-            <div className="text-xs uppercase tracking-wider text-stone-500 font-medium mb-2">
+            <div className="text-xs uppercase tracking-wider text-zinc-500 font-medium mb-2">
               Verknüpfte Strafzettel ({linkedTickets.length})
             </div>
-            <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+            <div className="rounded-xl bg-white ring-1 ring-zinc-200 overflow-hidden">
               {linkedTickets.length === 0 && (
-                <div className="px-5 py-8 text-center text-sm text-stone-500">
+                <div className="px-5 py-8 text-center text-sm text-zinc-500">
                   Noch keine Strafzettel diesem Vertrag zugeordnet.
                 </div>
               )}
@@ -439,13 +439,13 @@ export default async function ContractDetailPage({ params }: { params: { id: str
                 <Link
                   key={t.id}
                   href={`/dashboard/tickets/${t.id}`}
-                  className="grid grid-cols-[100px_1fr_120px_100px_24px] items-center gap-3 px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+                  className="grid grid-cols-[100px_1fr_120px_100px_24px] items-center gap-3 px-5 py-3 border-b border-zinc-50 last:border-0 text-sm hover:bg-zinc-50"
                 >
                   <span className="font-mono text-xs">{t.ticket_nr}</span>
                   <span className="truncate">{t.offense || "—"}</span>
-                  <span className="text-xs text-stone-500 tabular-nums">{fmtDate(t.offense_date)}</span>
+                  <span className="text-xs text-zinc-500 tabular-nums">{fmtDate(t.offense_date)}</span>
                   <StatusBadge status={t.status} />
-                  <ChevronRight size={14} className="text-stone-300" />
+                  <ChevronRight size={14} className="text-zinc-300" />
                 </Link>
               ))}
             </div>
@@ -465,8 +465,8 @@ const InfoCard = ({
   Icon: typeof User;
   children: React.ReactNode;
 }) => (
-  <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
-    <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold mb-3">
+  <div className="rounded-xl bg-white ring-1 ring-zinc-200 p-5">
+    <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-zinc-500 font-semibold mb-3">
       <Icon size={13} />
       {title}
     </div>
@@ -484,8 +484,8 @@ const Row = ({
   mono?: boolean;
 }) => (
   <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-    <div className="text-stone-500 text-xs">{label}</div>
-    <div className={mono ? "tabular-nums text-stone-800" : "text-stone-800"}>{value}</div>
+    <div className="text-zinc-500 text-xs">{label}</div>
+    <div className={mono ? "tabular-nums text-zinc-800" : "text-zinc-800"}>{value}</div>
   </div>
 );
 
@@ -519,7 +519,7 @@ const SelfServiceStatus = ({
   }) => {
     const pct = Math.max(0, Math.min(100, (value / total) * 100));
     return (
-      <div className="h-1.5 rounded-full bg-stone-200 overflow-hidden mt-1.5">
+      <div className="h-1.5 rounded-full bg-zinc-200 overflow-hidden mt-1.5">
         <div
           className="h-full rounded-full transition-[width] duration-500 ease-out"
           style={{ width: `${pct}%`, background: color }}
@@ -545,7 +545,7 @@ const SelfServiceStatus = ({
   }) => (
     <div className="flex-1 min-w-[180px]">
       <div className="flex items-center justify-between gap-2">
-        <div className="text-[12px] uppercase tracking-wider text-stone-500 font-semibold">
+        <div className="text-[12px] uppercase tracking-wider text-zinc-500 font-semibold">
           {title}
         </div>
         <span
@@ -555,7 +555,7 @@ const SelfServiceStatus = ({
           {badge}
         </span>
       </div>
-      <div className="text-[13px] text-stone-700 mt-1 tabular-nums">
+      <div className="text-[13px] text-zinc-700 mt-1 tabular-nums">
         {step} / {total} Schritte
       </div>
       <ProgressBar value={step} total={total} color={color} />
@@ -582,7 +582,7 @@ const SelfServiceStatus = ({
     checkoutStep >= 4 ? "#16a34a" : checkoutStep > 0 ? "#ca8a04" : "#a8a29e";
 
   return (
-    <div className="mt-5 rounded-xl bg-white ring-1 ring-stone-200 px-5 py-4">
+    <div className="mt-5 rounded-xl bg-white ring-1 ring-zinc-200 px-5 py-4">
       <div className="flex flex-wrap gap-6">
         <Block
           title="Self-Check-in"
@@ -592,7 +592,7 @@ const SelfServiceStatus = ({
           color={checkinColor}
           extra={
             fuelPickup ? (
-              <div className="text-[11.5px] text-stone-500 mt-1">
+              <div className="text-[11.5px] text-zinc-500 mt-1">
                 Tankstand bei Übergabe: {FUEL_LABEL[fuelPickup] ?? fuelPickup}
               </div>
             ) : null
@@ -606,7 +606,7 @@ const SelfServiceStatus = ({
           color={checkoutColor}
           extra={
             fuelReturn ? (
-              <div className="text-[11.5px] text-stone-500 mt-1">
+              <div className="text-[11.5px] text-zinc-500 mt-1">
                 Tankstand bei Rückgabe: {FUEL_LABEL[fuelReturn] ?? fuelReturn}
               </div>
             ) : null
@@ -629,7 +629,7 @@ const DAMAGE_STATUS_META: Record<
 const PhotoThumb = ({ url, label }: { url: string | null; label: string }) => {
   if (!url) {
     return (
-      <div className="aspect-square bg-stone-50 rounded-md flex items-center justify-center text-[9px] uppercase tracking-wider text-stone-300">
+      <div className="aspect-square bg-zinc-50 rounded-md flex items-center justify-center text-[9px] uppercase tracking-wider text-zinc-300">
         {label}
       </div>
     );
@@ -639,7 +639,7 @@ const PhotoThumb = ({ url, label }: { url: string | null; label: string }) => {
       href={url}
       target="_blank"
       rel="noreferrer"
-      className="relative aspect-square block rounded-md overflow-hidden bg-stone-100"
+      className="relative aspect-square block rounded-md overflow-hidden bg-zinc-100"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={url} alt={label} className="w-full h-full object-cover" />

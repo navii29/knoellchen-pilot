@@ -71,8 +71,8 @@ export const TiresAlert = ({ items }: { items: TireAlertItem[] }) => {
                 href={`/dashboard/vehicles/${item.vehicle_id}`}
                 className="grid grid-cols-[120px_1fr_auto] items-center gap-3 px-5 py-2.5 text-sm hover:bg-white/50 transition"
               >
-                <span className="font-mono font-semibold text-stone-900">{item.plate}</span>
-                <span className="text-stone-700 truncate">{item.vehicle_label}</span>
+                <span className="font-mono font-semibold text-zinc-900">{item.plate}</span>
+                <span className="text-zinc-700 truncate">{item.vehicle_label}</span>
                 <span className="flex items-center gap-1.5">
                   <span
                     className="inline-flex items-center gap-1 px-1.5 h-5 rounded text-[11px] font-medium"

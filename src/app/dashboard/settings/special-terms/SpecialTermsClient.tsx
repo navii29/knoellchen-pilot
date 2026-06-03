@@ -138,7 +138,7 @@ export const SpecialTermsClient = ({
           <h1 className="font-display font-bold text-2xl tracking-tight">
             Sondervereinbarungen
           </h1>
-          <p className="text-sm text-stone-500 mt-1 max-w-2xl">
+          <p className="text-sm text-zinc-500 mt-1 max-w-2xl">
             Wiederverwendbare Textbausteine, die du bei jedem Vertrag per Checkbox
             auswählen kannst. Erscheinen auf Seite 3 des Mietvertrag-PDFs.
           </p>
@@ -146,7 +146,7 @@ export const SpecialTermsClient = ({
         <button
           type="button"
           onClick={openCreate}
-          className="shrink-0 inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-stone-900 text-white text-sm font-medium hover:bg-stone-800"
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-800"
         >
           <Plus size={14} /> Neuer Textbaustein
         </button>
@@ -154,8 +154,8 @@ export const SpecialTermsClient = ({
 
       <div className="space-y-6">
         {grouped.length === 0 && (
-          <div className="rounded-xl bg-white ring-1 ring-stone-200 p-8 text-center">
-            <div className="text-sm text-stone-500">
+          <div className="rounded-xl bg-white ring-1 ring-zinc-200 p-8 text-center">
+            <div className="text-sm text-zinc-500">
               Noch keine Textbausteine. Lege den ersten an oder warte auf die
               Standard-Vorschläge.
             </div>
@@ -163,20 +163,20 @@ export const SpecialTermsClient = ({
         )}
         {grouped.map(({ cat, items }) => (
           <section key={cat}>
-            <div className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-2">
+            <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold mb-2">
               {SPECIAL_TERMS_CATEGORY_LABEL[cat]}
             </div>
-            <div className="rounded-xl bg-white ring-1 ring-stone-200 divide-y divide-stone-100 overflow-hidden">
+            <div className="rounded-xl bg-white ring-1 ring-zinc-200 divide-y divide-zinc-100 overflow-hidden">
               {items.map((t) => (
                 <div
                   key={t.id}
-                  className="flex items-start gap-3 p-4 hover:bg-stone-50/60"
+                  className="flex items-start gap-3 p-4 hover:bg-zinc-50/60"
                 >
                   <button
                     type="button"
                     onClick={() => toggleActive(t)}
                     className={`mt-0.5 w-9 h-5 rounded-full relative transition-colors shrink-0 ${
-                      t.active ? "bg-teal-600" : "bg-stone-300"
+                      t.active ? "bg-indigo-600" : "bg-zinc-300"
                     }`}
                     title={t.active ? "Aktiv — klicken zum Deaktivieren" : "Inaktiv"}
                   >
@@ -189,12 +189,12 @@ export const SpecialTermsClient = ({
                   <div className="flex-1 min-w-0">
                     <div
                       className={`font-medium text-sm ${
-                        t.active ? "text-stone-900" : "text-stone-400"
+                        t.active ? "text-zinc-900" : "text-zinc-400"
                       }`}
                     >
                       {t.title}
                     </div>
-                    <div className="text-xs text-stone-500 mt-1 leading-snug">
+                    <div className="text-xs text-zinc-500 mt-1 leading-snug">
                       {t.text}
                     </div>
                   </div>
@@ -202,14 +202,14 @@ export const SpecialTermsClient = ({
                     <button
                       type="button"
                       onClick={() => openEdit(t)}
-                      className="w-8 h-8 rounded-lg inline-flex items-center justify-center text-stone-500 hover:bg-stone-100 hover:text-stone-900"
+                      className="w-8 h-8 rounded-lg inline-flex items-center justify-center text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
                     >
                       <Pencil size={14} />
                     </button>
                     <button
                       type="button"
                       onClick={() => remove(t)}
-                      className="w-8 h-8 rounded-lg inline-flex items-center justify-center text-stone-500 hover:bg-rose-50 hover:text-rose-700"
+                      className="w-8 h-8 rounded-lg inline-flex items-center justify-center text-zinc-500 hover:bg-rose-50 hover:text-rose-700"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -226,48 +226,48 @@ export const SpecialTermsClient = ({
           <button
             type="button"
             onClick={close}
-            className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
             aria-label="Schließen"
           />
-          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl ring-1 ring-stone-200 overflow-hidden">
-            <div className="px-6 py-4 flex items-start justify-between gap-3 border-b border-stone-100">
+          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl ring-1 ring-zinc-200 overflow-hidden">
+            <div className="px-6 py-4 flex items-start justify-between gap-3 border-b border-zinc-100">
               <h2 className="font-display font-semibold text-lg">
                 {editing ? "Textbaustein bearbeiten" : "Neuer Textbaustein"}
               </h2>
               <button
                 type="button"
                 onClick={close}
-                className="w-8 h-8 -mr-2 inline-flex items-center justify-center text-stone-500 hover:bg-stone-100 rounded-full"
+                className="w-8 h-8 -mr-2 inline-flex items-center justify-center text-zinc-500 hover:bg-zinc-100 rounded-full"
               >
                 <X size={15} />
               </button>
             </div>
             <div className="px-6 py-5 space-y-4">
               <label className="block">
-                <div className="text-[11px] uppercase tracking-wider text-stone-500 font-medium mb-1">
+                <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-medium mb-1">
                   Titel (kurz)
                 </div>
                 <input
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder="z.B. Auslandsfahrten DACH"
-                  className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-stone-300 outline-none focus:ring-stone-500"
+                  className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-zinc-300 outline-none focus:ring-zinc-500"
                 />
               </label>
               <label className="block">
-                <div className="text-[11px] uppercase tracking-wider text-stone-500 font-medium mb-1">
+                <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-medium mb-1">
                   Volltext (erscheint im PDF)
                 </div>
                 <textarea
                   value={form.text}
                   onChange={(e) => setForm({ ...form, text: e.target.value })}
                   rows={4}
-                  className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-stone-300 outline-none focus:ring-stone-500 leading-relaxed"
+                  className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-zinc-300 outline-none focus:ring-zinc-500 leading-relaxed"
                 />
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <label className="block">
-                  <div className="text-[11px] uppercase tracking-wider text-stone-500 font-medium mb-1">
+                  <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-medium mb-1">
                     Kategorie
                   </div>
                   <select
@@ -275,7 +275,7 @@ export const SpecialTermsClient = ({
                     onChange={(e) =>
                       setForm({ ...form, category: e.target.value as SpecialTermsCategory })
                     }
-                    className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-stone-300 outline-none focus:ring-stone-500 bg-white"
+                    className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-zinc-300 outline-none focus:ring-zinc-500 bg-white"
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c} value={c}>
@@ -285,7 +285,7 @@ export const SpecialTermsClient = ({
                   </select>
                 </label>
                 <label className="block">
-                  <div className="text-[11px] uppercase tracking-wider text-stone-500 font-medium mb-1">
+                  <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-medium mb-1">
                     Sortier-Reihenfolge
                   </div>
                   <input
@@ -294,7 +294,7 @@ export const SpecialTermsClient = ({
                     onChange={(e) =>
                       setForm({ ...form, sort_order: Number(e.target.value) || 0 })
                     }
-                    className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-stone-300 outline-none focus:ring-stone-500 tabular-nums"
+                    className="w-full px-3 py-2 text-sm rounded-lg ring-1 ring-zinc-300 outline-none focus:ring-zinc-500 tabular-nums"
                   />
                 </label>
               </div>
@@ -304,11 +304,11 @@ export const SpecialTermsClient = ({
                 </div>
               )}
             </div>
-            <div className="px-6 py-4 flex items-center justify-end gap-2 border-t border-stone-100">
+            <div className="px-6 py-4 flex items-center justify-end gap-2 border-t border-zinc-100">
               <button
                 type="button"
                 onClick={close}
-                className="text-sm text-stone-600 hover:text-stone-900 px-3 py-2"
+                className="text-sm text-zinc-600 hover:text-zinc-900 px-3 py-2"
               >
                 Abbrechen
               </button>
@@ -316,7 +316,7 @@ export const SpecialTermsClient = ({
                 type="button"
                 onClick={save}
                 disabled={busy}
-                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-800 disabled:opacity-50"
               >
                 {busy && <Loader2 size={14} className="animate-spin" />}
                 {editing ? "Speichern" : "Anlegen"}

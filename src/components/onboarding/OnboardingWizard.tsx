@@ -114,7 +114,7 @@ export const OnboardingWizard = ({
   }, [router]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-stone-50">
+    <div className="min-h-screen flex flex-col bg-zinc-50">
       <ProgressBar
         current={step}
         total={5}

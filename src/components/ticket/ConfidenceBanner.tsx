@@ -13,7 +13,7 @@ export const ConfidenceBanner = ({
   const pct = Math.round((confidence ?? 0) * 100);
   const sourceLabel = source === "email" ? "E-Mail" : "Upload";
   return (
-    <div className="flex items-center gap-3 p-3.5 rounded-lg bg-stone-50 ring-1 ring-stone-200">
+    <div className="flex items-center gap-3 p-3.5 rounded-lg bg-zinc-50 ring-1 ring-zinc-200">
       <div
         className="w-9 h-9 rounded-lg flex items-center justify-center"
         style={{ background: THEME.primaryTint, color: THEME.primary }}
@@ -24,7 +24,7 @@ export const ConfidenceBanner = ({
         <div className="font-medium">
           KI-Auslesung: {pct ? `${pct} %` : "—"} Confidence
         </div>
-        <div className="text-xs text-stone-500">
+        <div className="text-xs text-zinc-500">
           {pct >= 95 ? "Alle Pflichtfelder erkannt" : pct > 0 ? "Bitte vor Versand prüfen" : "Noch nicht ausgelesen"} · Quelle: {sourceLabel}
         </div>
       </div>
@@ -33,7 +33,7 @@ export const ConfidenceBanner = ({
           href={uploadUrl}
           target="_blank"
           rel="noreferrer"
-          className="text-xs px-2.5 py-1.5 rounded-md bg-white ring-1 ring-stone-200 hover:bg-stone-50"
+          className="text-xs px-2.5 py-1.5 rounded-md bg-white ring-1 ring-zinc-200 hover:bg-zinc-50"
         >
           Original anzeigen
         </a>

@@ -126,21 +126,21 @@ export const TirePhotosModal = ({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 sm:px-4">
       <button
         type="button"
-        className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
         onClick={close}
         aria-label="Schließen"
       />
-      <div className="relative w-full sm:max-w-2xl max-h-[92vh] flex flex-col bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl ring-1 ring-stone-200 overflow-hidden">
-        <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100 shrink-0">
+      <div className="relative w-full sm:max-w-2xl max-h-[92vh] flex flex-col bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl ring-1 ring-zinc-200 overflow-hidden">
+        <div className="px-6 py-4 flex items-center justify-between border-b border-zinc-100 shrink-0">
           <div className="min-w-0">
-            <div className="text-[11px] uppercase tracking-[0.08em] font-semibold text-teal-700">
+            <div className="text-[11px] uppercase tracking-[0.08em] font-semibold text-indigo-700">
               Reifen-Fotos
             </div>
             <h2 className="font-display text-xl tracking-tight font-medium mt-0.5 truncate">
               {[tire.brand, tire.model].filter(Boolean).join(" ") ||
                 "Reifensatz"}
               {tire.size && (
-                <span className="ml-2 text-stone-500 text-base font-mono">
+                <span className="ml-2 text-zinc-500 text-base font-mono">
                   {tire.size}
                 </span>
               )}
@@ -148,14 +148,14 @@ export const TirePhotosModal = ({
           </div>
           <button
             onClick={close}
-            className="w-9 h-9 rounded-full inline-flex items-center justify-center text-stone-500 hover:bg-stone-100 shrink-0"
+            className="w-9 h-9 rounded-full inline-flex items-center justify-center text-zinc-500 hover:bg-zinc-100 shrink-0"
           >
             <X size={16} />
           </button>
         </div>
 
         <div className="px-6 py-5 overflow-auto scroll-thin grow">
-          <div className="text-[12.5px] text-stone-500 mb-3">
+          <div className="text-[12.5px] text-zinc-500 mb-3">
             6 Positionen verfügbar — vorhandene Fotos können ersetzt oder
             entfernt werden. Klick auf ein Bild öffnet es in voller Größe.
           </div>
@@ -174,7 +174,7 @@ export const TirePhotosModal = ({
                       ? "ring-emerald-200"
                       : isError
                       ? "ring-rose-200"
-                      : "ring-stone-200"
+                      : "ring-zinc-200"
                   }`}
                 >
                   <input
@@ -192,7 +192,7 @@ export const TirePhotosModal = ({
                   />
 
                   {/* Thumbnail oder leerer Slot */}
-                  <div className="aspect-square bg-stone-100 flex items-center justify-center relative">
+                  <div className="aspect-square bg-zinc-100 flex items-center justify-center relative">
                     {isUploaded && state.path ? (
                       <a
                         href={photoUrl(state.path)}
@@ -210,16 +210,16 @@ export const TirePhotosModal = ({
                         />
                       </a>
                     ) : isBusy ? (
-                      <Loader2 size={20} className="animate-spin text-stone-400" />
+                      <Loader2 size={20} className="animate-spin text-zinc-400" />
                     ) : (
-                      <Camera size={22} className="text-stone-400" />
+                      <Camera size={22} className="text-zinc-400" />
                     )}
 
                     {isUploaded && (
                       <button
                         type="button"
                         onClick={() => remove(p.key)}
-                        className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/90 ring-1 ring-stone-200 text-stone-600 hover:text-rose-700 hover:bg-white inline-flex items-center justify-center shadow-sm"
+                        className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/90 ring-1 ring-zinc-200 text-zinc-600 hover:text-rose-700 hover:bg-white inline-flex items-center justify-center shadow-sm"
                         aria-label="Foto entfernen"
                         title="Foto entfernen"
                       >
@@ -230,12 +230,12 @@ export const TirePhotosModal = ({
 
                   {/* Footer mit Label + Action */}
                   <div className="px-3 py-2 bg-white">
-                    <div className="text-[12.5px] font-medium text-stone-900 leading-tight truncate">
+                    <div className="text-[12.5px] font-medium text-zinc-900 leading-tight truncate">
                       {p.label}
                     </div>
                     <div
                       className={`text-[11px] mt-0.5 leading-tight truncate ${
-                        isError ? "text-rose-700" : "text-stone-500"
+                        isError ? "text-rose-700" : "text-zinc-500"
                       }`}
                     >
                       {isError
@@ -250,7 +250,7 @@ export const TirePhotosModal = ({
                       type="button"
                       onClick={() => refs.current[p.key]?.click()}
                       disabled={isBusy}
-                      className="mt-2 w-full inline-flex items-center justify-center gap-1 h-8 rounded-md ring-1 ring-stone-200 bg-white text-[12px] text-stone-700 font-medium hover:bg-stone-50 disabled:opacity-40"
+                      className="mt-2 w-full inline-flex items-center justify-center gap-1 h-8 rounded-md ring-1 ring-zinc-200 bg-white text-[12px] text-zinc-700 font-medium hover:bg-zinc-50 disabled:opacity-40"
                     >
                       {isUploaded ? (
                         <>
@@ -269,11 +269,11 @@ export const TirePhotosModal = ({
           </div>
         </div>
 
-        <div className="px-6 py-4 flex items-center justify-end gap-3 border-t border-stone-100 shrink-0">
+        <div className="px-6 py-4 flex items-center justify-end gap-3 border-t border-zinc-100 shrink-0">
           <button
             type="button"
             onClick={close}
-            className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-stone-900 text-white text-sm font-medium hover:bg-stone-800"
+            className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-800"
           >
             <Check size={14} /> Fertig
           </button>

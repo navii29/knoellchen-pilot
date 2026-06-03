@@ -43,35 +43,35 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 bg-stone-50">
+    <div className="min-h-screen flex items-center justify-center px-6 bg-zinc-50">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-10">
           <Link href="/"><Logo /></Link>
         </div>
-        <div className="rounded-2xl bg-white ring-1 ring-stone-200 p-8 shadow-sm">
+        <div className="rounded-2xl bg-white ring-1 ring-zinc-200 p-8 shadow-sm">
           <h1 className="font-display font-bold text-2xl tracking-tight">Anmelden</h1>
-          <p className="text-sm text-stone-500 mt-1">Willkommen zurück</p>
+          <p className="text-sm text-zinc-500 mt-1">Willkommen zurück</p>
 
           <form onSubmit={onSubmit} className="mt-7 space-y-4">
             <div>
-              <label className="text-xs uppercase tracking-wider text-stone-500 font-medium">E-Mail</label>
+              <label className="text-xs uppercase tracking-wider text-zinc-500 font-medium">E-Mail</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400"
+                className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-lg ring-1 ring-zinc-200 outline-none focus:ring-zinc-400"
                 placeholder="ihre@autovermietung.de"
               />
             </div>
             <div>
-              <label className="text-xs uppercase tracking-wider text-stone-500 font-medium">Passwort</label>
+              <label className="text-xs uppercase tracking-wider text-zinc-500 font-medium">Passwort</label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400"
+                className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-lg ring-1 ring-zinc-200 outline-none focus:ring-zinc-400"
                 placeholder="••••••••"
               />
             </div>
@@ -92,17 +92,17 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 text-sm text-stone-500 text-center">
+          <div className="mt-6 text-sm text-zinc-500 text-center">
             Noch kein Konto?{" "}
-            <Link href="/register" className="font-medium text-stone-900 hover:underline">
+            <Link href="/register" className="font-medium text-zinc-900 hover:underline">
               Jetzt registrieren
             </Link>
           </div>
         </div>
-        <div className="mt-6 flex items-center justify-center gap-4 text-[12px] text-stone-400">
-          <Link href="/impressum" className="hover:text-stone-600">Impressum</Link>
-          <Link href="/datenschutz" className="hover:text-stone-600">Datenschutz</Link>
-          <Link href="/agb" className="hover:text-stone-600">AGB</Link>
+        <div className="mt-6 flex items-center justify-center gap-4 text-[12px] text-zinc-400">
+          <Link href="/impressum" className="hover:text-zinc-600">Impressum</Link>
+          <Link href="/datenschutz" className="hover:text-zinc-600">Datenschutz</Link>
+          <Link href="/agb" className="hover:text-zinc-600">AGB</Link>
         </div>
       </div>
     </div>

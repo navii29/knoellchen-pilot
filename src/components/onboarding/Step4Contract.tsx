@@ -196,17 +196,17 @@ export const Step4Contract = ({
               onChange={(e) => setDailyRate(e.target.value)}
               inputMode="decimal"
             />
-            <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[14px] text-stone-400">
+            <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[14px] text-zinc-400">
               €
             </span>
           </div>
         </Field>
         <div className="flex items-end">
-          <div className="w-full px-4 py-3 rounded-xl bg-stone-100 ring-1 ring-stone-200/60">
-            <div className="text-[12px] uppercase tracking-[0.08em] text-stone-500 font-medium">
+          <div className="w-full px-4 py-3 rounded-xl bg-zinc-100 ring-1 ring-zinc-200/60">
+            <div className="text-[12px] uppercase tracking-[0.08em] text-zinc-500 font-medium">
               Gesamtsumme
             </div>
-            <div className="font-display text-[24px] tracking-[-0.02em] text-stone-900 font-medium leading-tight">
+            <div className="font-display text-[24px] tracking-[-0.02em] text-zinc-900 font-medium leading-tight">
               {totalAmount.toLocaleString("de-DE", {
                 style: "currency",
                 currency: "EUR",

@@ -6,7 +6,7 @@ import { Check, Loader2, Save } from "lucide-react";
 import type { Customer } from "@/lib/types";
 
 const inputCls =
-  "w-full h-11 px-3.5 rounded-xl bg-white ring-1 ring-stone-200 text-[14.5px] text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500 transition-shadow";
+  "w-full h-11 px-3.5 rounded-xl bg-white ring-1 ring-zinc-200 text-[14.5px] text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-shadow";
 
 export const ProfileClient = ({ initial }: { initial: Customer }) => {
   const router = useRouter();
@@ -56,11 +56,11 @@ export const ProfileClient = ({ initial }: { initial: Customer }) => {
 
   return (
     <div className="px-5 py-3">
-      <h1 className="font-display text-[22px] tracking-tight font-medium text-stone-900 mb-3">
+      <h1 className="font-display text-[22px] tracking-tight font-medium text-zinc-900 mb-3">
         Profil
       </h1>
 
-      <form onSubmit={submit} className="rounded-2xl bg-white ring-1 ring-stone-200 p-5 space-y-3">
+      <form onSubmit={submit} className="rounded-2xl bg-white ring-1 ring-zinc-200 p-5 space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <Field label="Vorname">
             <input className={inputCls} value={data.first_name} onChange={set("first_name")} />
@@ -122,7 +122,7 @@ export const ProfileClient = ({ initial }: { initial: Customer }) => {
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-stone-900 text-white text-[14px] font-medium hover:bg-stone-800 disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-zinc-900 text-white text-[14px] font-medium hover:bg-zinc-800 disabled:opacity-40"
           >
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             Speichern
@@ -135,7 +135,7 @@ export const ProfileClient = ({ initial }: { initial: Customer }) => {
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <label className="block">
-    <div className="text-[11.5px] uppercase tracking-wider text-stone-500 font-medium mb-1">
+    <div className="text-[11.5px] uppercase tracking-wider text-zinc-500 font-medium mb-1">
       {label}
     </div>
     {children}
