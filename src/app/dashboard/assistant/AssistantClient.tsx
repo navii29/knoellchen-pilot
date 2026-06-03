@@ -26,9 +26,9 @@ type ChatMsg = { role: "user" | "assistant"; content: string; toolCalls?: ToolCa
 
 const SUGGESTIONS = [
   "Wie viele aktive Verträge haben wir?",
-  "Welche Autos sind am 28. April frei?",
-  "Rückgabe für MV-2026-8541: Kilometerstand 5890",
-  "Wer hatte M-AV 5678 am 21. April?",
+  "Welche Fahrzeuge sind aktuell frei?",
+  "Zeig mir die offenen Strafzettel.",
+  "Welche Verträge enden diese Woche?",
 ];
 
 export const AssistantClient = () => {
@@ -75,7 +75,7 @@ export const AssistantClient = () => {
   };
 
   return (
-    <div className="flex-1 overflow-hidden bg-stone-50 flex flex-col">
+    <div className="flex-1 overflow-hidden bg-zinc-50 flex flex-col">
       <div ref={scrollRef} className="flex-1 overflow-y-auto scroll-thin">
         <div className="max-w-3xl mx-auto px-6 py-8 md:py-12 space-y-6">
           {messages.length === 0 && <Welcome onPick={send} />}
@@ -83,7 +83,7 @@ export const AssistantClient = () => {
             <Message key={i} msg={m} />
           ))}
           {loading && (
-            <div className="flex items-center gap-2 text-sm text-stone-500 pl-12">
+            <div className="flex items-center gap-2 text-sm text-zinc-500 pl-12">
               <Loader2 size={14} className="animate-spin" />
               denkt nach…
             </div>
@@ -116,7 +116,7 @@ const Welcome = ({ onPick }: { onPick: (s: string) => void }) => (
       <Sparkles size={22} />
     </div>
     <h1 className="mt-5 font-display font-bold text-2xl tracking-tight">Wie kann ich helfen?</h1>
-    <p className="mt-2 text-sm text-stone-500">
+    <p className="mt-2 text-sm text-zinc-500">
       Frag mich nach Verträgen, Strafzetteln, Statistiken — oder lass mich einen neuen Vertrag anlegen.
     </p>
     <div className="mt-8 grid sm:grid-cols-2 gap-2.5">
@@ -124,7 +124,7 @@ const Welcome = ({ onPick }: { onPick: (s: string) => void }) => (
         <button
           key={s}
           onClick={() => onPick(s)}
-          className="text-left text-sm px-4 py-3 rounded-xl bg-white ring-1 ring-stone-200 hover:ring-stone-400 transition"
+          className="text-left text-sm px-4 py-3 rounded-xl bg-white ring-1 ring-zinc-200 hover:ring-zinc-400 transition"
         >
           {s}
         </button>
@@ -223,7 +223,7 @@ const ToolResult = ({ call }: { call: ToolCall }) => {
     return (
       <Link
         href={`/dashboard/tickets/${t.id}`}
-        className="block rounded-xl bg-white ring-1 ring-stone-200 hover:ring-stone-400 p-4 transition"
+        className="block rounded-xl bg-white ring-1 ring-zinc-200 hover:ring-zinc-400 p-4 transition"
       >
         <div className="flex items-start gap-3">
           <div
@@ -233,15 +233,15 @@ const ToolResult = ({ call }: { call: ToolCall }) => {
             <UserCheck size={16} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-xs uppercase tracking-wider text-stone-500 font-medium">
+            <div className="text-xs uppercase tracking-wider text-zinc-500 font-medium">
               Strafzettel zugeordnet
             </div>
             <div className="font-display font-semibold text-lg mt-0.5">{t.renter_name}</div>
-            <div className="text-sm text-stone-500 flex flex-wrap gap-x-4 gap-y-1 mt-1">
+            <div className="text-sm text-zinc-500 flex flex-wrap gap-x-4 gap-y-1 mt-1">
               <span className="font-mono">{t.ticket_nr}</span>
               <span>→</span>
               <span className="font-mono">{c.contract_nr}</span>
-              <span className="font-mono font-semibold text-stone-900">{c.plate}</span>
+              <span className="font-mono font-semibold text-zinc-900">{c.plate}</span>
             </div>
           </div>
         </div>
@@ -293,7 +293,7 @@ const ContractCreatedCard = ({
 }) => (
   <Link
     href={`/dashboard/contracts/${contract.id}`}
-    className="block rounded-xl bg-white ring-1 ring-stone-200 hover:ring-stone-400 p-4 transition"
+    className="block rounded-xl bg-white ring-1 ring-zinc-200 hover:ring-zinc-400 p-4 transition"
   >
     <div className="flex items-start gap-3">
       <div
@@ -303,11 +303,11 @@ const ContractCreatedCard = ({
         <CheckCircle2 size={16} />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-xs uppercase tracking-wider text-stone-500 font-medium">{headline}</div>
+        <div className="text-xs uppercase tracking-wider text-zinc-500 font-medium">{headline}</div>
         <div className="font-display font-semibold text-lg mt-0.5">{contract.renter_name}</div>
-        <div className="text-sm text-stone-500 flex flex-wrap gap-x-4 gap-y-1 mt-1">
+        <div className="text-sm text-zinc-500 flex flex-wrap gap-x-4 gap-y-1 mt-1">
           <span className="font-mono">{contract.contract_nr}</span>
-          <span className="font-mono font-semibold text-stone-900">{contract.plate}</span>
+          <span className="font-mono font-semibold text-zinc-900">{contract.plate}</span>
           <span>
             {fmtDate(contract.pickup_date)} → {fmtDate(contract.actual_return_date || contract.return_date)}
           </span>
@@ -318,7 +318,7 @@ const ContractCreatedCard = ({
 );
 
 const VehicleCard = ({ vehicle }: { vehicle: VehicleSummary }) => (
-  <div className="rounded-xl bg-white ring-1 ring-stone-200 p-4 flex items-center gap-3">
+  <div className="rounded-xl bg-white ring-1 ring-zinc-200 p-4 flex items-center gap-3">
     <div
       className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
       style={{ background: THEME.primaryTint, color: THEME.primary }}
@@ -327,7 +327,7 @@ const VehicleCard = ({ vehicle }: { vehicle: VehicleSummary }) => (
     </div>
     <div className="flex-1">
       <div className="font-mono font-semibold">{vehicle.plate}</div>
-      <div className="text-xs text-stone-500">
+      <div className="text-xs text-zinc-500">
         {[vehicle.vehicle_type, vehicle.color].filter(Boolean).join(" · ") || "Fahrzeug angelegt"}
       </div>
     </div>
@@ -339,16 +339,16 @@ const ContractList = ({ contracts }: { contracts: ContractSummary[] }) => {
   if (contracts.length === 0)
     return <EmptyResult Icon={FileSignature} text="Keine Verträge gefunden" />;
   return (
-    <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+    <div className="rounded-xl bg-white ring-1 ring-zinc-200 overflow-hidden">
       {contracts.map((c) => (
         <Link
           key={c.id}
           href={`/dashboard/contracts/${c.id}`}
-          className="grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+          className="grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3 border-b border-zinc-50 last:border-0 text-sm hover:bg-zinc-50"
         >
           <div className="min-w-0">
             <div className="font-medium truncate">{c.renter_name}</div>
-            <div className="text-xs text-stone-500 mt-0.5 flex flex-wrap gap-x-3">
+            <div className="text-xs text-zinc-500 mt-0.5 flex flex-wrap gap-x-3">
               <span className="font-mono">{c.contract_nr}</span>
               <span className="font-mono font-semibold">{c.plate}</span>
               <span>
@@ -356,7 +356,7 @@ const ContractList = ({ contracts }: { contracts: ContractSummary[] }) => {
               </span>
             </div>
           </div>
-          {c.status && <span className="text-[10px] uppercase font-medium text-stone-500">{c.status}</span>}
+          {c.status && <span className="text-[10px] uppercase font-medium text-zinc-500">{c.status}</span>}
         </Link>
       ))}
     </div>
@@ -366,16 +366,16 @@ const ContractList = ({ contracts }: { contracts: ContractSummary[] }) => {
 const TicketList = ({ tickets }: { tickets: TicketSummary[] }) => {
   if (tickets.length === 0) return <EmptyResult Icon={FileText} text="Keine Strafzettel gefunden" />;
   return (
-    <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+    <div className="rounded-xl bg-white ring-1 ring-zinc-200 overflow-hidden">
       {tickets.map((t) => (
         <Link
           key={t.id}
           href={`/dashboard/tickets/${t.id}`}
-          className="grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+          className="grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3 border-b border-zinc-50 last:border-0 text-sm hover:bg-zinc-50"
         >
           <div className="min-w-0">
             <div className="font-medium truncate">{t.offense || t.ticket_nr}</div>
-            <div className="text-xs text-stone-500 mt-0.5 flex flex-wrap gap-x-3">
+            <div className="text-xs text-zinc-500 mt-0.5 flex flex-wrap gap-x-3">
               <span className="font-mono">{t.ticket_nr}</span>
               <span className="font-mono font-semibold">{t.plate || "—"}</span>
               <span>{fmtDate(t.offense_date)}</span>
@@ -383,7 +383,7 @@ const TicketList = ({ tickets }: { tickets: TicketSummary[] }) => {
           </div>
           <div className="text-right">
             <div className="tabular-nums text-sm">{fmtEur(t.fine_amount)}</div>
-            <div className="text-[10px] uppercase font-medium text-stone-500 mt-0.5">{t.status}</div>
+            <div className="text-[10px] uppercase font-medium text-zinc-500 mt-0.5">{t.status}</div>
           </div>
         </Link>
       ))}
@@ -403,8 +403,8 @@ const StatsCard = ({ stats }: { stats: Stats }) => (
 );
 
 const Stat = ({ label, value, Icon }: { label: string; value: string | number; Icon: LucideIcon }) => (
-  <div className="rounded-xl bg-white ring-1 ring-stone-200 p-3.5">
-    <div className="flex items-center gap-2 text-xs text-stone-500">
+  <div className="rounded-xl bg-white ring-1 ring-zinc-200 p-3.5">
+    <div className="flex items-center gap-2 text-xs text-zinc-500">
       <Icon size={13} />
       {label}
     </div>
@@ -445,8 +445,8 @@ const DecommissionList = ({
       />
     );
   return (
-    <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-stone-100 text-xs uppercase tracking-wider text-stone-500 font-medium flex items-center gap-1.5">
+    <div className="rounded-xl bg-white ring-1 ring-zinc-200 overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-zinc-100 text-xs uppercase tracking-wider text-zinc-500 font-medium flex items-center gap-1.5">
         <CalendarClock size={12} /> Aussteuerung in den nächsten {windowDays} Tagen
       </div>
       {vehicles.map((v) => {
@@ -455,11 +455,11 @@ const DecommissionList = ({
           <Link
             key={v.id}
             href={`/dashboard/vehicles/${v.id}`}
-            className="grid grid-cols-[110px_1fr_140px_auto] items-center gap-3 px-4 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+            className="grid grid-cols-[110px_1fr_140px_auto] items-center gap-3 px-4 py-3 border-b border-zinc-50 last:border-0 text-sm hover:bg-zinc-50"
           >
             <span className="font-mono font-semibold">{v.plate}</span>
-            <span className="text-stone-700 truncate">{v.vehicle_type || "—"}</span>
-            <span className="text-xs text-stone-500 tabular-nums">
+            <span className="text-zinc-700 truncate">{v.vehicle_type || "—"}</span>
+            <span className="text-xs text-zinc-500 tabular-nums">
               {v.decommission_date ? fmtDate(v.decommission_date) : "—"}
             </span>
             <span
@@ -513,10 +513,10 @@ const AvailableVehiclesCard = ({
       ? `Verfügbarkeit am ${fmtDate(range.from)}`
       : `Verfügbarkeit ${fmtDate(range.from)} – ${fmtDate(range.to)}`;
   return (
-    <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-stone-100 text-xs uppercase tracking-wider text-stone-500 font-medium flex items-center justify-between">
+    <div className="rounded-xl bg-white ring-1 ring-zinc-200 overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-zinc-100 text-xs uppercase tracking-wider text-zinc-500 font-medium flex items-center justify-between">
         <span>{headline}</span>
-        <span className="text-stone-700 tabular-nums">
+        <span className="text-zinc-700 tabular-nums">
           {available.length} frei · {blocked.length} belegt
         </span>
       </div>
@@ -526,12 +526,12 @@ const AvailableVehiclesCard = ({
           {available.map((v) => (
             <div
               key={v.id}
-              className="grid grid-cols-[110px_1fr_120px] items-center gap-3 px-4 py-2.5 border-b border-stone-50 last:border-0 text-sm"
+              className="grid grid-cols-[110px_1fr_120px] items-center gap-3 px-4 py-2.5 border-b border-zinc-50 last:border-0 text-sm"
             >
               <span className="font-mono font-semibold">{v.plate}</span>
-              <span className="text-stone-700 truncate">
+              <span className="text-zinc-700 truncate">
                 {v.vehicle_type || "—"}
-                {v.color && <span className="text-stone-400 text-xs ml-2">· {v.color}</span>}
+                {v.color && <span className="text-zinc-400 text-xs ml-2">· {v.color}</span>}
               </span>
               <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 justify-self-start">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -543,14 +543,14 @@ const AvailableVehiclesCard = ({
       )}
 
       {available.length === 0 && (
-        <div className="px-4 py-6 text-center text-sm text-stone-500">
+        <div className="px-4 py-6 text-center text-sm text-zinc-500">
           Kein Fahrzeug in diesem Zeitraum frei.
         </div>
       )}
 
       {blocked.length > 0 && (
-        <div className="border-t border-stone-100 bg-stone-50/50">
-          <div className="px-4 py-2 text-[11px] uppercase tracking-wider text-stone-500 font-medium">
+        <div className="border-t border-zinc-100 bg-zinc-50/50">
+          <div className="px-4 py-2 text-[11px] uppercase tracking-wider text-zinc-500 font-medium">
             Belegt ({blocked.length})
           </div>
           {blocked.map((v) => (
@@ -558,10 +558,10 @@ const AvailableVehiclesCard = ({
               key={v.plate}
               className="grid grid-cols-[110px_1fr] items-start gap-3 px-4 py-2 text-xs"
             >
-              <span className="font-mono font-semibold text-stone-700">{v.plate}</span>
+              <span className="font-mono font-semibold text-zinc-700">{v.plate}</span>
               <div>
                 {v.conflicts.map((c, i) => (
-                  <div key={i} className="text-stone-500">
+                  <div key={i} className="text-zinc-500">
                     {c.renter_name} · {fmtDate(c.pickup_date)} → {fmtDate(c.return_date)}
                   </div>
                 ))}
@@ -605,7 +605,7 @@ const ProcessReturnCard = ({
   return (
     <Link
       href={`/dashboard/contracts/${contract.id}`}
-      className="block rounded-xl bg-white ring-1 ring-stone-200 hover:ring-stone-400 p-4 transition"
+      className="block rounded-xl bg-white ring-1 ring-zinc-200 hover:ring-zinc-400 p-4 transition"
     >
       <div className="flex items-start gap-3">
         <div
@@ -615,13 +615,13 @@ const ProcessReturnCard = ({
           <CheckCircle2 size={16} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs uppercase tracking-wider text-stone-500 font-medium">
+          <div className="text-xs uppercase tracking-wider text-zinc-500 font-medium">
             Rückgabe verarbeitet
           </div>
           <div className="font-display font-semibold text-lg mt-0.5">{contract.renter_name}</div>
-          <div className="text-sm text-stone-500 flex flex-wrap gap-x-4 gap-y-1 mt-1">
+          <div className="text-sm text-zinc-500 flex flex-wrap gap-x-4 gap-y-1 mt-1">
             <span className="font-mono">{contract.contract_nr}</span>
-            <span className="font-mono font-semibold text-stone-900">{contract.plate}</span>
+            <span className="font-mono font-semibold text-zinc-900">{contract.plate}</span>
             <span>
               {fmtDate(contract.pickup_date)} →{" "}
               {fmtDate(contract.actual_return_date || contract.return_date)} ({diffLabel})
@@ -659,11 +659,11 @@ const ReturnStat = ({
   value: string;
   highlight?: boolean;
 }) => (
-  <div className="rounded-md bg-stone-50 ring-1 ring-stone-100 px-2.5 py-2">
-    <div className="text-[10px] uppercase tracking-wider text-stone-400 font-medium">{label}</div>
+  <div className="rounded-md bg-zinc-50 ring-1 ring-zinc-100 px-2.5 py-2">
+    <div className="text-[10px] uppercase tracking-wider text-zinc-400 font-medium">{label}</div>
     <div
       className={`tabular-nums font-display font-semibold mt-0.5 ${
-        highlight ? "text-amber-700" : "text-stone-900"
+        highlight ? "text-amber-700" : "text-zinc-900"
       }`}
     >
       {value}
@@ -672,8 +672,8 @@ const ReturnStat = ({
 );
 
 const EmptyResult = ({ Icon, text }: { Icon: LucideIcon; text: string }) => (
-  <div className="rounded-xl bg-stone-100 px-4 py-6 text-center text-sm text-stone-500">
-    <Icon size={20} className="mx-auto mb-2 text-stone-400" />
+  <div className="rounded-xl bg-zinc-100 px-4 py-6 text-center text-sm text-zinc-500">
+    <Icon size={20} className="mx-auto mb-2 text-zinc-400" />
     {text}
   </div>
 );
@@ -740,9 +740,9 @@ const Composer = ({ value, onChange, onSubmit, disabled, inputRef }: ComposerPro
     };
 
     return (
-      <div className="border-t border-stone-200 bg-white">
+      <div className="border-t border-zinc-200 bg-white">
         <div className="max-w-3xl mx-auto px-6 py-4">
-          <div className="flex items-end gap-2 rounded-2xl bg-stone-50 ring-1 ring-stone-200 p-2 focus-within:ring-stone-400">
+          <div className="flex items-end gap-2 rounded-2xl bg-zinc-50 ring-1 ring-zinc-200 p-2 focus-within:ring-zinc-400">
             <textarea
               ref={inputRef}
               value={value}
@@ -761,7 +761,7 @@ const Composer = ({ value, onChange, onSubmit, disabled, inputRef }: ComposerPro
                 className={`w-10 h-10 rounded-xl flex items-center justify-center transition ${
                   listening
                     ? "bg-red-500 text-white hover:bg-red-600"
-                    : "bg-white ring-1 ring-stone-200 text-stone-700 hover:bg-stone-100"
+                    : "bg-white ring-1 ring-zinc-200 text-zinc-700 hover:bg-zinc-100"
                 }`}
               >
                 {listening ? <MicOff size={16} /> : <Mic size={16} />}
@@ -777,7 +777,7 @@ const Composer = ({ value, onChange, onSubmit, disabled, inputRef }: ComposerPro
               <ArrowUp size={16} />
             </button>
           </div>
-          <div className="text-[11px] text-stone-400 text-center mt-2">
+          <div className="text-[11px] text-zinc-400 text-center mt-2">
             Enter zum Senden · Shift+Enter für neue Zeile
             {supported && " · Mikrofon für Sprache"}
           </div>

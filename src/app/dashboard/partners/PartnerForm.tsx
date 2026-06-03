@@ -22,7 +22,7 @@ const TYPES: PartnerType[] = ["hotel", "agency", "portal", "workshop", "other"];
 const COMMISSION_TYPES: CommissionType[] = ["fixed", "percent", "margin"];
 
 const inputCls =
-  "w-full h-10 px-3 rounded-lg bg-white ring-1 ring-stone-200 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-500/40";
+  "w-full h-10 px-3 rounded-lg bg-white ring-1 ring-zinc-200 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40";
 
 export const PartnerForm = ({
   mode,
@@ -99,7 +99,7 @@ export const PartnerForm = ({
       {mode === "create" && (
         <Link
           href="/dashboard/partners"
-          className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+          className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 mb-4"
         >
           <ArrowLeft size={14} /> Zurück zu Partner
         </Link>
@@ -110,7 +110,7 @@ export const PartnerForm = ({
           <div className="font-display font-bold text-2xl tracking-tight">
             Neuer Partner
           </div>
-          <p className="text-sm text-stone-500 mt-1 max-w-xl">
+          <p className="text-sm text-zinc-500 mt-1 max-w-xl">
             Hotel, Portal oder Werkstatt eintragen und Provisionsmodell
             festlegen — Fahrzeug-Preise je Partner gibt&apos;s im Fahrzeug-Detail.
           </p>
@@ -242,12 +242,12 @@ export const PartnerForm = ({
                   }
                   disabled={data.commission_type === "margin"}
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-stone-400">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-zinc-400">
                   {data.commission_type === "percent" ? "%" : "€"}
                 </span>
               </div>
             </Field>
-            <div className="sm:col-span-2 text-[12px] text-stone-500 leading-snug">
+            <div className="sm:col-span-2 text-[12px] text-zinc-500 leading-snug">
               {COMMISSION_TYPE_META[data.commission_type].description}
             </div>
           </div>
@@ -265,16 +265,16 @@ export const PartnerForm = ({
               placeholder="Optional"
             />
           </Field>
-          <label className="mt-3 flex items-start gap-3 p-3 rounded-lg ring-1 ring-stone-200 cursor-pointer">
+          <label className="mt-3 flex items-start gap-3 p-3 rounded-lg ring-1 ring-zinc-200 cursor-pointer">
             <input
               type="checkbox"
               checked={data.active}
               onChange={(e) =>
                 setData((d) => ({ ...d, active: e.target.checked }))
               }
-              className="mt-0.5 w-4 h-4 accent-teal-600"
+              className="mt-0.5 w-4 h-4 accent-indigo-600"
             />
-            <div className="text-sm text-stone-700">
+            <div className="text-sm text-zinc-700">
               Partner ist <strong>aktiv</strong> — taucht in Vertragsanlage und
               Listen auf.
             </div>
@@ -319,7 +319,7 @@ const Card = ({
   title: string;
   children: React.ReactNode;
 }) => (
-  <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5 sm:p-6">
+  <div className="rounded-xl bg-white ring-1 ring-zinc-200 p-5 sm:p-6">
     <div className="font-display font-semibold mb-4">{title}</div>
     {children}
   </div>
@@ -333,7 +333,7 @@ const Field = ({
   children: React.ReactNode;
 }) => (
   <label className="block">
-    <div className="text-[11.5px] uppercase tracking-wider text-stone-500 font-medium mb-1">
+    <div className="text-[11.5px] uppercase tracking-wider text-zinc-500 font-medium mb-1">
       {label}
     </div>
     {children}

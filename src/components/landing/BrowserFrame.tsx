@@ -14,15 +14,15 @@ export const BrowserFrame = ({
   const dark = variant === "dark";
   return (
     <div
-      className={`relative rounded-[14px] overflow-hidden shadow-2xl ${
+      className={`relative rounded-xl overflow-hidden shadow-[0_24px_64px_-28px_rgba(9,9,11,0.22)] ${
         dark
           ? "bg-zinc-900 ring-1 ring-white/10"
-          : "bg-white ring-1 ring-black/10"
+          : "bg-white ring-1 ring-zinc-200"
       } ${className}`}
     >
       <div
         className={`flex items-center gap-2 px-4 h-9 border-b ${
-          dark ? "border-white/10 bg-zinc-950/60" : "border-black/[0.06] bg-stone-50"
+          dark ? "border-white/10 bg-zinc-950/60" : "border-zinc-200/70 bg-zinc-50"
         }`}
       >
         <div className="flex gap-[6px]">

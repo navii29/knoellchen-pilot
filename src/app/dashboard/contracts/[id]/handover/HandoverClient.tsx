@@ -156,27 +156,27 @@ export const HandoverClient = ({
     <>
       <Link
         href={`/dashboard/contracts/${contractId}`}
-        className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 mb-4"
       >
         <ArrowLeft size={14} /> Zurück zum Vertrag
       </Link>
 
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <div className="text-xs text-stone-500 mb-1 font-mono">
+          <div className="text-xs text-zinc-500 mb-1 font-mono">
             {contractNr} · {plate}
           </div>
           <h1 className="font-display font-bold text-2xl tracking-tight">Übergabe-Fotos</h1>
-          <p className="text-sm text-stone-500 mt-1">
+          <p className="text-sm text-zinc-500 mt-1">
             10 Positionen pro Übergabe und Rücknahme. Vergleich erkennt neue Schäden via Claude Vision.
           </p>
         </div>
-        <div className="text-right text-xs text-stone-500">
+        <div className="text-right text-xs text-zinc-500">
           <div>{renterName}</div>
         </div>
       </div>
 
-      <div className="mt-6 inline-flex items-center bg-stone-100 rounded-lg p-1">
+      <div className="mt-6 inline-flex items-center bg-zinc-100 rounded-lg p-1">
         <TabButton
           active={tab === "pickup"}
           onClick={() => setTab("pickup")}
@@ -204,16 +204,16 @@ export const HandoverClient = ({
           return (
             <div
               key={p.key}
-              className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden"
+              className="rounded-xl bg-white ring-1 ring-zinc-200 overflow-hidden"
             >
-              <div className="aspect-[4/3] bg-stone-100 relative">
+              <div className="aspect-[4/3] bg-zinc-100 relative">
                 {photo?.url ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={photo.url} alt={p.label} className="w-full h-full object-cover" />
                     <button
                       onClick={() => photo && remove(photo)}
-                      className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/90 backdrop-blur text-stone-700 hover:text-red-600 flex items-center justify-center shadow"
+                      className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/90 backdrop-blur text-zinc-700 hover:text-red-600 flex items-center justify-center shadow"
                       title="Foto löschen"
                     >
                       <Trash2 size={13} />
@@ -238,7 +238,7 @@ export const HandoverClient = ({
                 ) : (
                   <button
                     onClick={() => fileRefs.current[key]?.click()}
-                    className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-stone-400 hover:text-teal-700 hover:bg-teal-50/40 transition"
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-zinc-400 hover:text-indigo-700 hover:bg-indigo-50/40 transition"
                     disabled={isUploading}
                   >
                     {isUploading ? (
@@ -267,21 +267,21 @@ export const HandoverClient = ({
               </div>
               <div className="px-3 py-2.5 flex items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <div className="text-sm font-medium text-stone-900 truncate">{p.label}</div>
-                  <div className="text-[11px] text-stone-500 truncate">{p.hint}</div>
+                  <div className="text-sm font-medium text-zinc-900 truncate">{p.label}</div>
+                  <div className="text-[11px] text-zinc-500 truncate">{p.hint}</div>
                 </div>
                 {photo && tab === "pickup" && photoFor("return", p.key) && !result && (
                   <button
                     onClick={() => compareOne(p.key)}
                     disabled={comparing}
-                    className="text-xs inline-flex items-center gap-1 text-teal-700 hover:bg-teal-50 px-2 py-1 rounded"
+                    className="text-xs inline-flex items-center gap-1 text-indigo-700 hover:bg-indigo-50 px-2 py-1 rounded"
                     title="Diese Position vergleichen"
                   >
                     <ScanSearch size={12} /> Vergl.
                   </button>
                 )}
                 {tab === "return" && result && !result.ok && (
-                  <span className="text-[10px] text-stone-400" title={result.error}>
+                  <span className="text-[10px] text-zinc-400" title={result.error}>
                     nicht möglich
                   </span>
                 )}
@@ -309,7 +309,7 @@ export const HandoverClient = ({
       )}
 
       <div className="mt-6 flex items-center justify-between flex-wrap gap-3">
-        <div className="text-xs text-stone-500">
+        <div className="text-xs text-zinc-500">
           {completePairs} {completePairs === 1 ? "Position" : "Positionen"} mit Vorher- und Nachher-Foto
         </div>
         <button
@@ -344,13 +344,13 @@ const TabButton = ({
   <button
     onClick={onClick}
     className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${
-      active ? "bg-white text-stone-900 shadow-sm" : "text-stone-600 hover:text-stone-900"
+      active ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-600 hover:text-zinc-900"
     }`}
   >
     {label}
     <span
       className={`ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded ${
-        active ? "bg-stone-100 text-stone-600" : "bg-stone-200 text-stone-500"
+        active ? "bg-zinc-100 text-zinc-600" : "bg-zinc-200 text-zinc-500"
       }`}
     >
       {count}/10
@@ -367,8 +367,8 @@ const ResultSummary = ({ results }: { results: CompareResultMap }) => {
   if (total === 0) return null;
 
   return (
-    <div className="mt-4 rounded-xl bg-white ring-1 ring-stone-200 p-4">
-      <div className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-2 flex items-center gap-1.5">
+    <div className="mt-4 rounded-xl bg-white ring-1 ring-zinc-200 p-4">
+      <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold mb-2 flex items-center gap-1.5">
         <CheckCircle2 size={12} /> Vergleichs-Ergebnis
       </div>
       <div className="flex items-center gap-3 text-sm flex-wrap">

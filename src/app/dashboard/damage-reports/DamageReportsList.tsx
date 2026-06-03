@@ -85,7 +85,7 @@ export const DamageReportsList = ({
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
           <div className="font-display font-bold text-2xl tracking-tight">Schadensberichte</div>
-          <p className="text-sm text-stone-500 mt-1">
+          <p className="text-sm text-zinc-500 mt-1">
             Unfälle, Vandalismus, Mietschäden — mit Foto-Dokumentation und Versicherungs-Tracking.
           </p>
         </div>
@@ -105,7 +105,7 @@ export const DamageReportsList = ({
               key={f}
               onClick={() => setFilter(f)}
               className={`px-2.5 py-1.5 rounded-md ${
-                filter === f ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-100"
+                filter === f ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"
               }`}
             >
               {FILTER_LABEL[f]}
@@ -113,20 +113,20 @@ export const DamageReportsList = ({
           ))}
         </div>
         <div className="relative">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400" />
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Ort, AZ, Gegner, Vertrag…"
-            className="pl-8 pr-3 py-2 bg-white rounded-md text-sm ring-1 ring-stone-200 w-72 outline-none focus:ring-stone-400"
+            className="pl-8 pr-3 py-2 bg-white rounded-md text-sm ring-1 ring-zinc-200 w-72 outline-none focus:ring-zinc-400"
           />
         </div>
       </div>
 
-      <div className="mt-4 rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+      <div className="mt-4 rounded-xl bg-white ring-1 ring-zinc-200 overflow-hidden">
         {/* Desktop */}
         <div className="hidden md:block">
-          <div className="grid grid-cols-[110px_110px_1fr_180px_120px_24px] gap-3 px-5 py-2.5 text-[11px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
+          <div className="grid grid-cols-[110px_110px_1fr_180px_120px_24px] gap-3 px-5 py-2.5 text-[11px] uppercase tracking-wider text-zinc-400 border-b border-zinc-100">
             <span>Datum</span>
             <span>Kennzeichen</span>
             <span>Ort / Beschreibung</span>
@@ -141,21 +141,21 @@ export const DamageReportsList = ({
               <Link
                 key={r.id}
                 href={`/dashboard/damage-reports/${r.id}`}
-                className="grid grid-cols-[110px_110px_1fr_180px_120px_24px] gap-3 items-center px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+                className="grid grid-cols-[110px_110px_1fr_180px_120px_24px] gap-3 items-center px-5 py-3 border-b border-zinc-50 last:border-0 text-sm hover:bg-zinc-50"
               >
                 <span className="tabular-nums text-xs">
                   {fmtDate(r.date)}
-                  {r.time && <span className="text-stone-400 ml-1">{r.time}</span>}
+                  {r.time && <span className="text-zinc-400 ml-1">{r.time}</span>}
                 </span>
                 <span className="font-mono font-semibold">{v?.plate || "—"}</span>
                 <span className="truncate">
-                  {r.location && <span className="text-stone-900">{r.location}</span>}
+                  {r.location && <span className="text-zinc-900">{r.location}</span>}
                   {r.description && (
-                    <span className="text-stone-400 ml-2 text-xs">· {r.description}</span>
+                    <span className="text-zinc-400 ml-2 text-xs">· {r.description}</span>
                   )}
-                  {!r.location && !r.description && <span className="text-stone-400">—</span>}
+                  {!r.location && !r.description && <span className="text-zinc-400">—</span>}
                 </span>
-                <span className="text-xs text-stone-500 truncate font-mono">
+                <span className="text-xs text-zinc-500 truncate font-mono">
                   {r.police_reference_nr || r.insurance_claim_nr || "—"}
                 </span>
                 <span
@@ -169,14 +169,14 @@ export const DamageReportsList = ({
                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: meta.color }} />
                   {meta.label}
                 </span>
-                <ChevronRight size={14} className="text-stone-300" />
+                <ChevronRight size={14} className="text-zinc-300" />
               </Link>
             );
           })}
         </div>
 
         {/* Mobile */}
-        <div className="md:hidden divide-y divide-stone-100">
+        <div className="md:hidden divide-y divide-zinc-100">
           {filtered.map((r) => {
             const v = r.vehicle_id ? vehicleById.get(r.vehicle_id) : null;
             const meta = STATUS_META[r.status];
@@ -184,7 +184,7 @@ export const DamageReportsList = ({
               <Link
                 key={r.id}
                 href={`/dashboard/damage-reports/${r.id}`}
-                className="flex items-start gap-3 px-4 py-3 hover:bg-stone-50 active:bg-stone-100"
+                className="flex items-start gap-3 px-4 py-3 hover:bg-zinc-50 active:bg-zinc-100"
               >
                 <div className="flex-1 min-w-0 space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -205,28 +205,28 @@ export const DamageReportsList = ({
                     {v?.plate && (
                       <span className="font-mono font-semibold text-sm">{v.plate}</span>
                     )}
-                    <span className="ml-auto tabular-nums text-[11px] text-stone-500">
+                    <span className="ml-auto tabular-nums text-[11px] text-zinc-500">
                       {fmtDate(r.date)}
                     </span>
                   </div>
-                  <div className="text-sm text-stone-900 truncate">
+                  <div className="text-sm text-zinc-900 truncate">
                     {r.location || r.description || "—"}
                   </div>
                   {(r.police_reference_nr || r.insurance_claim_nr) && (
-                    <div className="text-[11px] text-stone-500 font-mono truncate">
+                    <div className="text-[11px] text-zinc-500 font-mono truncate">
                       {r.police_reference_nr || r.insurance_claim_nr}
                     </div>
                   )}
                 </div>
-                <ChevronRight size={16} className="text-stone-300 shrink-0 mt-1" />
+                <ChevronRight size={16} className="text-zinc-300 shrink-0 mt-1" />
               </Link>
             );
           })}
         </div>
 
         {filtered.length === 0 && (
-          <div className="px-5 py-12 text-center text-sm text-stone-500">
-            <AlertOctagon size={28} className="mx-auto text-stone-300" />
+          <div className="px-5 py-12 text-center text-sm text-zinc-500">
+            <AlertOctagon size={28} className="mx-auto text-zinc-300" />
             <div className="mt-3">
               {q ? "Keine Berichte gefunden." : "Noch keine Schadensberichte."}
             </div>

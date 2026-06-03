@@ -1,21 +1,25 @@
 import Link from "next/link";
+import { Check, Minus } from "lucide-react";
 import { FadeUp } from "./FadeUp";
+import { BOOKING_URL } from "@/lib/links";
 
 const plans = [
   {
     name: "Starter",
     price: "249",
-    tagline: "Für Vermietungen, die zuerst Strafzettel und Verträge automatisieren wollen.",
+    tagline: "Für Vermietungen, die Strafzettel, Verträge und Schadendokumentation automatisieren wollen.",
     limit: "Bis zu 15 Fahrzeuge",
     features: [
       "Strafzettel-Automatisierung (KI-Auslesen, Anschreiben, Rechnung)",
+      "Übergabe & Schadenerkennung (Computer Vision)",
       "Vertragsverwaltung & Kalender",
       "Kunden- und Führerschein-Scan",
       "5.000 KI-Auslesungen / Monat",
-      "E-Mail Support",
-      "— Schaden-Vergleich, Tablet-Sign und Kundenportal erst ab Professional",
+      "E-Mail-Support",
+      "— Tablet-Unterschrift und Kundenportal erst ab Professional",
     ],
     cta: "Starter wählen",
+    href: "/register",
     featured: false,
   },
   {
@@ -26,16 +30,16 @@ const plans = [
     features: [
       "Alles aus Starter, plus:",
       "Self-Service Kundenportal",
-      "Digitale Vertragsunterschrift",
+      "Digitale Vertragsunterschrift am Tablet",
       "Dynamische Preisoptimierung",
       "KI-Sprachassistent",
-      "Übergabe & Schadenerkennung",
       "Flottenkalender mit Aussteuerungs-Alerts",
-      "LexOffice & Echoes Integrationen",
+      "LexOffice-Integration für die Buchhaltung",
       "20.000 KI-Auslesungen / Monat",
       "Priorisierter Support",
     ],
     cta: "Professional wählen",
+    href: "/register",
     featured: true,
   },
   {
@@ -49,123 +53,105 @@ const plans = [
       "Mehrere Standorte / Mandanten",
       "REST-API & Webhooks",
       "Custom Onboarding & Schulung",
-      "SLA mit 99,9 % Uptime",
+      "SLA nach Vereinbarung",
       "Dedizierter Account Manager",
     ],
     cta: "Vertrieb kontaktieren",
+    href: BOOKING_URL,
     featured: false,
   },
 ];
 
+const FeatureRow = ({ text, featured }: { text: string; featured: boolean }) => {
+  if (text.startsWith("Alles aus")) {
+    return (
+      <li className={`text-[13px] font-medium ${featured ? "text-zinc-400" : "text-zinc-500"}`}>
+        {text}
+      </li>
+    );
+  }
+  if (text.startsWith("—")) {
+    return (
+      <li className={`flex items-start gap-2.5 text-[13.5px] ${featured ? "text-zinc-500" : "text-zinc-400"}`}>
+        <Minus size={16} className="mt-0.5 shrink-0 text-zinc-400" strokeWidth={2.25} />
+        <span>{text.replace(/^—\s*/, "")}</span>
+      </li>
+    );
+  }
+  return (
+    <li className={`flex items-start gap-2.5 text-[14px] ${featured ? "text-zinc-700" : "text-zinc-700"}`}>
+      <Check size={16} className="mt-0.5 shrink-0 text-indigo-600" strokeWidth={2.5} />
+      <span>{text}</span>
+    </li>
+  );
+};
+
 export const Pricing = () => {
   return (
-    <section id="pricing" className="bg-white py-20 sm:py-28 lg:py-36">
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
+    <section id="pricing" className="bg-zinc-50 border-t border-zinc-200 py-20 sm:py-28">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8">
         <FadeUp>
-          <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
-            <div className="inline-flex items-center gap-2 px-3 h-7 rounded-full bg-stone-100 ring-1 ring-black/[0.04] text-[12px] text-stone-600 mb-5">
+          <div className="max-w-2xl mb-12">
+            <div className="text-[12px] font-semibold uppercase tracking-[0.09em] text-indigo-600 mb-4">
               Preise
             </div>
-            <h2 className="font-display text-stone-900 text-[32px] sm:text-[48px] lg:text-[68px] leading-[1.05] tracking-[-0.03em] font-medium text-balance">
-              Ein Preis. Alles inklusive.
+            <h2 className="text-[30px] sm:text-[42px] leading-[1.08] tracking-[-0.03em] font-semibold text-zinc-950 text-balance">
+              Transparente Preise. Keine Überraschungen.
             </h2>
-            <p className="mt-4 text-[15px] sm:text-[17px] text-stone-600 leading-relaxed">
-              Keine versteckten Kosten. Keine Setup-Gebühren. Jederzeit
-              kündbar.
+            <p className="mt-4 text-[16px] text-zinc-600 leading-relaxed">
+              Keine Setup-Gebühren, monatlich kündbar, 30 Tage kostenlos testen.
             </p>
           </div>
         </FadeUp>
 
-        <div className="grid lg:grid-cols-3 gap-4 lg:gap-0 lg:rounded-3xl lg:overflow-hidden lg:ring-1 lg:ring-black/[0.06]">
+        <div className="grid lg:grid-cols-3 gap-5 items-start">
           {plans.map((plan, i) => {
             const featured = plan.featured;
             return (
-              <FadeUp key={plan.name} delay={i * 80}>
+              <FadeUp key={plan.name} delay={i * 70}>
                 <div
-                  className={`h-full rounded-3xl lg:rounded-none p-6 sm:p-8 lg:p-10 flex flex-col ${
+                  className={`h-full rounded-xl bg-white p-7 sm:p-8 flex flex-col ${
                     featured
-                      ? "bg-black text-white order-first lg:order-none lg:scale-[1.02] lg:my-[-8px] lg:rounded-3xl lg:ring-1 lg:ring-white/10 relative z-10 shadow-2xl"
-                      : "bg-stone-50 lg:bg-white text-stone-900"
+                      ? "ring-2 ring-indigo-600 shadow-[0_24px_60px_-30px_rgba(79,70,229,0.45)]"
+                      : "ring-1 ring-zinc-200"
                   }`}
                 >
-                  {featured && (
-                    <div className="inline-flex self-start items-center gap-1.5 px-2.5 h-6 rounded-full bg-gradient-to-r from-teal-400 to-emerald-400 text-black text-[11px] font-semibold mb-5">
-                      ★ Beliebt
-                    </div>
-                  )}
-                  <div
-                    className={`text-[14px] font-medium mb-2 ${
-                      featured ? "text-white/60" : "text-stone-500"
-                    }`}
-                  >
-                    {plan.name}
+                  <div className="flex items-center justify-between">
+                    <div className="text-[15px] font-semibold text-zinc-900">{plan.name}</div>
+                    {featured && (
+                      <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 ring-1 ring-indigo-100 rounded-full px-2.5 h-6 inline-flex items-center">
+                        Beliebt
+                      </span>
+                    )}
                   </div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span
-                      className={`text-[14px] ${
-                        featured ? "text-white/50" : "text-stone-400"
-                      }`}
-                    >
-                      €
-                    </span>
-                    <span className="font-display text-[52px] sm:text-[60px] lg:text-[64px] tracking-[-0.04em] font-medium leading-none">
+
+                  <div className="mt-4 flex items-baseline gap-1">
+                    <span className="text-[15px] text-zinc-400">€</span>
+                    <span className="text-[48px] sm:text-[52px] font-semibold tracking-[-0.04em] text-zinc-950 leading-none tabular-nums">
                       {plan.price}
                     </span>
-                    <span
-                      className={`text-[14px] ${
-                        featured ? "text-white/50" : "text-stone-400"
-                      }`}
-                    >
-                      / Monat
-                    </span>
+                    <span className="text-[14px] text-zinc-400">/ Monat</span>
                   </div>
-                  <div
-                    className={`text-[13.5px] mt-2 ${
-                      featured ? "text-white/60" : "text-stone-500"
-                    }`}
-                  >
-                    {plan.tagline}
-                  </div>
-                  <div
-                    className={`mt-5 inline-flex self-start items-center px-2.5 h-6 rounded-full text-[12px] font-medium ${
-                      featured
-                        ? "bg-white/10 text-white ring-1 ring-white/15"
-                        : "bg-stone-200/70 text-stone-700"
-                    }`}
-                  >
+
+                  <div className="mt-2 text-[13.5px] text-zinc-500 leading-snug">{plan.tagline}</div>
+
+                  <div className="mt-5 inline-flex self-start items-center px-2.5 h-6 rounded-full bg-zinc-100 text-zinc-600 text-[12px] font-medium">
                     {plan.limit}
                   </div>
 
                   <ul className="mt-7 space-y-3 flex-1">
                     {plan.features.map((f) => (
-                      <li
-                        key={f}
-                        className={`flex items-start gap-2.5 text-[14px] ${
-                          featured ? "text-white/85" : "text-stone-700"
-                        }`}
-                      >
-                        <span
-                          className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${
-                            featured
-                              ? "bg-emerald-400/20 text-emerald-300"
-                              : "bg-teal-100 text-teal-700"
-                          }`}
-                        >
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        </span>
-                        <span>{f}</span>
-                      </li>
+                      <FeatureRow key={f} text={f} featured={featured} />
                     ))}
                   </ul>
 
                   <Link
-                    href="/register"
-                    className={`mt-8 inline-flex w-full sm:w-auto items-center justify-center h-12 sm:h-11 px-5 rounded-full text-[14.5px] sm:text-[14px] font-medium transition-colors ${
+                    href={plan.href}
+                    {...(plan.href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                    className={`mt-8 inline-flex w-full items-center justify-center h-11 px-5 rounded-lg text-[14.5px] font-medium transition-colors ${
                       featured
-                        ? "bg-white text-black hover:bg-white/90"
-                        : "bg-stone-900 text-white hover:bg-stone-800"
+                        ? "bg-indigo-600 text-white hover:bg-indigo-500"
+                        : "bg-white ring-1 ring-zinc-300 text-zinc-900 hover:bg-zinc-50"
                     }`}
                   >
                     {plan.cta}
@@ -176,9 +162,9 @@ export const Pricing = () => {
           })}
         </div>
 
-        <FadeUp delay={300}>
-          <div className="text-center mt-10 text-[13.5px] text-stone-500">
-            Alle Preise zzgl. MwSt. · 30 Tage kostenlos testen · Keine Kreditkarte
+        <FadeUp delay={250}>
+          <div className="mt-8 text-[13px] text-zinc-500">
+            Alle Preise zzgl. MwSt. · 30 Tage kostenlos testen · Keine Kreditkarte erforderlich
           </div>
         </FadeUp>
       </div>

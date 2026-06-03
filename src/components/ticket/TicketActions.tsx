@@ -156,7 +156,7 @@ export const TicketActions = ({
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <div className="text-xs uppercase tracking-wider text-stone-500 font-medium">Aktionen</div>
+        <div className="text-xs uppercase tracking-wider text-zinc-500 font-medium">Aktionen</div>
         <TestModeBadge />
       </div>
 
@@ -240,7 +240,7 @@ export const TicketActions = ({
             <button
               onClick={syncLexoffice}
               disabled={loading != null}
-              className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md ring-1 ring-stone-200 hover:bg-stone-50 text-stone-700 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md ring-1 ring-zinc-200 hover:bg-zinc-50 text-zinc-700 disabled:opacity-50"
             >
               {loading === "lexoffice" ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -260,7 +260,7 @@ export const TicketActions = ({
             value={authorityInput}
             onChange={(e) => setAuthorityInput(e.target.value)}
             placeholder="bussgeld@behoerde.de"
-            className="flex-1 px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400"
+            className="flex-1 px-3 py-2 text-sm rounded-lg ring-1 ring-zinc-200 outline-none focus:ring-zinc-400"
           />
           <button
             onClick={sendToAuthority}
@@ -349,7 +349,7 @@ const ActionButton = ({
   <button
     onClick={onClick}
     disabled={disabled || loading}
-    className="flex items-start gap-3 p-3.5 rounded-lg ring-1 ring-stone-200 bg-white hover:bg-stone-50 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+    className="flex items-start gap-3 p-3.5 rounded-lg ring-1 ring-zinc-200 bg-white hover:bg-zinc-50 text-left disabled:opacity-50 disabled:cursor-not-allowed"
   >
     <div
       className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
@@ -359,7 +359,7 @@ const ActionButton = ({
     </div>
     <div className="flex-1 min-w-0">
       <div className="text-sm font-medium">{label}</div>
-      <div className="text-xs text-stone-500 truncate">{hint}</div>
+      <div className="text-xs text-zinc-500 truncate">{hint}</div>
     </div>
   </button>
 );
@@ -369,7 +369,7 @@ const DocLink = ({ label, Icon, url }: { label: string; Icon: LucideIcon; url: s
     href={url}
     target="_blank"
     rel="noreferrer"
-    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg ring-1 ring-stone-200 hover:bg-stone-50 text-stone-700"
+    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg ring-1 ring-zinc-200 hover:bg-zinc-50 text-zinc-700"
   >
     <Icon size={14} />
     {label}

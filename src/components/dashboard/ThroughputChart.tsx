@@ -23,18 +23,18 @@ export const ThroughputChart = ({ data, total }: { data: number[]; total: number
 
   return (
     <div className="rounded-2xl bg-white ring-1 ring-black/[0.05] hover:ring-black/[0.08] transition-all duration-200 overflow-hidden">
-      <div className="px-7 py-5 border-b border-stone-100 flex items-center justify-between">
+      <div className="px-7 py-5 border-b border-zinc-100 flex items-center justify-between">
         <div>
-          <div className="font-display font-medium text-[17px] tracking-tight text-stone-900">
+          <div className="font-display font-medium text-[17px] tracking-tight text-zinc-900">
             Durchsatz
           </div>
-          <div className="text-[12px] text-stone-400 mt-1">Strafzettel pro Tag · 14 Tage</div>
+          <div className="text-[12px] text-zinc-400 mt-1">Strafzettel pro Tag · 14 Tage</div>
         </div>
         <div className="text-right">
-          <div className="font-display font-medium text-[28px] leading-none tracking-[-0.025em] tabular-nums text-stone-900">
+          <div className="font-display font-medium text-[28px] leading-none tracking-[-0.025em] tabular-nums text-zinc-900">
             {total}
           </div>
-          <div className="text-[12px] text-stone-400 mt-1">gesamt</div>
+          <div className="text-[12px] text-zinc-400 mt-1">gesamt</div>
         </div>
       </div>
       <div className="px-5 pt-3 pb-4">
@@ -45,15 +45,15 @@ export const ThroughputChart = ({ data, total }: { data: number[]; total: number
         >
           <defs>
             <linearGradient id="throughput-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#2dd4bf" stopOpacity="0.22" />
-              <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0" />
+              <stop offset="0%" stopColor="#818cf8" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="#818cf8" stopOpacity="0" />
             </linearGradient>
           </defs>
           <path d={fillPath} fill="url(#throughput-grad)" />
           <path
             d={linePath}
             fill="none"
-            stroke="#0d9488"
+            stroke="#4f46e5"
             strokeWidth="1.75"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -63,11 +63,11 @@ export const ThroughputChart = ({ data, total }: { data: number[]; total: number
             cx={px(last)}
             cy={py(data[last] ?? 0)}
             r="2"
-            fill="#0d9488"
+            fill="#4f46e5"
             vectorEffect="non-scaling-stroke"
           />
         </svg>
-        <div className="flex justify-between text-[10.5px] text-stone-400 px-1 mt-1.5 tabular-nums">
+        <div className="flex justify-between text-[10.5px] text-zinc-400 px-1 mt-1.5 tabular-nums">
           <span>vor 14 Tagen</span>
           <span>heute</span>
         </div>

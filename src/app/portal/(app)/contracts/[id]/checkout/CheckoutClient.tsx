@@ -129,7 +129,7 @@ export const CheckoutClient = ({
       <div className="px-5 pt-3">
         <Link
           href={`/portal/contracts/${contractId}`}
-          className="inline-flex items-center gap-1.5 text-[13px] text-stone-500 hover:text-stone-900"
+          className="inline-flex items-center gap-1.5 text-[13px] text-zinc-500 hover:text-zinc-900"
         >
           <ArrowLeft size={13} /> Zum Vertrag
         </Link>
@@ -138,7 +138,7 @@ export const CheckoutClient = ({
       <WizardProgress current={step} total={TOTAL} labels={STEP_LABELS} />
 
       <div className="px-5 py-4 space-y-4">
-        <div className="text-[12px] text-stone-500">
+        <div className="text-[12px] text-zinc-500">
           <span className="font-mono">{plate}</span>
           {vehicleType && <span className="ml-2">· {vehicleType}</span>}
           <span className="ml-2 opacity-70">· {contractNr}</span>
@@ -159,14 +159,14 @@ export const CheckoutClient = ({
               onChange={setPhotoCount}
             />
             <div className="mt-5 flex items-center justify-between gap-3">
-              <div className="text-[12.5px] text-stone-600">
+              <div className="text-[12.5px] text-zinc-600">
                 {photoCount}/10 Fotos hochgeladen
               </div>
               <button
                 type="button"
                 onClick={goNext}
                 disabled={photoCount < 4}
-                className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full bg-stone-900 text-white text-[14px] font-medium hover:bg-stone-800 disabled:opacity-40"
+                className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full bg-zinc-900 text-white text-[14px] font-medium hover:bg-zinc-800 disabled:opacity-40"
               >
                 <Check size={14} /> Weiter
               </button>
@@ -180,9 +180,9 @@ export const CheckoutClient = ({
             subtitle="Schau auf den Tacho und gib den aktuellen Stand ein."
             onBack={goBack}
           >
-            <div className="rounded-2xl bg-stone-100 ring-1 ring-stone-200 px-4 py-3 mb-4 flex items-center gap-3">
-              <Gauge size={18} className="text-stone-600" />
-              <div className="text-[13.5px] text-stone-700">
+            <div className="rounded-2xl bg-zinc-100 ring-1 ring-zinc-200 px-4 py-3 mb-4 flex items-center gap-3">
+              <Gauge size={18} className="text-zinc-600" />
+              <div className="text-[13.5px] text-zinc-700">
                 Stand bei Übergabe:{" "}
                 <span className="font-semibold tabular-nums">
                   {kmPickup != null
@@ -194,27 +194,27 @@ export const CheckoutClient = ({
             </div>
 
             <label className="block">
-              <div className="text-[12px] font-medium text-stone-700 mb-1.5">
+              <div className="text-[12px] font-medium text-zinc-700 mb-1.5">
                 Aktueller Kilometerstand
               </div>
               <div className="relative">
                 <input
                   type="number"
                   inputMode="numeric"
-                  className="w-full h-14 px-4 rounded-xl bg-white ring-1 ring-stone-200 text-[22px] text-stone-900 text-center font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+                  className="w-full h-14 px-4 rounded-xl bg-white ring-1 ring-zinc-200 text-[22px] text-zinc-900 text-center font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
                   value={kmReturn}
                   onChange={(e) => setKmReturn(e.target.value)}
                   placeholder={kmPickup ? String(kmPickup) : "0"}
                   autoFocus
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[13px] text-stone-400 font-medium">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[13px] text-zinc-400 font-medium">
                   km
                 </span>
               </div>
             </label>
 
             {Number.isFinite(km) && km > 0 && (
-              <div className="mt-4 rounded-2xl ring-1 ring-stone-200 bg-white p-4 space-y-1.5">
+              <div className="mt-4 rounded-2xl ring-1 ring-zinc-200 bg-white p-4 space-y-1.5">
                 <SummaryRow
                   label="Gefahren"
                   value={`${driven.toLocaleString("de-DE")} km`}
@@ -254,7 +254,7 @@ export const CheckoutClient = ({
                 type="button"
                 onClick={goNext}
                 disabled={!Number.isFinite(km) || km <= 0}
-                className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full bg-stone-900 text-white text-[14px] font-medium hover:bg-stone-800 disabled:opacity-40"
+                className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full bg-zinc-900 text-white text-[14px] font-medium hover:bg-zinc-800 disabled:opacity-40"
               >
                 <Check size={14} /> Weiter
               </button>
@@ -272,9 +272,9 @@ export const CheckoutClient = ({
             }
             onBack={goBack}
           >
-            <div className="rounded-2xl bg-stone-100 ring-1 ring-stone-200 px-4 py-3 mb-4 flex items-center gap-3">
-              <Fuel size={18} className="text-stone-600" />
-              <div className="text-[13.5px] text-stone-700">
+            <div className="rounded-2xl bg-zinc-100 ring-1 ring-zinc-200 px-4 py-3 mb-4 flex items-center gap-3">
+              <Fuel size={18} className="text-zinc-600" />
+              <div className="text-[13.5px] text-zinc-700">
                 Aktueller Tankstand wählen:
               </div>
             </div>
@@ -288,8 +288,8 @@ export const CheckoutClient = ({
                     onClick={() => setFuel(opt.value)}
                     className={`h-12 rounded-xl text-[14px] font-medium transition-colors ${
                       active
-                        ? "bg-stone-900 text-white"
-                        : "bg-white text-stone-700 ring-1 ring-stone-200 hover:ring-stone-300"
+                        ? "bg-zinc-900 text-white"
+                        : "bg-white text-zinc-700 ring-1 ring-zinc-200 hover:ring-zinc-300"
                     }`}
                   >
                     {opt.label}
@@ -301,7 +301,7 @@ export const CheckoutClient = ({
               <button
                 type="button"
                 onClick={goNext}
-                className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full bg-stone-900 text-white text-[14px] font-medium hover:bg-stone-800"
+                className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full bg-zinc-900 text-white text-[14px] font-medium hover:bg-zinc-800"
               >
                 <Check size={14} /> Weiter
               </button>
@@ -315,7 +315,7 @@ export const CheckoutClient = ({
             subtitle="Letzte Prüfung vor dem Absenden."
             onBack={goBack}
           >
-            <div className="rounded-2xl bg-white ring-1 ring-stone-200 p-4 space-y-1.5">
+            <div className="rounded-2xl bg-white ring-1 ring-zinc-200 p-4 space-y-1.5">
               <SummaryRow
                 label="Fotos"
                 value={`${photoCount}/10 hochgeladen`}
@@ -349,7 +349,7 @@ export const CheckoutClient = ({
               type="button"
               onClick={submitCheckout}
               disabled={submitting}
-              className="mt-5 w-full inline-flex items-center justify-center gap-1.5 h-12 rounded-full bg-stone-900 text-white text-[14.5px] font-medium hover:bg-stone-800 disabled:opacity-40"
+              className="mt-5 w-full inline-flex items-center justify-center gap-1.5 h-12 rounded-full bg-zinc-900 text-white text-[14.5px] font-medium hover:bg-zinc-800 disabled:opacity-40"
             >
               {submitting ? (
                 <Loader2 size={16} className="animate-spin" />
@@ -362,21 +362,21 @@ export const CheckoutClient = ({
         )}
 
         {step === TOTAL && !submitting && error == null && (
-          <div className="rounded-2xl bg-white ring-1 ring-stone-200 p-7 text-center">
+          <div className="rounded-2xl bg-white ring-1 ring-zinc-200 p-7 text-center">
             <div className="inline-flex w-14 h-14 rounded-full bg-emerald-50 ring-1 ring-emerald-200 items-center justify-center text-emerald-700 mb-3">
               <PartyPopper size={26} />
             </div>
-            <h2 className="font-display text-stone-900 text-[24px] tracking-tight font-medium">
+            <h2 className="font-display text-zinc-900 text-[24px] tracking-tight font-medium">
               Vielen Dank!
             </h2>
-            <p className="text-[14px] text-stone-600 mt-2 leading-relaxed">
+            <p className="text-[14px] text-zinc-600 mt-2 leading-relaxed">
               Deine Rückgabe wurde erfasst. Die KI prüft im Hintergrund, ob es
               neue Schäden gibt — bei Auffälligkeiten meldet sich die Vermietung.
             </p>
             <button
               type="button"
               onClick={() => router.push(`/portal/contracts/${contractId}`)}
-              className="mt-5 inline-flex items-center justify-center h-12 px-6 rounded-full bg-stone-900 text-white text-[14.5px] font-medium hover:bg-stone-800"
+              className="mt-5 inline-flex items-center justify-center h-12 px-6 rounded-full bg-zinc-900 text-white text-[14.5px] font-medium hover:bg-zinc-800"
             >
               Zurück zum Vertrag
             </button>
@@ -398,13 +398,13 @@ const StepCard = ({
   children: React.ReactNode;
   onBack?: () => void;
 }) => (
-  <div className="rounded-2xl bg-white ring-1 ring-stone-200 p-5 sm:p-6">
+  <div className="rounded-2xl bg-white ring-1 ring-zinc-200 p-5 sm:p-6">
     <div className="mb-4">
-      <h2 className="font-display text-stone-900 text-[22px] sm:text-[24px] tracking-tight font-medium leading-tight">
+      <h2 className="font-display text-zinc-900 text-[22px] sm:text-[24px] tracking-tight font-medium leading-tight">
         {title}
       </h2>
       {subtitle && (
-        <p className="text-[13.5px] text-stone-500 mt-1.5 leading-snug">{subtitle}</p>
+        <p className="text-[13.5px] text-zinc-500 mt-1.5 leading-snug">{subtitle}</p>
       )}
     </div>
     {children}
@@ -413,7 +413,7 @@ const StepCard = ({
         <button
           type="button"
           onClick={onBack}
-          className="text-[13px] text-stone-500 hover:text-stone-900"
+          className="text-[13px] text-zinc-500 hover:text-zinc-900"
         >
           ← Vorheriger Schritt
         </button>
@@ -432,7 +432,7 @@ const SummaryRow = ({
   mono?: boolean;
 }) => (
   <div className="grid grid-cols-[140px_1fr] gap-2 text-[13.5px]">
-    <div className="text-stone-500">{label}</div>
-    <div className={mono ? "tabular-nums text-stone-900" : "text-stone-900"}>{value}</div>
+    <div className="text-zinc-500">{label}</div>
+    <div className={mono ? "tabular-nums text-zinc-900" : "text-zinc-900"}>{value}</div>
   </div>
 );

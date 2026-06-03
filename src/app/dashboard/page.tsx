@@ -12,6 +12,7 @@ import { VehicleDueAlert, type DueAlertItem } from "@/components/dashboard/Vehic
 import { PricingTodayWidget } from "@/components/dashboard/PricingTodayWidget";
 import { MarginWidget } from "@/components/dashboard/MarginWidget";
 import { TiresAlert } from "@/components/dashboard/TiresAlert";
+import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { buildTireAlerts } from "@/lib/tire-alerts";
 import { isDecommissionAlertWindow } from "@/lib/decommission";
 import { buildVehicleType } from "@/lib/vehicle";
@@ -166,6 +167,11 @@ export default async function DashboardPage() {
     isDecommissionAlertWindow(v, 21)
   );
 
+  const isEmpty =
+    (vehicleCount ?? 0) === 0 &&
+    allTickets.length === 0 &&
+    recentContracts.length === 0;
+
   const counts = {
     neu: allTickets.filter((t) => t.status === "neu").length,
     gebuehren: allTickets
@@ -184,28 +190,34 @@ export default async function DashboardPage() {
   return (
     <>
       <Topbar />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
+      <div className="flex-1 overflow-auto scroll-thin bg-zinc-50">
         <div className="px-4 md:px-10 py-8 md:py-12 space-y-8 max-w-[1400px]">
           <div className="flex items-end justify-between flex-wrap gap-4">
             <div>
-              <div className="text-[12px] uppercase tracking-wider text-stone-500 font-medium mb-2">
+              <div className="text-[12px] uppercase tracking-wider text-zinc-500 font-medium mb-2">
                 {today}
               </div>
-              <h1 className="font-display font-medium text-[32px] md:text-[44px] leading-[1.05] tracking-[-0.03em] text-stone-900">
+              <h1 className="font-display font-medium text-[32px] md:text-[44px] leading-[1.05] tracking-[-0.03em] text-zinc-900">
                 Guten Tag, {org?.name || "Team"}.
               </h1>
-              <p className="text-[15px] text-stone-500 mt-3 max-w-2xl">
-                {counts.neu === 0
+              <p className="text-[15px] text-zinc-500 mt-3 max-w-2xl">
+                {isEmpty
+                  ? "Noch keine Daten — legen wir gemeinsam los."
+                  : counts.neu === 0
                   ? "Keine offenen Eingänge — alles erledigt."
                   : `${counts.neu} ${counts.neu === 1 ? "neuer Strafzettel wartet" : "neue Strafzettel warten"} auf Freigabe.`}
               </p>
             </div>
-            <div className="hidden md:flex items-center gap-2 px-3 h-7 rounded-full bg-white ring-1 ring-black/[0.05] text-[12px] text-stone-600">
+            <div className="hidden md:flex items-center gap-2 px-3 h-7 rounded-full bg-white ring-1 ring-black/[0.05] text-[12px] text-zinc-600">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Alle Systeme online
             </div>
           </div>
 
+          {isEmpty ? (
+            <DashboardEmptyState />
+          ) : (
+          <>
           {decommissionAlerts.length > 0 && <DecommissionAlert vehicles={decommissionAlerts} />}
           {dueAlerts.length > 0 && <VehicleDueAlert items={dueAlerts} />}
           {tireAlerts.length > 0 && <TiresAlert items={tireAlerts} />}
@@ -258,6 +270,8 @@ export default async function DashboardPage() {
           </div>
 
           <TicketTable tickets={allTickets} />
+          </>
+          )}
         </div>
       </div>
     </>

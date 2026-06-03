@@ -78,17 +78,17 @@ export const DocScanStep = ({
           <Check size={14} />
           Daten erkannt — bitte prüfen
         </div>
-        <div className="rounded-2xl bg-white ring-1 ring-stone-200 divide-y divide-stone-100">
+        <div className="rounded-2xl bg-white ring-1 ring-zinc-200 divide-y divide-zinc-100">
           {parseFields.map((f) => {
             const value = renderValue(f.keys, f.join);
             return (
               <div key={f.label} className="px-4 py-2.5">
-                <div className="text-[11px] uppercase tracking-wider text-stone-500 font-medium">
+                <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-medium">
                   {f.label}
                 </div>
                 <div
                   className={`text-[14px] mt-0.5 ${
-                    value ? "text-stone-900" : "text-stone-400"
+                    value ? "text-zinc-900" : "text-zinc-400"
                   }`}
                 >
                   {value ?? "Nicht erkannt"}
@@ -105,7 +105,7 @@ export const DocScanStep = ({
               setParsed(null);
               setError(null);
             }}
-            className="text-sm text-stone-500 hover:text-stone-900 inline-flex items-center gap-1"
+            className="text-sm text-zinc-500 hover:text-zinc-900 inline-flex items-center gap-1"
           >
             <RefreshCw size={13} /> Neu fotografieren
           </button>
@@ -113,7 +113,7 @@ export const DocScanStep = ({
             <button
               type="button"
               onClick={() => onSuccess(parsed as Record<string, string | null>)}
-              className="inline-flex items-center gap-1.5 h-11 px-5 rounded-full bg-stone-900 text-white text-[14px] font-medium hover:bg-stone-800"
+              className="inline-flex items-center gap-1.5 h-11 px-5 rounded-full bg-zinc-900 text-white text-[14px] font-medium hover:bg-zinc-800"
             >
               <Check size={14} /> Daten bestätigen
             </button>
@@ -125,9 +125,9 @@ export const DocScanStep = ({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl bg-stone-100 ring-1 ring-stone-200 px-4 py-6 text-center">
-        <Camera size={26} className="mx-auto text-stone-500 mb-2" />
-        <div className="text-[13px] text-stone-600 leading-snug">{exampleHint}</div>
+      <div className="rounded-2xl bg-zinc-100 ring-1 ring-zinc-200 px-4 py-6 text-center">
+        <Camera size={26} className="mx-auto text-zinc-500 mb-2" />
+        <div className="text-[13px] text-zinc-600 leading-snug">{exampleHint}</div>
       </div>
 
       <input
@@ -146,7 +146,7 @@ export const DocScanStep = ({
         type="button"
         onClick={() => fileRef.current?.click()}
         disabled={busy}
-        className="w-full inline-flex items-center justify-center gap-1.5 h-12 rounded-full bg-stone-900 text-white text-[14.5px] font-medium hover:bg-stone-800 disabled:opacity-40"
+        className="w-full inline-flex items-center justify-center gap-1.5 h-12 rounded-full bg-zinc-900 text-white text-[14.5px] font-medium hover:bg-zinc-800 disabled:opacity-40"
       >
         {busy ? (
           <>

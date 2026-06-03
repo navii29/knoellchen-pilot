@@ -31,20 +31,20 @@ export default async function PortalContractDetail({
     <div className="px-5 py-3 space-y-4">
       <Link
         href="/portal/contracts"
-        className="inline-flex items-center gap-1.5 text-[13px] text-stone-500 hover:text-stone-900"
+        className="inline-flex items-center gap-1.5 text-[13px] text-zinc-500 hover:text-zinc-900"
       >
         <ArrowLeft size={13} /> Alle Verträge
       </Link>
 
       <div>
-        <div className="flex items-center gap-2 flex-wrap text-[12px] text-stone-500 mb-1">
-          <span className="font-mono text-stone-700">{c.plate}</span>
+        <div className="flex items-center gap-2 flex-wrap text-[12px] text-zinc-500 mb-1">
+          <span className="font-mono text-zinc-700">{c.plate}</span>
           <span>·</span>
           <span>{c.contract_nr}</span>
           <span>·</span>
           <span className="capitalize">{c.status}</span>
         </div>
-        <h1 className="font-display text-[24px] tracking-tight font-medium text-stone-900">
+        <h1 className="font-display text-[24px] tracking-tight font-medium text-zinc-900">
           {c.vehicle_type || "Mietvertrag"}
         </h1>
       </div>
@@ -74,7 +74,7 @@ export default async function PortalContractDetail({
       ) : (
         <Link
           href={`/portal/contracts/${c.id}/sign`}
-          className="rounded-2xl bg-stone-900 text-white p-4 flex items-center gap-3 hover:bg-stone-800"
+          className="rounded-2xl bg-zinc-900 text-white p-4 flex items-center gap-3 hover:bg-zinc-800"
         >
           <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
             <FileSignature size={18} />
@@ -93,7 +93,7 @@ export default async function PortalContractDetail({
       {c.status === "aktiv" && (c.checkin_step ?? 0) < 5 && (
         <Link
           href={`/portal/contracts/${c.id}/checkin`}
-          className="rounded-2xl bg-teal-600 text-white p-4 flex items-center gap-3 hover:bg-teal-700"
+          className="rounded-2xl bg-indigo-600 text-white p-4 flex items-center gap-3 hover:bg-indigo-700"
         >
           <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
             <KeyRound size={18} />
@@ -114,7 +114,7 @@ export default async function PortalContractDetail({
       {c.status === "aktiv" && c.signed_at && (c.checkin_step ?? 0) >= 5 && (
         <Link
           href={`/portal/contracts/${c.id}/checkout`}
-          className="rounded-2xl bg-stone-900 text-white p-4 flex items-center gap-3 hover:bg-stone-800"
+          className="rounded-2xl bg-zinc-900 text-white p-4 flex items-center gap-3 hover:bg-zinc-800"
         >
           <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
             <LogOut size={18} />
@@ -180,8 +180,8 @@ const Card = ({
   Icon: typeof Car;
   children: React.ReactNode;
 }) => (
-  <div className="rounded-2xl bg-white ring-1 ring-stone-200 p-4">
-    <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-3">
+  <div className="rounded-2xl bg-white ring-1 ring-zinc-200 p-4">
+    <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-zinc-500 font-semibold mb-3">
       <Icon size={12} />
       {title}
     </div>
@@ -199,8 +199,8 @@ const Row = ({
   mono?: boolean;
 }) => (
   <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-    <div className="text-stone-500 text-[12.5px]">{label}</div>
-    <div className={mono ? "tabular-nums text-stone-900" : "text-stone-900"}>
+    <div className="text-zinc-500 text-[12.5px]">{label}</div>
+    <div className={mono ? "tabular-nums text-zinc-900" : "text-zinc-900"}>
       {value}
     </div>
   </div>

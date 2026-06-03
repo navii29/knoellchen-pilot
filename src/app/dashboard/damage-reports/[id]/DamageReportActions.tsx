@@ -89,7 +89,7 @@ export const DamageReportActions = ({
       <button
         onClick={() => fileRef.current?.click()}
         disabled={uploading}
-        className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-stone-200 hover:bg-stone-50 disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-zinc-200 hover:bg-zinc-50 disabled:opacity-50"
       >
         {uploading ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />} Fotos hinzufügen
       </button>
@@ -106,7 +106,7 @@ export const DamageReportActions = ({
         <button
           onClick={advance}
           disabled={updating}
-          className="inline-flex items-center gap-1.5 text-sm text-white px-3 py-1.5 rounded-md font-medium bg-teal-600 hover:bg-teal-700 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 text-sm text-white px-3 py-1.5 rounded-md font-medium bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
         >
           {updating && <Loader2 size={14} className="animate-spin" />}
           {advanceMeta.label}
@@ -116,7 +116,7 @@ export const DamageReportActions = ({
       <button
         onClick={remove}
         disabled={deleting}
-        className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-red-600 px-2.5 py-1.5 rounded-md disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-red-600 px-2.5 py-1.5 rounded-md disabled:opacity-50"
         title="Bericht löschen"
       >
         {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}

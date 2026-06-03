@@ -35,7 +35,12 @@ export const updateSession = async (request: NextRequest) => {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isAuthPage = path === "/login" || path === "/register";
+  // Error-Landings (?error=…) müssen rendern dürfen, auch wenn noch eine
+  // Session besteht — sonst Redirect-Loop bei kaputten/unvollständigen Konten
+  // (Session vorhanden, aber keine Organisation/Profil-Row).
+  const isAuthPage =
+    (path === "/login" || path === "/register") &&
+    !request.nextUrl.searchParams.has("error");
   const isProtected = path.startsWith("/dashboard");
 
   if (!user && isProtected) {

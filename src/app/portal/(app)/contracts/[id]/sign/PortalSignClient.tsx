@@ -103,34 +103,34 @@ export const PortalSignClient = ({
     <div className="px-5 py-3 space-y-4">
       <Link
         href={`/portal/contracts/${contractId}`}
-        className="inline-flex items-center gap-1.5 text-[13px] text-stone-500 hover:text-stone-900"
+        className="inline-flex items-center gap-1.5 text-[13px] text-zinc-500 hover:text-zinc-900"
       >
         <ArrowLeft size={13} /> Zurück zum Vertrag
       </Link>
 
       <div>
-        <div className="text-[12px] uppercase tracking-[0.08em] font-semibold text-teal-700 mb-1">
+        <div className="text-[12px] uppercase tracking-[0.08em] font-semibold text-indigo-700 mb-1">
           Unterschreiben
         </div>
-        <h1 className="font-display text-[22px] tracking-tight font-medium text-stone-900">
+        <h1 className="font-display text-[22px] tracking-tight font-medium text-zinc-900">
           {contractNr}
         </h1>
-        <div className="text-sm text-stone-500 mt-0.5">
+        <div className="text-sm text-zinc-500 mt-0.5">
           <span className="font-mono">{plate}</span>
           {vehicleType && <span className="ml-2">· {vehicleType}</span>}
         </div>
       </div>
 
-      <div className="rounded-2xl bg-white ring-1 ring-stone-200 overflow-hidden">
-        <div className="px-4 py-3 border-b border-stone-100 flex items-center justify-between">
-          <div className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold">
+      <div className="rounded-2xl bg-white ring-1 ring-zinc-200 overflow-hidden">
+        <div className="px-4 py-3 border-b border-zinc-100 flex items-center justify-between">
+          <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold">
             Vertragsvorschau
           </div>
           <a
             href={`/api/portal/contracts/${contractId}/contract-pdf`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[12px] text-teal-700 hover:underline"
+            className="text-[12px] text-indigo-700 hover:underline"
           >
             In neuem Tab öffnen ↗
           </a>
@@ -142,9 +142,9 @@ export const PortalSignClient = ({
         />
       </div>
 
-      <div className="rounded-2xl bg-white ring-1 ring-stone-200 p-4">
+      <div className="rounded-2xl bg-white ring-1 ring-zinc-200 p-4">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-stone-500 font-semibold">
+          <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-zinc-500 font-semibold">
             <FileSignature size={12} />
             Deine Unterschrift
           </div>
@@ -152,13 +152,13 @@ export const PortalSignClient = ({
             type="button"
             onClick={clear}
             disabled={!hasInk}
-            className="inline-flex items-center gap-1 text-xs text-stone-500 hover:text-stone-900 disabled:opacity-40"
+            className="inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-900 disabled:opacity-40"
           >
             <Eraser size={12} /> Löschen
           </button>
         </div>
         <div
-          className="relative rounded-xl ring-1 ring-stone-200 bg-stone-50 overflow-hidden"
+          className="relative rounded-xl ring-1 ring-zinc-200 bg-zinc-50 overflow-hidden"
           style={{ touchAction: "none" }}
         >
           <canvas
@@ -167,21 +167,21 @@ export const PortalSignClient = ({
             style={{ height: 200, display: "block" }}
           />
           {!hasInk && (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-[13px] text-stone-400">
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-[13px] text-zinc-400">
               Mit Finger oder Stift unterschreiben
             </div>
           )}
         </div>
       </div>
 
-      <label className="rounded-2xl bg-white ring-1 ring-stone-200 p-4 flex items-start gap-3 cursor-pointer">
+      <label className="rounded-2xl bg-white ring-1 ring-zinc-200 p-4 flex items-start gap-3 cursor-pointer">
         <input
           type="checkbox"
           checked={accepted}
           onChange={(e) => setAccepted(e.target.checked)}
-          className="mt-0.5 w-4 h-4 accent-teal-600 shrink-0"
+          className="mt-0.5 w-4 h-4 accent-indigo-600 shrink-0"
         />
-        <span className="text-[13.5px] text-stone-700 leading-snug">
+        <span className="text-[13.5px] text-zinc-700 leading-snug">
           Ich bestätige die Richtigkeit meiner Angaben und akzeptiere die im
           Vertrag abgedruckten Mietbedingungen. Mir ist bekannt, dass diese
           digitale Unterschrift dieselbe Rechtswirkung hat wie eine
@@ -200,7 +200,7 @@ export const PortalSignClient = ({
           type="button"
           onClick={submit}
           disabled={submitting || !hasInk || !accepted}
-          className="w-full inline-flex items-center justify-center gap-1.5 h-12 rounded-full bg-stone-900 text-white text-[14.5px] font-medium hover:bg-stone-800 disabled:opacity-40"
+          className="w-full inline-flex items-center justify-center gap-1.5 h-12 rounded-full bg-zinc-900 text-white text-[14.5px] font-medium hover:bg-zinc-800 disabled:opacity-40"
         >
           {submitting ? (
             <Loader2 size={16} className="animate-spin" />

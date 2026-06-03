@@ -119,7 +119,7 @@ export const colorForContract = (id: string): { bg: string; bgHover: string; rin
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
   const palette = [
-    { bg: "#0d9488", bgHover: "#0f766e", ring: "#0f766e" }, // teal-600
+    { bg: "#0891b2", bgHover: "#0e7490", ring: "#0e7490" }, // cyan-600
     { bg: "#2563eb", bgHover: "#1d4ed8", ring: "#1d4ed8" }, // blue-600
     { bg: "#7c3aed", bgHover: "#6d28d9", ring: "#6d28d9" }, // violet-600
     { bg: "#db2777", bgHover: "#be185d", ring: "#be185d" }, // pink-600

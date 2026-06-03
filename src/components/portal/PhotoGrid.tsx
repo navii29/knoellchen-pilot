@@ -100,7 +100,7 @@ export const PhotoGrid = ({
                 ? "bg-emerald-50 ring-emerald-200"
                 : isError
                 ? "bg-rose-50 ring-rose-200"
-                : "bg-white ring-stone-200 hover:ring-stone-300"
+                : "bg-white ring-zinc-200 hover:ring-zinc-300"
             } disabled:opacity-60`}
           >
             <input
@@ -123,7 +123,7 @@ export const PhotoGrid = ({
                     ? "bg-emerald-100 text-emerald-700"
                     : isError
                     ? "bg-rose-100 text-rose-700"
-                    : "bg-stone-100 text-stone-600"
+                    : "bg-zinc-100 text-zinc-600"
                 }`}
               >
                 {isUploading ? (
@@ -137,12 +137,12 @@ export const PhotoGrid = ({
                 )}
               </div>
               <div className="min-w-0">
-                <div className="text-[14px] font-medium text-stone-900 leading-tight">
+                <div className="text-[14px] font-medium text-zinc-900 leading-tight">
                   {p.label}
                 </div>
                 <div
                   className={`text-[11.5px] mt-0.5 ${
-                    isError ? "text-rose-700" : "text-stone-500"
+                    isError ? "text-rose-700" : "text-zinc-500"
                   } leading-tight truncate`}
                 >
                   {isUploaded

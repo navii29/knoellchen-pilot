@@ -161,14 +161,14 @@ export const Step3Customer = ({
             disabled={scanning}
             className={`relative overflow-hidden rounded-2xl ring-1 px-5 py-4 text-left transition-all ${
               mode === "scan"
-                ? "bg-stone-900 text-white ring-stone-900 shadow-lg shadow-stone-900/10"
-                : "bg-white text-stone-900 ring-stone-200 hover:ring-stone-300"
+                ? "bg-zinc-900 text-white ring-zinc-900 shadow-lg shadow-zinc-900/10"
+                : "bg-white text-zinc-900 ring-zinc-200 hover:ring-zinc-300"
             } disabled:opacity-60 disabled:cursor-not-allowed`}
           >
             <div className="flex items-center gap-3">
               <div
                 className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                  mode === "scan" ? "bg-white/10 text-teal-300" : "bg-teal-100 text-teal-700"
+                  mode === "scan" ? "bg-white/10 text-indigo-300" : "bg-indigo-100 text-indigo-700"
                 }`}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -180,7 +180,7 @@ export const Step3Customer = ({
                 <div className="text-[14.5px] font-medium">Führerschein scannen</div>
                 <div
                   className={`text-[12.5px] mt-0.5 ${
-                    mode === "scan" ? "text-white/60" : "text-stone-500"
+                    mode === "scan" ? "text-white/60" : "text-zinc-500"
                   }`}
                 >
                   {scanning ? "Wird ausgelesen…" : "Foto hochladen — KI füllt vor"}
@@ -204,14 +204,14 @@ export const Step3Customer = ({
             onClick={() => setMode("manual")}
             className={`rounded-2xl ring-1 px-5 py-4 text-left transition-all ${
               mode === "manual"
-                ? "bg-stone-900 text-white ring-stone-900 shadow-lg shadow-stone-900/10"
-                : "bg-white text-stone-900 ring-stone-200 hover:ring-stone-300"
+                ? "bg-zinc-900 text-white ring-zinc-900 shadow-lg shadow-zinc-900/10"
+                : "bg-white text-zinc-900 ring-zinc-200 hover:ring-zinc-300"
             }`}
           >
             <div className="flex items-center gap-3">
               <div
                 className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                  mode === "manual" ? "bg-white/10 text-teal-300" : "bg-stone-100 text-stone-700"
+                  mode === "manual" ? "bg-white/10 text-indigo-300" : "bg-zinc-100 text-zinc-700"
                 }`}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -223,7 +223,7 @@ export const Step3Customer = ({
                 <div className="text-[14.5px] font-medium">Manuell eingeben</div>
                 <div
                   className={`text-[12.5px] mt-0.5 ${
-                    mode === "manual" ? "text-white/60" : "text-stone-500"
+                    mode === "manual" ? "text-white/60" : "text-zinc-500"
                   }`}
                 >
                   Name, E-Mail, Telefon
@@ -235,7 +235,7 @@ export const Step3Customer = ({
       )}
 
       {scanned && (
-        <div className="mb-6 px-4 py-3 rounded-xl bg-teal-50 ring-1 ring-teal-200/70 text-[13.5px] text-teal-800 flex items-center gap-2">
+        <div className="mb-6 px-4 py-3 rounded-xl bg-indigo-50 ring-1 ring-indigo-200/70 text-[13.5px] text-indigo-800 flex items-center gap-2">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12" />
           </svg>
@@ -280,7 +280,7 @@ export const Step3Customer = ({
         </Field>
       </div>
 
-      <p className="mt-6 text-[13px] text-stone-500">
+      <p className="mt-6 text-[13px] text-zinc-500">
         Weitere Kunden können Sie jederzeit später hinzufügen.
       </p>
     </StepShell>

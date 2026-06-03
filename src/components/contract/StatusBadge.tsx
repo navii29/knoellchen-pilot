@@ -2,7 +2,7 @@ import type { ContractStatus } from "@/lib/types";
 
 const META: Record<ContractStatus, { label: string; bg: string; text: string; ring: string; dot: string }> = {
   aktiv: { label: "Aktiv", bg: "bg-emerald-50", text: "text-emerald-700", ring: "ring-emerald-200", dot: "#059669" },
-  abgeschlossen: { label: "Abgeschlossen", bg: "bg-stone-100", text: "text-stone-700", ring: "ring-stone-200", dot: "#78716c" },
+  abgeschlossen: { label: "Abgeschlossen", bg: "bg-zinc-100", text: "text-zinc-700", ring: "ring-zinc-200", dot: "#78716c" },
   storniert: { label: "Storniert", bg: "bg-red-50", text: "text-red-700", ring: "ring-red-200", dot: "#dc2626" },
 };
 

@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { ensureOrgForUser } from "@/lib/org-bootstrap";
 import { Sidebar } from "@/components/dashboard/Sidebar";
+import { DemoDataBanner } from "@/components/dashboard/DemoDataBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -15,11 +17,22 @@ export default async function DashboardLayout({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
+  let { data: profile } = await supabase
     .from("users")
     .select("org_id")
     .eq("id", user.id)
     .maybeSingle();
+
+  // Self-Heal: Session da, aber Org/Profil fehlt (z. B. abgebrochener Bootstrap
+  // beim Registrieren). Aus den signUp-Metadaten nachholen statt Login-Schleife.
+  if (!profile) {
+    await ensureOrgForUser(user).catch(() => null);
+    ({ data: profile } = await supabase
+      .from("users")
+      .select("org_id")
+      .eq("id", user.id)
+      .maybeSingle());
+  }
 
   if (!profile) redirect("/login?error=no_profile");
 
@@ -32,7 +45,7 @@ export default async function DashboardLayout({
   ] = await Promise.all([
     supabase
       .from("organizations")
-      .select("name, onboarding_completed")
+      .select("name, onboarding_completed, demo_seeded")
       .eq("id", profile.org_id)
       .single(),
     supabase.from("tickets").select("*", { count: "exact", head: true }).eq("status", "neu"),
@@ -44,7 +57,7 @@ export default async function DashboardLayout({
   if (org && org.onboarding_completed === false) redirect("/onboarding");
 
   return (
-    <div className="md:h-screen md:flex bg-stone-50 min-h-screen">
+    <div className="md:h-screen md:flex bg-zinc-50 min-h-screen">
       <Sidebar
         orgName={org?.name || "Mein Konto"}
         ticketCount={openTickets || 0}
@@ -52,7 +65,10 @@ export default async function DashboardLayout({
         customerCount={customers || 0}
         damageCount={openDamages || 0}
       />
-      <div className="flex-1 flex flex-col min-w-0 w-full">{children}</div>
+      <div className="flex-1 flex flex-col min-w-0 w-full">
+        {(org as { demo_seeded?: boolean } | null)?.demo_seeded && <DemoDataBanner />}
+        {children}
+      </div>
     </div>
   );
 }

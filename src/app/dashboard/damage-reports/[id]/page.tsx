@@ -74,11 +74,11 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
   return (
     <>
       <Topbar section={`Schadensbericht · ${fmtDate(r.date)}`} />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
+      <div className="flex-1 overflow-auto scroll-thin bg-zinc-50">
         <div className="max-w-4xl mx-auto p-4 md:p-10">
           <Link
             href="/dashboard/damage-reports"
-            className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+            className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 mb-4"
           >
             <ArrowLeft size={14} /> Zurück zur Liste
           </Link>
@@ -102,7 +102,7 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
               <h1 className="font-display font-bold text-2xl md:text-3xl tracking-tight break-words">
                 {r.location || "Unbekannter Ort"}
               </h1>
-              <div className="mt-1 text-sm text-stone-500 tabular-nums">
+              <div className="mt-1 text-sm text-zinc-500 tabular-nums">
                 {fmtDate(r.date)}
                 {r.time && <span className="ml-2">{r.time}</span>}
               </div>
@@ -139,11 +139,11 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
                     value={
                       <Link
                         href={`/dashboard/vehicles/${vehicle.id}`}
-                        className="text-teal-700 hover:underline font-mono"
+                        className="text-indigo-700 hover:underline font-mono"
                       >
                         {vehicle.plate}
                         {vehicle.vehicle_type && (
-                          <span className="text-stone-500 ml-2 font-sans text-xs">
+                          <span className="text-zinc-500 ml-2 font-sans text-xs">
                             {vehicle.vehicle_type}
                           </span>
                         )}
@@ -158,7 +158,7 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
                       value={
                         <Link
                           href={`/dashboard/contracts/${contract.id}`}
-                          className="text-teal-700 hover:underline font-mono"
+                          className="text-indigo-700 hover:underline font-mono"
                         >
                           {contract.contract_nr}
                         </Link>
@@ -181,12 +181,12 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
 
           <div className="mt-6">
             <div className="flex items-end justify-between mb-2">
-              <div className="text-xs uppercase tracking-wider text-stone-500 font-medium">
+              <div className="text-xs uppercase tracking-wider text-zinc-500 font-medium">
                 Fotos ({photoUrls.length})
               </div>
             </div>
             {photoUrls.length === 0 ? (
-              <div className="rounded-xl bg-white ring-1 ring-stone-200 px-5 py-10 text-center text-sm text-stone-500">
+              <div className="rounded-xl bg-white ring-1 ring-zinc-200 px-5 py-10 text-center text-sm text-zinc-500">
                 Noch keine Fotos zu diesem Bericht.
               </div>
             ) : (
@@ -197,7 +197,7 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
                     href={p.url || "#"}
                     target="_blank"
                     rel="noreferrer"
-                    className="relative aspect-square block rounded-lg overflow-hidden bg-stone-100 ring-1 ring-stone-200 hover:ring-stone-400 transition"
+                    className="relative aspect-square block rounded-lg overflow-hidden bg-zinc-100 ring-1 ring-zinc-200 hover:ring-zinc-400 transition"
                   >
                     {p.url && (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -223,8 +223,8 @@ const InfoCard = ({
   Icon: typeof Calendar;
   children: React.ReactNode;
 }) => (
-  <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
-    <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold mb-3">
+  <div className="rounded-xl bg-white ring-1 ring-zinc-200 p-5">
+    <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-zinc-500 font-semibold mb-3">
       <Icon size={13} />
       {title}
     </div>
@@ -242,7 +242,7 @@ const Row = ({
   mono?: boolean;
 }) => (
   <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-    <div className="text-stone-500 text-xs">{label}</div>
-    <div className={mono ? "tabular-nums text-stone-800" : "text-stone-800"}>{value}</div>
+    <div className="text-zinc-500 text-xs">{label}</div>
+    <div className={mono ? "tabular-nums text-zinc-800" : "text-zinc-800"}>{value}</div>
   </div>
 );

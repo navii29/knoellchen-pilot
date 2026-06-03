@@ -59,9 +59,9 @@ export const DecommissionAlert = ({ vehicles }: { vehicles: Vehicle[] }) => {
                 href={`/dashboard/vehicles/${v.id}`}
                 className="grid grid-cols-[120px_1fr_180px_120px_24px] items-center gap-3 px-5 py-2.5 text-sm hover:bg-white/50 transition"
               >
-                <span className="font-mono font-semibold text-stone-900">{v.plate}</span>
-                <span className="text-stone-700 truncate">{v.vehicle_type || "—"}</span>
-                <span className="tabular-nums text-xs text-stone-600">
+                <span className="font-mono font-semibold text-zinc-900">{v.plate}</span>
+                <span className="text-zinc-700 truncate">{v.vehicle_type || "—"}</span>
+                <span className="tabular-nums text-xs text-zinc-600">
                   Aussteuerung: {fmtDate(v.decommission_date)}
                 </span>
                 <span
@@ -75,7 +75,7 @@ export const DecommissionAlert = ({ vehicles }: { vehicles: Vehicle[] }) => {
                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: info.color }} />
                   {info.label}
                 </span>
-                <ChevronRight size={14} className="text-stone-400" />
+                <ChevronRight size={14} className="text-zinc-400" />
               </Link>
             );
           })}

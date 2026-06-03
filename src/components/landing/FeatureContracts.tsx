@@ -6,22 +6,22 @@ const Mock = () => (
     <div className="p-5 text-[11px]">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <div className="text-[14px] font-semibold text-stone-900 leading-tight">
+          <div className="text-[14px] font-semibold text-zinc-900 leading-tight">
             Mietverträge
           </div>
-          <div className="text-[10.5px] text-stone-500">
+          <div className="text-[10.5px] text-zinc-500">
             April 2026 · 28 aktive Verträge
           </div>
         </div>
-        <div className="px-2.5 h-7 rounded-md bg-teal-600 text-white text-[10.5px] flex items-center font-medium">
+        <div className="px-2.5 h-7 rounded-md bg-indigo-600 text-white text-[10.5px] flex items-center font-medium">
           + Neuer Vertrag
         </div>
       </div>
 
       {/* Calendar grid */}
       <div className="rounded-lg ring-1 ring-black/[0.06] overflow-hidden">
-        <div className="grid grid-cols-[110px_repeat(14,1fr)] bg-stone-50 border-b border-black/[0.06]">
-          <div className="px-2.5 py-1.5 text-[9.5px] uppercase tracking-wide text-stone-500 font-medium">
+        <div className="grid grid-cols-[110px_repeat(14,1fr)] bg-zinc-50 border-b border-black/[0.06]">
+          <div className="px-2.5 py-1.5 text-[9.5px] uppercase tracking-wide text-zinc-500 font-medium">
             Fahrzeug
           </div>
           {Array.from({ length: 14 }).map((_, i) => (
@@ -29,8 +29,8 @@ const Mock = () => (
               key={i}
               className={`text-center py-1.5 text-[9.5px] font-mono ${
                 i === 6 || i === 7
-                  ? "text-teal-700 bg-teal-50/60 font-semibold"
-                  : "text-stone-500"
+                  ? "text-indigo-700 bg-indigo-50/60 font-semibold"
+                  : "text-zinc-500"
               }`}
             >
               {15 + i}
@@ -49,10 +49,10 @@ const Mock = () => (
             className="grid grid-cols-[110px_repeat(14,1fr)] border-b border-black/[0.04] last:border-0 h-9"
           >
             <div className="px-2.5 flex flex-col justify-center">
-              <span className="text-[10.5px] text-stone-900 font-medium leading-none truncate">
+              <span className="text-[10.5px] text-zinc-900 font-medium leading-none truncate">
                 {row[0]}
               </span>
-              <span className="text-[9.5px] text-stone-500 font-mono mt-0.5">{row[1]}</span>
+              <span className="text-[9.5px] text-zinc-500 font-mono mt-0.5">{row[1]}</span>
             </div>
             <div className="col-span-14 relative">
               <div
@@ -64,7 +64,7 @@ const Mock = () => (
                     : row[5] === "emerald"
                     ? "bg-emerald-500"
                     : row[5] === "teal"
-                    ? "bg-teal-600"
+                    ? "bg-indigo-600"
                     : "bg-amber-500"
                 }`}
                 style={{
@@ -80,14 +80,14 @@ const Mock = () => (
       </div>
 
       {/* Smart suggestion */}
-      <div className="mt-3 flex items-center gap-2.5 px-3 h-9 rounded-md bg-teal-50 ring-1 ring-teal-200/60 text-[10.5px] text-teal-900">
-        <span className="w-4 h-4 rounded-full bg-teal-600 text-white flex items-center justify-center text-[9px] font-bold">
+      <div className="mt-3 flex items-center gap-2.5 px-3 h-9 rounded-md bg-indigo-50 ring-1 ring-indigo-200/60 text-[10.5px] text-indigo-900">
+        <span className="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[9px] font-bold">
           KI
         </span>
         <span className="flex-1">
           Audi A4 ist morgen frei — perfekt für Anfrage von <b>Familie Lang</b>.
         </span>
-        <span className="text-teal-700 font-medium">Vorschlagen →</span>
+        <span className="text-indigo-700 font-medium">Vorschlagen →</span>
       </div>
     </div>
   </BrowserFrame>
@@ -101,7 +101,7 @@ export const FeatureContracts = () => (
       <>
         Mietverträge.
         <br />
-        <span className="text-stone-400">Digital. Intelligent.</span>
+        <span className="text-zinc-400">Digital. Intelligent.</span>
       </>
     }
     description="Verträge per PDF hochladen oder direkt anlegen — die KI extrahiert alle Daten, ordnet sie dem Kunden zu und zeigt jeden Vertrag in einer eleganten Kalenderansicht. Kein doppeltes Buchen mehr, keine vergessenen Rückgaben."

@@ -179,7 +179,7 @@ export default function AGBPage() {
       <P>
         (2) Im Übrigen gelten die Datenschutzhinweise des Anbieters, abrufbar
         unter{" "}
-        <a href="/datenschutz" className="text-teal-700 hover:underline">
+        <a href="/datenschutz" className="text-indigo-700 hover:underline">
           knoellchen-pilot.de/datenschutz
         </a>
         .
@@ -286,8 +286,8 @@ export default function AGBPage() {
       </P>
 
       <P>
-        <span className="text-stone-500 text-[13.5px]">
-          Stand: Mai 2026
+        <span className="text-zinc-500 text-[13.5px]">
+          Stand: Juni 2026
         </span>
       </P>
     </LegalShell>

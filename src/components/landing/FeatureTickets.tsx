@@ -6,8 +6,8 @@ const Mock = () => (
     <div className="p-5 text-[11px]">
       {/* Drop zone */}
       <div className="rounded-xl border-2 border-dashed border-white/15 bg-white/[0.02] p-6 text-center">
-        <div className="mx-auto w-12 h-12 rounded-full bg-teal-500/20 flex items-center justify-center mb-3">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgb(45,212,191)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div className="mx-auto w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center mb-3">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgb(129,140,248)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" y1="3" x2="12" y2="15" />
@@ -36,7 +36,13 @@ const Mock = () => (
                   : "bg-white/10 text-white/60 ring-1 ring-white/15"
               }`}
             >
-              {done ? "✓" : i + 1}
+              {done ? (
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : (
+                i + 1
+              )}
             </div>
             <div className="flex-1">
               <div className={`text-[11px] ${done ? "text-white" : "text-white/60"}`}>
@@ -71,8 +77,7 @@ const Mock = () => (
 );
 
 export const FeatureTickets = () => (
-  <div id="features">
-    <FeatureSection
+  <FeatureSection
       variant="dark"
       eyebrow="Strafzettel-Automatisierung"
       title={
@@ -92,5 +97,4 @@ export const FeatureTickets = () => (
       mockup={<Mock />}
       side="right"
     />
-  </div>
 );

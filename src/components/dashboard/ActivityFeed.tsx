@@ -81,7 +81,7 @@ export const ActivityFeed = ({
         tone: "default",
         text: (
           <>
-            Vertrag <span className="font-mono text-xs text-stone-500">{c.contract_nr}</span> abgeschlossen ({c.renter_name})
+            Vertrag <span className="font-mono text-xs text-zinc-500">{c.contract_nr}</span> abgeschlossen ({c.renter_name})
           </>
         ),
         created_at: c.updated_at,
@@ -94,7 +94,7 @@ export const ActivityFeed = ({
         tone: "default",
         text: (
           <>
-            Neuer Vertrag <span className="font-mono text-xs text-stone-500">{c.contract_nr}</span> · {c.renter_name}
+            Neuer Vertrag <span className="font-mono text-xs text-zinc-500">{c.contract_nr}</span> · {c.renter_name}
           </>
         ),
         created_at: c.created_at,
@@ -108,15 +108,15 @@ export const ActivityFeed = ({
 
   return (
     <div className="rounded-2xl bg-white ring-1 ring-black/[0.05] hover:ring-black/[0.08] transition-all duration-200 overflow-hidden">
-      <div className="px-7 py-5 border-b border-stone-100 flex items-center justify-between">
-        <div className="font-display font-medium text-[17px] tracking-tight text-stone-900">
+      <div className="px-7 py-5 border-b border-zinc-100 flex items-center justify-between">
+        <div className="font-display font-medium text-[17px] tracking-tight text-zinc-900">
           Aktivität
         </div>
-        <span className="text-[12px] text-stone-400">Letzte Ereignisse</span>
+        <span className="text-[12px] text-zinc-400">Letzte Ereignisse</span>
       </div>
-      <div className="divide-y divide-stone-100">
+      <div className="divide-y divide-zinc-100">
         {top.length === 0 && (
-          <div className="px-6 py-12 text-center text-[13.5px] text-stone-400">
+          <div className="px-6 py-12 text-center text-[13.5px] text-zinc-400">
             Noch keine Aktivität.
           </div>
         )}
@@ -124,19 +124,19 @@ export const ActivityFeed = ({
           <Link
             key={it.id}
             href={it.href || "#"}
-            className="flex items-center gap-3.5 px-7 py-3.5 hover:bg-stone-50 transition-colors"
+            className="flex items-center gap-3.5 px-7 py-3.5 hover:bg-zinc-50 transition-colors"
           >
             <div
               className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
                 it.tone === "accent"
-                  ? "bg-gradient-to-br from-teal-50 to-emerald-50 text-teal-700 ring-1 ring-teal-100"
-                  : "bg-stone-100 text-stone-600"
+                  ? "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100"
+                  : "bg-zinc-100 text-zinc-600"
               }`}
             >
               <it.Icon size={14} strokeWidth={1.75} />
             </div>
-            <div className="flex-1 text-[13.5px] text-stone-700 truncate">{it.text}</div>
-            <div className="text-[11.5px] text-stone-400 tabular-nums shrink-0">
+            <div className="flex-1 text-[13.5px] text-zinc-700 truncate">{it.text}</div>
+            <div className="text-[11.5px] text-zinc-400 tabular-nums shrink-0">
               {relTime(it.created_at)}
             </div>
           </Link>

@@ -56,35 +56,35 @@ export const PricingTodayWidget = async ({ orgId }: { orgId: string }) => {
   if (allVehicles.length === 0) return null;
 
   return (
-    <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
+    <div className="rounded-xl bg-white ring-1 ring-zinc-200 p-5">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-zinc-500 font-semibold">
           <TrendingUp size={13} />
           Preisempfehlung heute
-          <span className="ml-1 text-stone-400 font-normal normal-case tracking-normal">
+          <span className="ml-1 text-zinc-400 font-normal normal-case tracking-normal">
             · {freeVehicles.length}/{allVehicles.length} frei
           </span>
         </div>
         <Link
           href="/dashboard/settings/pricing"
-          className="inline-flex items-center gap-1 text-[12px] text-stone-500 hover:text-stone-900"
+          className="inline-flex items-center gap-1 text-[12px] text-zinc-500 hover:text-zinc-900"
         >
           <Settings size={12} /> Regeln
         </Link>
       </div>
 
       {items.length === 0 ? (
-        <div className="py-6 text-center text-sm text-stone-500">
+        <div className="py-6 text-center text-sm text-zinc-500">
           Heute sind alle Fahrzeuge ausgebucht.
         </div>
       ) : rules.length === 0 ? (
         <div className="py-4 text-center">
-          <div className="text-sm text-stone-500 mb-2">
+          <div className="text-sm text-zinc-500 mb-2">
             Noch keine Preisregeln definiert.
           </div>
           <Link
             href="/dashboard/settings/pricing"
-            className="inline-flex items-center gap-1 text-[13px] text-teal-700 hover:underline"
+            className="inline-flex items-center gap-1 text-[13px] text-indigo-700 hover:underline"
           >
             Erste Regel anlegen
             <ChevronRight size={12} />
@@ -111,10 +111,10 @@ export const PricingTodayWidget = async ({ orgId }: { orgId: string }) => {
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="font-mono text-[12px] text-stone-700">
+                    <div className="font-mono text-[12px] text-zinc-700">
                       {vehicle.plate}
                     </div>
-                    <div className="text-[12px] text-stone-500 truncate">
+                    <div className="text-[12px] text-zinc-500 truncate">
                       {label}
                     </div>
                   </div>
@@ -146,7 +146,7 @@ export const PricingTodayWidget = async ({ orgId }: { orgId: string }) => {
       )}
 
       {items.length > 6 && (
-        <div className="mt-3 text-[11.5px] text-stone-500 text-center">
+        <div className="mt-3 text-[11.5px] text-zinc-500 text-center">
           Weitere {items.length - 6} Fahrzeuge in der Flottenübersicht
         </div>
       )}

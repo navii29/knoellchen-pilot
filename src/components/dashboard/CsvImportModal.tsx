@@ -124,14 +124,14 @@ export const CsvImportModal = ({
   // ───── Subviews ─────
   const renderUpload = () => (
     <div className="px-6 py-8">
-      <div className="rounded-2xl ring-1 ring-stone-200 bg-stone-50 px-5 py-8 text-center">
-        <div className="inline-flex w-12 h-12 rounded-xl bg-white ring-1 ring-stone-200 items-center justify-center text-stone-600 mb-3">
+      <div className="rounded-2xl ring-1 ring-zinc-200 bg-zinc-50 px-5 py-8 text-center">
+        <div className="inline-flex w-12 h-12 rounded-xl bg-white ring-1 ring-zinc-200 items-center justify-center text-zinc-600 mb-3">
           <UploadCloud size={20} />
         </div>
-        <div className="text-[15px] font-medium text-stone-900">
+        <div className="text-[15px] font-medium text-zinc-900">
           CSV-Datei auswählen
         </div>
-        <p className="text-[12.5px] text-stone-500 mt-1.5 max-w-sm mx-auto leading-snug">
+        <p className="text-[12.5px] text-zinc-500 mt-1.5 max-w-sm mx-auto leading-snug">
           Beliebige Spaltenbenennung — die KI ordnet die Spalten automatisch
           den richtigen Feldern zu. Trennzeichen (Komma, Semikolon, Tab) werden
           erkannt.
@@ -150,7 +150,7 @@ export const CsvImportModal = ({
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={analyzing}
-          className="mt-5 inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full bg-stone-900 text-white text-[14px] font-medium hover:bg-stone-800 disabled:opacity-40"
+          className="mt-5 inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full bg-zinc-900 text-white text-[14px] font-medium hover:bg-zinc-800 disabled:opacity-40"
         >
           {analyzing ? (
             <>
@@ -197,8 +197,8 @@ export const CsvImportModal = ({
           </div>
         </div>
 
-        <div className="rounded-xl ring-1 ring-stone-200 overflow-hidden">
-          <div className="grid grid-cols-[1fr_24px_1fr_minmax(0,2fr)] gap-2 items-center px-4 py-2.5 bg-stone-50 border-b border-stone-200 text-[10.5px] uppercase tracking-wider text-stone-500 font-semibold">
+        <div className="rounded-xl ring-1 ring-zinc-200 overflow-hidden">
+          <div className="grid grid-cols-[1fr_24px_1fr_minmax(0,2fr)] gap-2 items-center px-4 py-2.5 bg-zinc-50 border-b border-zinc-200 text-[10.5px] uppercase tracking-wider text-zinc-500 font-semibold">
             <div>CSV-Spalte</div>
             <div />
             <div>Ziel-Feld</div>
@@ -212,12 +212,12 @@ export const CsvImportModal = ({
             return (
               <div
                 key={h}
-                className="grid grid-cols-[1fr_24px_1fr_minmax(0,2fr)] gap-2 items-center px-4 py-2 border-b border-stone-100 last:border-0"
+                className="grid grid-cols-[1fr_24px_1fr_minmax(0,2fr)] gap-2 items-center px-4 py-2 border-b border-zinc-100 last:border-0"
               >
-                <div className="font-mono text-[12.5px] text-stone-800 truncate">
+                <div className="font-mono text-[12.5px] text-zinc-800 truncate">
                   {h}
                 </div>
-                <div className="text-stone-400 flex items-center justify-center">
+                <div className="text-zinc-400 flex items-center justify-center">
                   <ArrowRight size={12} />
                 </div>
                 <div>
@@ -229,8 +229,8 @@ export const CsvImportModal = ({
                     className={`w-full h-9 px-2.5 rounded-md text-[13px] bg-white outline-none ${
                       used > 1
                         ? "ring-1 ring-amber-300"
-                        : "ring-1 ring-stone-200"
-                    } focus:ring-2 focus:ring-teal-500/40`}
+                        : "ring-1 ring-zinc-200"
+                    } focus:ring-2 focus:ring-indigo-500/40`}
                   >
                     <option value="">— ignorieren —</option>
                     {fieldOptions.map((f) => (
@@ -241,9 +241,9 @@ export const CsvImportModal = ({
                     ))}
                   </select>
                 </div>
-                <div className="text-[12px] text-stone-500 truncate">
+                <div className="text-[12px] text-zinc-500 truncate">
                   {sample || (
-                    <span className="text-stone-300">— kein Beispiel —</span>
+                    <span className="text-zinc-300">— kein Beispiel —</span>
                   )}
                 </div>
               </div>
@@ -296,17 +296,17 @@ export const CsvImportModal = ({
         </div>
 
         {errors.length > 0 && (
-          <div className="rounded-xl ring-1 ring-stone-200 overflow-hidden">
-            <div className="px-4 py-2 bg-stone-50 border-b border-stone-200 text-[11px] uppercase tracking-wider text-stone-500 font-semibold">
+          <div className="rounded-xl ring-1 ring-zinc-200 overflow-hidden">
+            <div className="px-4 py-2 bg-zinc-50 border-b border-zinc-200 text-[11px] uppercase tracking-wider text-zinc-500 font-semibold">
               Übersprungene Zeilen
             </div>
             <div className="max-h-48 overflow-auto">
               {errors.map((e) => (
                 <div
                   key={e.row_index}
-                  className="px-4 py-1.5 text-[12.5px] text-stone-700 border-b border-stone-100 last:border-0 flex items-center gap-3"
+                  className="px-4 py-1.5 text-[12.5px] text-zinc-700 border-b border-zinc-100 last:border-0 flex items-center gap-3"
                 >
-                  <span className="font-mono text-stone-400">#{e.row_index}</span>
+                  <span className="font-mono text-zinc-400">#{e.row_index}</span>
                   <span className="text-rose-700">{e.error}</span>
                 </div>
               ))}
@@ -325,14 +325,14 @@ export const CsvImportModal = ({
           <button
             type="button"
             onClick={reset}
-            className="text-sm text-stone-500 hover:text-stone-800 px-3"
+            className="text-sm text-zinc-500 hover:text-zinc-800 px-3"
           >
             Weitere CSV importieren
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-stone-900 text-white text-sm font-medium hover:bg-stone-800"
+            className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-800"
           >
             Fertig
           </button>
@@ -345,7 +345,7 @@ export const CsvImportModal = ({
           <button
             type="button"
             onClick={reset}
-            className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800 px-2"
+            className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-800 px-2"
           >
             <ArrowLeft size={13} /> Andere Datei
           </button>
@@ -353,7 +353,7 @@ export const CsvImportModal = ({
             type="button"
             onClick={commit}
             disabled={committing}
-            className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-40"
+            className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-800 disabled:opacity-40"
           >
             {committing ? (
               <Loader2 size={14} className="animate-spin" />
@@ -369,7 +369,7 @@ export const CsvImportModal = ({
       <button
         type="button"
         onClick={onClose}
-        className="text-sm text-stone-500 hover:text-stone-800 px-3"
+        className="text-sm text-zinc-500 hover:text-zinc-800 px-3"
       >
         Abbrechen
       </button>
@@ -380,14 +380,14 @@ export const CsvImportModal = ({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 sm:px-4">
       <button
         type="button"
-        className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
         onClick={onClose}
         aria-label="Schließen"
       />
-      <div className="relative w-full sm:max-w-2xl max-h-[92vh] flex flex-col bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl ring-1 ring-stone-200 overflow-hidden">
-        <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100 shrink-0">
+      <div className="relative w-full sm:max-w-2xl max-h-[92vh] flex flex-col bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl ring-1 ring-zinc-200 overflow-hidden">
+        <div className="px-6 py-4 flex items-center justify-between border-b border-zinc-100 shrink-0">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] font-semibold text-teal-700">
+            <div className="text-[11px] uppercase tracking-[0.08em] font-semibold text-indigo-700">
               CSV-Import
             </div>
             <h2 className="font-display text-xl tracking-tight font-medium mt-0.5">
@@ -396,7 +396,7 @@ export const CsvImportModal = ({
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full inline-flex items-center justify-center text-stone-500 hover:bg-stone-100"
+            className="w-9 h-9 rounded-full inline-flex items-center justify-center text-zinc-500 hover:bg-zinc-100"
           >
             <X size={16} />
           </button>
@@ -410,7 +410,7 @@ export const CsvImportModal = ({
             : renderUpload()}
         </div>
 
-        <div className="px-6 py-4 flex items-center justify-end gap-3 border-t border-stone-100 shrink-0">
+        <div className="px-6 py-4 flex items-center justify-end gap-3 border-t border-zinc-100 shrink-0">
           {renderFooter()}
         </div>
       </div>

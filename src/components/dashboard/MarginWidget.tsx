@@ -60,13 +60,13 @@ export const MarginWidget = async ({ orgId }: { orgId: string }) => {
     return (
       <Link
         href="/dashboard/vehicles"
-        className="group block rounded-xl bg-white ring-1 ring-stone-200 p-5 hover:ring-stone-300 transition"
+        className="group block rounded-xl bg-white ring-1 ring-zinc-200 p-5 hover:ring-zinc-300 transition"
       >
-        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-zinc-500 font-semibold mb-2">
           <Wallet size={13} />
           Margen-Tracking
         </div>
-        <div className="font-display text-[20px] tracking-tight text-stone-900 leading-snug">
+        <div className="font-display text-[20px] tracking-tight text-zinc-900 leading-snug">
           EK-Kosten pflegen, um Margen zu sehen.
         </div>
         <div className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-emerald-700 group-hover:text-emerald-800">
@@ -101,16 +101,16 @@ export const MarginWidget = async ({ orgId }: { orgId: string }) => {
   return (
     <Link
       href="/dashboard/reports/margin"
-      className="block rounded-xl bg-white ring-1 ring-stone-200 p-5 hover:ring-stone-300 transition group"
+      className="block rounded-xl bg-white ring-1 ring-zinc-200 p-5 hover:ring-zinc-300 transition group"
     >
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-zinc-500 font-semibold">
           <Wallet size={13} />
           Marge diese Woche
         </div>
         <ChevronRight
           size={14}
-          className="text-stone-400 group-hover:text-stone-700 transition"
+          className="text-zinc-400 group-hover:text-zinc-700 transition"
         />
       </div>
       <div className="grid grid-cols-2 gap-4 items-end">
@@ -139,13 +139,13 @@ export const MarginWidget = async ({ orgId }: { orgId: string }) => {
           )}
         </div>
         <div className="text-right">
-          <div className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold">
+          <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold">
             Auslastung
           </div>
-          <div className="font-display tabular-nums text-[22px] font-medium text-stone-900 leading-none mt-0.5">
+          <div className="font-display tabular-nums text-[22px] font-medium text-zinc-900 leading-none mt-0.5">
             {current.avg_utilization_pct.toFixed(0)}%
           </div>
-          <div className="text-[11.5px] text-stone-500 tabular-nums mt-1">
+          <div className="text-[11.5px] text-zinc-500 tabular-nums mt-1">
             {current.total_rented_days}/{current.total_possible_days} Tage
           </div>
         </div>

@@ -114,14 +114,14 @@ export const ContractActions = ({
   };
 
   return (
-    <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
+    <div className="rounded-xl bg-white ring-1 ring-zinc-200 p-5">
       <div className="flex items-center gap-2 flex-wrap">
         {pdfUrl && (
           <a
             href={pdfUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-stone-200 hover:bg-stone-50"
+            className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-zinc-200 hover:bg-zinc-50"
           >
             <Download size={14} /> Upload-PDF anzeigen
           </a>
@@ -148,7 +148,7 @@ export const ContractActions = ({
 
         <Link
           href={`/dashboard/contracts/${contract.id}/handover`}
-          className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-stone-200 hover:bg-stone-50"
+          className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-zinc-200 hover:bg-zinc-50"
         >
           <Camera size={14} /> Übergabe-Fotos
         </Link>
@@ -167,7 +167,7 @@ export const ContractActions = ({
           <button
             onClick={() => patch("cancel", { status: "storniert" })}
             disabled={busy != null}
-            className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-stone-200 hover:bg-stone-50 text-stone-700"
+            className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-zinc-200 hover:bg-zinc-50 text-zinc-700"
           >
             {busy === "cancel" ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />}
             Stornieren
@@ -178,7 +178,7 @@ export const ContractActions = ({
           <button
             onClick={sendCheckinLink}
             disabled={busy != null}
-            className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-stone-200 hover:bg-stone-50 text-stone-700"
+            className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-zinc-200 hover:bg-zinc-50 text-zinc-700"
           >
             {busy === "checkin" ? (
               <Loader2 size={14} className="animate-spin" />
@@ -203,7 +203,7 @@ export const ContractActions = ({
             <button
               onClick={syncLexoffice}
               disabled={busy != null}
-              className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-stone-200 hover:bg-stone-50 text-stone-700"
+              className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-zinc-200 hover:bg-zinc-50 text-zinc-700"
             >
               {busy === "lexoffice" ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -218,7 +218,7 @@ export const ContractActions = ({
           <button
             onClick={remove}
             disabled={busy != null}
-            className="inline-flex items-center gap-1.5 text-sm px-2.5 py-1.5 rounded-md text-stone-500 hover:text-red-600"
+            className="inline-flex items-center gap-1.5 text-sm px-2.5 py-1.5 rounded-md text-zinc-500 hover:text-red-600"
           >
             <Trash2 size={14} /> Löschen
           </button>
@@ -322,11 +322,11 @@ const ReturnModal = ({
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white w-full md:w-[560px] md:rounded-2xl rounded-t-2xl shadow-2xl max-h-[92vh] overflow-y-auto">
-        <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between sticky top-0 bg-white">
+        <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between sticky top-0 bg-white">
           <div className="font-display font-semibold text-lg">Rückgabe erfassen</div>
           <button
             onClick={onClose}
-            className="touch-target flex items-center justify-center text-stone-400 hover:text-stone-700"
+            className="touch-target flex items-center justify-center text-zinc-400 hover:text-zinc-700"
             aria-label="Schließen"
           >
             <X size={18} />
@@ -334,7 +334,7 @@ const ReturnModal = ({
         </div>
 
         <div className="p-5 space-y-5">
-          <div className="text-xs text-stone-500">
+          <div className="text-xs text-zinc-500">
             <span className="font-mono">{contract.contract_nr}</span> ·{" "}
             <span className="font-mono">{contract.plate}</span> · {contract.renter_name}
           </div>
@@ -358,7 +358,7 @@ const ReturnModal = ({
                   placeholder="z.B. 5890"
                   className="input tabular-nums pr-9"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">km</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">km</span>
               </div>
             </Field>
           </div>
@@ -372,7 +372,7 @@ const ReturnModal = ({
             />
           )}
           {previewBusy && (
-            <div className="text-xs text-stone-400 inline-flex items-center gap-1.5">
+            <div className="text-xs text-zinc-400 inline-flex items-center gap-1.5">
               <Loader2 size={12} className="animate-spin" /> Berechne…
             </div>
           )}
@@ -386,7 +386,7 @@ const ReturnModal = ({
           <div className="flex items-center justify-end gap-2 pt-2 sticky bottom-0 bg-white pb-1">
             <button
               onClick={onClose}
-              className="text-sm px-3 py-2 rounded-md text-stone-600 hover:bg-stone-100"
+              className="text-sm px-3 py-2 rounded-md text-zinc-600 hover:bg-zinc-100"
             >
               Abbrechen
             </button>
@@ -438,7 +438,7 @@ const SummaryPanel = ({
       : `(${Math.abs(summary.daysDiff)} Tage früher)`;
 
   return (
-    <div className="rounded-xl bg-stone-50 ring-1 ring-stone-200 p-4 space-y-3">
+    <div className="rounded-xl bg-zinc-50 ring-1 ring-zinc-200 p-4 space-y-3">
       <Section title="Zeitraum">
         <Row label="Geplante Rückgabe" value={fmtDate(plannedReturn)} mono />
         <Row label="Tatsächliche Rückgabe" value={`${fmtDate(actualReturn)} ${diffLabel}`} mono />
@@ -447,7 +447,7 @@ const SummaryPanel = ({
 
       {summary.drivenKm != null ? (
         <>
-          <div className="border-t border-stone-200" />
+          <div className="border-t border-zinc-200" />
           <Section title="Kilometer">
             <Row
               label="Km bei Übergabe"
@@ -467,7 +467,7 @@ const SummaryPanel = ({
             />
           </Section>
 
-          <div className="border-t border-stone-200" />
+          <div className="border-t border-zinc-200" />
           <Section title="Mehrkilometer">
             {summary.allowedKm != null ? (
               <>
@@ -500,14 +500,14 @@ const SummaryPanel = ({
                 )}
               </>
             ) : (
-              <div className="text-xs text-stone-500 italic">
+              <div className="text-xs text-zinc-500 italic">
                 Kein Inklusiv-km-Limit definiert (am Fahrzeug einstellen oder Vertrags-Freikilometer setzen).
               </div>
             )}
           </Section>
         </>
       ) : (
-        <div className="text-xs text-stone-500 italic">
+        <div className="text-xs text-zinc-500 italic">
           Km-Stand bei Übergabe fehlt — Mehrkilometer können nicht berechnet werden.
         </div>
       )}
@@ -517,7 +517,7 @@ const SummaryPanel = ({
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div>
-    <div className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-2">{title}</div>
+    <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold mb-2">{title}</div>
     <div className="space-y-1">{children}</div>
   </div>
 );
@@ -536,12 +536,12 @@ const Row = ({
   highlight?: "amber";
 }) => (
   <div className="grid grid-cols-[140px_1fr] gap-2 text-sm">
-    <div className="text-stone-500 text-xs">{label}</div>
+    <div className="text-zinc-500 text-xs">{label}</div>
     <div
       className={[
         mono ? "tabular-nums" : "",
         bold ? "font-semibold" : "",
-        highlight === "amber" ? "text-amber-700" : "text-stone-800",
+        highlight === "amber" ? "text-amber-700" : "text-zinc-800",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -553,7 +553,7 @@ const Row = ({
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <label className="block">
-    <div className="text-[11px] uppercase tracking-wider text-stone-500 font-medium mb-1">{label}</div>
+    <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-medium mb-1">{label}</div>
     {children}
   </label>
 );

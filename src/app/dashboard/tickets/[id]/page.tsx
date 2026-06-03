@@ -62,24 +62,24 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
   return (
     <>
       <Topbar section={`Strafzettel · ${t.ticket_nr}`} />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
+      <div className="flex-1 overflow-auto scroll-thin bg-zinc-50">
         <div className="max-w-4xl mx-auto p-4 md:p-10">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+            className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 mb-4"
           >
             <ChevronLeft size={14} /> Zurück zum Dashboard
           </Link>
 
           <div className="flex items-center gap-3 mb-2">
-            <span className="font-mono text-xs text-stone-500">{t.ticket_nr}</span>
+            <span className="font-mono text-xs text-zinc-500">{t.ticket_nr}</span>
             <StatusBadge status={t.status} />
           </div>
           <h1 className="font-display font-bold text-3xl tracking-tight">
             {t.offense || "Strafzettel — noch nicht ausgelesen"}
           </h1>
           {(t.location || t.offense_date) && (
-            <div className="mt-1 text-sm text-stone-500">
+            <div className="mt-1 text-sm text-zinc-500">
               {t.location || ""}
               {t.location && t.offense_date ? " · " : ""}
               {t.offense_date ? `${fmtDate(t.offense_date)}${t.offense_time ? " · " + t.offense_time : ""}` : ""}
@@ -93,7 +93,7 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
               uploadUrl={uploadUrl}
             />
 
-            <div className="rounded-xl ring-1 ring-stone-200 divide-y divide-stone-100 bg-white">
+            <div className="rounded-xl ring-1 ring-zinc-200 divide-y divide-zinc-100 bg-white">
               {[
                 ["Kennzeichen", t.plate || "—", "font-mono font-semibold"],
                 ["Fahrzeug", t.vehicle_type || "—"],
@@ -105,7 +105,7 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
                 ["Frist Behörde", fmtDate(t.deadline), "tabular-nums"],
               ].map(([k, v, cls]) => (
                 <div key={k as string} className="grid grid-cols-[160px_1fr] gap-3 px-4 py-2.5 text-sm">
-                  <div className="text-stone-500">{k}</div>
+                  <div className="text-zinc-500">{k}</div>
                   <div className={(cls as string) || ""}>{v}</div>
                 </div>
               ))}
@@ -114,43 +114,43 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
             <ChargeEditor ticket={t} />
 
             <div>
-              <div className="text-xs uppercase tracking-wider text-stone-500 font-medium mb-2">
+              <div className="text-xs uppercase tracking-wider text-zinc-500 font-medium mb-2">
                 Fahrer zum Tatzeitpunkt
               </div>
               {contract ? (
                 <Link
                   href={`/dashboard/contracts/${contract.id}`}
-                  className="block rounded-xl ring-1 ring-stone-200 p-5 bg-white hover:ring-stone-300"
+                  className="block rounded-xl ring-1 ring-zinc-200 p-5 bg-white hover:ring-zinc-300"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-11 h-11 rounded-full bg-stone-900 text-white flex items-center justify-center font-display font-semibold">
+                    <div className="w-11 h-11 rounded-full bg-zinc-900 text-white flex items-center justify-center font-display font-semibold">
                       {initials(contract.renter_name)}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <div className="font-display font-semibold">{contract.renter_name}</div>
-                        <span className="text-[10px] uppercase tracking-wider font-mono px-1.5 py-0.5 rounded bg-stone-100 text-stone-600">
+                        <span className="text-[10px] uppercase tracking-wider font-mono px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600">
                           {contract.contract_nr}
                         </span>
                       </div>
-                      <div className="text-sm text-stone-500">{contract.renter_address || "—"}</div>
+                      <div className="text-sm text-zinc-500">{contract.renter_address || "—"}</div>
                       <div className="mt-3 grid grid-cols-2 gap-2.5 text-xs">
                         <div>
-                          <div className="text-stone-500">Mietbeginn</div>
+                          <div className="text-zinc-500">Mietbeginn</div>
                           <div className="tabular-nums mt-0.5">{fmtDate(contract.pickup_date)}</div>
                         </div>
                         <div>
-                          <div className="text-stone-500">Mietende</div>
+                          <div className="text-zinc-500">Mietende</div>
                           <div className="tabular-nums mt-0.5">
                             {fmtDate(contract.actual_return_date || contract.return_date)}
                           </div>
                         </div>
                         <div>
-                          <div className="text-stone-500">E-Mail</div>
+                          <div className="text-zinc-500">E-Mail</div>
                           <div className="mt-0.5 truncate">{contract.renter_email || "—"}</div>
                         </div>
                         <div>
-                          <div className="text-stone-500">Telefon</div>
+                          <div className="text-zinc-500">Telefon</div>
                           <div className="tabular-nums mt-0.5">{contract.renter_phone || "—"}</div>
                         </div>
                       </div>
@@ -186,9 +186,9 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
             <TicketActions ticket={t} lexofficeEnabled={lexofficeEnabled} />
 
             <div>
-              <div className="text-xs uppercase tracking-wider text-stone-500 font-medium mb-2">Verlauf</div>
-              <div className="relative pl-6 bg-white rounded-xl ring-1 ring-stone-200 p-4">
-                <div className="absolute left-[33px] top-5 bottom-5 w-px bg-stone-200" />
+              <div className="text-xs uppercase tracking-wider text-zinc-500 font-medium mb-2">Verlauf</div>
+              <div className="relative pl-6 bg-white rounded-xl ring-1 ring-zinc-200 p-4">
+                <div className="absolute left-[33px] top-5 bottom-5 w-px bg-zinc-200" />
                 {((logs || []) as TicketLog[]).map((l) => {
                   const meta = TIMELINE_ICONS[l.action as keyof typeof TIMELINE_ICONS] ?? {
                     Icon: ScanText,
@@ -196,18 +196,18 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
                   };
                   return (
                     <div key={l.id} className="relative flex items-start gap-3 py-2">
-                      <div className="absolute -left-[3px] w-[18px] h-[18px] rounded-full bg-white ring-1 ring-stone-200 flex items-center justify-center">
-                        <meta.Icon size={10} className="text-stone-500" />
+                      <div className="absolute -left-[3px] w-[18px] h-[18px] rounded-full bg-white ring-1 ring-zinc-200 flex items-center justify-center">
+                        <meta.Icon size={10} className="text-zinc-500" />
                       </div>
                       <div className="flex-1 ml-6">
                         <div className="text-sm">{meta.label}</div>
-                        <div className="text-xs text-stone-400">{relTime(l.created_at)}</div>
+                        <div className="text-xs text-zinc-400">{relTime(l.created_at)}</div>
                       </div>
                     </div>
                   );
                 })}
                 {(!logs || logs.length === 0) && (
-                  <div className="text-sm text-stone-500 py-2">Noch keine Ereignisse.</div>
+                  <div className="text-sm text-zinc-500 py-2">Noch keine Ereignisse.</div>
                 )}
               </div>
             </div>

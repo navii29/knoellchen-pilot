@@ -56,16 +56,16 @@ export const GpsLocation = ({
 
   if (!hasDevice) {
     return (
-      <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold mb-3">
+      <div className="rounded-xl bg-white ring-1 ring-zinc-200 p-5">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-zinc-500 font-semibold mb-3">
           <MapPin size={13} />
           Standort
         </div>
-        <div className="text-sm text-stone-600">
+        <div className="text-sm text-zinc-600">
           Diesem Fahrzeug ist kein GPS-Tracker zugeordnet.{" "}
           <Link
             href={`/dashboard/vehicles/${vehicleId}`}
-            className="inline-flex items-center gap-1 text-teal-700 hover:underline"
+            className="inline-flex items-center gap-1 text-indigo-700 hover:underline"
           >
             <Settings size={12} /> Tracker-ID im Vertragsformular ergänzen
           </Link>
@@ -77,13 +77,13 @@ export const GpsLocation = ({
   const hasPosition = lat != null && lng != null;
 
   return (
-    <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
+    <div className="rounded-xl bg-white ring-1 ring-zinc-200 p-5">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-zinc-500 font-semibold">
           <MapPin size={13} />
           Standort
           {updatedAt && (
-            <span className="ml-2 text-stone-400 font-normal normal-case tracking-normal">
+            <span className="ml-2 text-zinc-400 font-normal normal-case tracking-normal">
               · letztes Update {relTime(updatedAt)}
             </span>
           )}
@@ -92,7 +92,7 @@ export const GpsLocation = ({
           type="button"
           onClick={refresh}
           disabled={refreshing}
-          className="inline-flex items-center gap-1.5 text-[12.5px] px-2.5 py-1 rounded-md ring-1 ring-stone-200 hover:bg-stone-50 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 text-[12.5px] px-2.5 py-1 rounded-md ring-1 ring-zinc-200 hover:bg-zinc-50 disabled:opacity-50"
         >
           {refreshing ? (
             <Loader2 size={12} className="animate-spin" />
@@ -104,13 +104,13 @@ export const GpsLocation = ({
       </div>
 
       {!hasPosition ? (
-        <div className="py-8 text-center text-sm text-stone-500">
+        <div className="py-8 text-center text-sm text-zinc-500">
           Noch keine Position empfangen. Klick auf „Aktualisieren“ um die letzte
           Position vom Tracker zu laden.
         </div>
       ) : (
         <div>
-          <div className="rounded-lg overflow-hidden ring-1 ring-stone-200 bg-stone-50">
+          <div className="rounded-lg overflow-hidden ring-1 ring-zinc-200 bg-zinc-50">
             <iframe
               key={`${lat}-${lng}-${updatedAt ?? ""}`}
               title="Fahrzeug-Standort"
@@ -121,7 +121,7 @@ export const GpsLocation = ({
               style={{ border: 0 }}
             />
           </div>
-          <div className="mt-3 flex items-center justify-between text-[12.5px] text-stone-500 flex-wrap gap-2">
+          <div className="mt-3 flex items-center justify-between text-[12.5px] text-zinc-500 flex-wrap gap-2">
             <span className="font-mono tabular-nums">
               {lat.toFixed(6)}, {lng.toFixed(6)}
             </span>
@@ -129,7 +129,7 @@ export const GpsLocation = ({
               href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-teal-700 hover:underline"
+              className="text-indigo-700 hover:underline"
             >
               In OpenStreetMap öffnen ↗
             </a>

@@ -64,10 +64,10 @@ export const ChargeEditor = ({ ticket }: { ticket: Ticket }) => {
   };
 
   return (
-    <div className="rounded-xl ring-1 ring-stone-200 bg-white overflow-hidden">
-      <div className="px-4 py-3 border-b border-stone-100 flex items-center gap-2">
-        <Coins size={14} className="text-stone-400" />
-        <div className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold">
+    <div className="rounded-xl ring-1 ring-zinc-200 bg-white overflow-hidden">
+      <div className="px-4 py-3 border-b border-zinc-100 flex items-center gap-2">
+        <Coins size={14} className="text-zinc-400" />
+        <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold">
           Weiterbelastung an Mieter
         </div>
       </div>
@@ -79,24 +79,24 @@ export const ChargeEditor = ({ ticket }: { ticket: Ticket }) => {
             type="checkbox"
             checked={chargeFine}
             onChange={(e) => setChargeFine(e.target.checked)}
-            className="mt-0.5 w-4 h-4 rounded accent-teal-600"
+            className="mt-0.5 w-4 h-4 rounded accent-indigo-600"
           />
           <div className="flex-1">
             <div className="flex items-center justify-between gap-3">
-              <div className="text-sm font-medium text-stone-900">Bußgeld weiterbelasten</div>
+              <div className="text-sm font-medium text-zinc-900">Bußgeld weiterbelasten</div>
               <div
-                className={`tabular-nums text-sm ${chargeFine ? "text-stone-900" : "text-stone-300 line-through"}`}
+                className={`tabular-nums text-sm ${chargeFine ? "text-zinc-900" : "text-zinc-300 line-through"}`}
               >
                 {fmtEur(fineAmount)}
               </div>
             </div>
-            <div className="text-xs text-stone-500 mt-0.5">
+            <div className="text-xs text-zinc-500 mt-0.5">
               Behördliches Bußgeld 1:1 weitergeben (durchlaufender Posten, keine USt).
             </div>
           </div>
         </label>
 
-        <div className="border-t border-stone-100" />
+        <div className="border-t border-zinc-100" />
 
         {/* Bearbeitungsgebühr */}
         <label className="flex items-start gap-3 cursor-pointer select-none">
@@ -104,11 +104,11 @@ export const ChargeEditor = ({ ticket }: { ticket: Ticket }) => {
             type="checkbox"
             checked={chargeFee}
             onChange={(e) => setChargeFee(e.target.checked)}
-            className="mt-0.5 w-4 h-4 rounded accent-teal-600"
+            className="mt-0.5 w-4 h-4 rounded accent-indigo-600"
           />
           <div className="flex-1">
-            <div className="text-sm font-medium text-stone-900">Bearbeitungsgebühr berechnen</div>
-            <div className="text-xs text-stone-500 mt-0.5">
+            <div className="text-sm font-medium text-zinc-900">Bearbeitungsgebühr berechnen</div>
+            <div className="text-xs text-zinc-500 mt-0.5">
               Eigene Aufwandspauschale für die Bearbeitung. Wird mit {fmtPercent(VAT_RATE)} MwSt
               versteuert.
             </div>
@@ -118,14 +118,14 @@ export const ChargeEditor = ({ ticket }: { ticket: Ticket }) => {
         {chargeFee && (
           <div className="ml-7 space-y-2">
             <div className="grid grid-cols-[1fr_140px] gap-3 items-center text-sm">
-              <label className="text-stone-700">Bearbeitungsgebühr netto</label>
+              <label className="text-zinc-700">Bearbeitungsgebühr netto</label>
               <div className="relative">
                 <input
                   value={feeNetInput}
                   onChange={(e) => setFeeNetInput(e.target.value)}
-                  className="w-full px-3 py-1.5 text-right pr-7 rounded-md ring-1 ring-stone-200 outline-none focus:ring-stone-400 tabular-nums"
+                  className="w-full px-3 py-1.5 text-right pr-7 rounded-md ring-1 ring-zinc-200 outline-none focus:ring-zinc-400 tabular-nums"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 text-xs">
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 text-xs">
                   €
                 </span>
               </div>
@@ -135,11 +135,11 @@ export const ChargeEditor = ({ ticket }: { ticket: Ticket }) => {
           </div>
         )}
 
-        <div className="border-t border-stone-100" />
+        <div className="border-t border-zinc-100" />
 
         {/* Total */}
         <div className="flex items-center justify-between text-base">
-          <div className="font-semibold text-stone-900">Gesamtbetrag</div>
+          <div className="font-semibold text-zinc-900">Gesamtbetrag</div>
           <div className="tabular-nums font-display font-semibold text-xl" style={{ color: THEME.primary }}>
             {fmtEur(breakdown.total_charge)}
           </div>
@@ -192,7 +192,7 @@ const BreakdownRow = ({
 }) => (
   <div
     className={`grid grid-cols-[1fr_140px] gap-3 text-sm ${
-      muted ? "text-stone-500" : "text-stone-800"
+      muted ? "text-zinc-500" : "text-zinc-800"
     }`}
   >
     <div className={bold ? "font-medium" : ""}>{label}</div>

@@ -150,13 +150,13 @@ export const NewCustomerClient = () => {
     <>
       <Link
         href="/dashboard/customers"
-        className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 mb-4"
       >
         <ArrowLeft size={14} /> Zurück zu Kunden
       </Link>
 
       <div className="font-display font-bold text-2xl tracking-tight">Neuer Kunde</div>
-      <p className="text-sm text-stone-500 mt-1">
+      <p className="text-sm text-zinc-500 mt-1">
         Foto vom Führerschein oder Personalausweis hochladen — Claude füllt das Formular automatisch — oder manuell anlegen.
       </p>
 
@@ -167,7 +167,7 @@ export const NewCustomerClient = () => {
               setDocHint("license");
               fileRef.current?.click();
             }}
-            className="rounded-2xl bg-white ring-1 ring-stone-200 p-6 text-left hover:ring-stone-400 transition"
+            className="rounded-2xl bg-white ring-1 ring-zinc-200 p-6 text-left hover:ring-zinc-400 transition"
           >
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center"
@@ -176,7 +176,7 @@ export const NewCustomerClient = () => {
               <CreditCard size={22} />
             </div>
             <div className="font-display font-semibold text-lg mt-4">Führerschein scannen</div>
-            <div className="text-sm text-stone-500 mt-1">
+            <div className="text-sm text-zinc-500 mt-1">
               Foto oder Scan — Claude liest Name, Geburtsdatum, FS-Nummer und Klassen aus.
             </div>
           </button>
@@ -186,7 +186,7 @@ export const NewCustomerClient = () => {
               setDocHint("id_card");
               fileRef.current?.click();
             }}
-            className="rounded-2xl bg-white ring-1 ring-stone-200 p-6 text-left hover:ring-stone-400 transition"
+            className="rounded-2xl bg-white ring-1 ring-zinc-200 p-6 text-left hover:ring-zinc-400 transition"
           >
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center"
@@ -195,20 +195,20 @@ export const NewCustomerClient = () => {
               <IdCard size={22} />
             </div>
             <div className="font-display font-semibold text-lg mt-4">Personalausweis scannen</div>
-            <div className="text-sm text-stone-500 mt-1">
+            <div className="text-sm text-zinc-500 mt-1">
               Bekommt zusätzlich die Anschrift und die Ausweisnummer.
             </div>
           </button>
 
           <button
             onClick={() => setMode("manual")}
-            className="rounded-2xl bg-white ring-1 ring-stone-200 p-6 text-left hover:ring-stone-400 transition sm:col-span-2"
+            className="rounded-2xl bg-white ring-1 ring-zinc-200 p-6 text-left hover:ring-zinc-400 transition sm:col-span-2"
           >
-            <div className="w-12 h-12 rounded-xl bg-stone-100 text-stone-700 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-zinc-100 text-zinc-700 flex items-center justify-center">
               <UserPlus size={22} />
             </div>
             <div className="font-display font-semibold text-lg mt-4">Manuell anlegen</div>
-            <div className="text-sm text-stone-500 mt-1">Alle Felder direkt ins Formular eintragen.</div>
+            <div className="text-sm text-zinc-500 mt-1">Alle Felder direkt ins Formular eintragen.</div>
           </button>
 
           <input
@@ -230,7 +230,7 @@ export const NewCustomerClient = () => {
       )}
 
       {mode === "ai" && parsing && (
-        <div className="mt-8 rounded-2xl bg-white ring-1 ring-stone-200 p-8 flex items-center gap-4">
+        <div className="mt-8 rounded-2xl bg-white ring-1 ring-zinc-200 p-8 flex items-center gap-4">
           <div
             className="w-12 h-12 rounded-xl flex items-center justify-center"
             style={{ background: THEME.primaryTint, color: THEME.primary }}
@@ -239,7 +239,7 @@ export const NewCustomerClient = () => {
           </div>
           <div>
             <div className="font-display font-semibold">Claude liest das Dokument aus…</div>
-            <div className="text-xs text-stone-500 mt-1">Das dauert meist 5–15 Sekunden.</div>
+            <div className="text-xs text-zinc-500 mt-1">Das dauert meist 5–15 Sekunden.</div>
           </div>
         </div>
       )}
@@ -254,7 +254,7 @@ export const NewCustomerClient = () => {
       )}
 
       {mode === "manual" && (
-        <form onSubmit={submit} className="mt-6 rounded-2xl bg-white ring-1 ring-stone-200 p-6 space-y-6">
+        <form onSubmit={submit} className="mt-6 rounded-2xl bg-white ring-1 ring-zinc-200 p-6 space-y-6">
           {parsedFromAI && (
             <div
               className="flex items-center gap-3 p-3 rounded-lg"
@@ -367,7 +367,7 @@ export const NewCustomerClient = () => {
             <button
               type="button"
               onClick={() => setMode("choose")}
-              className="text-sm text-stone-500 hover:text-stone-900"
+              className="text-sm text-zinc-500 hover:text-zinc-900"
             >
               Eingabe abbrechen
             </button>
@@ -416,14 +416,14 @@ export const NewCustomerClient = () => {
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div>
-    <div className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-3">{title}</div>
+    <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold mb-3">{title}</div>
     <div className="grid sm:grid-cols-2 gap-4">{children}</div>
   </div>
 );
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <label className="block">
-    <div className="text-[11px] uppercase tracking-wider text-stone-500 font-medium mb-1">{label}</div>
+    <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-medium mb-1">{label}</div>
     {children}
   </label>
 );

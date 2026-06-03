@@ -7,7 +7,7 @@ export default function MarginReportPage() {
   return (
     <>
       <Topbar section="Auswertung · Margen" />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50 p-4 md:p-10">
+      <div className="flex-1 overflow-auto scroll-thin bg-zinc-50 p-4 md:p-10">
         <div className="max-w-6xl mx-auto">
           <MarginClient />
         </div>

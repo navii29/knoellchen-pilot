@@ -19,6 +19,8 @@
 # misc
 .DS_Store
 *.pem
+# editor / write temp artifacts
+*.tmp.*
 
 # debug
 npm-debug.log*

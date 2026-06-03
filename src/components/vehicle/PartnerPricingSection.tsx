@@ -33,7 +33,7 @@ type PricingRow = VehiclePartnerPricing & {
 };
 
 const inputCls =
-  "w-full h-10 px-3 rounded-lg bg-white ring-1 ring-stone-200 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-500/40";
+  "w-full h-10 px-3 rounded-lg bg-white ring-1 ring-zinc-200 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40";
 
 export const PartnerPricingSection = ({
   vehicleId,
@@ -62,32 +62,32 @@ export const PartnerPricingSection = ({
 
   return (
     <>
-      <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
+      <div className="rounded-xl bg-white ring-1 ring-zinc-200 p-5">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-zinc-500 font-semibold">
             <Handshake size={13} />
             Vertriebspartner-Preise
-            <span className="ml-1 text-stone-400 font-normal normal-case tracking-normal">
+            <span className="ml-1 text-zinc-400 font-normal normal-case tracking-normal">
               ({initialPricing.length})
             </span>
           </div>
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-stone-900 text-white text-[12.5px] font-medium hover:bg-stone-800"
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-zinc-900 text-white text-[12.5px] font-medium hover:bg-zinc-800"
           >
             <Plus size={13} /> Partner-Preis
           </button>
         </div>
 
         {initialPricing.length === 0 ? (
-          <div className="py-6 text-center text-sm text-stone-500">
+          <div className="py-6 text-center text-sm text-zinc-500">
             Noch keine Partner-Preise hinterlegt. Lege fest, was Hotels, Portale
             oder Werkstätten für dieses Fahrzeug zahlen.
           </div>
         ) : (
-          <div className="rounded-lg ring-1 ring-stone-100 overflow-hidden">
-            <div className="grid grid-cols-[1fr_120px_120px_100px_30px] items-center gap-3 px-3 py-2 bg-stone-50 border-b border-stone-100 text-[10.5px] uppercase tracking-wider text-stone-500 font-semibold">
+          <div className="rounded-lg ring-1 ring-zinc-100 overflow-hidden">
+            <div className="grid grid-cols-[1fr_120px_120px_100px_30px] items-center gap-3 px-3 py-2 bg-zinc-50 border-b border-zinc-100 text-[10.5px] uppercase tracking-wider text-zinc-500 font-semibold">
               <span>Partner</span>
               <span className="text-right">Einstand/Tag</span>
               <span className="text-right">VK/Tag</span>
@@ -104,11 +104,11 @@ export const PartnerPricingSection = ({
               return (
                 <div
                   key={row.id}
-                  className="grid grid-cols-[1fr_120px_120px_100px_30px] items-center gap-3 px-3 py-2 border-b border-stone-100 last:border-0"
+                  className="grid grid-cols-[1fr_120px_120px_100px_30px] items-center gap-3 px-3 py-2 border-b border-zinc-100 last:border-0"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-[13.5px] font-medium text-stone-900 truncate">
+                      <span className="text-[13.5px] font-medium text-zinc-900 truncate">
                         {partnerObj.name}
                       </span>
                       <span
@@ -123,15 +123,15 @@ export const PartnerPricingSection = ({
                       </span>
                     </div>
                   </div>
-                  <span className="text-sm tabular-nums text-stone-700 text-right">
+                  <span className="text-sm tabular-nums text-zinc-700 text-right">
                     {fmtEur(Number(row.purchase_price))}
                   </span>
-                  <span className="text-sm tabular-nums text-stone-900 text-right font-medium">
+                  <span className="text-sm tabular-nums text-zinc-900 text-right font-medium">
                     {fmtEur(Number(row.selling_price))}
                   </span>
                   <span
                     className={`text-sm tabular-nums text-right font-semibold ${
-                      margin > 0 ? "text-emerald-700" : "text-stone-400"
+                      margin > 0 ? "text-emerald-700" : "text-zinc-400"
                     }`}
                   >
                     {fmtEur(margin)}
@@ -140,7 +140,7 @@ export const PartnerPricingSection = ({
                     type="button"
                     onClick={() => remove(row.id)}
                     disabled={busyId === row.id}
-                    className="text-stone-400 hover:text-rose-700 disabled:opacity-30 inline-flex justify-center"
+                    className="text-zinc-400 hover:text-rose-700 disabled:opacity-30 inline-flex justify-center"
                   >
                     <Trash2 size={13} />
                   </button>
@@ -243,14 +243,14 @@ const AddPricingModal = ({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 sm:px-4">
       <button
         type="button"
-        className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
         onClick={onClose}
         aria-label="Schließen"
       />
-      <div className="relative w-full sm:max-w-md bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl ring-1 ring-stone-200 overflow-hidden">
-        <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100">
+      <div className="relative w-full sm:max-w-md bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl ring-1 ring-zinc-200 overflow-hidden">
+        <div className="px-6 py-4 flex items-center justify-between border-b border-zinc-100">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] font-semibold text-teal-700">
+            <div className="text-[11px] uppercase tracking-[0.08em] font-semibold text-indigo-700">
               Vertriebspartner
             </div>
             <h2 className="font-display text-xl tracking-tight font-medium mt-0.5">
@@ -259,7 +259,7 @@ const AddPricingModal = ({
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full inline-flex items-center justify-center text-stone-500 hover:bg-stone-100"
+            className="w-9 h-9 rounded-full inline-flex items-center justify-center text-zinc-500 hover:bg-zinc-100"
           >
             <X size={16} />
           </button>
@@ -267,7 +267,7 @@ const AddPricingModal = ({
 
         <div className="px-6 py-5 space-y-3">
           <label className="block">
-            <div className="text-[11.5px] uppercase tracking-wider text-stone-500 font-medium mb-1.5">
+            <div className="text-[11.5px] uppercase tracking-wider text-zinc-500 font-medium mb-1.5">
               Partner
             </div>
             <select
@@ -290,7 +290,7 @@ const AddPricingModal = ({
 
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
-              <div className="text-[11.5px] uppercase tracking-wider text-stone-500 font-medium mb-1.5">
+              <div className="text-[11.5px] uppercase tracking-wider text-zinc-500 font-medium mb-1.5">
                 Einstandspreis / Tag
               </div>
               <div className="relative">
@@ -301,13 +301,13 @@ const AddPricingModal = ({
                   inputMode="decimal"
                   placeholder="45,00"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-stone-400">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-zinc-400">
                   €
                 </span>
               </div>
             </label>
             <label className="block">
-              <div className="text-[11.5px] uppercase tracking-wider text-stone-500 font-medium mb-1.5">
+              <div className="text-[11.5px] uppercase tracking-wider text-zinc-500 font-medium mb-1.5">
                 VK-Preis / Tag
               </div>
               <div className="relative">
@@ -318,7 +318,7 @@ const AddPricingModal = ({
                   inputMode="decimal"
                   placeholder="65,00"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-stone-400">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-zinc-400">
                   €
                 </span>
               </div>
@@ -326,7 +326,7 @@ const AddPricingModal = ({
           </div>
 
           {margin != null && (
-            <div className="rounded-lg bg-stone-50 ring-1 ring-stone-200 px-3 py-2.5 text-[13px] text-stone-700">
+            <div className="rounded-lg bg-zinc-50 ring-1 ring-zinc-200 px-3 py-2.5 text-[13px] text-zinc-700">
               Marge:{" "}
               <span
                 className={`font-semibold tabular-nums ${
@@ -334,7 +334,7 @@ const AddPricingModal = ({
                     ? "text-emerald-700"
                     : margin < 0
                     ? "text-rose-700"
-                    : "text-stone-700"
+                    : "text-zinc-700"
                 }`}
               >
                 {fmtEur(margin)} / Tag
@@ -349,11 +349,11 @@ const AddPricingModal = ({
           )}
         </div>
 
-        <div className="px-6 py-4 flex items-center justify-end gap-3 border-t border-stone-100">
+        <div className="px-6 py-4 flex items-center justify-end gap-3 border-t border-zinc-100">
           <button
             type="button"
             onClick={onClose}
-            className="text-sm text-stone-500 hover:text-stone-800 px-3"
+            className="text-sm text-zinc-500 hover:text-zinc-800 px-3"
           >
             Abbrechen
           </button>
@@ -361,7 +361,7 @@ const AddPricingModal = ({
             type="button"
             onClick={submit}
             disabled={submitting || partners.length === 0}
-            className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-40"
+            className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-800 disabled:opacity-40"
           >
             {submitting ? (
               <Loader2 size={14} className="animate-spin" />

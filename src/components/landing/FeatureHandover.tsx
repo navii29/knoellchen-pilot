@@ -10,10 +10,10 @@ const PhotoTile = ({
 }) => (
   <div
     className={`relative aspect-[4/3] rounded-md overflow-hidden ring-1 ${
-      flagged ? "ring-red-500" : "ring-black/[0.08]"
-    } bg-gradient-to-br from-stone-300 to-stone-500`}
+      flagged ? "ring-red-500" : "ring-zinc-200"
+    } bg-gradient-to-br from-zinc-300 to-zinc-500`}
   >
-    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&q=70')] bg-cover bg-center opacity-90" />
+    <div className="absolute inset-0 bg-[url('/handover-demo.jpg')] bg-cover bg-center opacity-90" />
     <div className="absolute top-1 left-1 px-1.5 h-4 rounded text-[8.5px] font-medium bg-black/60 text-white backdrop-blur-sm">
       {side === "before" ? "Vorher" : "Nachher"}
     </div>
@@ -33,10 +33,10 @@ const Mock = () => (
     <div className="p-5 text-[11px]">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <div className="text-[14px] font-semibold text-stone-900 leading-tight">
+          <div className="text-[14px] font-semibold text-zinc-900 leading-tight">
             Übergabe-Vergleich
           </div>
-          <div className="text-[10.5px] text-stone-500">
+          <div className="text-[10.5px] text-zinc-500">
             Audi A4 · F-EF 9012 · Vergleich abgeschlossen
           </div>
         </div>
@@ -94,7 +94,7 @@ export const FeatureHandover = () => (
       <>
         Vorher. Nachher.
         <br />
-        <span className="text-stone-400">KI sieht den Unterschied.</span>
+        <span className="text-zinc-400">KI sieht den Unterschied.</span>
       </>
     }
     description="10 Fotos bei der Übergabe, 10 bei der Rückgabe — der Rest passiert von selbst. Knöllchen-Pilot vergleicht jedes Detail per Computer Vision und meldet jede Beule, jeden Kratzer, jede Verschmutzung. Kein Streit mehr darüber, was vorher schon da war."

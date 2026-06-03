@@ -28,16 +28,16 @@ export default async function PortalLoginPage({
     : null;
 
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4 py-10">
+    <div className="min-h-screen bg-zinc-50 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <div className="inline-flex w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-500 items-center justify-center shadow-lg shadow-teal-500/20 mb-3">
+          <div className="inline-flex w-12 h-12 rounded-2xl bg-zinc-900 items-center justify-center shadow-lg shadow-indigo-500/20 mb-3">
             <span className="text-white font-bold text-[20px]">K</span>
           </div>
-          <h1 className="font-display text-stone-900 text-[26px] tracking-tight font-medium">
+          <h1 className="font-display text-zinc-900 text-[26px] tracking-tight font-medium">
             Kundenportal
           </h1>
-          <p className="text-sm text-stone-500 mt-1">
+          <p className="text-sm text-zinc-500 mt-1">
             Verträge, Dokumente und Selfservice an einem Ort.
           </p>
         </div>

@@ -9,7 +9,7 @@ const LicenseCard = () => (
     <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent_0,transparent_8px,rgba(255,255,255,0.25)_8px,rgba(255,255,255,0.25)_9px)]" />
     {/* Header */}
     <div className="absolute top-1.5 left-2 right-2 flex items-center justify-between">
-      <div className="text-[7.5px] font-semibold tracking-wide text-stone-700 leading-tight">
+      <div className="text-[7.5px] font-semibold tracking-wide text-zinc-700 leading-tight">
         FÜHRERSCHEIN
         <div className="text-[6px] font-normal opacity-70">
           BUNDESREPUBLIK DEUTSCHLAND
@@ -39,8 +39,8 @@ const LicenseCard = () => (
     {/* Foto-Slot + Felder */}
     <div className="absolute top-7 left-2 right-2 bottom-2 grid grid-cols-[28%_1fr] gap-2">
       {/* Foto */}
-      <div className="rounded-md bg-stone-200/80 ring-1 ring-stone-300/80 flex items-center justify-center overflow-hidden">
-        <svg viewBox="0 0 32 40" className="w-8 h-10 text-stone-400">
+      <div className="rounded-md bg-zinc-200/80 ring-1 ring-zinc-300/80 flex items-center justify-center overflow-hidden">
+        <svg viewBox="0 0 32 40" className="w-8 h-10 text-zinc-400">
           <circle cx="16" cy="13" r="6.5" fill="currentColor" />
           <path
             d="M 4 38 Q 4 24 16 24 Q 28 24 28 38 Z"
@@ -50,7 +50,7 @@ const LicenseCard = () => (
       </div>
 
       {/* Felder mit nummerierten Labels */}
-      <div className="text-[6.5px] leading-[1.25] text-stone-800 space-y-[1px] font-mono">
+      <div className="text-[6.5px] leading-[1.25] text-zinc-800 space-y-[1px] font-mono">
         <div>
           <span className="opacity-50">1.</span>{" "}
           <span className="font-semibold tracking-wide">BAUER</span>
@@ -85,9 +85,9 @@ const LicenseCard = () => (
     </div>
 
     {/* OCR-Highlights: dezent über den erkannten Feldern */}
-    <div className="absolute top-[40%] left-[32%] w-[40%] h-[10%] rounded-sm ring-2 ring-teal-500/80 bg-teal-400/15" />
-    <div className="absolute top-[52%] left-[32%] w-[28%] h-[10%] rounded-sm ring-2 ring-teal-500/80 bg-teal-400/15" />
-    <div className="absolute top-[64%] left-[32%] w-[55%] h-[10%] rounded-sm ring-2 ring-teal-500/80 bg-teal-400/15" />
+    <div className="absolute top-[40%] left-[32%] w-[40%] h-[10%] rounded-sm ring-2 ring-indigo-500/80 bg-indigo-400/15" />
+    <div className="absolute top-[52%] left-[32%] w-[28%] h-[10%] rounded-sm ring-2 ring-indigo-500/80 bg-indigo-400/15" />
+    <div className="absolute top-[64%] left-[32%] w-[55%] h-[10%] rounded-sm ring-2 ring-indigo-500/80 bg-indigo-400/15" />
 
     <div className="absolute bottom-1 right-1.5 px-1.5 h-4 rounded bg-black/70 text-white text-[7.5px] flex items-center font-mono">
       0,8s OCR
@@ -100,10 +100,10 @@ const Mock = () => (
     <div className="p-5 text-[11px]">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <div className="text-[14px] font-semibold text-stone-900 leading-tight">
+          <div className="text-[14px] font-semibold text-zinc-900 leading-tight">
             Neuen Kunden anlegen
           </div>
-          <div className="text-[10.5px] text-stone-500">
+          <div className="text-[10.5px] text-zinc-500">
             Führerschein scannen für automatische Erfassung
           </div>
         </div>
@@ -127,10 +127,10 @@ const Mock = () => (
             ["FS-Nummer", "K07HHX9MZ4"],
           ].map(([label, value]) => (
             <div key={label}>
-              <div className="text-[9.5px] uppercase tracking-wide text-stone-500 font-medium mb-0.5">
+              <div className="text-[9.5px] uppercase tracking-wide text-zinc-500 font-medium mb-0.5">
                 {label}
               </div>
-              <div className="px-2.5 h-7 rounded-md bg-stone-50 ring-1 ring-black/[0.05] flex items-center text-[10.5px] text-stone-900 justify-between">
+              <div className="px-2.5 h-7 rounded-md bg-zinc-50 ring-1 ring-black/[0.05] flex items-center text-[10.5px] text-zinc-900 justify-between">
                 <span>{value}</span>
                 <span className="text-emerald-600 text-[9.5px]">✓</span>
               </div>
@@ -140,14 +140,14 @@ const Mock = () => (
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-2 pt-3 border-t border-black/[0.05]">
-        <div className="text-[10.5px] text-stone-500">
+        <div className="text-[10.5px] text-zinc-500">
           5 Felder erkannt · 0 manuell ergänzt
         </div>
         <div className="flex gap-2">
-          <span className="px-3 h-8 rounded-md bg-stone-100 text-stone-700 text-[10.5px] flex items-center font-medium ring-1 ring-black/[0.05]">
+          <span className="px-3 h-8 rounded-md bg-zinc-100 text-zinc-700 text-[10.5px] flex items-center font-medium ring-1 ring-black/[0.05]">
             Bearbeiten
           </span>
-          <span className="px-3 h-8 rounded-md bg-teal-600 text-white text-[10.5px] flex items-center font-medium">
+          <span className="px-3 h-8 rounded-md bg-indigo-600 text-white text-[10.5px] flex items-center font-medium">
             Kunde anlegen →
           </span>
         </div>
@@ -164,15 +164,15 @@ export const FeatureCustomers = () => (
       <>
         Führerschein scannen.
         <br />
-        <span className="text-stone-400">Kunde angelegt.</span>
+        <span className="text-zinc-400">Kunde angelegt.</span>
       </>
     }
     description="Führerscheinfoto hochladen — Knöllchen-Pilot liest Name, Adresse, Geburtsdatum, Führerscheinklasse und Gültigkeit aus. In unter einer Sekunde. Keine Tippfehler, keine vergessenen Felder, kein Papierchaos."
     bullets={[
-      "OCR liest Vorder- und Rückseite, EU- und Drittländer-Führerscheine",
+      "OCR liest deutsche und EU-Führerscheine (Vorder- und Rückseite); weitere Länder folgen",
       "Automatischer Abgleich: Ist die Führerscheinklasse für das Fahrzeug gültig?",
       "Kundenkartei mit Mietverlauf, Strafzetteln und offenen Beträgen",
-      "DSGVO-konform: alles verschlüsselt in EU-Rechenzentren",
+      "DSGVO-konform: alles verschlüsselt in der EU (Frankfurt)",
     ]}
     mockup={<Mock />}
     side="left"
