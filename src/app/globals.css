@@ -13,8 +13,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  background: #fafaf9; /* stone-50 */
-  color: #292524;     /* stone-800 — ein Tick weicher als pures stone-900 */
+  background: #ffffff;
+  color: #3f3f46; /* zinc-700 */
   font-size: 14px;
   line-height: 1.5;
 }
@@ -22,8 +22,8 @@ body {
 @layer base {
   h1, h2, h3, h4 {
     font-weight: 600;
-    letter-spacing: -0.02em;
-    color: #1c1917; /* stone-900 für Headings */
+    letter-spacing: -0.021em;
+    color: #09090b; /* zinc-950 */
   }
   h1 { font-size: 26px; line-height: 1.15; }
   h2 { font-size: 20px; line-height: 1.25; }
@@ -32,8 +32,9 @@ body {
   p { color: #44403c; /* stone-700 */ }
 }
 
-.font-display { font-feature-settings: "ss01", "cv11", "kern"; letter-spacing: -0.025em; }
+.font-display { letter-spacing: -0.028em; font-weight: 600; }
 .font-mono { font-feature-settings: "tnum", "zero"; }
+::selection { background: rgba(79, 70, 229, 0.18); }
 
 .grid-bg {
   background-image:

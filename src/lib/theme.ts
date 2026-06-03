@@ -1,9 +1,9 @@
 import type { TicketStatus } from "./types";
 
 export const THEME = {
-  primary: "#0d9488",
-  primaryLight: "#5eead4",
-  primaryTint: "#ccfbf1",
+  primary: "#4f46e5", // indigo-600
+  primaryLight: "#a5b4fc", // indigo-300
+  primaryTint: "#e0e7ff", // indigo-100
 };
 
 export const STATUS_META: Record<

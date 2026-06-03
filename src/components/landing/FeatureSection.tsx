@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Check } from "lucide-react";
 import { FadeUp } from "./FadeUp";
 
 export const FeatureSection = ({
@@ -25,58 +26,52 @@ export const FeatureSection = ({
     <section
       id={id}
       className={`${
-        dark ? "bg-black text-white" : "bg-white text-stone-900"
-      } py-20 sm:py-28 lg:py-36 overflow-hidden`}
+        dark ? "bg-zinc-950 text-white" : "bg-white text-zinc-950"
+      } py-20 sm:py-28 border-t ${dark ? "border-white/10" : "border-zinc-100"}`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
-        {/*
-          Mobile: Mockup zuerst (Bild über Text). Desktop: Side-Prop entscheidet.
-          Realisiert über grid-flow + explizite order-Klassen.
-        */}
+      <div className="max-w-6xl mx-auto px-5 sm:px-8">
         <div
-          className={`grid lg:grid-cols-2 gap-10 lg:gap-20 items-center ${
+          className={`grid lg:grid-cols-2 gap-12 lg:gap-16 items-center ${
             side === "left" ? "lg:[&>*:first-child]:order-2" : ""
           }`}
         >
           <FadeUp className="order-2 lg:order-none">
-            <div className="max-w-xl">
+            <div className="max-w-lg">
               <div
-                className={`inline-flex items-center gap-2 px-3 h-7 rounded-full text-[12px] mb-5 sm:mb-6 ${
-                  dark
-                    ? "bg-white/5 ring-1 ring-white/10 text-white/70"
-                    : "bg-stone-100 ring-1 ring-black/[0.04] text-stone-600"
+                className={`inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.09em] mb-5 ${
+                  dark ? "text-indigo-300" : "text-indigo-600"
                 }`}
               >
+                <span className="w-1.5 h-1.5 rounded-full bg-current" />
                 {eyebrow}
               </div>
               <h2
-                className={`font-display leading-[1.05] tracking-[-0.03em] font-medium text-balance ${
-                  dark ? "text-white" : "text-stone-900"
+                className={`text-[28px] sm:text-[34px] lg:text-[40px] leading-[1.1] tracking-[-0.025em] font-semibold ${
+                  dark ? "text-white" : "text-zinc-950"
                 }`}
-                style={{ fontSize: "clamp(28px, 7vw, 58px)" }}
               >
                 {title}
               </h2>
               <div
-                className={`mt-5 sm:mt-6 text-[15px] sm:text-[17px] leading-[1.55] ${
-                  dark ? "text-white/60" : "text-stone-600"
+                className={`mt-4 text-[16px] sm:text-[17px] leading-[1.6] ${
+                  dark ? "text-zinc-400" : "text-zinc-600"
                 }`}
               >
                 {description}
               </div>
               {bullets && bullets.length > 0 && (
-                <ul className="mt-8 space-y-3">
+                <ul className="mt-7 space-y-3">
                   {bullets.map((b) => (
                     <li
                       key={b}
                       className={`flex items-start gap-3 text-[15px] ${
-                        dark ? "text-white/80" : "text-stone-700"
+                        dark ? "text-zinc-300" : "text-zinc-700"
                       }`}
                     >
-                      <span
-                        className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${
-                          dark ? "bg-emerald-400" : "bg-teal-600"
-                        }`}
+                      <Check
+                        size={18}
+                        strokeWidth={2.5}
+                        className={`mt-0.5 shrink-0 ${dark ? "text-indigo-400" : "text-indigo-600"}`}
                       />
                       <span>{b}</span>
                     </li>
@@ -86,18 +81,8 @@ export const FeatureSection = ({
             </div>
           </FadeUp>
 
-          <FadeUp delay={120} className="order-1 lg:order-none">
-            <div className="relative">
-              {/* radial accent behind mockup */}
-              <div
-                className={`pointer-events-none absolute -inset-12 rounded-full blur-3xl ${
-                  dark
-                    ? "bg-[radial-gradient(circle,rgba(45,212,191,0.18),transparent_60%)]"
-                    : "bg-[radial-gradient(circle,rgba(45,212,191,0.12),transparent_60%)]"
-                }`}
-              />
-              <div className="relative">{mockup}</div>
-            </div>
+          <FadeUp delay={100} className="order-1 lg:order-none">
+            <div className="relative">{mockup}</div>
           </FadeUp>
         </div>
       </div>

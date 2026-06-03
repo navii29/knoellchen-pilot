@@ -8,19 +8,16 @@ const stats: Array<[string, string]> = [
 
 export const TrustBar = () => {
   return (
-    <section className="bg-stone-50 border-y border-black/[0.05]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-14 sm:py-28">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-8 divide-y divide-stone-200/70 sm:divide-y-0">
+    <section className="bg-zinc-50 border-y border-zinc-200">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-14 sm:py-16">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-12">
           {stats.map(([number, label], i) => (
-            <FadeUp key={number} delay={i * 80}>
-              <div className="text-center sm:text-left pt-10 first:pt-0 sm:pt-0">
-                <div
-                  className="font-display text-stone-900 leading-none tracking-[-0.04em] font-medium"
-                  style={{ fontSize: "clamp(48px, 12vw, 88px)" }}
-                >
+            <FadeUp key={number} delay={i * 70}>
+              <div>
+                <div className="text-[40px] sm:text-[48px] font-semibold tracking-[-0.035em] text-zinc-950 leading-none tabular-nums">
                   {number}
                 </div>
-                <div className="mt-3 sm:mt-4 text-[14px] sm:text-[15px] leading-relaxed text-stone-600 max-w-[28ch] mx-auto sm:mx-0 text-balance">
+                <div className="mt-3 text-[14.5px] leading-relaxed text-zinc-600 max-w-[32ch]">
                   {label}
                 </div>
               </div>

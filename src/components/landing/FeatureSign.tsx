@@ -11,7 +11,7 @@ const SignMock = () => (
             Vertragsvorschau
           </div>
           <div className="bg-white rounded ring-1 ring-stone-200 px-3 py-3 space-y-2">
-            <div className="text-[10px] font-bold text-teal-700">
+            <div className="text-[10px] font-bold text-zinc-900">
               Mietwagen Müller GmbH
             </div>
             <div className="text-[12px] font-bold text-stone-900 leading-tight">
