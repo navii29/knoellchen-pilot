@@ -13,7 +13,7 @@ export const ProgressBar = ({
   return (
     <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-stone-200/70">
       <div className="max-w-5xl mx-auto px-6 lg:px-10 py-4 flex items-center gap-4">
-        <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
+        <Link href="/" className="flex items-center gap-2 shrink-0">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shadow shadow-teal-500/20">
             <span className="text-black font-bold text-[13px]">K</span>
           </div>

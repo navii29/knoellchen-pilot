@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { THEME } from "@/lib/theme";
 import { Logo } from "@/components/ui/Logo";
+import { mapAuthError, mapQueryError } from "@/lib/auth-errors";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,6 +16,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("error");
+    const msg = mapQueryError(code);
+    if (msg) setError(msg);
+  }, []);
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -22,7 +29,7 @@ export default function LoginPage() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      setError(error.message);
+      setError(mapAuthError(error.message));
       setLoading(false);
       return;
     }
@@ -86,6 +93,11 @@ export default function LoginPage() {
               Jetzt registrieren
             </Link>
           </div>
+        </div>
+        <div className="mt-6 flex items-center justify-center gap-4 text-[12px] text-stone-400">
+          <Link href="/impressum" className="hover:text-stone-600">Impressum</Link>
+          <Link href="/datenschutz" className="hover:text-stone-600">Datenschutz</Link>
+          <Link href="/agb" className="hover:text-stone-600">AGB</Link>
         </div>
       </div>
     </div>
