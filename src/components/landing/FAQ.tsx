@@ -6,15 +6,15 @@ import { FadeUp } from "./FadeUp";
 const faqs = [
   {
     q: "Wie genau ist die KI beim Auslesen von Strafzetteln?",
-    a: "Knöllchen-Pilot setzt auf Claude Sonnet 4.6 mit Vision-Capabilities. Bei deutschen Bußgeldbescheiden und Anhörungsbögen erreichen wir in unseren Tests Erkennungsraten von rund 95 %. Jedes ausgelesene Dokument bekommt einen Confidence-Wert, und vor dem Versand geben Sie es frei — unklare Fälle prüfen Sie also gezielt, bevor etwas rausgeht.",
+    a: "Knöllchen-Pilot setzt auf Claude Sonnet 4.6 mit Vision-Capabilities. Bei deutschen Bußgeldbescheiden und Anhörungsbögen erreichen wir in internen Tests Erkennungsraten von rund 95 %. Jedes ausgelesene Dokument bekommt einen Confidence-Wert, und vor dem Versand geben Sie es frei — unklare Fälle prüfen Sie also gezielt, bevor etwas rausgeht.",
   },
   {
     q: "Was passiert mit meinen Daten? Ist das DSGVO-konform?",
-    a: "Alle Daten liegen verschlüsselt in deutschen Rechenzentren bei Supabase EU. Wir sind vollständig DSGVO-konform, mit AV-Vertrag, Lösch- und Auskunftsrechten. Ihre Kundendaten werden niemals zum Training von KI-Modellen verwendet.",
+    a: "Ihre Daten liegen verschlüsselt in einem EU-Rechenzentrum (Supabase, Frankfurt). Knöllchen-Pilot ist DSGVO-konform aufgebaut: AV-Vertrag, Lösch- und Auskunftsrechte gehören dazu. Ihre Kundendaten werden nicht zum Training von KI-Modellen verwendet.",
   },
   {
     q: "Kann ich Knöllchen-Pilot mit meiner bestehenden Software verbinden?",
-    a: "Ja. Wir haben fertige Integrationen für LexOffice (Buchhaltung), Echoes.solutions (GPS-Tracking), Stripe (Zahlungen) und Mailgun (E-Mail-Inbound). Über unsere REST-API können Sie zudem eigene Anbindungen bauen — Webhooks für alle wichtigen Events sind dabei.",
+    a: "LexOffice (Buchhaltung) und Echoes.solutions (GPS-Tracking) sind bereits angebunden. Eine Zahlungs- und E-Mail-Inbound-Integration ist in Vorbereitung. Für individuelle Anbindungen sprechen Sie uns gerne an.",
   },
   {
     q: "Wie lange dauert das Onboarding?",

@@ -144,6 +144,12 @@ export const Hero = () => {
     <section className="relative overflow-hidden bg-black pt-28 sm:pt-40 pb-16 sm:pb-28">
       {/* Background video — auch auf Mobile. preload="metadata" lädt nur
           den Header, das Video startet erst beim Decoden. */}
+      {/* Poster-Fallback: auf Mobile und bei reduzierter Bewegung sichtbar,
+          damit das ~12-MB-Video dort nicht geladen/abgespielt wird. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-cover bg-center opacity-40 bg-[url('/hero-poster.jpg')]"
+      />
       <video
         autoPlay
         loop
@@ -152,7 +158,7 @@ export const Hero = () => {
         preload="metadata"
         poster="/hero-poster.jpg"
         aria-hidden="true"
-        className="absolute inset-0 w-full h-full object-cover opacity-40"
+        className="hidden sm:block motion-reduce:sm:hidden absolute inset-0 w-full h-full object-cover opacity-40"
       >
         <source src="/hero-video.mp4" type="video/mp4" />
       </video>
@@ -213,7 +219,7 @@ export const Hero = () => {
               rel="noopener noreferrer"
               className="w-full sm:w-auto inline-flex items-center justify-center h-12 px-6 rounded-full bg-white/5 ring-1 ring-white/10 text-white text-[15px] font-medium hover:bg-white/10 transition-colors"
             >
-              Live-Demo mit dem Gründer
+              Demo mit dem Gründer
             </a>
           </div>
           <div className="mt-4 text-[12.5px] text-white/40">
@@ -255,7 +261,8 @@ export const Hero = () => {
               KI liest aus · 1,2s
             </div>
             <div className="hidden lg:flex absolute -right-8 bottom-28 items-center gap-2 px-3 h-9 rounded-full bg-white/5 backdrop-blur-md ring-1 ring-white/10 text-[12.5px] text-white/80">
-              ✨ Fahrer auto-zugeordnet
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              Fahrer auto-zugeordnet
             </div>
           </div>
         </FadeUp>

@@ -9,9 +9,12 @@ export const Footer = () => {
             <span className="text-black font-bold text-[11px]">K</span>
           </div>
           <span className="text-white/70 font-medium">Knöllchen-Pilot</span>
-          <span className="ml-2">© 2026</span>
+          <span className="ml-2">© 2026 · Eine Marke der Southern Phoenix GmbH</span>
         </div>
         <nav className="flex items-center gap-6">
+          <a href="mailto:kontakt@knoellchen-pilot.de" className="hover:text-white/80 transition-colors">
+            Kontakt
+          </a>
           <Link href="/impressum" className="hover:text-white/80 transition-colors">
             Impressum
           </Link>

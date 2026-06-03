@@ -13,7 +13,7 @@ const PhotoTile = ({
       flagged ? "ring-red-500" : "ring-black/[0.08]"
     } bg-gradient-to-br from-stone-300 to-stone-500`}
   >
-    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&q=70')] bg-cover bg-center opacity-90" />
+    <div className="absolute inset-0 bg-[url('/handover-demo.jpg')] bg-cover bg-center opacity-90" />
     <div className="absolute top-1 left-1 px-1.5 h-4 rounded text-[8.5px] font-medium bg-black/60 text-white backdrop-blur-sm">
       {side === "before" ? "Vorher" : "Nachher"}
     </div>

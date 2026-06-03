@@ -26,27 +26,27 @@ export const FinalCTA = () => {
 
         <FadeUp delay={120}>
           <p className="mt-5 sm:mt-7 text-[15px] sm:text-[20px] text-white/60 max-w-xl mx-auto leading-[1.5]">
-            30-Minuten-Call mit dem Gründer. Wir zeigen Knöllchen-Pilot
-            an Ihrem konkreten Fall — kein Sales-Pitch, kein Funnel.
+            In 30 Sekunden kostenlos starten — oder sich Knöllchen-Pilot in
+            einem 30-Minuten-Call vom Gründer an Ihrem Fall zeigen lassen.
           </p>
         </FadeUp>
 
         <FadeUp delay={200}>
           <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3 items-center justify-center">
+            <Link
+              href="/register"
+              className="w-full sm:w-auto inline-flex items-center justify-center h-[52px] px-7 rounded-full bg-white text-black text-[15px] font-medium hover:bg-white/90 transition-colors shadow-[0_8px_30px_-8px_rgba(255,255,255,0.4)]"
+            >
+              30 Tage gratis testen
+            </Link>
             <a
               href={BOOKING_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto inline-flex items-center justify-center h-13 px-7 rounded-full bg-white text-black text-[15px] font-medium hover:bg-white/90 transition-colors shadow-[0_8px_30px_-8px_rgba(255,255,255,0.4)] min-h-[52px]"
+              className="w-full sm:w-auto inline-flex items-center justify-center h-[52px] px-7 rounded-full bg-white/5 ring-1 ring-white/10 text-white text-[15px] font-medium hover:bg-white/10 transition-colors"
             >
-              30-Min-Call buchen
+              Oder: Demo mit dem Gründer
             </a>
-            <Link
-              href="/register"
-              className="w-full sm:w-auto inline-flex items-center justify-center h-13 px-7 rounded-full bg-white/5 ring-1 ring-white/10 text-white text-[15px] font-medium hover:bg-white/10 transition-colors min-h-[52px]"
-            >
-              Oder gleich gratis testen →
-            </Link>
           </div>
         </FadeUp>
 
@@ -58,7 +58,7 @@ export const FinalCTA = () => {
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              EU-Hosting
+              EU-Datenspeicherung
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />

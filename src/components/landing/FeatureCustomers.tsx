@@ -169,10 +169,10 @@ export const FeatureCustomers = () => (
     }
     description="Führerscheinfoto hochladen — Knöllchen-Pilot liest Name, Adresse, Geburtsdatum, Führerscheinklasse und Gültigkeit aus. In unter einer Sekunde. Keine Tippfehler, keine vergessenen Felder, kein Papierchaos."
     bullets={[
-      "OCR liest Vorder- und Rückseite, EU- und Drittländer-Führerscheine",
+      "OCR liest deutsche und EU-Führerscheine (Vorder- und Rückseite); weitere Länder folgen",
       "Automatischer Abgleich: Ist die Führerscheinklasse für das Fahrzeug gültig?",
       "Kundenkartei mit Mietverlauf, Strafzetteln und offenen Beträgen",
-      "DSGVO-konform: alles verschlüsselt in EU-Rechenzentren",
+      "DSGVO-konform: alles verschlüsselt in der EU (Frankfurt)",
     ]}
     mockup={<Mock />}
     side="left"

@@ -85,7 +85,14 @@ export const Nav = () => {
           <a href="#features" onClick={() => setOpen(false)} className="block">Features</a>
           <a href="#pricing" onClick={() => setOpen(false)} className="block">Preise</a>
           <a href="#faq" onClick={() => setOpen(false)} className="block">FAQ</a>
-          <Link href="/login" className="block">Login</Link>
+          <Link href="/login" onClick={() => setOpen(false)} className="block">Login</Link>
+          <Link
+            href="/register"
+            onClick={() => setOpen(false)}
+            className="block mt-2 text-center px-4 h-11 leading-[44px] rounded-full bg-white text-black font-medium"
+          >
+            30 Tage gratis testen
+          </Link>
         </div>
       )}
     </header>
