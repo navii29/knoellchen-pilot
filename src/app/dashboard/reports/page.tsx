@@ -35,7 +35,9 @@ export default function ReportsPage() {
             </div>
             <div className="font-display font-bold text-xl mt-4">Weitere Auswertungen</div>
             <p className="text-sm text-stone-500 mt-2 max-w-md mx-auto">
-              Detail-Auswertungen über Durchsatz, Behörden, Gebühren-Quoten und Mahnstufen folgen in Kürze.
+              Detail-Auswertungen über Durchsatz, Behörden und Gebühren-Quoten
+              entwickeln wir gemeinsam mit unseren Pilot-Kunden. Sagen Sie uns,
+              was Sie brauchen.
             </p>
           </div>
         </div>

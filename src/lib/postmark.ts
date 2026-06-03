@@ -30,9 +30,20 @@ export type SendArgs = {
 
 export const sendEmail = async (args: SendArgs) => {
   const c = postmark();
+  // Sicherheitsnetz: NUR außerhalb von Production werden Mails auf
+  // EMAIL_TEST_OVERRIDE umgeleitet. In Production wird der Override ignoriert,
+  // damit echte Empfänger (Mieter:innen, Behörden, Portal) ihre Mail erhalten.
+  const override =
+    process.env.NODE_ENV !== "production"
+      ? process.env.EMAIL_TEST_OVERRIDE?.trim()
+      : undefined;
+  const to = override && override.length > 0 ? override : args.to;
+  if (to !== args.to) {
+    console.warn(`[email] DEV-Override aktiv — Mail an ${to} statt ${args.to}`);
+  }
   return c.sendEmail({
     From: args.from,
-    To: args.to,
+    To: to,
     Subject: args.subject,
     HtmlBody: args.htmlBody,
     TextBody: args.textBody,

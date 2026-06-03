@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Knöllchen-Pilot
 
-## Getting Started
+KI-Plattform für Autovermietungen. Knöllchen-Pilot automatisiert die lästigen
+Back-Office-Prozesse rund um Fahrzeugvermietung: Strafzettel werden per Computer
+Vision ausgelesen, dem richtigen Mieter zugeordnet und mit fertigen PDFs (Anschreiben,
+Rechnung, Zeugenfragebogen) weiterbelastet. Dazu kommen Fahrzeug-Übergabe und
+Schadenerkennung per Foto-Vergleich, Mietverträge mit digitaler Unterschrift, ein
+Kundenportal für Mieter, dynamisches Pricing, ein Flottenkalender, ein KI-Assistent
+sowie Anbindungen an LexOffice und die Echoes-GPS-Telematik.
 
-First, run the development server:
+## Tech-Stack
+
+- **Next.js 14** (App Router, React, TypeScript, Tailwind CSS)
+- **Supabase** (PostgreSQL, Auth, Storage)
+- **Anthropic Claude** (Vision für OCR & Schadenerkennung)
+- **Postmark** (E-Mail-Versand & Inbound)
+- **Vercel** (Hosting + Cron)
+
+## Lokales Setup
+
+Voraussetzung: Node.js 18+ (LTS empfohlen).
 
 ```bash
+npm install
+cp .env.local.example .env.local   # Werte eintragen, siehe Kommentare in der Datei
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App läuft anschließend unter http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Mindestens nötig für einen funktionierenden Start: die Supabase-Keys, der
+`ANTHROPIC_API_KEY` und `PORTAL_JWT_SECRET` (sonst crasht das Kundenportal —
+erzeugen mit `openssl rand -hex 32`). Details zu allen Variablen stehen als
+Kommentare in `.env.local.example`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Externe Voraussetzungen (vor Production)
 
-## Learn More
+- **Supabase Auth:** E-Mail-Bestätigung aktivieren, Site-URL und Redirect-URLs
+  auf die echte Domain setzen (nicht localhost / nicht *.vercel.app).
+- **Postmark:** Sender-Domain verifizieren (DKIM/Return-Path), ggf. Inbound-Webhook
+  einrichten.
+- **Vercel:** alle Env-Vars im Projekt hinterlegen; `NEXT_PUBLIC_APP_URL` auf die
+  echte Domain; `EMAIL_TEST_OVERRIDE` LEER lassen.
 
-To learn more about Next.js, take a look at the following resources:
+Vollständige Go-Live-Checkliste: siehe `docs/GO-LIVE.md`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Befehle
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run dev     # Dev-Server (Hot Reload)
+npm run build   # Production-Build
+npm run start   # Production-Server (nach build)
+npm run lint    # ESLint
+```
 
-## Deploy on Vercel
+## Repo
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`navii29/knoellchen-pilot`

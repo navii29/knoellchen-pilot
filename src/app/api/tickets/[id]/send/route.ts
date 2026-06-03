@@ -20,6 +20,8 @@ const downloadAsBase64 = async (
 };
 
 const testOverride = (): string | null => {
+  // In Production niemals umleiten — echte Empfänger müssen ihre Mail erhalten.
+  if (process.env.NODE_ENV === "production") return null;
   const v = process.env.EMAIL_TEST_OVERRIDE?.trim();
   return v && v.length > 0 ? v : null;
 };

@@ -113,7 +113,7 @@ export default function ImpressumPage() {
       </P>
 
       <P>
-        <span className="text-stone-500 text-[13.5px]">Stand: Mai 2026</span>
+        <span className="text-stone-500 text-[13.5px]">Stand: Juni 2026</span>
       </P>
     </LegalShell>
   );
