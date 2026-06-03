@@ -5,15 +5,16 @@ const plans = [
   {
     name: "Starter",
     price: "249",
-    tagline: "Für Vermietungen, die zuerst Strafzettel und Verträge automatisieren wollen.",
+    tagline: "Für Vermietungen, die Strafzettel, Verträge und Schadendokumentation automatisieren wollen.",
     limit: "Bis zu 15 Fahrzeuge",
     features: [
       "Strafzettel-Automatisierung (KI-Auslesen, Anschreiben, Rechnung)",
+      "Übergabe & Schadenerkennung (Computer Vision)",
       "Vertragsverwaltung & Kalender",
       "Kunden- und Führerschein-Scan",
       "5.000 KI-Auslesungen / Monat",
       "E-Mail Support",
-      "— Schaden-Vergleich, Tablet-Sign und Kundenportal erst ab Professional",
+      "— Tablet-Unterschrift und Kundenportal erst ab Professional",
     ],
     cta: "Starter wählen",
     featured: false,
@@ -29,7 +30,6 @@ const plans = [
       "Digitale Vertragsunterschrift",
       "Dynamische Preisoptimierung",
       "KI-Sprachassistent",
-      "Übergabe & Schadenerkennung",
       "Flottenkalender mit Aussteuerungs-Alerts",
       "LexOffice & Echoes Integrationen",
       "20.000 KI-Auslesungen / Monat",
@@ -49,7 +49,7 @@ const plans = [
       "Mehrere Standorte / Mandanten",
       "REST-API & Webhooks",
       "Custom Onboarding & Schulung",
-      "SLA mit 99,9 % Uptime",
+      "SLA nach Vereinbarung",
       "Dedizierter Account Manager",
     ],
     cta: "Vertrieb kontaktieren",
@@ -67,7 +67,7 @@ export const Pricing = () => {
               Preise
             </div>
             <h2 className="font-display text-stone-900 text-[32px] sm:text-[48px] lg:text-[68px] leading-[1.05] tracking-[-0.03em] font-medium text-balance">
-              Ein Preis. Alles inklusive.
+              Transparente Preise. Keine Überraschungen.
             </h2>
             <p className="mt-4 text-[15px] sm:text-[17px] text-stone-600 leading-relaxed">
               Keine versteckten Kosten. Keine Setup-Gebühren. Jederzeit
