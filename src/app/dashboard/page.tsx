@@ -12,6 +12,7 @@ import { VehicleDueAlert, type DueAlertItem } from "@/components/dashboard/Vehic
 import { PricingTodayWidget } from "@/components/dashboard/PricingTodayWidget";
 import { MarginWidget } from "@/components/dashboard/MarginWidget";
 import { TiresAlert } from "@/components/dashboard/TiresAlert";
+import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { buildTireAlerts } from "@/lib/tire-alerts";
 import { isDecommissionAlertWindow } from "@/lib/decommission";
 import { buildVehicleType } from "@/lib/vehicle";
@@ -166,6 +167,11 @@ export default async function DashboardPage() {
     isDecommissionAlertWindow(v, 21)
   );
 
+  const isEmpty =
+    (vehicleCount ?? 0) === 0 &&
+    allTickets.length === 0 &&
+    recentContracts.length === 0;
+
   const counts = {
     neu: allTickets.filter((t) => t.status === "neu").length,
     gebuehren: allTickets
@@ -195,7 +201,9 @@ export default async function DashboardPage() {
                 Guten Tag, {org?.name || "Team"}.
               </h1>
               <p className="text-[15px] text-stone-500 mt-3 max-w-2xl">
-                {counts.neu === 0
+                {isEmpty
+                  ? "Noch keine Daten — legen wir gemeinsam los."
+                  : counts.neu === 0
                   ? "Keine offenen Eingänge — alles erledigt."
                   : `${counts.neu} ${counts.neu === 1 ? "neuer Strafzettel wartet" : "neue Strafzettel warten"} auf Freigabe.`}
               </p>
@@ -206,6 +214,10 @@ export default async function DashboardPage() {
             </div>
           </div>
 
+          {isEmpty ? (
+            <DashboardEmptyState />
+          ) : (
+          <>
           {decommissionAlerts.length > 0 && <DecommissionAlert vehicles={decommissionAlerts} />}
           {dueAlerts.length > 0 && <VehicleDueAlert items={dueAlerts} />}
           {tireAlerts.length > 0 && <TiresAlert items={tireAlerts} />}
@@ -258,6 +270,8 @@ export default async function DashboardPage() {
           </div>
 
           <TicketTable tickets={allTickets} />
+          </>
+          )}
         </div>
       </div>
     </>

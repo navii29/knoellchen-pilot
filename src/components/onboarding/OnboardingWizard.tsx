@@ -85,15 +85,30 @@ export const OnboardingWizard = ({
   }, []);
 
   const finish = useCallback(async () => {
+    // Onboarding abschließen — mit einem Retry, damit die "Fertig"-Bestätigung
+    // nicht still verloren geht (sonst Redirect-Schleife zurück ins Onboarding).
+    const markDone = async () => {
+      try {
+        const res = await fetch("/api/onboarding", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ completed: true }),
+        });
+        return res.ok;
+      } catch {
+        return false;
+      }
+    };
+    if (!(await markDone())) await markDone();
+
+    // Beispieldaten laden, damit das Dashboard sofort lebendig aussieht.
+    // Best-effort und idempotent (Route seedet nur leere, noch nicht geseedete Orgs).
     try {
-      await fetch("/api/onboarding", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ completed: true }),
-      });
+      await fetch("/api/demo/seed", { method: "POST" });
     } catch {
-      // continue anyway — user has explicitly clicked done
+      // Egal — Dashboard funktioniert auch ohne Beispieldaten.
     }
+
     router.replace("/dashboard");
     router.refresh();
   }, [router]);
