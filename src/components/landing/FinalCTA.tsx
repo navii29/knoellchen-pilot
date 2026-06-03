@@ -54,7 +54,7 @@ export const FinalCTA = () => {
           <div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[12.5px] text-white/40">
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              DSGVO-konform
+              DSGVO-konform aufgebaut
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />

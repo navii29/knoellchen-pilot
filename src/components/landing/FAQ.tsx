@@ -14,7 +14,7 @@ const faqs = [
   },
   {
     q: "Kann ich Knöllchen-Pilot mit meiner bestehenden Software verbinden?",
-    a: "LexOffice (Buchhaltung) und Echoes.solutions (GPS-Tracking) sind bereits angebunden. Eine Zahlungs- und E-Mail-Inbound-Integration ist in Vorbereitung. Für individuelle Anbindungen sprechen Sie uns gerne an.",
+    a: "LexOffice (Buchhaltung) ist bereits angebunden. GPS-Tracking (Echoes.solutions), Zahlungsabwicklung und E-Mail-Inbound sind in Vorbereitung. Für individuelle Anbindungen sprechen Sie uns gerne an.",
   },
   {
     q: "Wie lange dauert das Onboarding?",

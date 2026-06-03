@@ -26,6 +26,8 @@ export const mapQueryError = (code: string | null | undefined): string | null =>
   switch (code) {
     case "no_profile":
       return "Ihr Konto ist noch nicht vollständig eingerichtet. Bitte melden Sie sich erneut an — wir richten es automatisch fertig ein.";
+    case "no_org":
+      return "Ihrem Konto ist noch keine Organisation zugeordnet. Bitte registrieren Sie sich erneut.";
     case "auth":
       return "Die Anmeldung konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.";
     default:

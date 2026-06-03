@@ -20,6 +20,11 @@ export default function LoginPage() {
     const code = new URLSearchParams(window.location.search).get("error");
     const msg = mapQueryError(code);
     if (msg) setError(msg);
+    // Kaputtes/unvollständiges Konto: hängende Session beenden, damit kein
+    // Redirect-Loop entsteht und der Nutzer neu anmelden/registrieren kann.
+    if (code === "no_profile" || code === "no_org") {
+      createClient().auth.signOut().catch(() => {});
+    }
   }, []);
 
   const onSubmit = async (e: React.FormEvent) => {

@@ -50,6 +50,7 @@ const Mock = () => (
       name="Echoes.solutions"
       tagline="GPS-Tracking und Telematikdaten direkt in der Flottenansicht."
       accent="linear-gradient(135deg,#0d9488,#10b981)"
+      status="soon"
       glyph={
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 22s8-7 8-13a8 8 0 0 0-16 0c0 6 8 13 8 13z" />
@@ -93,8 +94,8 @@ export const FeatureIntegrations = () => (
     description="Knöllchen-Pilot lebt nicht im luftleeren Raum. Wir verbinden uns mit den Tools, die Sie bereits nutzen — und machen Ihre Vermietung dadurch noch schneller."
     bullets={[
       "LexOffice: Belege, Rechnungen und Mahnungen synchronisieren sich automatisch",
-      "Echoes.solutions: GPS-Position und Kilometerstand jedes Fahrzeugs in Echtzeit",
-      "Zahlungsabwicklung und E-Mail-Inbound sind in Vorbereitung",
+      "GPS-Tracking (Echoes.solutions) für Live-Fahrzeugpositionen ist in Vorbereitung",
+      "Zahlungsabwicklung und E-Mail-Inbound sind ebenfalls in Vorbereitung",
     ]}
     mockup={<Mock />}
     side="right"
