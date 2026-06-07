@@ -1,25 +1,23 @@
-import { SiteNav } from "@/components/landing/SiteNav";
-import { Hero } from "@/components/landing/Hero";
-import { LogosStrip } from "@/components/landing/LogosStrip";
-import { LeitstelleRail } from "@/components/landing/LeitstelleRail";
-import { ModulesBento } from "@/components/landing/ModulesBento";
-import { Pricing } from "@/components/landing/Pricing";
-import { FAQ } from "@/components/landing/FAQ";
-import { FinalCTA } from "@/components/landing/FinalCTA";
-import { Footer } from "@/components/landing/Footer";
+import { AppleNav } from "@/components/apple/AppleNav";
+import { AppleHero } from "@/components/apple/AppleHero";
+import { BlackShowcase } from "@/components/apple/BlackShowcase";
+import { FeatureRows } from "@/components/apple/FeatureRows";
+import { ApplePricing } from "@/components/apple/ApplePricing";
+import { AppleFAQ } from "@/components/apple/AppleFAQ";
+import { AppleCTA } from "@/components/apple/AppleCTA";
+import { AppleFooter } from "@/components/apple/AppleFooter";
 
 export default function Home() {
   return (
-    <main className="bg-canvas text-ink-soft">
-      <SiteNav />
-      <Hero />
-      <LogosStrip />
-      <LeitstelleRail />
-      <ModulesBento />
-      <Pricing />
-      <FAQ />
-      <FinalCTA />
-      <Footer />
+    <main className="apple bg-white">
+      <AppleNav />
+      <AppleHero />
+      <FeatureRows />
+      <BlackShowcase />
+      <ApplePricing />
+      <AppleFAQ />
+      <AppleCTA />
+      <AppleFooter />
     </main>
   );
 }
