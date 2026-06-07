@@ -9,6 +9,7 @@ import {
   LogOut,
   User,
 } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 
 const TABS = [
   { href: "/portal/dashboard", label: "Übersicht", Icon: Home },
@@ -38,32 +39,27 @@ export const PortalShell = ({
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col">
-      <header className="bg-white border-b border-stone-200/70">
-        <div className="max-w-2xl mx-auto px-5 py-4 flex items-center justify-between gap-3">
+    <div className="min-h-screen bg-canvas flex flex-col">
+      {/* top header — hairline bottom, paper surface */}
+      <header className="bg-paper border-b border-hairline">
+        <div className="max-w-2xl mx-auto px-5 py-3.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             {orgLogoUrl ? (
-              <div className="h-9 max-w-[140px] flex items-center shrink-0">
+              <div className="h-8 max-w-[140px] flex items-center shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={orgLogoUrl}
                   alt={orgName}
-                  className="max-h-9 max-w-full object-contain"
+                  className="max-h-8 max-w-full object-contain"
                 />
               </div>
             ) : (
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shadow shadow-teal-500/20 shrink-0">
-                <span className="text-white font-bold text-[15px]">
-                  {orgName.slice(0, 1).toUpperCase()}
-                </span>
-              </div>
+              <Logo size={26} tone="light" wordmark={false} />
             )}
             <div className="min-w-0">
-              <div className="text-[10.5px] uppercase tracking-[0.08em] text-stone-500 font-medium">
-                Kundenportal
-              </div>
+              <div className="kicker text-ink-muted leading-none mb-0.5">Kundenportal</div>
               <div
-                className={`font-display text-[15px] tracking-tight font-medium text-stone-900 truncate leading-tight ${
+                className={`font-display text-[14px] tracking-tight font-semibold text-ink truncate leading-tight ${
                   orgLogoUrl ? "sr-only sm:not-sr-only" : ""
                 }`}
               >
@@ -74,7 +70,7 @@ export const PortalShell = ({
           <button
             type="button"
             onClick={onLogout}
-            className="text-stone-500 hover:text-stone-900 inline-flex items-center gap-1 text-xs"
+            className="text-ink-muted hover:text-ink inline-flex items-center gap-1.5 text-[12px] font-medium transition-colors"
           >
             <LogOut size={13} />
             <span className="hidden sm:inline">Abmelden</span>
@@ -84,14 +80,15 @@ export const PortalShell = ({
 
       <main className="flex-1 pb-24 sm:pb-8">
         <div className="max-w-2xl mx-auto">
-          <div className="px-5 pt-4 text-xs text-stone-500">
-            Hallo, <span className="font-medium text-stone-700">{customerName}</span>
+          <div className="px-5 pt-4 text-[12px] text-ink-muted font-mono">
+            Hallo, <span className="font-semibold text-ink-soft">{customerName}</span>
           </div>
           {children}
         </div>
       </main>
 
-      <nav className="fixed sm:hidden bottom-0 inset-x-0 bg-white border-t border-stone-200 z-40">
+      {/* mobile bottom nav — fixed, hairline top */}
+      <nav className="fixed sm:hidden bottom-0 inset-x-0 bg-paper border-t border-hairline z-40">
         <div className="max-w-2xl mx-auto grid grid-cols-4">
           {TABS.map(({ href, label, Icon }) => {
             const active = pathname === href || pathname.startsWith(`${href}/`);
@@ -99,19 +96,20 @@ export const PortalShell = ({
               <Link
                 key={href}
                 href={href}
-                className={`flex flex-col items-center gap-0.5 py-2.5 ${
-                  active ? "text-stone-900" : "text-stone-400"
+                className={`flex flex-col items-center gap-0.5 py-2.5 transition-colors ${
+                  active ? "text-signal" : "text-ink-muted"
                 }`}
               >
                 <Icon size={18} strokeWidth={active ? 2.4 : 1.8} />
-                <span className="text-[10.5px] font-medium">{label}</span>
+                <span className="text-[10px] font-medium tracking-wide uppercase">{label}</span>
               </Link>
             );
           })}
         </div>
       </nav>
 
-      <nav className="hidden sm:block bg-white border-t border-stone-200">
+      {/* desktop tab bar — hairline top */}
+      <nav className="hidden sm:block bg-paper border-t border-hairline">
         <div className="max-w-2xl mx-auto flex items-center gap-1 px-5 py-2">
           {TABS.map(({ href, label, Icon }) => {
             const active = pathname === href || pathname.startsWith(`${href}/`);
@@ -119,10 +117,10 @@ export const PortalShell = ({
               <Link
                 key={href}
                 href={href}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn text-[13px] font-medium transition-colors ${
                   active
-                    ? "bg-stone-900 text-white"
-                    : "text-stone-600 hover:bg-stone-100"
+                    ? "bg-signal text-white"
+                    : "text-ink-soft hover:bg-ink/5"
                 }`}
               >
                 <Icon size={13} />

@@ -13,6 +13,7 @@ import {
   UploadCloud,
   X,
 } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 export type FieldDef = {
   key: string;
@@ -46,7 +47,7 @@ export const CsvImportModal = ({
   onClose,
 }: {
   title: string;
-  endpoint: string; // z. B. /api/customers/import-csv
+  endpoint: string;
   onClose: () => void;
 }) => {
   const router = useRouter();
@@ -124,14 +125,14 @@ export const CsvImportModal = ({
   // ───── Subviews ─────
   const renderUpload = () => (
     <div className="px-6 py-8">
-      <div className="rounded-2xl ring-1 ring-stone-200 bg-stone-50 px-5 py-8 text-center">
-        <div className="inline-flex w-12 h-12 rounded-xl bg-white ring-1 ring-stone-200 items-center justify-center text-stone-600 mb-3">
+      <div className="rounded-panel border border-hairline bg-canvas px-5 py-8 text-center">
+        <div className="inline-flex w-12 h-12 rounded-panel border border-hairline bg-paper items-center justify-center text-ink-muted mb-3">
           <UploadCloud size={20} />
         </div>
-        <div className="text-[15px] font-medium text-stone-900">
+        <div className="text-[15px] font-medium text-ink">
           CSV-Datei auswählen
         </div>
-        <p className="text-[12.5px] text-stone-500 mt-1.5 max-w-sm mx-auto leading-snug">
+        <p className="text-[12.5px] text-ink-muted mt-1.5 max-w-sm mx-auto leading-snug">
           Beliebige Spaltenbenennung — die KI ordnet die Spalten automatisch
           den richtigen Feldern zu. Trennzeichen (Komma, Semikolon, Tab) werden
           erkannt.
@@ -146,11 +147,12 @@ export const CsvImportModal = ({
             if (f) void onFile(f);
           }}
         />
-        <button
-          type="button"
+        <Button
+          variant="ink"
+          size="md"
           onClick={() => fileRef.current?.click()}
           disabled={analyzing}
-          className="mt-5 inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full bg-stone-900 text-white text-[14px] font-medium hover:bg-stone-800 disabled:opacity-40"
+          className="mt-5"
         >
           {analyzing ? (
             <>
@@ -163,11 +165,11 @@ export const CsvImportModal = ({
               CSV auswählen
             </>
           )}
-        </button>
+        </Button>
       </div>
 
       {error && (
-        <div className="mt-4 flex items-center gap-2 text-sm rounded-lg px-3 py-2 bg-rose-50 ring-1 ring-rose-200 text-rose-700">
+        <div className="mt-4 flex items-center gap-2 text-[13px] rounded-panel px-3 py-2 bg-red-50 border border-red-200 text-red-700">
           <AlertTriangle size={14} /> {error}
         </div>
       )}
@@ -182,23 +184,23 @@ export const CsvImportModal = ({
 
     return (
       <div className="px-6 py-5 space-y-4">
-        <div className="rounded-xl bg-emerald-50 ring-1 ring-emerald-200 px-4 py-3">
-          <div className="flex items-center gap-2 text-[13.5px] font-medium text-emerald-800">
-            <Sparkles size={14} /> KI-Mapping erstellt
+        <div className="rounded-panel border border-hairline bg-canvas px-4 py-3">
+          <div className="flex items-center gap-2 text-[13.5px] font-medium text-ink">
+            <Sparkles size={14} className="text-signal" /> KI-Mapping erstellt
           </div>
           {analysis.reasoning && (
-            <div className="text-[12px] text-emerald-700 mt-1 leading-snug">
+            <div className="text-[12px] text-ink-soft mt-1 leading-snug">
               {analysis.reasoning}
             </div>
           )}
-          <div className="text-[11.5px] text-emerald-700 mt-1.5">
+          <div className="text-[11.5px] text-ink-muted mt-1.5 font-mono tnum">
             Datei: <span className="font-mono">{csvFileName}</span> ·{" "}
             {analysis.total_rows} Zeilen · {analysis.headers.length} Spalten
           </div>
         </div>
 
-        <div className="rounded-xl ring-1 ring-stone-200 overflow-hidden">
-          <div className="grid grid-cols-[1fr_24px_1fr_minmax(0,2fr)] gap-2 items-center px-4 py-2.5 bg-stone-50 border-b border-stone-200 text-[10.5px] uppercase tracking-wider text-stone-500 font-semibold">
+        <div className="rounded-panel border border-hairline overflow-hidden">
+          <div className="grid grid-cols-[1fr_24px_1fr_minmax(0,2fr)] gap-2 items-center px-4 py-2.5 bg-canvas border-b border-hairline th">
             <div>CSV-Spalte</div>
             <div />
             <div>Ziel-Feld</div>
@@ -212,12 +214,12 @@ export const CsvImportModal = ({
             return (
               <div
                 key={h}
-                className="grid grid-cols-[1fr_24px_1fr_minmax(0,2fr)] gap-2 items-center px-4 py-2 border-b border-stone-100 last:border-0"
+                className="grid grid-cols-[1fr_24px_1fr_minmax(0,2fr)] gap-2 items-center px-4 py-2 border-b border-hairline last:border-0"
               >
-                <div className="font-mono text-[12.5px] text-stone-800 truncate">
+                <div className="font-mono text-[12.5px] text-ink truncate">
                   {h}
                 </div>
-                <div className="text-stone-400 flex items-center justify-center">
+                <div className="text-ink-muted flex items-center justify-center">
                   <ArrowRight size={12} />
                 </div>
                 <div>
@@ -226,11 +228,7 @@ export const CsvImportModal = ({
                     onChange={(e) =>
                       setMapping((m) => ({ ...m, [h]: e.target.value || null }))
                     }
-                    className={`w-full h-9 px-2.5 rounded-md text-[13px] bg-white outline-none ${
-                      used > 1
-                        ? "ring-1 ring-amber-300"
-                        : "ring-1 ring-stone-200"
-                    } focus:ring-2 focus:ring-teal-500/40`}
+                    className={`field ${used > 1 ? "border-amber-300" : ""}`}
                   >
                     <option value="">— ignorieren —</option>
                     {fieldOptions.map((f) => (
@@ -241,9 +239,9 @@ export const CsvImportModal = ({
                     ))}
                   </select>
                 </div>
-                <div className="text-[12px] text-stone-500 truncate">
+                <div className="text-[12px] text-ink-muted truncate">
                   {sample || (
-                    <span className="text-stone-300">— kein Beispiel —</span>
+                    <span className="text-ink-muted opacity-50">— kein Beispiel —</span>
                   )}
                 </div>
               </div>
@@ -257,7 +255,7 @@ export const CsvImportModal = ({
           .map((f) => (
             <div
               key={f.key}
-              className="flex items-center gap-2 text-[13px] rounded-lg px-3 py-2 bg-amber-50 ring-1 ring-amber-200 text-amber-900"
+              className="flex items-center gap-2 text-[13px] rounded-panel px-3 py-2 bg-amber-50 border border-amber-200 text-amber-900"
             >
               <AlertTriangle size={14} />
               Pflichtfeld <strong>{f.label}</strong> ist noch keiner Spalte
@@ -266,7 +264,7 @@ export const CsvImportModal = ({
           ))}
 
         {error && (
-          <div className="flex items-center gap-2 text-sm rounded-lg px-3 py-2 bg-rose-50 ring-1 ring-rose-200 text-rose-700">
+          <div className="flex items-center gap-2 text-[13px] rounded-panel px-3 py-2 bg-red-50 border border-red-200 text-red-700">
             <AlertTriangle size={14} /> {error}
           </div>
         )}
@@ -279,16 +277,16 @@ export const CsvImportModal = ({
     const errors = commitResult.results.filter((r) => !r.ok);
     return (
       <div className="px-6 py-6 space-y-4">
-        <div className="rounded-2xl bg-emerald-50 ring-1 ring-emerald-200 px-5 py-4 flex items-center gap-3">
-          <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center shrink-0">
-            <Check size={20} className="text-emerald-700" />
+        <div className="rounded-panel border border-hairline bg-canvas px-5 py-4 flex items-center gap-3">
+          <div className="w-11 h-11 rounded-panel border border-hairline bg-paper flex items-center justify-center shrink-0">
+            <Check size={20} className="text-signal" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-display text-[18px] text-emerald-900 leading-tight">
+            <div className="font-display font-bold text-[18px] text-ink leading-tight">
               {commitResult.inserted} Datensätze importiert
             </div>
             {commitResult.skipped > 0 && (
-              <div className="text-[12.5px] text-emerald-700 mt-0.5">
+              <div className="text-[12.5px] text-ink-muted mt-0.5">
                 {commitResult.skipped} Zeilen übersprungen — siehe unten.
               </div>
             )}
@@ -296,18 +294,18 @@ export const CsvImportModal = ({
         </div>
 
         {errors.length > 0 && (
-          <div className="rounded-xl ring-1 ring-stone-200 overflow-hidden">
-            <div className="px-4 py-2 bg-stone-50 border-b border-stone-200 text-[11px] uppercase tracking-wider text-stone-500 font-semibold">
+          <div className="rounded-panel border border-hairline overflow-hidden">
+            <div className="px-4 py-2 bg-canvas border-b border-hairline th">
               Übersprungene Zeilen
             </div>
             <div className="max-h-48 overflow-auto">
               {errors.map((e) => (
                 <div
                   key={e.row_index}
-                  className="px-4 py-1.5 text-[12.5px] text-stone-700 border-b border-stone-100 last:border-0 flex items-center gap-3"
+                  className="px-4 py-1.5 text-[12.5px] text-ink border-b border-hairline last:border-0 flex items-center gap-3"
                 >
-                  <span className="font-mono text-stone-400">#{e.row_index}</span>
-                  <span className="text-rose-700">{e.error}</span>
+                  <span className="font-mono text-ink-muted tnum">#{e.row_index}</span>
+                  <span className="text-red-700">{e.error}</span>
                 </div>
               ))}
             </div>
@@ -317,7 +315,7 @@ export const CsvImportModal = ({
     );
   };
 
-  // ───── Footer (Action Buttons je Phase) ─────
+  // ───── Footer ─────
   const renderFooter = () => {
     if (commitResult) {
       return (
@@ -325,17 +323,13 @@ export const CsvImportModal = ({
           <button
             type="button"
             onClick={reset}
-            className="text-sm text-stone-500 hover:text-stone-800 px-3"
+            className="text-[13px] text-ink-muted hover:text-ink px-3"
           >
             Weitere CSV importieren
           </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-stone-900 text-white text-sm font-medium hover:bg-stone-800"
-          >
+          <Button variant="ink" size="sm" onClick={onClose}>
             Fertig
-          </button>
+          </Button>
         </>
       );
     }
@@ -345,23 +339,18 @@ export const CsvImportModal = ({
           <button
             type="button"
             onClick={reset}
-            className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800 px-2"
+            className="inline-flex items-center gap-1 text-[13px] text-ink-muted hover:text-ink px-2"
           >
             <ArrowLeft size={13} /> Andere Datei
           </button>
-          <button
-            type="button"
-            onClick={commit}
-            disabled={committing}
-            className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-40"
-          >
+          <Button variant="signal" size="sm" onClick={commit} disabled={committing}>
             {committing ? (
               <Loader2 size={14} className="animate-spin" />
             ) : (
               <Check size={14} />
             )}
             {analysis.total_rows} Datensätze importieren
-          </button>
+          </Button>
         </>
       );
     }
@@ -369,7 +358,7 @@ export const CsvImportModal = ({
       <button
         type="button"
         onClick={onClose}
-        className="text-sm text-stone-500 hover:text-stone-800 px-3"
+        className="text-[13px] text-ink-muted hover:text-ink px-3"
       >
         Abbrechen
       </button>
@@ -380,23 +369,21 @@ export const CsvImportModal = ({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 sm:px-4">
       <button
         type="button"
-        className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-ink/40 backdrop-blur-sm"
         onClick={onClose}
         aria-label="Schließen"
       />
-      <div className="relative w-full sm:max-w-2xl max-h-[92vh] flex flex-col bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl ring-1 ring-stone-200 overflow-hidden">
-        <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100 shrink-0">
+      <div className="relative w-full sm:max-w-2xl max-h-[92vh] flex flex-col bg-paper sm:rounded-card rounded-t-card shadow-panel border border-hairline overflow-hidden">
+        <div className="px-6 py-4 flex items-center justify-between border-b border-hairline shrink-0">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] font-semibold text-teal-700">
-              CSV-Import
-            </div>
-            <h2 className="font-display text-xl tracking-tight font-medium mt-0.5">
+            <div className="kicker text-ink-muted mb-1">CSV-Import</div>
+            <h2 className="font-display font-bold text-[18px] tracking-tight text-ink mt-0.5">
               {title}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full inline-flex items-center justify-center text-stone-500 hover:bg-stone-100"
+            className="w-9 h-9 rounded-btn inline-flex items-center justify-center text-ink-muted hover:bg-canvas"
           >
             <X size={16} />
           </button>
@@ -410,7 +397,7 @@ export const CsvImportModal = ({
             : renderUpload()}
         </div>
 
-        <div className="px-6 py-4 flex items-center justify-end gap-3 border-t border-stone-100 shrink-0">
+        <div className="px-6 py-4 flex items-center justify-end gap-3 border-t border-hairline shrink-0">
           {renderFooter()}
         </div>
       </div>

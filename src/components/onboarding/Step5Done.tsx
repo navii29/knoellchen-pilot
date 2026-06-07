@@ -13,18 +13,16 @@ const Stat = ({
   zero?: boolean;
 }) => (
   <div
-    className={`px-5 py-4 rounded-2xl ring-1 ${
+    className={`px-5 py-4 rounded-card border ${
       zero
-        ? "bg-stone-50 ring-stone-200/70"
-        : "bg-gradient-to-br from-teal-50 to-emerald-50 ring-teal-200/60"
+        ? "bg-canvas border-hairline"
+        : "bg-canvas border-signal/25"
     }`}
   >
-    <div className="font-display text-[36px] leading-none tracking-[-0.02em] font-medium text-stone-900">
+    <div className="font-display font-extrabold text-[36px] leading-none tracking-tightest text-ink tnum">
       {value}
     </div>
-    <div className="mt-1 text-[12.5px] uppercase tracking-[0.08em] text-stone-500 font-medium">
-      {label}
-    </div>
+    <div className="mt-1.5 data-label text-ink-muted">{label}</div>
   </div>
 );
 
@@ -59,16 +57,15 @@ export const Step5Done = ({
         <Stat value={contractCount} label="Vertrag/Verträge" zero={contractCount === 0} />
       </div>
 
-      <div className="rounded-2xl bg-stone-900 text-white p-6 sm:p-7 relative overflow-hidden">
-        <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-teal-400/20 to-emerald-500/20 blur-3xl rounded-full" />
+      {/* dark tip panel — void tone */}
+      <div className="rounded-card bg-void text-on-dark p-6 sm:p-7 relative overflow-hidden">
+        <div className="absolute inset-0 dot-dark opacity-30 [mask-image:radial-gradient(80%_80%_at_90%_110%,#000_20%,transparent_80%)]" />
         <div className="relative">
-          <div className="text-[12px] uppercase tracking-[0.1em] font-semibold text-teal-300 mb-2">
-            Tipp
-          </div>
-          <h3 className="font-display text-[22px] sm:text-[26px] leading-[1.15] tracking-[-0.01em] font-medium">
+          <div className="kicker text-signal mb-3">Tipp</div>
+          <h3 className="font-display font-extrabold text-white text-[20px] sm:text-[24px] leading-[1.12] tracking-tightest">
             Laden Sie jetzt einen Strafzettel hoch — und sehen Sie die KI in Aktion.
           </h3>
-          <p className="mt-3 text-[14.5px] leading-[1.55] text-white/70">
+          <p className="mt-3 text-[14px] leading-[1.55] text-white/60">
             Knöllchen-Pilot liest Aktenzeichen, Tatort, Bußgeld und Frist
             automatisch aus, ordnet den passenden Mietvertrag zu und bereitet
             das Anschreiben an Mieter:in und Behörde vor.

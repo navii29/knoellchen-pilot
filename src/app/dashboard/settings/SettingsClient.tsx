@@ -22,8 +22,9 @@ import {
   Wifi,
 } from "lucide-react";
 import { DEFAULT_RENTAL_TERMS } from "@/lib/rental-terms";
-import { THEME } from "@/lib/theme";
 import type { Organization } from "@/lib/types";
+import { Button } from "@/components/ui/Button";
+import { Panel } from "@/components/ui/Panel";
 
 export const SettingsClient = ({
   org,
@@ -79,12 +80,15 @@ export const SettingsClient = ({
 
   return (
     <>
-      <div className="font-display font-bold text-2xl tracking-tight">Einstellungen</div>
-      <p className="text-sm text-stone-500 mt-1">
-        Diese Daten erscheinen auf allen erstellten PDFs und gesendeten E-Mails.
-      </p>
+      <div className="mb-6">
+        <div className="kicker text-ink-muted mb-2">Leitstelle · Konfiguration</div>
+        <h1 className="font-display font-extrabold text-ink text-[28px] leading-[1.05] tracking-tightest">Einstellungen</h1>
+        <p className="text-[14px] text-ink-muted mt-1.5">
+          Diese Daten erscheinen auf allen erstellten PDFs und gesendeten E-Mails.
+        </p>
+      </div>
 
-      <form onSubmit={submit} className="mt-6 space-y-6">
+      <form onSubmit={submit} className="space-y-6">
         <Section title="Branding" subtitle="Logo für PDFs, Briefkopf und Kundenportal">
           <BrandingCard initialLogoPath={org.logo_path} />
         </Section>
@@ -104,11 +108,11 @@ export const SettingsClient = ({
                   onChange={set("processing_fee")}
                   className="input tabular-nums pr-10"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-ink-muted font-mono">
                   € netto
                 </span>
               </div>
-              <div className="text-[11px] text-stone-500 mt-1">
+              <div className="text-[11px] text-ink-muted mt-1">
                 Standardwert für neue Strafzettel. Im Strafzettel-Detail veränderbar — wird mit 19% MwSt versteuert.
               </div>
             </Field>
@@ -158,24 +162,24 @@ export const SettingsClient = ({
             </Field>
           </div>
 
-          <p className="mt-3 text-xs text-stone-500">
+          <p className="mt-3 text-[12px] text-ink-muted">
             E-Mails an Mieter und Behörden werden von dieser Adresse gesendet.
           </p>
 
-          <label className="mt-5 flex items-start gap-3 p-3 rounded-lg ring-1 ring-stone-200 cursor-pointer">
+          <label className="mt-5 flex items-start gap-3 p-3 rounded-panel border border-hairline cursor-pointer">
             <input
               type="checkbox"
               checked={data.email_automation_enabled}
               onChange={(e) =>
                 setData((d) => ({ ...d, email_automation_enabled: e.target.checked }))
               }
-              className="mt-0.5 w-4 h-4 accent-teal-600"
+              className="mt-0.5 w-4 h-4 accent-signal"
             />
             <div className="flex-1">
-              <div className="font-medium text-sm flex items-center gap-1.5">
+              <div className="font-medium text-[13.5px] flex items-center gap-1.5 text-ink">
                 <Send size={13} /> E-Mail-Automation aktivieren
               </div>
-              <div className="text-xs text-stone-500 mt-1">
+              <div className="text-[12px] text-ink-muted mt-1">
                 Wenn aktiviert: Nach erfolgreicher Auslesung + Match werden Mails als Draft vorbereitet.
                 Versand erfolgt nach manuellem Klick auf &bdquo;An Mieter senden&ldquo; / &bdquo;An Behörde senden&ldquo; auf der Detailseite.
               </div>
@@ -211,38 +215,38 @@ export const SettingsClient = ({
 
         <Link
           href="/dashboard/settings/pricing"
-          className="rounded-xl bg-white ring-1 ring-stone-200 p-6 hover:ring-stone-300 transition flex items-center gap-4 group"
+          className="panel p-6 hover:border-ink/20 transition flex items-center gap-4 group"
         >
-          <div className="w-11 h-11 rounded-xl bg-teal-50 ring-1 ring-teal-200 flex items-center justify-center text-teal-700 shrink-0">
-            <TrendingUp size={18} />
+          <div className="w-11 h-11 rounded-panel border border-hairline bg-canvas flex items-center justify-center text-ink-muted shrink-0">
+            <TrendingUp size={18} strokeWidth={1.75} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-display font-semibold text-stone-900">
+            <div className="font-display font-semibold text-[14px] tracking-tight text-ink">
               Preisregeln & Revenue Management
             </div>
-            <div className="text-xs text-stone-500 mt-0.5 max-w-xl">
+            <div className="text-[12.5px] text-ink-muted mt-0.5 max-w-xl">
               Definiere Saison-, Wochentag- und Nachfrage-Aufschläge. Die App
               schlägt bei jedem Vertrag den optimalen Tagespreis vor.
             </div>
           </div>
           <ChevronRight
             size={16}
-            className="text-stone-400 group-hover:text-stone-700 transition shrink-0"
+            className="text-ink-muted group-hover:text-ink transition shrink-0"
           />
         </Link>
 
         <Link
           href="/dashboard/settings/special-terms"
-          className="rounded-xl bg-white ring-1 ring-stone-200 p-6 hover:ring-stone-300 transition flex items-center gap-4 group"
+          className="panel p-6 hover:border-ink/20 transition flex items-center gap-4 group"
         >
-          <div className="w-11 h-11 rounded-xl bg-amber-50 ring-1 ring-amber-200 flex items-center justify-center text-amber-700 shrink-0">
-            <FileSignature size={18} />
+          <div className="w-11 h-11 rounded-panel border border-hairline bg-canvas flex items-center justify-center text-ink-muted shrink-0">
+            <FileSignature size={18} strokeWidth={1.75} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-display font-semibold text-stone-900">
+            <div className="font-display font-semibold text-[14px] tracking-tight text-ink">
               Sondervereinbarungen-Textbausteine
             </div>
-            <div className="text-xs text-stone-500 mt-0.5 max-w-xl">
+            <div className="text-[12.5px] text-ink-muted mt-0.5 max-w-xl">
               Vordefinierte Vereinbarungen, die bei der Vertragsanlage per
               Checkbox ausgewählt werden und auf Seite 3 des Mietvertrags
               erscheinen.
@@ -250,7 +254,7 @@ export const SettingsClient = ({
           </div>
           <ChevronRight
             size={16}
-            className="text-stone-400 group-hover:text-stone-700 transition shrink-0"
+            className="text-ink-muted group-hover:text-ink transition shrink-0"
           />
         </Link>
 
@@ -260,9 +264,9 @@ export const SettingsClient = ({
         >
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-xs text-stone-500">
+              <div className="flex items-center gap-2 text-[12px] text-ink-muted">
                 <FileSignature size={13} />
-                {data.rental_terms.length.toLocaleString("de-DE")} Zeichen
+                <span className="font-mono tnum">{data.rental_terms.length.toLocaleString("de-DE")}</span> Zeichen
               </div>
               <button
                 type="button"
@@ -276,7 +280,7 @@ export const SettingsClient = ({
                     return;
                   setData((d) => ({ ...d, rental_terms: DEFAULT_RENTAL_TERMS }));
                 }}
-                className="inline-flex items-center gap-1 text-xs text-stone-500 hover:text-stone-900"
+                className="inline-flex items-center gap-1 text-[12px] text-ink-muted hover:text-ink"
               >
                 <RotateCcw size={11} /> Standard wiederherstellen
               </button>
@@ -287,31 +291,26 @@ export const SettingsClient = ({
                 setData((d) => ({ ...d, rental_terms: e.target.value }))
               }
               rows={18}
-              className="input font-mono text-[12.5px] leading-[1.55] resize-y"
+              className="field font-mono text-[12.5px] leading-[1.55] resize-y"
               spellCheck={false}
             />
-            <div className="text-[11px] text-stone-500">
+            <div className="text-[11px] text-ink-muted">
               Diese Vorlage ist ein Standard-Entwurf — bitte vor Live-Gang einmal von einem Anwalt prüfen lassen.
             </div>
           </div>
         </Section>
 
-        {err && <div className="text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2">{err}</div>}
+        {err && <div className="text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-panel px-3 py-2">{err}</div>}
         {msg && (
-          <div className="text-sm text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200 rounded-lg px-3 py-2">
+          <div className="text-[13px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-panel px-3 py-2">
             {msg}
           </div>
         )}
 
         <div className="flex justify-end">
-          <button
-            type="submit"
-            disabled={busy}
-            className="inline-flex items-center gap-1.5 text-white text-sm px-4 py-2 rounded-lg font-medium"
-            style={{ background: THEME.primary }}
-          >
+          <Button type="submit" variant="signal" disabled={busy}>
             {busy ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Speichern
-          </button>
+          </Button>
         </div>
 
         <style jsx>{`
@@ -319,11 +318,13 @@ export const SettingsClient = ({
             width: 100%;
             padding: 0.5rem 0.75rem;
             font-size: 0.875rem;
-            border-radius: 0.5rem;
+            border-radius: 0.375rem;
             outline: none;
-            box-shadow: inset 0 0 0 1px rgb(231 229 228);
+            border: 1px solid var(--hairline);
+            background: #fff;
+            transition: border-color 0.15s;
           }
-          .input:focus { box-shadow: inset 0 0 0 1px rgb(168 162 158); }
+          .input:focus { border-color: rgb(100 100 100 / 0.3); box-shadow: 0 0 0 3px rgb(255 90 31 / 0.1); }
         `}</style>
       </form>
     </>
@@ -339,16 +340,16 @@ const Section = ({
   subtitle?: string;
   children: React.ReactNode;
 }) => (
-  <div className="rounded-xl bg-white ring-1 ring-stone-200 p-6">
-    <div className="font-display font-semibold">{title}</div>
-    {subtitle && <p className="text-xs text-stone-500 mt-0.5">{subtitle}</p>}
+  <Panel>
+    <div className="font-display font-semibold text-[15px] tracking-tight text-ink">{title}</div>
+    {subtitle && <p className="text-[12.5px] text-ink-muted mt-0.5">{subtitle}</p>}
     <div className="mt-5">{children}</div>
-  </div>
+  </Panel>
 );
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <label className="block">
-    <div className="text-[11px] uppercase tracking-wider text-stone-500 font-medium mb-1">{label}</div>
+    <div className="data-label mb-1">{label}</div>
     {children}
   </label>
 );
@@ -438,13 +439,13 @@ const LexOfficeCard = ({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg ring-1 ring-stone-200 bg-stone-50 p-4">
+      <div className="rounded-panel border border-hairline bg-canvas p-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2 text-sm font-medium text-stone-800">
-            <Lock size={14} className="text-stone-500" />
+          <div className="flex items-center gap-2 text-[13.5px] font-medium text-ink">
+            <Lock size={14} className="text-ink-muted" />
             LexOffice API-Key
             {hasKeyLocal && (
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                 <Check size={11} /> Hinterlegt
               </span>
             )}
@@ -454,7 +455,7 @@ const LexOfficeCard = ({
               type="button"
               onClick={removeKey}
               disabled={savingKey}
-              className="text-xs text-stone-500 hover:text-rose-700"
+              className="text-[12px] text-ink-muted hover:text-rose-700"
             >
               Entfernen
             </button>
@@ -467,63 +468,64 @@ const LexOfficeCard = ({
             value={keyInput}
             onChange={(e) => setKeyInput(e.target.value)}
             placeholder={hasKeyLocal ? "•••••••••••••••• (zum Ersetzen neuen Key eingeben)" : "API-Key aus LexOffice einfügen"}
-            className="flex-1 px-3 py-2 rounded-md text-sm bg-white outline-none"
-            style={{ boxShadow: "inset 0 0 0 1px rgb(231 229 228)" }}
+            className="field flex-1"
             autoComplete="off"
           />
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={saveKey}
             disabled={savingKey || keyInput.trim().length === 0}
-            className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md ring-1 ring-stone-200 bg-white hover:bg-stone-100 disabled:opacity-40"
           >
             {savingKey ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
             Speichern
-          </button>
+          </Button>
         </div>
 
-        <div className="mt-2 text-[11px] text-stone-500">
+        <div className="mt-2 text-[11px] text-ink-muted">
           Den API-Key finden Sie in LexOffice unter Mein Konto → Öffentliche API → Schlüssel erstellen. Er wird nur serverseitig verwendet und niemals an den Browser gesendet.
         </div>
 
         {keyMsg && (
-          <div className="mt-2 text-xs text-emerald-700">{keyMsg}</div>
+          <div className="mt-2 text-[12px] text-emerald-700">{keyMsg}</div>
         )}
-        {keyErr && <div className="mt-2 text-xs text-rose-700">{keyErr}</div>}
+        {keyErr && <div className="mt-2 text-[12px] text-rose-700">{keyErr}</div>}
       </div>
 
-      <div className="rounded-lg ring-1 ring-stone-200 p-4">
+      <div className="rounded-panel border border-hairline bg-paper p-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2 text-sm font-medium text-stone-800">
-            <Wifi size={14} className="text-stone-500" />
+          <div className="flex items-center gap-2 text-[13.5px] font-medium text-ink">
+            <Wifi size={14} className="text-ink-muted" />
             Verbindung testen
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={testConnection}
             disabled={!hasKeyLocal || testing}
-            className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md ring-1 ring-stone-200 bg-white hover:bg-stone-50 disabled:opacity-40"
           >
             {testing ? <Loader2 size={13} className="animate-spin" /> : <Wifi size={13} />}
             Test
-          </button>
+          </Button>
         </div>
         {!hasKeyLocal && (
-          <div className="mt-2 text-xs text-stone-500">
+          <div className="mt-2 text-[12px] text-ink-muted">
             Erst API-Key speichern, dann Verbindung prüfen.
           </div>
         )}
         {testErr && (
-          <div className="mt-3 text-sm rounded-md px-3 py-2 bg-rose-50 ring-1 ring-rose-200 text-rose-700">
+          <div className="mt-3 text-[13px] rounded-panel px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700">
             {testErr}
           </div>
         )}
         {testResult && (
-          <div className="mt-3 text-sm rounded-md px-3 py-2 bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800">
+          <div className="mt-3 text-[13px] rounded-panel px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-800">
             <div className="font-medium flex items-center gap-1.5">
               <Check size={14} /> Verbunden mit {testResult.company_name}
             </div>
-            <div className="mt-1 text-xs opacity-90 space-y-0.5">
+            <div className="mt-1 text-[11.5px] opacity-90 space-y-0.5">
               {testResult.tax_number && <div>Steuernummer: {testResult.tax_number}</div>}
               {testResult.vat_id && <div>USt-IdNr.: {testResult.vat_id}</div>}
               <div className="font-mono text-[11px] opacity-70">
@@ -534,19 +536,19 @@ const LexOfficeCard = ({
         )}
       </div>
 
-      <label className="flex items-start gap-3 p-3 rounded-lg ring-1 ring-stone-200 cursor-pointer">
+      <label className="flex items-start gap-3 p-3 rounded-panel border border-hairline cursor-pointer">
         <input
           type="checkbox"
           checked={enabled}
           onChange={(e) => onToggle(e.target.checked)}
           disabled={!hasKeyLocal}
-          className="mt-0.5 w-4 h-4 accent-teal-600 disabled:opacity-40"
+          className="mt-0.5 w-4 h-4 accent-signal disabled:opacity-40"
         />
         <div className="flex-1">
-          <div className="font-medium text-sm flex items-center gap-1.5">
+          <div className="font-medium text-[13.5px] flex items-center gap-1.5 text-ink">
             <Calculator size={13} /> LexOffice-Übertragung aktivieren
           </div>
-          <div className="text-xs text-stone-500 mt-1">
+          <div className="text-[12px] text-ink-muted mt-1">
             Wenn aktiviert: An Verträgen und Strafzetteln erscheint ein Button „An LexOffice übertragen“. Übertragene Dokumente werden in LexOffice als finalisierte Rechnungen angelegt und sind dort unveränderlich. Neue Fahrzeuge werden automatisch als Artikel in LexOffice angelegt.
           </div>
         </div>
@@ -595,45 +597,46 @@ const VehicleBulkSync = ({ disabled }: { disabled: boolean }) => {
   };
 
   return (
-    <div className="rounded-lg ring-1 ring-stone-200 p-4">
+    <div className="rounded-panel border border-hairline bg-paper p-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2 text-sm font-medium text-stone-800">
-          <Calculator size={14} className="text-stone-500" />
+        <div className="flex items-center gap-2 text-[13.5px] font-medium text-ink">
+          <Calculator size={14} className="text-ink-muted" />
           Fahrzeuge nach LexOffice synchronisieren
         </div>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={run}
           disabled={disabled || running}
-          className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md ring-1 ring-stone-200 bg-white hover:bg-stone-50 disabled:opacity-40"
         >
           {running ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
           Jetzt synchronisieren
-        </button>
+        </Button>
       </div>
-      <div className="mt-2 text-xs text-stone-500">
+      <div className="mt-2 text-[12px] text-ink-muted">
         Legt alle noch nicht übertragenen aktiven Fahrzeuge als Artikel
         (Dienstleistung „Tag“) in LexOffice an.
       </div>
       {result && (
-        <div className="mt-3 text-sm rounded-md px-3 py-2 bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800">
+        <div className="mt-3 text-[13px] rounded-panel px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-800">
           <div className="font-medium flex items-center gap-1.5">
             <Check size={14} /> {result.synced} von {result.total} Fahrzeugen synchronisiert
           </div>
           {result.failed > 0 && result.failed_plates?.length ? (
-            <div className="mt-1 text-xs">
+            <div className="mt-1 text-[11.5px]">
               Fehlgeschlagen: {result.failed_plates.join(", ")}
             </div>
           ) : null}
           {result.total === 0 && (
-            <div className="mt-1 text-xs opacity-90">
+            <div className="mt-1 text-[11.5px] opacity-90">
               Keine Fahrzeuge offen — alles bereits synchronisiert.
             </div>
           )}
         </div>
       )}
       {err && (
-        <div className="mt-3 text-sm rounded-md px-3 py-2 bg-rose-50 ring-1 ring-rose-200 text-rose-700">
+        <div className="mt-3 text-[13px] rounded-panel px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700">
           {err}
         </div>
       )}
@@ -732,13 +735,13 @@ const EchoesCard = ({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg ring-1 ring-stone-200 bg-stone-50 p-4">
+      <div className="rounded-panel border border-hairline bg-canvas p-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2 text-sm font-medium text-stone-800">
-            <Lock size={14} className="text-stone-500" />
+          <div className="flex items-center gap-2 text-[13.5px] font-medium text-ink">
+            <Lock size={14} className="text-ink-muted" />
             Echoes API-Key
             {hasKeyLocal && (
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                 <Check size={11} /> Hinterlegt
               </span>
             )}
@@ -748,7 +751,7 @@ const EchoesCard = ({
               type="button"
               onClick={removeKey}
               disabled={savingKey}
-              className="text-xs text-stone-500 hover:text-rose-700"
+              className="text-[12px] text-ink-muted hover:text-rose-700"
             >
               Entfernen
             </button>
@@ -761,60 +764,58 @@ const EchoesCard = ({
             value={keyInput}
             onChange={(e) => setKeyInput(e.target.value)}
             placeholder={hasKeyLocal ? "•••••••••••••••• (zum Ersetzen neuen Key eingeben)" : "API-Key aus Echoes einfügen"}
-            className="flex-1 px-3 py-2 rounded-md text-sm bg-white outline-none"
-            style={{ boxShadow: "inset 0 0 0 1px rgb(231 229 228)" }}
+            className="field flex-1"
             autoComplete="off"
           />
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={saveKey}
             disabled={savingKey || keyInput.trim().length === 0}
-            className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md ring-1 ring-stone-200 bg-white hover:bg-stone-100 disabled:opacity-40"
           >
             {savingKey ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
             Speichern
-          </button>
+          </Button>
         </div>
 
-        <div className="mt-2 text-[11px] text-stone-500">
+        <div className="mt-2 text-[11px] text-ink-muted">
           Den API-Key bekommst du im Echoes-Dashboard unter Account → API. Wird ausschließlich serverseitig verwendet.
         </div>
 
-        {keyMsg && <div className="mt-2 text-xs text-emerald-700">{keyMsg}</div>}
-        {keyErr && <div className="mt-2 text-xs text-rose-700">{keyErr}</div>}
+        {keyMsg && <div className="mt-2 text-[12px] text-emerald-700">{keyMsg}</div>}
+        {keyErr && <div className="mt-2 text-[12px] text-rose-700">{keyErr}</div>}
       </div>
 
       <div className="grid sm:grid-cols-[1fr_auto] gap-3 items-end">
         <label className="block">
-          <div className="text-[11px] uppercase tracking-wider text-stone-500 font-medium mb-1">
-            Echoes Account-ID
-          </div>
+          <div className="data-label mb-1">Echoes Account-ID</div>
           <input
             value={accountId}
             onChange={(e) => onAccountChange(e.target.value)}
             placeholder="z. B. ECHO-12345"
-            className="w-full px-3 py-2 rounded-md text-sm bg-white outline-none"
-            style={{ boxShadow: "inset 0 0 0 1px rgb(231 229 228)" }}
+            className="field"
           />
         </label>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={testConnection}
           disabled={!hasKeyLocal || !accountId.trim() || testing}
-          className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md ring-1 ring-stone-200 bg-white hover:bg-stone-50 disabled:opacity-40"
         >
           {testing ? <Loader2 size={13} className="animate-spin" /> : <Wifi size={13} />}
           Verbindung testen
-        </button>
+        </Button>
       </div>
 
       {testErr && (
-        <div className="text-sm rounded-md px-3 py-2 bg-rose-50 ring-1 ring-rose-200 text-rose-700">
+        <div className="text-[13px] rounded-panel px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700">
           {testErr}
         </div>
       )}
       {testResult && (
-        <div className="text-sm rounded-md px-3 py-2 bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800">
+        <div className="text-[13px] rounded-panel px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-800">
           <div className="font-medium flex items-center gap-1.5">
             <Check size={14} /> Verbindung erfolgreich · {testResult.device_count} Tracker
             {testResult.online_count != null && (
@@ -822,7 +823,7 @@ const EchoesCard = ({
             )}
           </div>
           {testResult.sample && testResult.sample.length > 0 && (
-            <ul className="mt-2 space-y-0.5 text-xs opacity-90 font-mono">
+            <ul className="mt-2 space-y-0.5 text-[11.5px] opacity-90 font-mono">
               {testResult.sample.map((d) => (
                 <li key={d.id}>
                   {d.id} — {d.label}
@@ -833,26 +834,26 @@ const EchoesCard = ({
             </ul>
           )}
           {stubWarning && (
-            <div className="mt-2 text-[11px] text-amber-800 bg-amber-50 ring-1 ring-amber-200 rounded px-2 py-1">
+            <div className="mt-2 text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1">
               ⚠ {stubWarning}
             </div>
           )}
         </div>
       )}
 
-      <label className="flex items-start gap-3 p-3 rounded-lg ring-1 ring-stone-200 cursor-pointer">
+      <label className="flex items-start gap-3 p-3 rounded-panel border border-hairline cursor-pointer">
         <input
           type="checkbox"
           checked={enabled}
           onChange={(e) => onToggle(e.target.checked)}
           disabled={!hasKeyLocal || !accountId.trim()}
-          className="mt-0.5 w-4 h-4 accent-teal-600 disabled:opacity-40"
+          className="mt-0.5 w-4 h-4 accent-signal disabled:opacity-40"
         />
         <div className="flex-1">
-          <div className="font-medium text-sm flex items-center gap-1.5">
+          <div className="font-medium text-[13.5px] flex items-center gap-1.5 text-ink">
             <MapPin size={13} /> GPS-Tracking aktivieren
           </div>
-          <div className="text-xs text-stone-500 mt-1">
+          <div className="text-[12px] text-ink-muted mt-1">
             Wenn aktiviert: An jedem Fahrzeug mit hinterlegter Tracker-ID erscheint eine Standort-Karte. Über die Sync-Funktion können alle Positionen aktualisiert werden.
           </div>
         </div>
@@ -874,7 +875,7 @@ const InboundCard = ({ inboundEmail }: { inboundEmail: string | null }) => {
 
   if (!inboundEmail) {
     return (
-      <div className="rounded-lg ring-1 ring-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+      <div className="rounded-panel border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
         Diese Organisation hat noch keine Inbound-Adresse. Bitte Migration{" "}
         <span className="font-mono">002_email_automation.sql</span> einspielen und Org neu speichern.
       </div>
@@ -882,27 +883,26 @@ const InboundCard = ({ inboundEmail }: { inboundEmail: string | null }) => {
   }
 
   return (
-    <div className="rounded-lg ring-1 ring-stone-200 bg-stone-50 p-4">
-      <div className="text-[11px] uppercase tracking-wider text-stone-500 font-medium mb-2">
-        Ihre Strafzettel-Adresse
-      </div>
+    <div className="rounded-panel border border-hairline bg-canvas p-4">
+      <div className="data-label mb-2">Ihre Strafzettel-Adresse</div>
       <div className="flex items-center gap-2">
-        <code className="flex-1 px-3 py-2 rounded-md bg-white ring-1 ring-stone-200 font-mono text-sm">
+        <code className="flex-1 px-3 py-2 rounded-input bg-paper border border-hairline font-mono text-[13px] text-ink">
           {inboundEmail}
         </code>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={copy}
-          className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md ring-1 ring-stone-200 bg-white hover:bg-stone-50"
         >
           {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
           {copied ? "Kopiert" : "Kopieren"}
-        </button>
+        </Button>
       </div>
       <button
         type="button"
         onClick={() => setShowHelp((v) => !v)}
-        className="mt-3 inline-flex items-center gap-1 text-xs text-stone-600 hover:text-stone-900"
+        className="mt-3 inline-flex items-center gap-1 text-[12px] text-ink-soft hover:text-ink"
       >
         <ChevronDown
           size={12}
@@ -912,7 +912,7 @@ const InboundCard = ({ inboundEmail }: { inboundEmail: string | null }) => {
         So richten Sie die Weiterleitung ein
       </button>
       {showHelp && (
-        <div className="mt-3 text-xs text-stone-600 leading-relaxed space-y-2 bg-white rounded-md p-3 ring-1 ring-stone-200">
+        <div className="mt-3 text-[12px] text-ink-soft leading-relaxed space-y-2 bg-paper rounded-panel p-3 border border-hairline">
           <div>
             <strong>Gmail:</strong> Einstellungen → Weiterleitung und POP/IMAP → Weiterleitungsadresse
             hinzufügen → <span className="font-mono">{inboundEmail}</span> → bestätigen → Filter erstellen
@@ -922,7 +922,7 @@ const InboundCard = ({ inboundEmail }: { inboundEmail: string | null }) => {
             <strong>Outlook:</strong> Einstellungen → Mail → Weiterleitung → Weiterleiten an{" "}
             <span className="font-mono">{inboundEmail}</span>.
           </div>
-          <div className="text-stone-500">
+          <div className="text-ink-muted">
             Tipp: Nutzen Sie eine separate Weiterleitungsregel nur für Behörden-Absender, damit private
             Mails nicht aus Versehen verarbeitet werden.
           </div>
@@ -1004,8 +1004,8 @@ const BrandingCard = ({ initialLogoPath }: { initialLogoPath: string | null }) =
   return (
     <div>
       {url ? (
-        <div className="flex items-center gap-5 p-5 rounded-xl ring-1 ring-stone-200 bg-stone-50">
-          <div className="w-28 h-20 flex items-center justify-center bg-white rounded-lg ring-1 ring-stone-200 overflow-hidden">
+        <div className="flex items-center gap-5 p-5 rounded-panel border border-hairline bg-canvas">
+          <div className="w-28 h-20 flex items-center justify-center bg-paper rounded-panel border border-hairline overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={url}
@@ -1014,15 +1014,13 @@ const BrandingCard = ({ initialLogoPath }: { initialLogoPath: string | null }) =
             />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-medium text-sm">Logo aktiv</div>
-            <div className="text-xs text-stone-500 mt-0.5">
+            <div className="font-medium text-[13.5px] text-ink">Logo aktiv</div>
+            <div className="text-[12px] text-ink-muted mt-0.5">
               Erscheint zentriert oben auf jeder Vertragsseite und im Kundenportal.
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <label
-              className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg ring-1 ring-stone-300 bg-white text-stone-700 hover:bg-stone-100 cursor-pointer"
-            >
+            <label className="inline-flex items-center gap-1.5 h-8 px-3 text-[13px] font-medium rounded-btn text-ink-soft hover:bg-ink/5 border border-transparent cursor-pointer transition-colors">
               {busy ? (
                 <Loader2 size={13} className="animate-spin" />
               ) : (
@@ -1044,7 +1042,7 @@ const BrandingCard = ({ initialLogoPath }: { initialLogoPath: string | null }) =
               type="button"
               onClick={() => void remove()}
               disabled={busy}
-              className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-stone-500 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+              className="inline-flex items-center justify-center w-8 h-8 rounded-btn text-ink-muted hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
               aria-label="Logo entfernen"
             >
               <Trash2 size={14} />
@@ -1059,10 +1057,10 @@ const BrandingCard = ({ initialLogoPath }: { initialLogoPath: string | null }) =
           }}
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
-          className={`block rounded-xl border-2 border-dashed p-8 text-center cursor-pointer transition ${
+          className={`block rounded-card border-2 border-dashed p-8 text-center cursor-pointer transition ${
             dragging
-              ? "border-teal-500 bg-teal-50"
-              : "border-stone-300 hover:border-stone-400 bg-stone-50"
+              ? "border-signal bg-signal/5"
+              : "border-hairline hover:border-ink/20 bg-canvas"
           }`}
         >
           <input
@@ -1075,20 +1073,20 @@ const BrandingCard = ({ initialLogoPath }: { initialLogoPath: string | null }) =
             }}
             disabled={busy}
           />
-          <div className="w-12 h-12 mx-auto rounded-xl bg-white ring-1 ring-stone-200 flex items-center justify-center text-stone-500">
+          <div className="w-12 h-12 mx-auto rounded-panel border border-hairline bg-paper flex items-center justify-center text-ink-muted">
             {busy ? <Loader2 size={20} className="animate-spin" /> : <ImageIcon size={20} />}
           </div>
-          <div className="font-medium text-sm mt-3">
+          <div className="font-display font-semibold text-[14px] tracking-tight text-ink mt-3">
             {busy ? "Lade hoch…" : "Logo hochladen"}
           </div>
-          <div className="text-xs text-stone-500 mt-1">
+          <div className="text-[12.5px] text-ink-muted mt-1">
             Drag &amp; Drop oder klicken — PNG, JPG oder SVG, max. 2 MB
           </div>
         </label>
       )}
 
       {err && (
-        <div className="mt-3 text-xs text-rose-700 bg-rose-50 ring-1 ring-rose-200 rounded-lg px-3 py-2">
+        <div className="mt-3 text-[12px] text-rose-700 bg-rose-50 border border-rose-200 rounded-panel px-3 py-2">
           {err}
         </div>
       )}

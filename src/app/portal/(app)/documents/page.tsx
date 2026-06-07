@@ -2,6 +2,7 @@ import { Download, FileText } from "lucide-react";
 import { getPortalCustomer } from "@/lib/portal-auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { fmtDate } from "@/lib/utils";
+import { Plate } from "@/components/ui/Plate";
 
 export const dynamic = "force-dynamic";
 
@@ -71,43 +72,40 @@ export default async function PortalDocumentsPage() {
 
   return (
     <div className="px-5 py-3 space-y-3">
-      <h1 className="font-display text-[22px] tracking-tight font-medium text-stone-900 mb-1">
+      <h1 className="font-display text-[22px] tracking-tightest font-bold text-ink mb-1">
         Dokumente
       </h1>
 
       {docs.length === 0 ? (
-        <div className="rounded-2xl bg-white ring-1 ring-stone-200 px-5 py-8 text-center">
-          <FileText size={24} className="mx-auto text-stone-300 mb-2" />
-          <div className="text-sm text-stone-500">Noch keine Dokumente vorhanden.</div>
+        <div className="bg-paper border border-hairline rounded-card shadow-panel px-5 py-8 text-center">
+          <FileText size={22} className="mx-auto text-ink-muted mb-2" />
+          <div className="text-[13px] text-ink-muted">Noch keine Dokumente vorhanden.</div>
         </div>
       ) : (
-        <div className="rounded-2xl bg-white ring-1 ring-stone-200 divide-y divide-stone-100 overflow-hidden">
+        <div className="bg-paper border border-hairline rounded-card shadow-panel divide-y divide-hairline overflow-hidden">
           {docs.map((d, i) => (
             <a
               key={`${d.url}-${i}`}
               href={d.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 px-4 py-3 hover:bg-stone-50"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-canvas transition-colors"
             >
-              <div className="w-9 h-9 rounded-lg bg-stone-100 flex items-center justify-center shrink-0">
-                <FileText size={15} className="text-stone-600" />
+              <div className="w-9 h-9 rounded-panel bg-canvas border border-hairline flex items-center justify-center shrink-0">
+                <FileText size={14} className="text-ink-muted" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[14px] font-medium text-stone-900 truncate">
+                <div className="text-[14px] font-medium text-ink truncate">
                   {d.title}
                 </div>
-                <div className="text-[12px] text-stone-500 mt-0.5">
+                <div className="flex items-center gap-1.5 mt-0.5">
                   {d.subtitle && (
-                    <>
-                      <span className="font-mono">{d.subtitle}</span>
-                      <span className="mx-1.5">·</span>
-                    </>
+                    <Plate value={d.subtitle} size="sm" />
                   )}
-                  <span className="tabular-nums">{fmtDate(d.date)}</span>
+                  <span className="text-[12px] text-ink-muted font-mono tnum">{fmtDate(d.date)}</span>
                 </div>
               </div>
-              <Download size={14} className="text-stone-400 shrink-0" />
+              <Download size={13} className="text-ink-muted shrink-0" />
             </a>
           ))}
         </div>

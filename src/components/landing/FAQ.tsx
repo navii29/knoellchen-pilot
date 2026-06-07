@@ -1,36 +1,40 @@
 "use client";
 
 import { useState } from "react";
-import { FadeUp } from "./FadeUp";
+import { Plus, Minus } from "lucide-react";
 
-const faqs = [
+const FAQS = [
   {
-    q: "Wie genau ist die KI beim Auslesen von Strafzetteln?",
-    a: "Knöllchen-Pilot setzt auf Claude Sonnet 4.6 mit Vision-Capabilities. Bei deutschen Bußgeldbescheiden und Anhörungsbögen erreichen wir in unseren Tests Erkennungsraten von rund 95 %. Jedes ausgelesene Dokument bekommt einen Confidence-Wert, und vor dem Versand geben Sie es frei — unklare Fälle prüfen Sie also gezielt, bevor etwas rausgeht.",
+    q: "Wo liegen meine Daten — ist das DSGVO-konform?",
+    a: "Alle Daten liegen verschlüsselt auf Servern in der EU (Supabase EU-Region, Deutschland). Wir arbeiten mit AV-Vertrag, Auskunfts- und Löschrechten nach DSGVO. Ihre Kunden- und Buchungsdaten werden niemals zum Training von KI-Modellen verwendet.",
   },
   {
-    q: "Was passiert mit meinen Daten? Ist das DSGVO-konform?",
-    a: "Alle Daten liegen verschlüsselt in deutschen Rechenzentren bei Supabase EU. Wir sind vollständig DSGVO-konform, mit AV-Vertrag, Lösch- und Auskunftsrechten. Ihre Kundendaten werden niemals zum Training von KI-Modellen verwendet.",
+    q: "Wie funktioniert die KI-Auslesung von Strafzetteln genau?",
+    a: "Knöllchen-Pilot nutzt Claude Vision (Anthropic) um Bußgeldbescheide und Anhörungsbögen als Bild oder PDF auszulesen. Die KI extrahiert Kennzeichen, Tatzeit, Tatort, Behörde und Betrag — und gibt einen Confidence-Wert zurück. Unter 80 % markiert die Leitstelle den Fall zur manuellen Prüfung. Der Mensch entscheidet, bevor irgendetwas rausgeht.",
   },
   {
-    q: "Kann ich Knöllchen-Pilot mit meiner bestehenden Software verbinden?",
-    a: "Ja. Wir haben fertige Integrationen für LexOffice (Buchhaltung), Echoes.solutions (GPS-Tracking), Stripe (Zahlungen) und Mailgun (E-Mail-Inbound). Über unsere REST-API können Sie zudem eigene Anbindungen bauen — Webhooks für alle wichtigen Events sind dabei.",
+    q: "Sind Stripe-Zahlung und E-Mail-Inbound schon live?",
+    a: "Noch nicht. Stripe-Zahlungen und automatischer E-Mail-Inbound (Mailgun-Webhook) sind in Entwicklung und werden bald freigeschaltet. Aktuell läuft die Abrechnung per SEPA-Überweisung, Strafzettel werden manuell hochgeladen. Wir halten Sie per In-App-Hinweis auf dem Laufenden.",
   },
   {
-    q: "Wie lange dauert das Onboarding?",
-    a: "In den meisten Fällen sind Sie in 30 Minuten startklar. Sie laden Ihre Fahrzeuge und Buchungen per CSV hoch — oder lassen die KI Ihre bestehenden PDFs auslesen. Beim Enterprise-Plan begleiten wir Sie persönlich durch den gesamten Prozess.",
+    q: "Gibt es eine Mindestlaufzeit oder Testphase?",
+    a: "Nein. Sie können Knöllchen-Pilot 14 Tage lang ohne Kreditkarte kostenlos testen. Danach wählen Sie einen Tarif — alle Tarife sind monatlich kündbar, ohne Mindestlaufzeit. Beim Enterprise-Plan sprechen wir individuelle Konditionen ab.",
   },
   {
-    q: "Was kostet eine KI-Auslesung wirklich?",
-    a: "Die Auslesung eines Strafzettels über Claude Vision kostet uns ca. 2 Cent pro Dokument. Im Starter- und Professional-Plan sind großzügige Kontingente enthalten — der Enterprise-Plan hat keine Begrenzung. Sie zahlen einen Pauschalpreis pro Monat, keine versteckten API-Kosten.",
+    q: "Welchen Support bieten Sie an?",
+    a: "Starter-Kunden erhalten E-Mail-Support mit Antwort innerhalb von einem Werktag. Pro-Kunden werden priorisiert behandelt. Enterprise-Kunden bekommen einen dedizierten Account-Manager und optional ein SLA. Wir sind ein deutsches Team — kein Outsourcing.",
   },
   {
-    q: "Kann ich jederzeit kündigen?",
-    a: "Ja. Alle Pläne sind monatlich kündbar, ohne Mindestlaufzeit. Beim Enterprise-Plan haben wir flexible Konditionen — sprechen Sie mit unserem Vertrieb.",
+    q: "Kann ich mehrere Standorte oder Mandanten verwalten?",
+    a: "Multi-Mandanten-Fähigkeit ist ab dem Enterprise-Plan verfügbar. Jeder Standort hat dann seine eigene Organisation, eigene Nutzer, Preise und Dokumente — vollständig getrennt. Für einzelne Vermietungen mit einem Standort reicht Starter oder Pro.",
+  },
+  {
+    q: "Was passiert, wenn die KI einen Strafzettel falsch ausliest?",
+    a: "Vor jedem Versand sehen Sie die ausgelesenen Daten im Überblick — Felder mit niedrigem Confidence-Wert sind hervorgehoben. Sie korrigieren, was nötig ist, und geben dann frei. Die Leitstelle schickt niemals automatisch etwas raus, ohne Ihre Freigabe.",
   },
 ];
 
-const Item = ({
+const AccordionItem = ({
   q,
   a,
   open,
@@ -40,67 +44,67 @@ const Item = ({
   a: string;
   open: boolean;
   onToggle: () => void;
-}) => {
-  return (
-    <div className="border-b border-black/[0.08]">
-      <button
-        onClick={onToggle}
-        className="w-full text-left flex items-center justify-between gap-4 sm:gap-6 py-5 sm:py-6 group min-h-[60px]"
-      >
-        <span
-          className={`text-[15.5px] sm:text-[19px] font-medium tracking-[-0.01em] transition-colors leading-snug ${
-            open ? "text-stone-900" : "text-stone-800 group-hover:text-stone-900"
-          }`}
-        >
-          {q}
-        </span>
-        <span
-          className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-            open ? "bg-stone-900 text-white rotate-45" : "bg-stone-100 text-stone-700"
-          }`}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </span>
-      </button>
-      <div
-        className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+}) => (
+  <div className="border-b border-hairline last:border-b-0">
+    <button
+      onClick={onToggle}
+      className="w-full text-left flex items-start justify-between gap-4 py-5 group"
+      aria-expanded={open}
+    >
+      <span
+        className={`font-display font-bold text-[15.5px] lg:text-[17px] leading-snug tracking-tight transition-colors ${
+          open ? "text-ink" : "text-ink group-hover:text-ink"
         }`}
       >
-        <div className="overflow-hidden">
-          <p className="pb-5 sm:pb-6 pr-2 sm:pr-12 text-[14.5px] sm:text-[15.5px] leading-[1.6] text-stone-600">{a}</p>
-        </div>
+        {q}
+      </span>
+      <span
+        className={`shrink-0 mt-0.5 w-7 h-7 rounded-panel border flex items-center justify-center transition-colors ${
+          open
+            ? "border-signal bg-signal text-white"
+            : "border-hairline bg-canvas text-ink-muted"
+        }`}
+      >
+        {open ? (
+          <Minus size={12} strokeWidth={2.5} />
+        ) : (
+          <Plus size={12} strokeWidth={2.5} />
+        )}
+      </span>
+    </button>
+    <div
+      className={`grid transition-[grid-template-rows] duration-200 ease-out ${
+        open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+      }`}
+    >
+      <div className="overflow-hidden">
+        <p className="pb-5 pr-10 text-[14px] leading-relaxed text-ink-soft">{a}</p>
       </div>
     </div>
-  );
-};
+  </div>
+);
 
 export const FAQ = () => {
   const [openIdx, setOpenIdx] = useState(0);
-  return (
-    <section id="faq" className="bg-stone-50 py-20 sm:py-28 lg:py-36">
-      <div className="max-w-4xl mx-auto px-4 sm:px-8 lg:px-12">
-        <FadeUp>
-          <div className="text-center mb-10 sm:mb-14">
-            <div className="inline-flex items-center gap-2 px-3 h-7 rounded-full bg-white ring-1 ring-black/[0.06] text-[12px] text-stone-600 mb-5">
-              FAQ
-            </div>
-            <h2
-              className="font-display text-stone-900 leading-[1.05] tracking-[-0.03em] font-medium text-balance"
-              style={{ fontSize: "clamp(32px, 8vw, 64px)" }}
-            >
-              Häufige Fragen.
-            </h2>
-          </div>
-        </FadeUp>
 
-        <FadeUp delay={120}>
-          <div className="bg-white rounded-2xl ring-1 ring-black/[0.06] px-5 sm:px-8">
-            {faqs.map((f, i) => (
-              <Item
+  return (
+    <section id="faq" className="bg-canvas border-t border-hairline">
+      <div className="max-w-wide mx-auto px-5 lg:px-8 py-20 lg:py-28">
+        {/* header */}
+        <div className="max-w-2xl mb-12">
+          <span className="kicker text-ink-muted">FAQ</span>
+          <h2 className="mt-4 font-display font-extrabold text-[28px] lg:text-[38px] text-ink leading-tight tracking-tightest">
+            Häufige Fragen.
+            <br />
+            <span className="text-ink-muted">Klare Antworten.</span>
+          </h2>
+        </div>
+
+        {/* accordion */}
+        <div className="max-w-3xl rounded-card border border-hairline bg-paper shadow-panel overflow-hidden">
+          <div className="divide-y divide-hairline px-6">
+            {FAQS.map((f, i) => (
+              <AccordionItem
                 key={f.q}
                 q={f.q}
                 a={f.a}
@@ -109,7 +113,7 @@ export const FAQ = () => {
               />
             ))}
           </div>
-        </FadeUp>
+        </div>
       </div>
     </section>
   );

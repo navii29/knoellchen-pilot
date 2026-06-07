@@ -95,12 +95,12 @@ export const PhotoGrid = ({
             type="button"
             onClick={() => fileRefs.current[p.key]?.click()}
             disabled={isUploading}
-            className={`relative rounded-2xl ring-1 px-3 py-4 text-left transition-all ${
+            className={`relative rounded-card border px-3 py-4 text-left transition-all ${
               isUploaded
-                ? "bg-emerald-50 ring-emerald-200"
+                ? "bg-canvas border-hairline"
                 : isError
-                ? "bg-rose-50 ring-rose-200"
-                : "bg-white ring-stone-200 hover:ring-stone-300"
+                ? "bg-rose-50 border-rose-200"
+                : "bg-paper border-hairline hover:border-ink/20"
             } disabled:opacity-60`}
           >
             <input
@@ -118,12 +118,12 @@ export const PhotoGrid = ({
             />
             <div className="flex items-center gap-2.5">
               <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                className={`w-9 h-9 rounded-panel flex items-center justify-center shrink-0 ${
                   isUploaded
-                    ? "bg-emerald-100 text-emerald-700"
+                    ? "bg-paper border border-hairline text-signal"
                     : isError
-                    ? "bg-rose-100 text-rose-700"
-                    : "bg-stone-100 text-stone-600"
+                    ? "bg-rose-100 border-rose-200 text-rose-700"
+                    : "bg-canvas border border-hairline text-ink-muted"
                 }`}
               >
                 {isUploading ? (
@@ -137,13 +137,13 @@ export const PhotoGrid = ({
                 )}
               </div>
               <div className="min-w-0">
-                <div className="text-[14px] font-medium text-stone-900 leading-tight">
+                <div className="text-[13px] font-medium text-ink leading-tight">
                   {p.label}
                 </div>
                 <div
-                  className={`text-[11.5px] mt-0.5 ${
-                    isError ? "text-rose-700" : "text-stone-500"
-                  } leading-tight truncate`}
+                  className={`text-[11px] mt-0.5 leading-tight truncate ${
+                    isError ? "text-rose-700" : "text-ink-muted"
+                  }`}
                 >
                   {isUploaded
                     ? "Hochgeladen"

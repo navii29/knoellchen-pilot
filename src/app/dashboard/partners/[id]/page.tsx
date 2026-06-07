@@ -14,6 +14,11 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Panel, PanelHeader } from "@/components/ui/Panel";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ButtonLink } from "@/components/ui/Button";
+import { Plate } from "@/components/ui/Plate";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import {
   COMMISSION_TYPE_META,
@@ -69,7 +74,6 @@ export default async function PartnerDetailPage({
   >;
   const contractRows = (contracts ?? []) as unknown as PartnerContractRow[];
 
-  // Provisions-Summe nach Zeitraum
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -103,47 +107,21 @@ export default async function PartnerDetailPage({
   return (
     <>
       <Topbar section={`Partner · ${p.name}`} />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
+      <div className="flex-1 overflow-auto scroll-thin bg-canvas">
         <div className="max-w-5xl mx-auto p-4 md:p-10">
           <Link
             href="/dashboard/partners"
-            className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+            className="inline-flex items-center gap-1.5 text-[13px] text-ink-muted hover:text-ink mb-5"
           >
             <ArrowLeft size={14} /> Zurück zu Partner
           </Link>
 
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span
-                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium"
-                  style={{
-                    background: meta.bg,
-                    color: meta.text,
-                    boxShadow: `inset 0 0 0 1px ${meta.ring}`,
-                  }}
-                >
-                  <span
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{ background: meta.color }}
-                  />
-                  {meta.label}
-                </span>
-                {!p.active && (
-                  <span className="text-[10.5px] uppercase tracking-wider text-stone-400">
-                    inaktiv
-                  </span>
-                )}
-              </div>
-              <h1 className="font-display font-bold text-2xl md:text-3xl tracking-tight">
-                {p.name}
-              </h1>
-              {p.contact_name && (
-                <div className="text-sm text-stone-500 mt-0.5">{p.contact_name}</div>
-              )}
-            </div>
-            <PartnerActions partnerId={p.id} />
-          </div>
+          <PageHeader
+            kicker={[meta.label, !p.active ? "· inaktiv" : ""].filter(Boolean).join(" ")}
+            title={p.name}
+            description={p.contact_name || undefined}
+            actions={<PartnerActions partnerId={p.id} />}
+          />
 
           {/* Provisions-Summary */}
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -153,12 +131,13 @@ export default async function PartnerDetailPage({
           </div>
 
           <div className="mt-3">
-            <Link
+            <ButtonLink
               href={`/dashboard/partners/${p.id}/invoice`}
-              className="inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-md bg-stone-900 text-white font-medium hover:bg-stone-800"
+              variant="ink"
+              size="sm"
             >
               <Receipt size={14} /> Provisionsabrechnung erstellen
-            </Link>
+            </ButtonLink>
           </div>
 
           {/* Stammdaten + Provision */}
@@ -170,7 +149,7 @@ export default async function PartnerDetailPage({
               />
               <Row label="Default-Wert" value={fmtCommissionDefault()} />
               {p.commission_type !== "margin" && (
-                <div className="text-[11.5px] text-stone-500 mt-1.5 leading-snug">
+                <div className="text-[11.5px] text-ink-muted mt-1.5 leading-snug">
                   {COMMISSION_TYPE_META[p.commission_type].description}
                 </div>
               )}
@@ -183,7 +162,7 @@ export default async function PartnerDetailPage({
                   label="Telefon"
                   value={
                     <span className="inline-flex items-center gap-1.5">
-                      <Phone size={11} className="text-stone-400" /> {p.phone}
+                      <Phone size={11} className="text-ink-muted" /> {p.phone}
                     </span>
                   }
                 />
@@ -193,7 +172,7 @@ export default async function PartnerDetailPage({
                   label="Adresse"
                   value={
                     <span className="inline-flex items-start gap-1.5">
-                      <MapPin size={11} className="text-stone-400 mt-1" />
+                      <MapPin size={11} className="text-ink-muted mt-1" />
                       <span className="whitespace-pre-line">{p.address}</span>
                     </span>
                   }
@@ -207,18 +186,20 @@ export default async function PartnerDetailPage({
 
           {/* Fahrzeug-Preise */}
           <div className="mt-6">
-            <div className="text-xs uppercase tracking-wider text-stone-500 font-medium mb-2 flex items-center gap-2">
-              <Car size={12} /> Fahrzeuge mit Preisen für diesen Partner ({pricingRows.length})
-            </div>
-            <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+            <Panel flush>
+              <PanelHeader
+                Icon={Car}
+                title={`Fahrzeuge mit Preisen für diesen Partner (${pricingRows.length})`}
+              />
               {pricingRows.length === 0 ? (
-                <div className="px-5 py-8 text-center text-sm text-stone-500">
-                  Noch keine Fahrzeug-Preise hinterlegt. Im Fahrzeug-Detail unter
-                  „Vertriebspartner-Preise“.
-                </div>
+                <EmptyState
+                  Icon={Car}
+                  title="Noch keine Fahrzeug-Preise hinterlegt."
+                  description={'Im Fahrzeug-Detail unter „Vertriebspartner-Preise".'}
+                />
               ) : (
                 <>
-                  <div className="grid grid-cols-[140px_1fr_120px_120px_100px_24px] items-center gap-3 px-5 py-2.5 bg-stone-50 border-b border-stone-100 text-[10.5px] uppercase tracking-wider text-stone-500 font-semibold">
+                  <div className="grid grid-cols-[140px_1fr_120px_120px_100px_24px] items-center gap-3 px-5 py-2.5 border-b border-hairline bg-canvas/60 th">
                     <span>Kennzeichen</span>
                     <span>Fahrzeug</span>
                     <span className="text-right">Einstand/Tag</span>
@@ -242,76 +223,78 @@ export default async function PartnerDetailPage({
                       <Link
                         key={row.id}
                         href={`/dashboard/vehicles/${v.id}`}
-                        className="grid grid-cols-[140px_1fr_120px_120px_100px_24px] items-center gap-3 px-5 py-2.5 hover:bg-stone-50 border-b border-stone-100 last:border-0"
+                        className="grid grid-cols-[140px_1fr_120px_120px_100px_24px] items-center gap-3 px-5 py-2.5 hover:bg-canvas border-b border-hairline last:border-0 transition-colors"
                       >
-                        <span className="font-mono text-sm font-semibold text-stone-900">
-                          {v.plate}
-                        </span>
-                        <span className="text-sm text-stone-700 truncate">
+                        <Plate value={v.plate} size="sm" />
+                        <span className="text-[13.5px] text-ink truncate">
                           {[v.manufacturer, v.model].filter(Boolean).join(" ") ||
                             v.vehicle_type ||
                             "—"}
                         </span>
-                        <span className="text-sm tabular-nums text-stone-700 text-right">
+                        <span className="font-mono tnum text-[13px] text-ink-soft text-right">
                           {fmtEur(Number(row.purchase_price))}
                         </span>
-                        <span className="text-sm tabular-nums text-stone-900 text-right font-medium">
+                        <span className="font-mono tnum text-[13px] text-ink text-right font-medium">
                           {fmtEur(Number(row.selling_price))}
                         </span>
                         <span
-                          className={`text-sm tabular-nums text-right font-semibold ${
-                            margin > 0 ? "text-emerald-700" : "text-stone-400"
+                          className={`font-mono tnum text-[13px] text-right font-semibold ${
+                            margin > 0 ? "text-ink" : "text-ink-muted"
                           }`}
                         >
                           {fmtEur(margin)}
                         </span>
-                        <ChevronRight size={14} className="text-stone-300" />
+                        <ChevronRight size={14} className="text-ink-muted" />
                       </Link>
                     );
                   })}
                 </>
               )}
-            </div>
+            </Panel>
           </div>
 
           {/* Verträge */}
           <div className="mt-6">
-            <div className="text-xs uppercase tracking-wider text-stone-500 font-medium mb-2 flex items-center gap-2">
-              <FileSignature size={12} /> Verträge über diesen Partner ({contractRows.length})
-            </div>
-            <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+            <Panel flush>
+              <PanelHeader
+                Icon={FileSignature}
+                title={`Verträge über diesen Partner (${contractRows.length})`}
+              />
               {contractRows.length === 0 ? (
-                <div className="px-5 py-8 text-center text-sm text-stone-500">
-                  Noch keine Verträge mit diesem Partner.
-                </div>
+                <EmptyState
+                  Icon={FileSignature}
+                  title="Noch keine Verträge mit diesem Partner."
+                />
               ) : (
                 contractRows.map((c) => (
                   <Link
                     key={c.id}
                     href={`/dashboard/contracts/${c.id}`}
-                    className="grid grid-cols-[140px_1fr_180px_140px_100px_24px] items-center gap-3 px-5 py-3 hover:bg-stone-50 border-b border-stone-100 last:border-0"
+                    className="grid grid-cols-[140px_1fr_140px_140px_100px_24px] items-center gap-3 px-5 py-3 hover:bg-canvas border-b border-hairline last:border-0 transition-colors"
                   >
-                    <span className="font-mono text-xs text-stone-700">
+                    <span className="font-mono text-[12px] text-ink-muted tnum">
                       {c.contract_nr}
                     </span>
-                    <span className="text-sm text-stone-700 truncate">
+                    <span className="text-[13.5px] text-ink truncate">
                       {c.renter_name}
                     </span>
-                    <span className="font-mono text-xs text-stone-500">
-                      {c.plate}
-                    </span>
-                    <span className="text-xs text-stone-500 inline-flex items-center gap-1 tabular-nums">
-                      <Calendar size={10} className="text-stone-400" />
+                    {c.plate ? (
+                      <Plate value={c.plate} size="sm" />
+                    ) : (
+                      <span className="font-mono text-ink-muted">—</span>
+                    )}
+                    <span className="text-[12px] text-ink-muted inline-flex items-center gap-1 font-mono tnum">
+                      <Calendar size={10} className="text-ink-muted" />
                       {fmtDate(c.pickup_date)}
                     </span>
-                    <span className="text-sm tabular-nums text-emerald-700 font-semibold text-right">
+                    <span className="font-mono tnum text-[13px] text-ink font-semibold text-right">
                       {fmtEur(Number(c.partner_commission ?? 0))}
                     </span>
-                    <ChevronRight size={14} className="text-stone-300" />
+                    <ChevronRight size={14} className="text-ink-muted" />
                   </Link>
                 ))
               )}
-            </div>
+            </Panel>
           </div>
         </div>
       </div>
@@ -329,20 +312,20 @@ const SummaryCard = ({
   highlight?: boolean;
 }) => (
   <div
-    className={`rounded-xl ring-1 p-4 ${
+    className={`rounded-card border p-4 ${
       highlight
-        ? "bg-stone-900 text-white ring-stone-900"
-        : "bg-white ring-stone-200"
+        ? "bg-ink text-white border-ink"
+        : "bg-paper border-hairline shadow-panel"
     }`}
   >
     <div
-      className={`text-[11px] uppercase tracking-wider font-semibold ${
-        highlight ? "text-white/70" : "text-stone-500"
+      className={`data-label mb-1 ${
+        highlight ? "text-white/60" : "text-ink-muted"
       }`}
     >
       {label}
     </div>
-    <div className="font-display text-[28px] tracking-tight font-medium leading-tight tabular-nums mt-1">
+    <div className="font-display text-[28px] tracking-tight font-bold leading-tight font-mono tnum">
       {value}
     </div>
   </div>
@@ -357,13 +340,13 @@ const InfoCard = ({
   Icon: typeof Mail;
   children: React.ReactNode;
 }) => (
-  <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
-    <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold mb-3">
-      <Icon size={13} />
+  <Panel>
+    <div className="flex items-center gap-2 data-label mb-3">
+      <Icon size={13} className="text-ink-muted" />
       {title}
     </div>
     <div className="space-y-1.5">{children}</div>
-  </div>
+  </Panel>
 );
 
 const Row = ({
@@ -373,8 +356,8 @@ const Row = ({
   label: string;
   value: React.ReactNode;
 }) => (
-  <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-    <div className="text-stone-500 text-xs">{label}</div>
-    <div className="text-stone-800">{value}</div>
+  <div className="grid grid-cols-[120px_1fr] gap-2 text-[13px]">
+    <div className="text-ink-muted text-[12px]">{label}</div>
+    <div className="text-ink">{value}</div>
   </div>
 );

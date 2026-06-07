@@ -1,13 +1,10 @@
-import { STATUS_META } from "@/lib/theme";
 import type { TicketStatus } from "@/lib/types";
+import { StatusPill } from "@/components/ui/StatusPill";
 
-export const StatusBadge = ({ status }: { status: TicketStatus }) => {
-  const m = STATUS_META[status];
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full ${m.bg} ${m.text} ring-1 ${m.ring}`}
-    >
-      <span className="w-1.5 h-1.5 rounded-full" style={{ background: m.dot }} /> {m.label}
-    </span>
-  );
-};
+/**
+ * Back-compat wrapper — delegates to the Leitstelle StatusPill so every existing
+ * usage across the dashboard picks up the new mono pipeline chip automatically.
+ */
+export const StatusBadge = ({ status }: { status: TicketStatus }) => (
+  <StatusPill status={status} />
+);

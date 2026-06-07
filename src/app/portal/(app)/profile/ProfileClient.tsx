@@ -4,9 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Loader2, Save } from "lucide-react";
 import type { Customer } from "@/lib/types";
-
-const inputCls =
-  "w-full h-11 px-3.5 rounded-xl bg-white ring-1 ring-stone-200 text-[14.5px] text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500 transition-shadow";
+import { Button } from "@/components/ui/Button";
 
 export const ProfileClient = ({ initial }: { initial: Customer }) => {
   const router = useRouter();
@@ -56,24 +54,24 @@ export const ProfileClient = ({ initial }: { initial: Customer }) => {
 
   return (
     <div className="px-5 py-3">
-      <h1 className="font-display text-[22px] tracking-tight font-medium text-stone-900 mb-3">
+      <h1 className="font-display text-[22px] tracking-tightest font-bold text-ink mb-3">
         Profil
       </h1>
 
-      <form onSubmit={submit} className="rounded-2xl bg-white ring-1 ring-stone-200 p-5 space-y-3">
+      <form onSubmit={submit} className="bg-paper border border-hairline rounded-card shadow-panel p-5 space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <Field label="Vorname">
-            <input className={inputCls} value={data.first_name} onChange={set("first_name")} />
+            <input className="field" value={data.first_name} onChange={set("first_name")} />
           </Field>
           <Field label="Nachname">
-            <input className={inputCls} value={data.last_name} onChange={set("last_name")} required />
+            <input className="field" value={data.last_name} onChange={set("last_name")} required />
           </Field>
         </div>
 
         <Field label="E-Mail">
           <input
             type="email"
-            className={inputCls}
+            className="field"
             value={data.email}
             onChange={set("email")}
           />
@@ -82,7 +80,7 @@ export const ProfileClient = ({ initial }: { initial: Customer }) => {
         <Field label="Telefon">
           <input
             type="tel"
-            className={inputCls}
+            className="field"
             value={data.phone}
             onChange={set("phone")}
             inputMode="tel"
@@ -91,42 +89,38 @@ export const ProfileClient = ({ initial }: { initial: Customer }) => {
 
         <div className="grid grid-cols-[1fr_100px] gap-3">
           <Field label="Straße">
-            <input className={inputCls} value={data.street} onChange={set("street")} />
+            <input className="field" value={data.street} onChange={set("street")} />
           </Field>
           <Field label="Hausnr.">
-            <input className={inputCls} value={data.house_nr} onChange={set("house_nr")} />
+            <input className="field" value={data.house_nr} onChange={set("house_nr")} />
           </Field>
         </div>
 
         <div className="grid grid-cols-[100px_1fr] gap-3">
           <Field label="PLZ">
-            <input className={inputCls} value={data.zip} onChange={set("zip")} inputMode="numeric" />
+            <input className="field" value={data.zip} onChange={set("zip")} inputMode="numeric" />
           </Field>
           <Field label="Ort">
-            <input className={inputCls} value={data.city} onChange={set("city")} />
+            <input className="field" value={data.city} onChange={set("city")} />
           </Field>
         </div>
 
         {error && (
-          <div className="text-sm rounded-lg px-3 py-2 bg-rose-50 ring-1 ring-rose-200 text-rose-700">
+          <div className="text-[13px] rounded-input px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700">
             {error}
           </div>
         )}
 
         <div className="flex items-center justify-end gap-3 pt-1">
           {saved && (
-            <span className="inline-flex items-center gap-1 text-xs text-emerald-700">
+            <span className="inline-flex items-center gap-1 text-[12px] text-ink-soft">
               <Check size={13} /> Gespeichert
             </span>
           )}
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-stone-900 text-white text-[14px] font-medium hover:bg-stone-800 disabled:opacity-40"
-          >
+          <Button type="submit" variant="signal" size="md" disabled={saving}>
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             Speichern
-          </button>
+          </Button>
         </div>
       </form>
     </div>
@@ -135,9 +129,7 @@ export const ProfileClient = ({ initial }: { initial: Customer }) => {
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <label className="block">
-    <div className="text-[11.5px] uppercase tracking-wider text-stone-500 font-medium mb-1">
-      {label}
-    </div>
+    <div className="data-label mb-1">{label}</div>
     {children}
   </label>
 );

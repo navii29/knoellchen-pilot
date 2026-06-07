@@ -44,7 +44,7 @@ export default async function DashboardLayout({
   if (org && org.onboarding_completed === false) redirect("/onboarding");
 
   return (
-    <div className="md:h-screen md:flex bg-stone-50 min-h-screen">
+    <div className="md:h-screen md:flex bg-canvas min-h-screen">
       <Sidebar
         orgName={org?.name || "Mein Konto"}
         ticketCount={openTickets || 0}

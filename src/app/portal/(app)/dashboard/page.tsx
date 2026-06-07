@@ -3,6 +3,7 @@ import { ChevronRight, FileSignature, FileText, Inbox } from "lucide-react";
 import { getPortalCustomer } from "@/lib/portal-auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { fmtDate, fmtEur } from "@/lib/utils";
+import { Plate } from "@/components/ui/Plate";
 
 export const dynamic = "force-dynamic";
 
@@ -42,14 +43,14 @@ export default async function PortalDashboardPage() {
   return (
     <div className="px-5 py-3 space-y-5">
       {openTickets.length > 0 && (
-        <div className="rounded-2xl bg-amber-50 ring-1 ring-amber-200 p-4">
-          <div className="flex items-center gap-2 text-[12px] uppercase tracking-wider font-semibold text-amber-800 mb-1">
-            <Inbox size={13} /> Offene Beträge
+        <div className="bg-amber-50 border border-amber-200 rounded-card p-4">
+          <div className="flex items-center gap-2 kicker text-amber-800 mb-1">
+            <Inbox size={12} /> Offene Beträge
           </div>
           <div className="text-[14px] text-amber-900">
             {openTickets.length}{" "}
             {openTickets.length === 1 ? "Strafzettel-Weiterbelastung" : "Strafzettel-Weiterbelastungen"} offen ·{" "}
-            <span className="font-medium tabular-nums">
+            <span className="font-mono font-semibold tnum">
               {fmtEur(
                 openTickets.reduce((s, t) => s + Number(t.total_charge ?? 0), 0)
               )}
@@ -74,7 +75,7 @@ export default async function PortalDashboardPage() {
           {past.length > 6 && (
             <Link
               href="/portal/contracts"
-              className="block text-center text-[13px] text-teal-700 hover:underline pt-2"
+              className="block text-center text-[13px] text-signal hover:underline py-2"
             >
               Alle {past.length} Verträge anzeigen
             </Link>
@@ -95,11 +96,11 @@ const Section = ({
   children: React.ReactNode;
 }) => (
   <div>
-    <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-2 px-1">
-      <Icon size={12} />
+    <div className="flex items-center gap-1.5 kicker text-ink-muted mb-2 px-1">
+      <Icon size={11} />
       {title}
     </div>
-    <div className="rounded-2xl bg-white ring-1 ring-stone-200 divide-y divide-stone-100 overflow-hidden">
+    <div className="bg-paper border border-hairline rounded-card shadow-panel divide-y divide-hairline overflow-hidden">
       {children}
     </div>
   </div>
@@ -120,36 +121,36 @@ type Row = {
 const ContractRow = ({ c }: { c: Row }) => (
   <Link
     href={`/portal/contracts/${c.id}`}
-    className="flex items-center gap-3 px-4 py-3 hover:bg-stone-50"
+    className="flex items-center gap-3 px-4 py-3 hover:bg-canvas transition-colors"
   >
     <div className="flex-1 min-w-0">
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-mono text-[12.5px] text-stone-700">{c.plate}</span>
+        <Plate value={c.plate} size="sm" />
         {c.signed_at && (
-          <span className="inline-flex items-center px-1.5 h-4 rounded bg-emerald-50 ring-1 ring-emerald-200 text-emerald-700 text-[10.5px] font-medium">
+          <span className="inline-flex items-center px-1.5 h-4 rounded-full bg-canvas border border-hairline text-ink-soft text-[10px] font-medium uppercase tracking-wide">
             unterschrieben
           </span>
         )}
         {!c.signed_at && c.status === "aktiv" && (
-          <span className="inline-flex items-center px-1.5 h-4 rounded bg-amber-50 ring-1 ring-amber-200 text-amber-700 text-[10.5px] font-medium">
+          <span className="inline-flex items-center px-1.5 h-4 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-medium uppercase tracking-wide">
             offen
           </span>
         )}
       </div>
-      <div className="text-[14px] text-stone-900 font-medium truncate mt-0.5">
+      <div className="text-[14px] text-ink font-medium truncate mt-0.5">
         {c.vehicle_type || "Fahrzeug"}
       </div>
-      <div className="text-[12px] text-stone-500 mt-0.5 tabular-nums">
+      <div className="text-[12px] text-ink-muted mt-0.5 font-mono tnum">
         {fmtDate(c.pickup_date)} → {fmtDate(c.return_date)}
         {c.total_amount != null && (
           <span className="ml-2">· {fmtEur(c.total_amount)}</span>
         )}
       </div>
     </div>
-    <ChevronRight size={14} className="text-stone-300 shrink-0" />
+    <ChevronRight size={14} className="text-ink-muted shrink-0" />
   </Link>
 );
 
 const Empty = ({ text }: { text: string }) => (
-  <div className="px-4 py-6 text-center text-sm text-stone-500">{text}</div>
+  <div className="px-4 py-6 text-center text-[13px] text-ink-muted">{text}</div>
 );

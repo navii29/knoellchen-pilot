@@ -29,11 +29,11 @@ export const VehicleDeleteButton = ({ vehicleId }: { vehicleId: string }) => {
       <button
         onClick={remove}
         disabled={busy}
-        className="inline-flex items-center gap-1.5 text-sm text-red-700 px-3 py-1.5 rounded-md hover:bg-red-50 disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 text-[13px] text-red-700 px-3 py-1.5 rounded-btn border border-hairline hover:bg-red-50 disabled:opacity-50 transition-colors"
       >
         {busy ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} Löschen
       </button>
-      {error && <span className="text-xs text-red-700">{error}</span>}
+      {error && <span className="text-[12px] text-red-700">{error}</span>}
     </div>
   );
 };

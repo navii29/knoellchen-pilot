@@ -12,6 +12,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { fmtEur } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Panel } from "@/components/ui/Panel";
+import { Button } from "@/components/ui/Button";
+import { Plate } from "@/components/ui/Plate";
 import {
   UTIL_META,
   lastNDaysIso,
@@ -92,40 +96,37 @@ export const MarginClient = () => {
     <>
       <Link
         href="/dashboard/reports"
-        className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+        className="inline-flex items-center gap-1.5 text-[13px] text-ink-muted hover:text-ink mb-4"
       >
         <ArrowLeft size={14} /> Zurück zur Auswertung
       </Link>
 
-      <div className="flex items-end justify-between flex-wrap gap-3">
-        <div>
-          <div className="font-display font-bold text-2xl tracking-tight">
-            Margenrechnung
-          </div>
-          <p className="text-sm text-stone-500 mt-1 max-w-xl">
-            Welche Fahrzeuge verdienen Geld, welche nicht? EK-Kosten laufen
-            jeden Tag — auch wenn das Auto steht.
-          </p>
-        </div>
-        <a
-          href={`/api/reports/margin/pdf?from=${from}&to=${to}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-md bg-stone-900 text-white font-medium hover:bg-stone-800"
-        >
-          <Download size={13} /> Als PDF
-        </a>
-      </div>
+      <PageHeader
+        kicker="Reports · Fahrzeugmarge"
+        title="Margenrechnung"
+        description="Welche Fahrzeuge verdienen Geld, welche nicht? EK-Kosten laufen jeden Tag — auch wenn das Auto steht."
+        actions={
+          <a
+            href={`/api/reports/margin/pdf?from=${from}&to=${to}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 h-8 px-3 text-[13px] font-medium rounded-btn bg-ink text-white hover:bg-ink-soft transition-colors"
+          >
+            <Download size={13} /> Als PDF
+          </a>
+        }
+        className="mb-6"
+      />
 
       {/* Period Selector */}
-      <div className="mt-6 rounded-xl bg-white ring-1 ring-stone-200 p-4 sm:p-5">
+      <Panel>
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           {presets.map((p) => (
             <button
               key={p.days}
               type="button"
               onClick={() => setPreset(p.days)}
-              className="text-[12.5px] px-3 h-8 rounded-full bg-stone-100 text-stone-700 font-medium hover:bg-stone-200"
+              className="text-[12.5px] px-3 h-8 rounded-btn border border-hairline bg-canvas text-ink-soft font-medium hover:bg-ink/5 hover:text-ink transition-colors"
             >
               {p.label}
             </button>
@@ -133,41 +134,42 @@ export const MarginClient = () => {
         </div>
         <div className="grid grid-cols-[1fr_1fr_auto] gap-3 items-end">
           <label className="block">
-            <div className="text-[11.5px] uppercase tracking-wider text-stone-500 font-medium mb-1 inline-flex items-center gap-1.5">
+            <div className="data-label mb-1 inline-flex items-center gap-1.5">
               <Calendar size={11} /> Von
             </div>
             <input
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg bg-white ring-1 ring-stone-200 text-sm outline-none focus:ring-2 focus:ring-teal-500/40"
+              className="field"
             />
           </label>
           <label className="block">
-            <div className="text-[11.5px] uppercase tracking-wider text-stone-500 font-medium mb-1 inline-flex items-center gap-1.5">
+            <div className="data-label mb-1 inline-flex items-center gap-1.5">
               <Calendar size={11} /> Bis
             </div>
             <input
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg bg-white ring-1 ring-stone-200 text-sm outline-none focus:ring-2 focus:ring-teal-500/40"
+              className="field"
             />
           </label>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             type="button"
             onClick={() => load(from, to)}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 text-sm px-3 h-10 rounded-lg ring-1 ring-stone-200 hover:bg-stone-50 disabled:opacity-50"
           >
             {loading ? <Loader2 size={13} className="animate-spin" /> : null}
             Aktualisieren
-          </button>
+          </Button>
         </div>
-      </div>
+      </Panel>
 
       {error && (
-        <div className="mt-4 flex items-center gap-2 text-sm rounded-lg px-3 py-2 bg-rose-50 ring-1 ring-rose-200 text-rose-700">
+        <div className="mt-4 flex items-center gap-2 text-[13px] rounded-panel px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700">
           <AlertTriangle size={14} /> {error}
         </div>
       )}
@@ -207,14 +209,14 @@ export const MarginClient = () => {
 
       {/* Per-vehicle table */}
       {m && (
-        <div className="mt-6 rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+        <div className="mt-6 panel overflow-hidden">
           {m.vehicles.length === 0 ? (
-            <div className="px-5 py-12 text-center text-sm text-stone-500">
+            <div className="px-5 py-12 text-center text-[13px] text-ink-muted">
               Keine Fahrzeuge in der Flotte.
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-[110px_1fr_70px_90px_90px_90px_100px_70px] items-center gap-3 px-5 py-2.5 bg-stone-50 border-b border-stone-100 text-[10.5px] uppercase tracking-wider text-stone-500 font-semibold">
+              <div className="grid grid-cols-[128px_1fr_70px_90px_90px_90px_100px_70px] items-center gap-3 px-5 py-2.5 bg-canvas/60 border-b border-hairline th">
                 <span>Kennzeichen</span>
                 <span>Fahrzeug</span>
                 <span className="text-right">Tage</span>
@@ -232,28 +234,26 @@ export const MarginClient = () => {
                   <Link
                     key={v.vehicle_id}
                     href={`/dashboard/vehicles/${v.vehicle_id}`}
-                    className="grid grid-cols-[110px_1fr_70px_90px_90px_90px_100px_70px] items-center gap-3 px-5 py-2.5 hover:bg-stone-50 border-b border-stone-100 last:border-0"
+                    className="grid grid-cols-[128px_1fr_70px_90px_90px_90px_100px_70px] items-center gap-3 px-5 py-2.5 hover:bg-canvas border-b border-hairline last:border-0 transition-colors"
                   >
-                    <span className="font-mono text-sm font-semibold text-stone-900">
-                      {v.plate}
-                    </span>
-                    <span className="text-sm text-stone-700 truncate">
+                    <Plate value={v.plate} size="sm" />
+                    <span className="text-[13px] text-ink-soft truncate">
                       {v.label}
                     </span>
-                    <span className="text-sm tabular-nums text-right text-stone-700">
+                    <span className="font-mono tnum text-[13px] text-right text-ink-soft">
                       {v.rented_days}/{v.period_days}
                     </span>
-                    <span className="text-sm tabular-nums text-right text-stone-500">
+                    <span className="font-mono tnum text-[13px] text-right text-ink-muted">
                       {fmtEur(v.ek_total)}
                     </span>
-                    <span className="text-sm tabular-nums text-right text-stone-500">
+                    <span className="font-mono tnum text-[13px] text-right text-ink-muted">
                       {v.target_daily_rate != null ? fmtEur(v.soll_vk_total) : "—"}
                     </span>
-                    <span className="text-sm tabular-nums text-right text-stone-900 font-medium">
+                    <span className="font-mono tnum text-[13px] text-right text-ink font-medium">
                       {fmtEur(v.ist_vk_total)}
                     </span>
                     <span
-                      className="text-sm tabular-nums text-right font-semibold"
+                      className="font-mono tnum text-[13px] text-right font-semibold"
                       style={{ color: mc.text }}
                     >
                       {fmtEur(v.margin_eur)}
@@ -264,7 +264,7 @@ export const MarginClient = () => {
                       )}
                     </span>
                     <span
-                      className="text-xs tabular-nums text-right font-semibold inline-flex items-center justify-end gap-1"
+                      className="font-mono tnum text-[12px] text-right font-semibold inline-flex items-center justify-end gap-1"
                       style={{ color: utilMeta.text }}
                     >
                       <span
@@ -277,30 +277,28 @@ export const MarginClient = () => {
                 );
               })}
               {/* Totals row */}
-              <div className="grid grid-cols-[110px_1fr_70px_90px_90px_90px_100px_70px] items-center gap-3 px-5 py-3 bg-stone-50 border-t border-stone-200 text-[12.5px] font-medium">
-                <span className="text-stone-500 uppercase tracking-wider text-[10.5px]">
-                  Summe
-                </span>
+              <div className="grid grid-cols-[128px_1fr_70px_90px_90px_90px_100px_70px] items-center gap-3 px-5 py-3 bg-canvas/60 border-t border-hairline text-[12.5px] font-medium">
+                <span className="kicker text-ink-muted">Summe</span>
                 <span></span>
-                <span className="text-right tabular-nums text-stone-700">
+                <span className="font-mono tnum text-right text-ink-soft">
                   {m.total_rented_days}/{m.total_possible_days}
                 </span>
-                <span className="text-right tabular-nums text-stone-700">
+                <span className="font-mono tnum text-right text-ink-soft">
                   {fmtEur(m.total_ek)}
                 </span>
-                <span className="text-right tabular-nums text-stone-700">
+                <span className="font-mono tnum text-right text-ink-soft">
                   {fmtEur(m.total_soll_vk)}
                 </span>
-                <span className="text-right tabular-nums text-stone-900">
+                <span className="font-mono tnum text-right text-ink">
                   {fmtEur(m.total_ist_vk)}
                 </span>
                 <span
-                  className="text-right tabular-nums font-bold"
+                  className="font-mono tnum text-right font-bold"
                   style={{ color: marginColor(m.total_margin).text }}
                 >
                   {fmtEur(m.total_margin)}
                 </span>
-                <span className="text-right tabular-nums text-stone-700">
+                <span className="font-mono tnum text-right text-ink-soft">
                   {m.avg_utilization_pct.toFixed(0)}%
                 </span>
               </div>
@@ -329,12 +327,12 @@ const SummaryCard = ({
 }) => {
   const bg =
     highlight === "good"
-      ? "bg-emerald-50 ring-emerald-200"
+      ? "bg-emerald-50 border-emerald-200"
       : highlight === "warn"
-      ? "bg-amber-50 ring-amber-200"
+      ? "bg-amber-50 border-amber-200"
       : highlight === "bad"
-      ? "bg-rose-50 ring-rose-200"
-      : "bg-white ring-stone-200";
+      ? "bg-rose-50 border-rose-200"
+      : "bg-paper border-hairline";
   const valColor =
     highlight === "good"
       ? "text-emerald-700"
@@ -342,29 +340,25 @@ const SummaryCard = ({
       ? "text-amber-700"
       : highlight === "bad"
       ? "text-rose-700"
-      : "text-stone-900";
+      : "text-ink";
   return (
-    <div className={`rounded-xl ring-1 p-4 ${bg}`}>
-      <div
-        className={`text-[11px] uppercase tracking-wider font-semibold ${
-          muted ? "text-stone-400" : "text-stone-500"
-        }`}
-      >
+    <div className={`rounded-card border p-4 shadow-panel ${bg}`}>
+      <div className={`data-label ${muted ? "text-ink-muted" : "text-ink-soft"}`}>
         {label}
       </div>
       <div
-        className={`font-display text-[24px] sm:text-[28px] tracking-tight font-medium leading-tight tabular-nums mt-1 ${valColor}`}
+        className={`font-display text-[24px] sm:text-[28px] tracking-tightest font-extrabold leading-tight font-mono tnum mt-1 ${valColor}`}
       >
         {value}
       </div>
       {delta && (
         <div
-          className={`mt-1 text-[11.5px] tabular-nums inline-flex items-center gap-1 font-medium ${
+          className={`mt-1 text-[11.5px] font-mono tnum inline-flex items-center gap-1 font-medium ${
             deltaDirection === "up"
               ? "text-emerald-700"
               : deltaDirection === "down"
               ? "text-rose-700"
-              : "text-stone-500"
+              : "text-ink-muted"
           }`}
         >
           {deltaDirection === "up" ? (

@@ -161,7 +161,7 @@ export const Step1Org = ({
                 placeholder="25"
                 inputMode="decimal"
               />
-              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[14px] text-stone-400">
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 font-mono text-[13px] text-ink-muted">
                 €
               </span>
             </div>

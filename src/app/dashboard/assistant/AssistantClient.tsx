@@ -18,8 +18,8 @@ import {
   Loader2,
   UserCheck,
 } from "lucide-react";
-import { THEME } from "@/lib/theme";
 import { fmtDate, fmtEur } from "@/lib/utils";
+import { Plate } from "@/components/ui/Plate";
 
 type ToolCall = { name: string; input: Record<string, unknown>; result: { ok: boolean; data?: unknown; error?: string } };
 type ChatMsg = { role: "user" | "assistant"; content: string; toolCalls?: ToolCall[] };
@@ -75,7 +75,7 @@ export const AssistantClient = () => {
   };
 
   return (
-    <div className="flex-1 overflow-hidden bg-stone-50 flex flex-col">
+    <div className="flex-1 overflow-hidden bg-canvas flex flex-col">
       <div ref={scrollRef} className="flex-1 overflow-y-auto scroll-thin">
         <div className="max-w-3xl mx-auto px-6 py-8 md:py-12 space-y-6">
           {messages.length === 0 && <Welcome onPick={send} />}
@@ -83,13 +83,13 @@ export const AssistantClient = () => {
             <Message key={i} msg={m} />
           ))}
           {loading && (
-            <div className="flex items-center gap-2 text-sm text-stone-500 pl-12">
+            <div className="flex items-center gap-2 text-[13px] text-ink-muted pl-12">
               <Loader2 size={14} className="animate-spin" />
               denkt nach…
             </div>
           )}
           {error && (
-            <div className="text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2">
+            <div className="text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-panel px-3 py-2">
               {error}
             </div>
           )}
@@ -109,14 +109,11 @@ export const AssistantClient = () => {
 
 const Welcome = ({ onPick }: { onPick: (s: string) => void }) => (
   <div className="text-center pt-8">
-    <div
-      className="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center"
-      style={{ background: THEME.primaryTint, color: THEME.primary }}
-    >
-      <Sparkles size={22} />
+    <div className="w-12 h-12 rounded-panel border border-hairline bg-canvas mx-auto flex items-center justify-center text-ink-muted">
+      <Sparkles size={20} strokeWidth={1.75} />
     </div>
-    <h1 className="mt-5 font-display font-bold text-2xl tracking-tight">Wie kann ich helfen?</h1>
-    <p className="mt-2 text-sm text-stone-500">
+    <h1 className="mt-5 font-display font-extrabold text-ink text-[24px] tracking-tightest">Wie kann ich helfen?</h1>
+    <p className="mt-2 text-[13.5px] text-ink-muted">
       Frag mich nach Verträgen, Strafzetteln, Statistiken — oder lass mich einen neuen Vertrag anlegen.
     </p>
     <div className="mt-8 grid sm:grid-cols-2 gap-2.5">
@@ -124,7 +121,7 @@ const Welcome = ({ onPick }: { onPick: (s: string) => void }) => (
         <button
           key={s}
           onClick={() => onPick(s)}
-          className="text-left text-sm px-4 py-3 rounded-xl bg-white ring-1 ring-stone-200 hover:ring-stone-400 transition"
+          className="text-left text-[13.5px] px-4 py-3 panel hover:border-ink/20 transition text-ink"
         >
           {s}
         </button>
@@ -137,7 +134,7 @@ const Message = ({ msg }: { msg: ChatMsg }) => {
   if (msg.role === "user") {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] rounded-2xl px-4 py-2.5 text-white text-[15px]" style={{ background: THEME.primary }}>
+        <div className="max-w-[85%] rounded-card px-4 py-2.5 bg-ink text-white text-[14.5px]">
           {msg.content}
         </div>
       </div>
@@ -145,14 +142,11 @@ const Message = ({ msg }: { msg: ChatMsg }) => {
   }
   return (
     <div className="flex gap-3">
-      <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-        style={{ background: THEME.primaryTint, color: THEME.primary }}
-      >
-        <Sparkles size={15} />
+      <div className="w-8 h-8 rounded-panel border border-hairline bg-canvas flex items-center justify-center shrink-0 text-ink-muted">
+        <Sparkles size={14} strokeWidth={1.75} />
       </div>
       <div className="flex-1 space-y-3 min-w-0">
-        {msg.content && <div className="text-[15px] leading-relaxed whitespace-pre-wrap">{msg.content}</div>}
+        {msg.content && <div className="text-[14.5px] leading-relaxed whitespace-pre-wrap text-ink">{msg.content}</div>}
         {msg.toolCalls?.map((tc, i) => (
           <ToolResult key={i} call={tc} />
         ))}
@@ -167,11 +161,11 @@ const Message = ({ msg }: { msg: ChatMsg }) => {
 const ToolResult = ({ call }: { call: ToolCall }) => {
   if (!call.result.ok) {
     return (
-      <div className="rounded-xl bg-red-50 ring-1 ring-red-200 p-3 text-sm text-red-800 flex items-start gap-2">
+      <div className="rounded-panel border border-red-200 bg-red-50 p-3 text-[13px] text-red-800 flex items-start gap-2">
         <AlertTriangle size={14} className="mt-0.5 shrink-0" />
         <div>
           <div className="font-medium">{call.name} fehlgeschlagen</div>
-          <div className="text-xs mt-0.5 opacity-80">{call.result.error}</div>
+          <div className="text-[11.5px] mt-0.5 opacity-80">{call.result.error}</div>
         </div>
       </div>
     );
@@ -204,7 +198,7 @@ const ToolResult = ({ call }: { call: ToolCall }) => {
   if (call.name === "find_driver_for_date") {
     if (d.found && d.contract) return <ContractCreatedCard contract={d.contract as ContractSummary} headline="Fahrer gefunden" />;
     return (
-      <div className="rounded-xl bg-amber-50 ring-1 ring-amber-200 p-3 text-sm text-amber-900">
+      <div className="rounded-panel border border-amber-200 bg-amber-50 p-3 text-[13px] text-amber-900">
         Kein Mietvertrag für dieses Fahrzeug an diesem Datum gefunden.
       </div>
     );
@@ -223,25 +217,20 @@ const ToolResult = ({ call }: { call: ToolCall }) => {
     return (
       <Link
         href={`/dashboard/tickets/${t.id}`}
-        className="block rounded-xl bg-white ring-1 ring-stone-200 hover:ring-stone-400 p-4 transition"
+        className="block panel p-4 hover:border-ink/20 transition"
       >
         <div className="flex items-start gap-3">
-          <div
-            className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: THEME.primaryTint, color: THEME.primary }}
-          >
-            <UserCheck size={16} />
+          <div className="w-9 h-9 rounded-panel border border-hairline bg-canvas flex items-center justify-center shrink-0 text-ink-muted">
+            <UserCheck size={16} strokeWidth={1.75} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-xs uppercase tracking-wider text-stone-500 font-medium">
-              Strafzettel zugeordnet
-            </div>
-            <div className="font-display font-semibold text-lg mt-0.5">{t.renter_name}</div>
-            <div className="text-sm text-stone-500 flex flex-wrap gap-x-4 gap-y-1 mt-1">
+            <div className="kicker text-ink-muted">Strafzettel zugeordnet</div>
+            <div className="font-display font-semibold text-[16px] tracking-tight text-ink mt-0.5">{t.renter_name}</div>
+            <div className="text-[12.5px] text-ink-muted flex flex-wrap gap-x-4 gap-y-1 mt-1">
               <span className="font-mono">{t.ticket_nr}</span>
               <span>→</span>
               <span className="font-mono">{c.contract_nr}</span>
-              <span className="font-mono font-semibold text-stone-900">{c.plate}</span>
+              <Plate value={c.plate} size="sm" />
             </div>
           </div>
         </div>
@@ -293,22 +282,19 @@ const ContractCreatedCard = ({
 }) => (
   <Link
     href={`/dashboard/contracts/${contract.id}`}
-    className="block rounded-xl bg-white ring-1 ring-stone-200 hover:ring-stone-400 p-4 transition"
+    className="block panel p-4 hover:border-ink/20 transition"
   >
     <div className="flex items-start gap-3">
-      <div
-        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-        style={{ background: THEME.primaryTint, color: THEME.primary }}
-      >
-        <CheckCircle2 size={16} />
+      <div className="w-9 h-9 rounded-panel border border-hairline bg-canvas flex items-center justify-center shrink-0 text-ink-muted">
+        <CheckCircle2 size={16} strokeWidth={1.75} />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-xs uppercase tracking-wider text-stone-500 font-medium">{headline}</div>
-        <div className="font-display font-semibold text-lg mt-0.5">{contract.renter_name}</div>
-        <div className="text-sm text-stone-500 flex flex-wrap gap-x-4 gap-y-1 mt-1">
+        <div className="kicker text-ink-muted">{headline}</div>
+        <div className="font-display font-semibold text-[16px] tracking-tight text-ink mt-0.5">{contract.renter_name}</div>
+        <div className="text-[12.5px] text-ink-muted flex flex-wrap gap-x-4 gap-y-1 mt-1">
           <span className="font-mono">{contract.contract_nr}</span>
-          <span className="font-mono font-semibold text-stone-900">{contract.plate}</span>
-          <span>
+          <Plate value={contract.plate} size="sm" />
+          <span className="font-mono">
             {fmtDate(contract.pickup_date)} → {fmtDate(contract.actual_return_date || contract.return_date)}
           </span>
         </div>
@@ -318,16 +304,13 @@ const ContractCreatedCard = ({
 );
 
 const VehicleCard = ({ vehicle }: { vehicle: VehicleSummary }) => (
-  <div className="rounded-xl bg-white ring-1 ring-stone-200 p-4 flex items-center gap-3">
-    <div
-      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-      style={{ background: THEME.primaryTint, color: THEME.primary }}
-    >
-      <CarIcon size={16} />
+  <div className="panel p-4 flex items-center gap-3">
+    <div className="w-9 h-9 rounded-panel border border-hairline bg-canvas flex items-center justify-center shrink-0 text-ink-muted">
+      <CarIcon size={16} strokeWidth={1.75} />
     </div>
     <div className="flex-1">
-      <div className="font-mono font-semibold">{vehicle.plate}</div>
-      <div className="text-xs text-stone-500">
+      <Plate value={vehicle.plate} size="sm" />
+      <div className="text-[12px] text-ink-muted mt-0.5">
         {[vehicle.vehicle_type, vehicle.color].filter(Boolean).join(" · ") || "Fahrzeug angelegt"}
       </div>
     </div>
@@ -339,24 +322,24 @@ const ContractList = ({ contracts }: { contracts: ContractSummary[] }) => {
   if (contracts.length === 0)
     return <EmptyResult Icon={FileSignature} text="Keine Verträge gefunden" />;
   return (
-    <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+    <div className="panel overflow-hidden">
       {contracts.map((c) => (
         <Link
           key={c.id}
           href={`/dashboard/contracts/${c.id}`}
-          className="grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+          className="grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3 border-b border-hairline last:border-0 text-[13.5px] hover:bg-canvas transition-colors"
         >
           <div className="min-w-0">
-            <div className="font-medium truncate">{c.renter_name}</div>
-            <div className="text-xs text-stone-500 mt-0.5 flex flex-wrap gap-x-3">
+            <div className="font-medium text-ink truncate">{c.renter_name}</div>
+            <div className="text-[12px] text-ink-muted mt-0.5 flex flex-wrap gap-x-3">
               <span className="font-mono">{c.contract_nr}</span>
-              <span className="font-mono font-semibold">{c.plate}</span>
-              <span>
+              <span className="font-mono font-semibold text-ink">{c.plate}</span>
+              <span className="font-mono">
                 {fmtDate(c.pickup_date)} → {fmtDate(c.actual_return_date || c.return_date)}
               </span>
             </div>
           </div>
-          {c.status && <span className="text-[10px] uppercase font-medium text-stone-500">{c.status}</span>}
+          {c.status && <span className="kicker text-ink-muted">{c.status}</span>}
         </Link>
       ))}
     </div>
@@ -366,24 +349,24 @@ const ContractList = ({ contracts }: { contracts: ContractSummary[] }) => {
 const TicketList = ({ tickets }: { tickets: TicketSummary[] }) => {
   if (tickets.length === 0) return <EmptyResult Icon={FileText} text="Keine Strafzettel gefunden" />;
   return (
-    <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+    <div className="panel overflow-hidden">
       {tickets.map((t) => (
         <Link
           key={t.id}
           href={`/dashboard/tickets/${t.id}`}
-          className="grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+          className="grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3 border-b border-hairline last:border-0 text-[13.5px] hover:bg-canvas transition-colors"
         >
           <div className="min-w-0">
-            <div className="font-medium truncate">{t.offense || t.ticket_nr}</div>
-            <div className="text-xs text-stone-500 mt-0.5 flex flex-wrap gap-x-3">
+            <div className="font-medium text-ink truncate">{t.offense || t.ticket_nr}</div>
+            <div className="text-[12px] text-ink-muted mt-0.5 flex flex-wrap gap-x-3">
               <span className="font-mono">{t.ticket_nr}</span>
-              <span className="font-mono font-semibold">{t.plate || "—"}</span>
-              <span>{fmtDate(t.offense_date)}</span>
+              {t.plate ? <Plate value={t.plate} size="sm" /> : <span className="font-mono">—</span>}
+              <span className="font-mono">{fmtDate(t.offense_date)}</span>
             </div>
           </div>
           <div className="text-right">
-            <div className="tabular-nums text-sm">{fmtEur(t.fine_amount)}</div>
-            <div className="text-[10px] uppercase font-medium text-stone-500 mt-0.5">{t.status}</div>
+            <div className="font-mono tnum text-[13px] text-ink">{fmtEur(t.fine_amount)}</div>
+            <div className="kicker text-ink-muted mt-0.5">{t.status}</div>
           </div>
         </Link>
       ))}
@@ -403,12 +386,12 @@ const StatsCard = ({ stats }: { stats: Stats }) => (
 );
 
 const Stat = ({ label, value, Icon }: { label: string; value: string | number; Icon: LucideIcon }) => (
-  <div className="rounded-xl bg-white ring-1 ring-stone-200 p-3.5">
-    <div className="flex items-center gap-2 text-xs text-stone-500">
-      <Icon size={13} />
+  <div className="panel p-3.5">
+    <div className="flex items-center gap-2 text-[12px] text-ink-muted">
+      <Icon size={13} strokeWidth={1.75} />
       {label}
     </div>
-    <div className="font-display font-bold text-2xl mt-1 tabular-nums">{value}</div>
+    <div className="font-display font-bold text-[22px] tracking-tightest text-ink mt-1 font-mono tnum">{value}</div>
   </div>
 );
 
@@ -445,8 +428,8 @@ const DecommissionList = ({
       />
     );
   return (
-    <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-stone-100 text-xs uppercase tracking-wider text-stone-500 font-medium flex items-center gap-1.5">
+    <div className="panel overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-hairline th flex items-center gap-1.5">
         <CalendarClock size={12} /> Aussteuerung in den nächsten {windowDays} Tagen
       </div>
       {vehicles.map((v) => {
@@ -455,11 +438,11 @@ const DecommissionList = ({
           <Link
             key={v.id}
             href={`/dashboard/vehicles/${v.id}`}
-            className="grid grid-cols-[110px_1fr_140px_auto] items-center gap-3 px-4 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+            className="grid grid-cols-[128px_1fr_140px_auto] items-center gap-3 px-4 py-3 border-b border-hairline last:border-0 text-[13.5px] hover:bg-canvas transition-colors"
           >
-            <span className="font-mono font-semibold">{v.plate}</span>
-            <span className="text-stone-700 truncate">{v.vehicle_type || "—"}</span>
-            <span className="text-xs text-stone-500 tabular-nums">
+            <Plate value={v.plate} size="sm" />
+            <span className="text-ink-soft truncate">{v.vehicle_type || "—"}</span>
+            <span className="font-mono tnum text-[12px] text-ink-muted">
               {v.decommission_date ? fmtDate(v.decommission_date) : "—"}
             </span>
             <span
@@ -467,7 +450,7 @@ const DecommissionList = ({
               style={{
                 background: s.bg,
                 color: s.text,
-                boxShadow: `inset 0 0 0 1px ${s.ring}`,
+                border: `1px solid ${s.ring}`,
               }}
             >
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: s.color }} />
@@ -513,10 +496,10 @@ const AvailableVehiclesCard = ({
       ? `Verfügbarkeit am ${fmtDate(range.from)}`
       : `Verfügbarkeit ${fmtDate(range.from)} – ${fmtDate(range.to)}`;
   return (
-    <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-stone-100 text-xs uppercase tracking-wider text-stone-500 font-medium flex items-center justify-between">
+    <div className="panel overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-hairline th flex items-center justify-between">
         <span>{headline}</span>
-        <span className="text-stone-700 tabular-nums">
+        <span className="font-mono tnum text-ink-soft">
           {available.length} frei · {blocked.length} belegt
         </span>
       </div>
@@ -526,12 +509,12 @@ const AvailableVehiclesCard = ({
           {available.map((v) => (
             <div
               key={v.id}
-              className="grid grid-cols-[110px_1fr_120px] items-center gap-3 px-4 py-2.5 border-b border-stone-50 last:border-0 text-sm"
+              className="grid grid-cols-[128px_1fr_140px] items-center gap-3 px-4 py-2.5 border-b border-hairline last:border-0 text-[13.5px]"
             >
-              <span className="font-mono font-semibold">{v.plate}</span>
-              <span className="text-stone-700 truncate">
+              <Plate value={v.plate} size="sm" />
+              <span className="text-ink-soft truncate">
                 {v.vehicle_type || "—"}
-                {v.color && <span className="text-stone-400 text-xs ml-2">· {v.color}</span>}
+                {v.color && <span className="text-ink-muted text-[12px] ml-2">· {v.color}</span>}
               </span>
               <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 justify-self-start">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -543,25 +526,25 @@ const AvailableVehiclesCard = ({
       )}
 
       {available.length === 0 && (
-        <div className="px-4 py-6 text-center text-sm text-stone-500">
+        <div className="px-4 py-6 text-center text-[13px] text-ink-muted">
           Kein Fahrzeug in diesem Zeitraum frei.
         </div>
       )}
 
       {blocked.length > 0 && (
-        <div className="border-t border-stone-100 bg-stone-50/50">
-          <div className="px-4 py-2 text-[11px] uppercase tracking-wider text-stone-500 font-medium">
+        <div className="border-t border-hairline bg-canvas/60">
+          <div className="px-4 py-2 kicker text-ink-muted">
             Belegt ({blocked.length})
           </div>
           {blocked.map((v) => (
             <div
               key={v.plate}
-              className="grid grid-cols-[110px_1fr] items-start gap-3 px-4 py-2 text-xs"
+              className="grid grid-cols-[128px_1fr] items-start gap-3 px-4 py-2 text-[12px]"
             >
-              <span className="font-mono font-semibold text-stone-700">{v.plate}</span>
+              <span className="font-mono font-semibold text-ink-soft">{v.plate}</span>
               <div>
                 {v.conflicts.map((c, i) => (
-                  <div key={i} className="text-stone-500">
+                  <div key={i} className="text-ink-muted font-mono">
                     {c.renter_name} · {fmtDate(c.pickup_date)} → {fmtDate(c.return_date)}
                   </div>
                 ))}
@@ -605,24 +588,19 @@ const ProcessReturnCard = ({
   return (
     <Link
       href={`/dashboard/contracts/${contract.id}`}
-      className="block rounded-xl bg-white ring-1 ring-stone-200 hover:ring-stone-400 p-4 transition"
+      className="block panel p-4 hover:border-ink/20 transition"
     >
       <div className="flex items-start gap-3">
-        <div
-          className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-          style={{ background: THEME.primaryTint, color: THEME.primary }}
-        >
-          <CheckCircle2 size={16} />
+        <div className="w-9 h-9 rounded-panel border border-hairline bg-canvas flex items-center justify-center shrink-0 text-ink-muted">
+          <CheckCircle2 size={16} strokeWidth={1.75} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs uppercase tracking-wider text-stone-500 font-medium">
-            Rückgabe verarbeitet
-          </div>
-          <div className="font-display font-semibold text-lg mt-0.5">{contract.renter_name}</div>
-          <div className="text-sm text-stone-500 flex flex-wrap gap-x-4 gap-y-1 mt-1">
+          <div className="kicker text-ink-muted">Rückgabe verarbeitet</div>
+          <div className="font-display font-semibold text-[16px] tracking-tight text-ink mt-0.5">{contract.renter_name}</div>
+          <div className="text-[12.5px] text-ink-muted flex flex-wrap gap-x-4 gap-y-1 mt-1">
             <span className="font-mono">{contract.contract_nr}</span>
-            <span className="font-mono font-semibold text-stone-900">{contract.plate}</span>
-            <span>
+            <Plate value={contract.plate} size="sm" />
+            <span className="font-mono">
               {fmtDate(contract.pickup_date)} →{" "}
               {fmtDate(contract.actual_return_date || contract.return_date)} ({diffLabel})
             </span>
@@ -630,7 +608,7 @@ const ProcessReturnCard = ({
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+      <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
         <ReturnStat label="Miettage" value={`${summary.actualDays}`} />
         <ReturnStat
           label="Gefahren"
@@ -659,11 +637,11 @@ const ReturnStat = ({
   value: string;
   highlight?: boolean;
 }) => (
-  <div className="rounded-md bg-stone-50 ring-1 ring-stone-100 px-2.5 py-2">
-    <div className="text-[10px] uppercase tracking-wider text-stone-400 font-medium">{label}</div>
+  <div className="rounded-panel border border-hairline bg-canvas px-2.5 py-2">
+    <div className="data-label text-ink-muted">{label}</div>
     <div
-      className={`tabular-nums font-display font-semibold mt-0.5 ${
-        highlight ? "text-amber-700" : "text-stone-900"
+      className={`font-mono tnum font-semibold mt-0.5 text-[13px] ${
+        highlight ? "text-amber-700" : "text-ink"
       }`}
     >
       {value}
@@ -672,8 +650,8 @@ const ReturnStat = ({
 );
 
 const EmptyResult = ({ Icon, text }: { Icon: LucideIcon; text: string }) => (
-  <div className="rounded-xl bg-stone-100 px-4 py-6 text-center text-sm text-stone-500">
-    <Icon size={20} className="mx-auto mb-2 text-stone-400" />
+  <div className="rounded-panel border border-hairline bg-canvas px-4 py-6 text-center text-[13px] text-ink-muted">
+    <Icon size={20} className="mx-auto mb-2 text-ink-muted" strokeWidth={1.75} />
     {text}
   </div>
 );
@@ -740,9 +718,9 @@ const Composer = ({ value, onChange, onSubmit, disabled, inputRef }: ComposerPro
     };
 
     return (
-      <div className="border-t border-stone-200 bg-white">
+      <div className="border-t border-hairline bg-paper">
         <div className="max-w-3xl mx-auto px-6 py-4">
-          <div className="flex items-end gap-2 rounded-2xl bg-stone-50 ring-1 ring-stone-200 p-2 focus-within:ring-stone-400">
+          <div className="flex items-end gap-2 rounded-card border border-hairline bg-canvas p-2 focus-within:border-ink/30 transition-colors">
             <textarea
               ref={inputRef}
               value={value}
@@ -750,7 +728,7 @@ const Composer = ({ value, onChange, onSubmit, disabled, inputRef }: ComposerPro
               onKeyDown={onKeyDown}
               placeholder="Frag mich etwas oder beschreibe einen neuen Vertrag…"
               rows={1}
-              className="flex-1 resize-none bg-transparent outline-none px-3 py-2 text-[15px] max-h-40"
+              className="flex-1 resize-none bg-transparent outline-none px-3 py-2 text-[14.5px] max-h-40 text-ink placeholder:text-ink-muted"
               style={{ minHeight: 40 }}
             />
             {supported && (
@@ -758,26 +736,25 @@ const Composer = ({ value, onChange, onSubmit, disabled, inputRef }: ComposerPro
                 type="button"
                 onClick={toggleMic}
                 title={listening ? "Aufnahme stoppen" : "Sprachaufnahme starten"}
-                className={`w-10 h-10 rounded-xl flex items-center justify-center transition ${
+                className={`w-9 h-9 rounded-btn flex items-center justify-center transition ${
                   listening
                     ? "bg-red-500 text-white hover:bg-red-600"
-                    : "bg-white ring-1 ring-stone-200 text-stone-700 hover:bg-stone-100"
+                    : "border border-hairline bg-paper text-ink-soft hover:bg-canvas"
                 }`}
               >
-                {listening ? <MicOff size={16} /> : <Mic size={16} />}
+                {listening ? <MicOff size={15} /> : <Mic size={15} />}
               </button>
             )}
             <button
               type="button"
               onClick={onSubmit}
               disabled={disabled || !value.trim()}
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-white disabled:opacity-30"
-              style={{ background: THEME.primary }}
+              className="w-9 h-9 rounded-btn flex items-center justify-center bg-signal text-white hover:bg-signal-strong disabled:opacity-30 transition-colors shadow-signal"
             >
-              <ArrowUp size={16} />
+              <ArrowUp size={15} />
             </button>
           </div>
-          <div className="text-[11px] text-stone-400 text-center mt-2">
+          <div className="text-[11px] text-ink-muted text-center mt-2">
             Enter zum Senden · Shift+Enter für neue Zeile
             {supported && " · Mikrofon für Sprache"}
           </div>

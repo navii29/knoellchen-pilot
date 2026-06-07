@@ -9,7 +9,9 @@ import {
   Loader2,
   Save,
 } from "lucide-react";
-import { THEME } from "@/lib/theme";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Panel } from "@/components/ui/Panel";
+import { Button } from "@/components/ui/Button";
 import {
   COMMISSION_TYPE_META,
   PARTNER_TYPE_META,
@@ -20,9 +22,6 @@ import {
 
 const TYPES: PartnerType[] = ["hotel", "agency", "portal", "workshop", "other"];
 const COMMISSION_TYPES: CommissionType[] = ["fixed", "percent", "margin"];
-
-const inputCls =
-  "w-full h-10 px-3 rounded-lg bg-white ring-1 ring-stone-200 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-500/40";
 
 export const PartnerForm = ({
   mode,
@@ -97,35 +96,31 @@ export const PartnerForm = ({
   return (
     <>
       {mode === "create" && (
-        <Link
-          href="/dashboard/partners"
-          className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
-        >
-          <ArrowLeft size={14} /> Zurück zu Partner
-        </Link>
-      )}
-
-      {mode === "create" && (
         <>
-          <div className="font-display font-bold text-2xl tracking-tight">
-            Neuer Partner
-          </div>
-          <p className="text-sm text-stone-500 mt-1 max-w-xl">
-            Hotel, Portal oder Werkstatt eintragen und Provisionsmodell
-            festlegen — Fahrzeug-Preise je Partner gibt&apos;s im Fahrzeug-Detail.
-          </p>
+          <Link
+            href="/dashboard/partners"
+            className="inline-flex items-center gap-1.5 text-[13px] text-ink-muted hover:text-ink mb-5"
+          >
+            <ArrowLeft size={14} /> Zurück zu Partner
+          </Link>
+          <PageHeader
+            kicker="Neuer Partner"
+            title="Partner anlegen"
+            description="Hotel, Portal oder Werkstatt eintragen und Provisionsmodell festlegen — Fahrzeug-Preise je Partner gibt's im Fahrzeug-Detail."
+          />
         </>
       )}
 
       <form onSubmit={submit} className={mode === "create" ? "mt-6 space-y-5" : "space-y-5"}>
-        <Card title="Stammdaten">
+        <Panel>
+          <div className="data-label mb-4">Stammdaten</div>
           <div className="grid sm:grid-cols-2 gap-3">
             <Field label="Name *">
               <input
                 required
                 value={data.name}
                 onChange={(e) => setData((d) => ({ ...d, name: e.target.value }))}
-                className={inputCls}
+                className="field"
                 placeholder="Hotel Bayerischer Hof"
               />
             </Field>
@@ -135,7 +130,7 @@ export const PartnerForm = ({
                 onChange={(e) =>
                   setData((d) => ({ ...d, type: e.target.value as PartnerType }))
                 }
-                className={inputCls}
+                className="field"
               >
                 {TYPES.map((t) => (
                   <option key={t} value={t}>
@@ -150,7 +145,7 @@ export const PartnerForm = ({
                 onChange={(e) =>
                   setData((d) => ({ ...d, contact_name: e.target.value }))
                 }
-                className={inputCls}
+                className="field"
               />
             </Field>
             <Field label="E-Mail">
@@ -160,7 +155,7 @@ export const PartnerForm = ({
                 onChange={(e) =>
                   setData((d) => ({ ...d, email: e.target.value }))
                 }
-                className={inputCls}
+                className="field"
               />
             </Field>
             <Field label="Telefon">
@@ -169,7 +164,7 @@ export const PartnerForm = ({
                 onChange={(e) =>
                   setData((d) => ({ ...d, phone: e.target.value }))
                 }
-                className={inputCls}
+                className="field font-mono tnum"
               />
             </Field>
             <Field label="Steuernummer">
@@ -178,7 +173,7 @@ export const PartnerForm = ({
                 onChange={(e) =>
                   setData((d) => ({ ...d, tax_number: e.target.value }))
                 }
-                className={inputCls}
+                className="field font-mono tnum"
               />
             </Field>
             <div className="sm:col-span-2">
@@ -189,14 +184,15 @@ export const PartnerForm = ({
                   onChange={(e) =>
                     setData((d) => ({ ...d, address: e.target.value }))
                   }
-                  className={`${inputCls} h-auto py-2 resize-none`}
+                  className="field resize-none"
                 />
               </Field>
             </div>
           </div>
-        </Card>
+        </Panel>
 
-        <Card title="Provisionsmodell">
+        <Panel>
+          <div className="data-label mb-4">Provisionsmodell</div>
           <div className="grid sm:grid-cols-2 gap-3">
             <Field label="Modell">
               <select
@@ -207,7 +203,7 @@ export const PartnerForm = ({
                     commission_type: e.target.value as CommissionType,
                   }))
                 }
-                className={inputCls}
+                className="field"
               >
                 {COMMISSION_TYPES.map((t) => (
                   <option key={t} value={t}>
@@ -231,7 +227,7 @@ export const PartnerForm = ({
                   onChange={(e) =>
                     setData((d) => ({ ...d, commission_value: e.target.value }))
                   }
-                  className={`${inputCls} pr-10`}
+                  className="field pr-10 font-mono tnum"
                   inputMode="decimal"
                   placeholder={
                     data.commission_type === "percent"
@@ -242,18 +238,19 @@ export const PartnerForm = ({
                   }
                   disabled={data.commission_type === "margin"}
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-stone-400">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-ink-muted">
                   {data.commission_type === "percent" ? "%" : "€"}
                 </span>
               </div>
             </Field>
-            <div className="sm:col-span-2 text-[12px] text-stone-500 leading-snug">
+            <div className="sm:col-span-2 text-[12px] text-ink-muted leading-snug">
               {COMMISSION_TYPE_META[data.commission_type].description}
             </div>
           </div>
-        </Card>
+        </Panel>
 
-        <Card title="Sonstiges">
+        <Panel>
+          <div className="data-label mb-4">Sonstiges</div>
           <Field label="Notizen">
             <textarea
               value={data.notes}
@@ -261,69 +258,50 @@ export const PartnerForm = ({
                 setData((d) => ({ ...d, notes: e.target.value }))
               }
               rows={3}
-              className={`${inputCls} h-auto py-2 resize-none`}
+              className="field resize-none"
               placeholder="Optional"
             />
           </Field>
-          <label className="mt-3 flex items-start gap-3 p-3 rounded-lg ring-1 ring-stone-200 cursor-pointer">
+          <label className="mt-3 flex items-start gap-3 p-3 rounded-panel border border-hairline cursor-pointer">
             <input
               type="checkbox"
               checked={data.active}
               onChange={(e) =>
                 setData((d) => ({ ...d, active: e.target.checked }))
               }
-              className="mt-0.5 w-4 h-4 accent-teal-600"
+              className="mt-0.5 w-4 h-4 accent-ink"
             />
-            <div className="text-sm text-stone-700">
-              Partner ist <strong>aktiv</strong> — taucht in Vertragsanlage und
-              Listen auf.
+            <div className="text-[13.5px] text-ink-soft">
+              Partner ist <strong className="text-ink">aktiv</strong> — taucht in Vertragsanlage und Listen auf.
             </div>
           </label>
-        </Card>
+        </Panel>
 
         {error && (
-          <div className="text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2">
+          <div className="text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-panel px-3 py-2">
             {error}
           </div>
         )}
 
         <div className="flex items-center justify-end gap-3">
           {saved && (
-            <span className="inline-flex items-center gap-1 text-xs text-emerald-700">
-              <Check size={13} /> Gespeichert
+            <span className="inline-flex items-center gap-1 text-[12px] text-ink-muted">
+              <Check size={13} className="text-signal" /> Gespeichert
             </span>
           )}
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex items-center gap-1.5 text-white text-sm px-4 py-2.5 rounded-lg font-medium disabled:opacity-50"
-            style={{ background: THEME.primary }}
-          >
+          <Button type="submit" variant="signal" size="md" disabled={saving}>
             {saving ? (
               <Loader2 size={14} className="animate-spin" />
             ) : (
               <Save size={14} />
             )}
             {mode === "create" ? "Partner anlegen" : "Speichern"}
-          </button>
+          </Button>
         </div>
       </form>
     </>
   );
 };
-
-const Card = ({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) => (
-  <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5 sm:p-6">
-    <div className="font-display font-semibold mb-4">{title}</div>
-    {children}
-  </div>
-);
 
 const Field = ({
   label,
@@ -333,9 +311,7 @@ const Field = ({
   children: React.ReactNode;
 }) => (
   <label className="block">
-    <div className="text-[11.5px] uppercase tracking-wider text-stone-500 font-medium mb-1">
-      {label}
-    </div>
+    <div className="data-label mb-1">{label}</div>
     {children}
   </label>
 );

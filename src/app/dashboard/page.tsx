@@ -184,23 +184,21 @@ export default async function DashboardPage() {
   return (
     <>
       <Topbar />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
+      <div className="flex-1 overflow-auto scroll-thin bg-canvas">
         <div className="px-4 md:px-10 py-8 md:py-12 space-y-8 max-w-[1400px]">
           <div className="flex items-end justify-between flex-wrap gap-4">
             <div>
-              <div className="text-[12px] uppercase tracking-wider text-stone-500 font-medium mb-2">
-                {today}
-              </div>
-              <h1 className="font-display font-medium text-[32px] md:text-[44px] leading-[1.05] tracking-[-0.03em] text-stone-900">
+              <div className="kicker text-ink-muted mb-2">{today}</div>
+              <h1 className="font-display font-extrabold text-[32px] md:text-[44px] leading-[1.05] tracking-tightest text-ink">
                 Guten Tag, {org?.name || "Team"}.
               </h1>
-              <p className="text-[15px] text-stone-500 mt-3 max-w-2xl">
+              <p className="text-[15px] text-ink-muted mt-3 max-w-2xl">
                 {counts.neu === 0
                   ? "Keine offenen Eingänge — alles erledigt."
                   : `${counts.neu} ${counts.neu === 1 ? "neuer Strafzettel wartet" : "neue Strafzettel warten"} auf Freigabe.`}
               </p>
             </div>
-            <div className="hidden md:flex items-center gap-2 px-3 h-7 rounded-full bg-white ring-1 ring-black/[0.05] text-[12px] text-stone-600">
+            <div className="hidden md:flex items-center gap-2 px-3 h-7 rounded-full border border-hairline bg-paper text-[12px] text-ink-soft">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Alle Systeme online
             </div>

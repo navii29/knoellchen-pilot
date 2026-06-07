@@ -89,31 +89,29 @@ export const CalendarClient = ({
     <>
       <div className="flex items-end justify-between gap-4 flex-wrap mb-4 md:mb-6">
         <div>
-          <div className="font-display font-bold text-2xl md:text-[28px] tracking-tight text-stone-900">
+          <div className="kicker text-ink-muted mb-2">KW {getIsoWeek(weekStart)} · Flottenbelegung</div>
+          <div className="font-display font-extrabold text-ink text-[26px] md:text-[30px] leading-[1.05] tracking-tightest">
             {monthYearLabel(weekStart, weekEnd)}
           </div>
-          <p className="text-xs md:text-sm text-stone-500 mt-1">
-            KW {getIsoWeek(weekStart)} · Flottenbelegung
-          </p>
         </div>
 
-        <div className="inline-flex items-center rounded-lg bg-white ring-1 ring-stone-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden">
+        <div className="inline-flex items-center rounded-btn bg-paper border border-hairline shadow-panel overflow-hidden">
           <Link
             href={`/dashboard/calendar?week=${prevWeek}`}
-            className="px-2.5 py-1.5 text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors border-r border-stone-200"
+            className="px-2.5 py-1.5 text-ink-soft hover:bg-canvas hover:text-ink transition-colors border-r border-hairline"
             aria-label="Vorherige Woche"
           >
             <ChevronLeft size={16} />
           </Link>
           <Link
             href={`/dashboard/calendar?week=${today}`}
-            className="px-3.5 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50 hover:text-stone-900 transition-colors border-r border-stone-200"
+            className="px-3.5 py-1.5 text-[13px] font-medium text-ink-soft hover:bg-canvas hover:text-ink transition-colors border-r border-hairline"
           >
             Heute
           </Link>
           <Link
             href={`/dashboard/calendar?week=${nextWeek}`}
-            className="px-2.5 py-1.5 text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+            className="px-2.5 py-1.5 text-ink-soft hover:bg-canvas hover:text-ink transition-colors"
             aria-label="Nächste Woche"
           >
             <ChevronRight size={16} />
@@ -121,13 +119,13 @@ export const CalendarClient = ({
         </div>
       </div>
 
-      <div className="rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] ring-1 ring-stone-100 overflow-hidden">
+      <div className="panel overflow-hidden">
        <div className="overflow-x-auto">
         <div
-          className="min-w-[760px] grid border-b border-stone-100 bg-stone-50/50"
+          className="min-w-[760px] grid border-b border-hairline bg-canvas/60"
           style={{ gridTemplateColumns: `200px repeat(7, minmax(80px, 1fr))` }}
         >
-          <div className="px-4 py-3 text-[11px] uppercase tracking-wider text-stone-500 font-semibold border-r border-stone-100">
+          <div className="th px-4 py-3 border-r border-hairline">
             Fahrzeug
           </div>
           {days.map((d, i) => {
@@ -137,23 +135,23 @@ export const CalendarClient = ({
             return (
               <div
                 key={iso}
-                className="px-2 py-3 flex flex-col items-center justify-center gap-1 border-l border-stone-100 first:border-l-0"
+                className="px-2 py-3 flex flex-col items-center justify-center gap-1 border-l border-hairline first:border-l-0"
               >
                 <div
-                  className={`text-[10px] font-medium uppercase tracking-wider ${
-                    isToday ? "text-teal-700" : isWeekend ? "text-stone-300" : "text-stone-500"
+                  className={`text-[10px] font-mono font-medium uppercase tracking-wider ${
+                    isToday ? "text-signal" : isWeekend ? "text-ink-muted/50" : "text-ink-muted"
                   }`}
                 >
                   {WEEKDAY[i]}
                 </div>
                 {isToday ? (
-                  <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-teal-600 text-white text-[13px] font-semibold tabular-nums">
+                  <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-signal text-white text-[13px] font-semibold tabular-nums font-mono">
                     {d.getDate()}
                   </div>
                 ) : (
                   <div
-                    className={`text-sm tabular-nums ${
-                      isWeekend ? "text-stone-300" : "text-stone-900"
+                    className={`text-sm font-mono tnum ${
+                      isWeekend ? "text-ink-muted/40" : "text-ink"
                     }`}
                   >
                     {d.getDate()}
@@ -165,7 +163,7 @@ export const CalendarClient = ({
         </div>
 
         {vehicles.length === 0 ? (
-          <div className="px-5 py-16 text-center text-sm text-stone-500 min-w-[760px]">
+          <div className="px-5 py-16 text-center text-sm text-ink-muted min-w-[760px]">
             Noch keine Fahrzeuge — leg zuerst welche unter &bdquo;Fahrzeuge&ldquo; an.
           </div>
         ) : (
@@ -192,13 +190,13 @@ export const CalendarClient = ({
                   transform: "translateX(-1px)",
                 }}
               >
-                <div className="w-0.5 h-full bg-teal-500" />
+                <div className="w-0.5 h-full bg-signal" />
                 <div
                   className="absolute -top-1 -left-[5px] w-0 h-0"
                   style={{
                     borderLeft: "6px solid transparent",
                     borderRight: "6px solid transparent",
-                    borderTop: "6px solid #14b8a6",
+                    borderTop: "6px solid #FF5A1F",
                   }}
                 />
               </div>
@@ -206,7 +204,7 @@ export const CalendarClient = ({
           </div>
         )}
        </div>
-       <div className="md:hidden text-[11px] text-stone-400 px-3 py-2 border-t border-stone-100 bg-stone-50/50">
+       <div className="md:hidden text-[11px] text-ink-muted px-3 py-2 border-t border-hairline bg-canvas/60">
          ← horizontal scrollen, um alle Tage zu sehen →
        </div>
       </div>
@@ -243,17 +241,17 @@ const VehicleRow = ({
 
   return (
     <div
-      className={`group grid border-b border-stone-100 last:border-0 transition-colors ${
-        zebra ? "bg-stone-50/30" : "bg-white"
-      } hover:bg-stone-50/60`}
+      className={`group grid border-b border-hairline last:border-0 transition-colors ${
+        zebra ? "bg-canvas/40" : "bg-paper"
+      } hover:bg-canvas/60`}
       style={{ gridTemplateColumns: `200px repeat(7, 1fr)`, minHeight: rowHeight }}
     >
-      <div className="px-4 py-3 flex items-center gap-2 border-r border-stone-100">
+      <div className="px-4 py-3 flex items-center gap-2 border-r border-hairline">
         <div className="min-w-0 w-full">
-          <div className="font-mono font-semibold text-sm text-stone-900 truncate">
+          <div className="font-mono font-semibold text-[13px] text-ink truncate">
             {vehicle.plate}
           </div>
-          <div className="text-xs text-stone-400 truncate mt-0.5">
+          <div className="text-[11px] text-ink-muted truncate mt-0.5">
             {vehicle.vehicle_type || "—"}
           </div>
         </div>
@@ -269,8 +267,8 @@ const VehicleRow = ({
           return (
             <div
               key={i}
-              className={`border-l border-stone-100 first:border-l-0 transition-colors hover:bg-emerald-50/40 ${
-                isToday ? "bg-teal-50/20" : ""
+              className={`border-l border-hairline first:border-l-0 transition-colors hover:bg-canvas/80 ${
+                isToday ? "bg-signal/5" : ""
               }`}
               style={{ height: rowHeight }}
             />
@@ -310,8 +308,8 @@ const ContractBar = ({
     background: laid.isOverdue ? "#dc2626" : color.bg,
     color: "#ffffff",
     boxShadow: laid.isOverdue
-      ? "0 1px 2px rgba(220,38,38,0.3)"
-      : `0 1px 2px rgba(0,0,0,0.08)`,
+      ? "0 1px 2px rgba(220,38,38,0.25)"
+      : `0 1px 2px rgba(0,0,0,0.06)`,
   };
 
   return (

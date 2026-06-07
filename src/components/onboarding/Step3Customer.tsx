@@ -159,16 +159,16 @@ export const Step3Customer = ({
               fileInputRef.current?.click();
             }}
             disabled={scanning}
-            className={`relative overflow-hidden rounded-2xl ring-1 px-5 py-4 text-left transition-all ${
+            className={`relative overflow-hidden rounded-card border px-5 py-4 text-left transition-all ${
               mode === "scan"
-                ? "bg-stone-900 text-white ring-stone-900 shadow-lg shadow-stone-900/10"
-                : "bg-white text-stone-900 ring-stone-200 hover:ring-stone-300"
+                ? "bg-ink text-white border-ink shadow-panel"
+                : "bg-paper text-ink border-hairline hover:border-ink/30"
             } disabled:opacity-60 disabled:cursor-not-allowed`}
           >
             <div className="flex items-center gap-3">
               <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                  mode === "scan" ? "bg-white/10 text-teal-300" : "bg-teal-100 text-teal-700"
+                className={`w-9 h-9 rounded-input flex items-center justify-center shrink-0 ${
+                  mode === "scan" ? "bg-white/10 text-signal" : "bg-canvas text-ink-muted"
                 }`}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -177,10 +177,10 @@ export const Step3Customer = ({
                 </svg>
               </div>
               <div className="min-w-0">
-                <div className="text-[14.5px] font-medium">Führerschein scannen</div>
+                <div className="text-[14px] font-medium">Führerschein scannen</div>
                 <div
                   className={`text-[12.5px] mt-0.5 ${
-                    mode === "scan" ? "text-white/60" : "text-stone-500"
+                    mode === "scan" ? "text-white/55" : "text-ink-muted"
                   }`}
                 >
                   {scanning ? "Wird ausgelesen…" : "Foto hochladen — KI füllt vor"}
@@ -202,16 +202,16 @@ export const Step3Customer = ({
           <button
             type="button"
             onClick={() => setMode("manual")}
-            className={`rounded-2xl ring-1 px-5 py-4 text-left transition-all ${
+            className={`rounded-card border px-5 py-4 text-left transition-all ${
               mode === "manual"
-                ? "bg-stone-900 text-white ring-stone-900 shadow-lg shadow-stone-900/10"
-                : "bg-white text-stone-900 ring-stone-200 hover:ring-stone-300"
+                ? "bg-ink text-white border-ink shadow-panel"
+                : "bg-paper text-ink border-hairline hover:border-ink/30"
             }`}
           >
             <div className="flex items-center gap-3">
               <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                  mode === "manual" ? "bg-white/10 text-teal-300" : "bg-stone-100 text-stone-700"
+                className={`w-9 h-9 rounded-input flex items-center justify-center shrink-0 ${
+                  mode === "manual" ? "bg-white/10 text-signal" : "bg-canvas text-ink-muted"
                 }`}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -220,10 +220,10 @@ export const Step3Customer = ({
                 </svg>
               </div>
               <div className="min-w-0">
-                <div className="text-[14.5px] font-medium">Manuell eingeben</div>
+                <div className="text-[14px] font-medium">Manuell eingeben</div>
                 <div
                   className={`text-[12.5px] mt-0.5 ${
-                    mode === "manual" ? "text-white/60" : "text-stone-500"
+                    mode === "manual" ? "text-white/55" : "text-ink-muted"
                   }`}
                 >
                   Name, E-Mail, Telefon
@@ -235,8 +235,8 @@ export const Step3Customer = ({
       )}
 
       {scanned && (
-        <div className="mb-6 px-4 py-3 rounded-xl bg-teal-50 ring-1 ring-teal-200/70 text-[13.5px] text-teal-800 flex items-center gap-2">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <div className="mb-6 px-4 py-3 rounded-input bg-canvas border border-hairline text-[13.5px] text-ink-soft flex items-center gap-2">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-signal shrink-0">
             <polyline points="20 6 9 17 4 12" />
           </svg>
           <span>Daten erfolgreich übernommen — bitte kurz prüfen und ergänzen.</span>
@@ -280,7 +280,7 @@ export const Step3Customer = ({
         </Field>
       </div>
 
-      <p className="mt-6 text-[13px] text-stone-500">
+      <p className="mt-6 text-[13px] text-ink-muted">
         Weitere Kunden können Sie jederzeit später hinzufügen.
       </p>
     </StepShell>

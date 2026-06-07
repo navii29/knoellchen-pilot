@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getPortalCustomer } from "@/lib/portal-auth";
 import { LoginClient } from "./LoginClient";
+import { Logo } from "@/components/ui/Logo";
 
 export const dynamic = "force-dynamic";
 
@@ -28,16 +29,16 @@ export default async function PortalLoginPage({
     : null;
 
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4 py-10">
+    <div className="min-h-screen bg-canvas flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <div className="inline-flex w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-500 items-center justify-center shadow-lg shadow-teal-500/20 mb-3">
-            <span className="text-white font-bold text-[20px]">K</span>
+          <div className="flex justify-center mb-4">
+            <Logo size={36} tone="light" wordmark={false} />
           </div>
-          <h1 className="font-display text-stone-900 text-[26px] tracking-tight font-medium">
+          <h1 className="font-display text-ink text-[26px] tracking-tightest font-bold">
             Kundenportal
           </h1>
-          <p className="text-sm text-stone-500 mt-1">
+          <p className="text-[13px] text-ink-muted mt-1.5">
             Verträge, Dokumente und Selfservice an einem Ort.
           </p>
         </div>

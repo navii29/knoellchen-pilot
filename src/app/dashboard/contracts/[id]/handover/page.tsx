@@ -27,7 +27,6 @@ export default async function HandoverPage({ params }: { params: { id: string } 
     .eq("contract_id", c.id);
   const photos = (photoRows ?? []) as HandoverPhoto[];
 
-  // Signed URLs für alle Fotos
   const admin = createAdminClient();
   const photosWithUrl: Array<HandoverPhoto & { url: string | null }> = await Promise.all(
     photos.map(async (p) => {
@@ -41,7 +40,7 @@ export default async function HandoverPage({ params }: { params: { id: string } 
   return (
     <>
       <Topbar section={`Übergabe · ${c.contract_nr}`} />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
+      <div className="flex-1 overflow-auto scroll-thin bg-canvas">
         <div className="max-w-5xl mx-auto p-4 md:p-10">
           <HandoverClient
             contractId={c.id}

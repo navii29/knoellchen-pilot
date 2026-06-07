@@ -5,6 +5,7 @@ import { useState } from "react";
 import { AlertTriangle, ChevronDown, ChevronRight, Disc } from "lucide-react";
 import { TIRE_TYPE_META } from "@/lib/tires";
 import type { TireAlertItem } from "@/lib/tire-alerts";
+import { Plate } from "@/components/ui/Plate";
 
 export type { TireAlertItem } from "@/lib/tire-alerts";
 
@@ -29,10 +30,10 @@ export const TiresAlert = ({ items }: { items: TireAlertItem[] }) => {
 
   return (
     <div
-      className="rounded-xl"
+      className="rounded-card border"
       style={{
         background: tone.bg,
-        boxShadow: `inset 0 0 0 1px ${tone.ring}`,
+        borderColor: tone.ring,
       }}
     >
       <button
@@ -40,23 +41,23 @@ export const TiresAlert = ({ items }: { items: TireAlertItem[] }) => {
         className="w-full flex items-center gap-3 px-5 py-3.5 text-left"
       >
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-          style={{ background: "white", color: tone.color }}
+          className="w-8 h-8 rounded-panel border flex items-center justify-center shrink-0"
+          style={{ background: "white", color: tone.color, borderColor: tone.ring }}
         >
-          {hasCritical ? <AlertTriangle size={16} /> : <Disc size={16} />}
+          {hasCritical ? <AlertTriangle size={15} strokeWidth={1.75} /> : <Disc size={15} strokeWidth={1.75} />}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium" style={{ color: tone.text }}>
+          <div className="text-[13.5px] font-medium" style={{ color: tone.text }}>
             {headline}
           </div>
-          <div className="text-xs mt-0.5" style={{ color: tone.text, opacity: 0.85 }}>
+          <div className="font-mono text-[11px] mt-0.5" style={{ color: tone.text, opacity: 0.75 }}>
             {open ? "Klick zum Einklappen" : "Klick für Details"}
           </div>
         </div>
         {open ? (
-          <ChevronDown size={16} style={{ color: tone.text }} />
+          <ChevronDown size={15} style={{ color: tone.text }} />
         ) : (
-          <ChevronRight size={16} style={{ color: tone.text }} />
+          <ChevronRight size={15} style={{ color: tone.text }} />
         )}
       </button>
       {open && (
@@ -69,28 +70,28 @@ export const TiresAlert = ({ items }: { items: TireAlertItem[] }) => {
               <Link
                 key={`${item.vehicle_id}-${item.reason}`}
                 href={`/dashboard/vehicles/${item.vehicle_id}`}
-                className="grid grid-cols-[120px_1fr_auto] items-center gap-3 px-5 py-2.5 text-sm hover:bg-white/50 transition"
+                className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-5 py-2.5 text-[13px] hover:bg-white/40 transition-colors"
               >
-                <span className="font-mono font-semibold text-stone-900">{item.plate}</span>
-                <span className="text-stone-700 truncate">{item.vehicle_label}</span>
+                <Plate value={item.plate} size="sm" />
+                <span className="text-ink truncate">{item.vehicle_label}</span>
                 <span className="flex items-center gap-1.5">
                   <span
-                    className="inline-flex items-center gap-1 px-1.5 h-5 rounded text-[11px] font-medium"
+                    className="inline-flex items-center gap-1 px-1.5 h-5 rounded-full border text-[11px] font-medium"
                     style={{
                       background: meta.bg,
                       color: meta.text,
-                      boxShadow: `inset 0 0 0 1px ${meta.ring}`,
+                      borderColor: meta.ring,
                     }}
                   >
                     {meta.short}
                   </span>
                   {isLow && item.min_tread_mm != null && (
-                    <span className="inline-flex items-center px-1.5 h-5 rounded text-[11px] font-mono font-semibold bg-rose-50 text-rose-700 ring-1 ring-rose-200 tabular-nums">
+                    <span className="inline-flex items-center px-1.5 h-5 rounded-full border text-[11px] font-mono tnum font-semibold bg-rose-50 text-rose-700 border-rose-200">
                       {item.min_tread_mm.toFixed(1).replace(".", ",")} mm
                     </span>
                   )}
                   {isMismatch && (
-                    <span className="inline-flex items-center px-1.5 h-5 rounded text-[11px] font-medium bg-amber-50 text-amber-800 ring-1 ring-amber-200">
+                    <span className="inline-flex items-center px-1.5 h-5 rounded-full border text-[11px] font-medium bg-amber-50 text-amber-800 border-amber-200">
                       {item.tire_type === "summer" ? "Winter empfohlen" : "Sommer empfohlen"}
                     </span>
                   )}

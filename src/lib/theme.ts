@@ -1,9 +1,10 @@
 import type { TicketStatus } from "./types";
 
 export const THEME = {
-  primary: "#0d9488",
-  primaryLight: "#5eead4",
-  primaryTint: "#ccfbf1",
+  // Leitstelle signal accent (was teal). Harmonizes legacy theme-driven UI.
+  primary: "#FF5A1F",
+  primaryLight: "#FF8A5C",
+  primaryTint: "#FFEDE4",
 };
 
 export const STATUS_META: Record<

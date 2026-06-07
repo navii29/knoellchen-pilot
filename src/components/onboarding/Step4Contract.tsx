@@ -134,7 +134,7 @@ export const Step4Contract = ({
       error={error}
     >
       {cannotProceed && (
-        <div className="mb-5 px-4 py-3 rounded-xl bg-amber-50 ring-1 ring-amber-200 text-[13.5px] text-amber-900">
+        <div className="mb-5 px-4 py-3 rounded-input bg-amber-50 border border-amber-200 text-[13.5px] text-amber-900">
           {noVehicles && "Sie haben noch kein Fahrzeug angelegt. "}
           {noCustomers && "Sie haben noch keinen Kunden angelegt. "}
           Gehen Sie zurück oder überspringen Sie diesen Schritt.
@@ -196,17 +196,15 @@ export const Step4Contract = ({
               onChange={(e) => setDailyRate(e.target.value)}
               inputMode="decimal"
             />
-            <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[14px] text-stone-400">
+            <span className="absolute right-3.5 top-1/2 -translate-y-1/2 font-mono text-[13px] text-ink-muted">
               €
             </span>
           </div>
         </Field>
         <div className="flex items-end">
-          <div className="w-full px-4 py-3 rounded-xl bg-stone-100 ring-1 ring-stone-200/60">
-            <div className="text-[12px] uppercase tracking-[0.08em] text-stone-500 font-medium">
-              Gesamtsumme
-            </div>
-            <div className="font-display text-[24px] tracking-[-0.02em] text-stone-900 font-medium leading-tight">
+          <div className="w-full px-4 py-3 rounded-input bg-canvas border border-hairline">
+            <div className="data-label text-ink-muted mb-1">Gesamtsumme</div>
+            <div className="font-display font-bold text-[26px] tracking-tightest text-ink leading-tight tnum">
               {totalAmount.toLocaleString("de-DE", {
                 style: "currency",
                 currency: "EUR",

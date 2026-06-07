@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Coins, Loader2, Save } from "lucide-react";
-import { THEME } from "@/lib/theme";
 import { fmtEur } from "@/lib/utils";
 import { computeCharge, VAT_RATE } from "@/lib/charge";
 import type { Ticket } from "@/lib/types";
+import { Panel, PanelHeader } from "@/components/ui/Panel";
+import { Button } from "@/components/ui/Button";
 
 const fmtPercent = (n: number) => `${Math.round(n * 100)}%`;
 
@@ -64,13 +65,8 @@ export const ChargeEditor = ({ ticket }: { ticket: Ticket }) => {
   };
 
   return (
-    <div className="rounded-xl ring-1 ring-stone-200 bg-white overflow-hidden">
-      <div className="px-4 py-3 border-b border-stone-100 flex items-center gap-2">
-        <Coins size={14} className="text-stone-400" />
-        <div className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold">
-          Weiterbelastung an Mieter
-        </div>
-      </div>
+    <Panel flush>
+      <PanelHeader Icon={Coins} title="Weiterbelastung an Mieter" />
 
       <div className="p-4 space-y-4">
         {/* Bußgeld */}
@@ -79,24 +75,24 @@ export const ChargeEditor = ({ ticket }: { ticket: Ticket }) => {
             type="checkbox"
             checked={chargeFine}
             onChange={(e) => setChargeFine(e.target.checked)}
-            className="mt-0.5 w-4 h-4 rounded accent-teal-600"
+            className="mt-0.5 w-4 h-4 rounded"
           />
           <div className="flex-1">
             <div className="flex items-center justify-between gap-3">
-              <div className="text-sm font-medium text-stone-900">Bußgeld weiterbelasten</div>
+              <div className="text-[13.5px] font-medium text-ink">Bußgeld weiterbelasten</div>
               <div
-                className={`tabular-nums text-sm ${chargeFine ? "text-stone-900" : "text-stone-300 line-through"}`}
+                className={`font-mono tnum text-[13.5px] ${chargeFine ? "text-ink" : "text-ink-muted line-through"}`}
               >
                 {fmtEur(fineAmount)}
               </div>
             </div>
-            <div className="text-xs text-stone-500 mt-0.5">
+            <div className="text-[12px] text-ink-muted mt-0.5">
               Behördliches Bußgeld 1:1 weitergeben (durchlaufender Posten, keine USt).
             </div>
           </div>
         </label>
 
-        <div className="border-t border-stone-100" />
+        <div className="border-t border-hairline" />
 
         {/* Bearbeitungsgebühr */}
         <label className="flex items-start gap-3 cursor-pointer select-none">
@@ -104,11 +100,11 @@ export const ChargeEditor = ({ ticket }: { ticket: Ticket }) => {
             type="checkbox"
             checked={chargeFee}
             onChange={(e) => setChargeFee(e.target.checked)}
-            className="mt-0.5 w-4 h-4 rounded accent-teal-600"
+            className="mt-0.5 w-4 h-4 rounded"
           />
           <div className="flex-1">
-            <div className="text-sm font-medium text-stone-900">Bearbeitungsgebühr berechnen</div>
-            <div className="text-xs text-stone-500 mt-0.5">
+            <div className="text-[13.5px] font-medium text-ink">Bearbeitungsgebühr berechnen</div>
+            <div className="text-[12px] text-ink-muted mt-0.5">
               Eigene Aufwandspauschale für die Bearbeitung. Wird mit {fmtPercent(VAT_RATE)} MwSt
               versteuert.
             </div>
@@ -117,15 +113,15 @@ export const ChargeEditor = ({ ticket }: { ticket: Ticket }) => {
 
         {chargeFee && (
           <div className="ml-7 space-y-2">
-            <div className="grid grid-cols-[1fr_140px] gap-3 items-center text-sm">
-              <label className="text-stone-700">Bearbeitungsgebühr netto</label>
+            <div className="grid grid-cols-[1fr_140px] gap-3 items-center text-[13.5px]">
+              <label className="text-ink-soft">Bearbeitungsgebühr netto</label>
               <div className="relative">
                 <input
                   value={feeNetInput}
                   onChange={(e) => setFeeNetInput(e.target.value)}
-                  className="w-full px-3 py-1.5 text-right pr-7 rounded-md ring-1 ring-stone-200 outline-none focus:ring-stone-400 tabular-nums"
+                  className="field text-right pr-7 font-mono tnum"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 text-xs">
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-muted text-[12px]">
                   €
                 </span>
               </div>
@@ -135,47 +131,46 @@ export const ChargeEditor = ({ ticket }: { ticket: Ticket }) => {
           </div>
         )}
 
-        <div className="border-t border-stone-100" />
+        <div className="border-t border-hairline" />
 
         {/* Total */}
-        <div className="flex items-center justify-between text-base">
-          <div className="font-semibold text-stone-900">Gesamtbetrag</div>
-          <div className="tabular-nums font-display font-semibold text-xl" style={{ color: THEME.primary }}>
+        <div className="flex items-center justify-between">
+          <div className="text-[13.5px] font-semibold text-ink">Gesamtbetrag</div>
+          <div className="font-display font-bold text-xl font-mono tnum text-signal">
             {fmtEur(breakdown.total_charge)}
           </div>
         </div>
 
-        {/* Erklärung wenn alles aus */}
         {!chargeFine && !chargeFee && (
-          <div className="text-xs text-amber-700 bg-amber-50 ring-1 ring-amber-200 rounded-md px-3 py-2">
+          <div className="text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded-card px-3 py-2">
             Es wird nichts an den Mieter weiterbelastet — Anschreiben und Rechnung enthalten keine Beträge.
           </div>
         )}
 
         {error && (
-          <div className="text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-md px-3 py-2">
+          <div className="text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-card px-3 py-2">
             {error}
           </div>
         )}
 
         <div className="flex items-center justify-end gap-3 pt-1">
           {saved && !dirty && (
-            <span className="inline-flex items-center gap-1 text-xs text-emerald-700">
+            <span className="inline-flex items-center gap-1 text-[12px] text-ink-soft">
               <CheckCircle2 size={13} /> Gespeichert
             </span>
           )}
-          <button
+          <Button
             onClick={save}
             disabled={saving || !dirty}
-            className="inline-flex items-center gap-1.5 text-white text-sm px-3.5 py-2 rounded-lg font-medium disabled:opacity-50"
-            style={{ background: THEME.primary }}
+            variant="signal"
+            size="sm"
           >
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             Übernehmen
-          </button>
+          </Button>
         </div>
       </div>
-    </div>
+    </Panel>
   );
 };
 
@@ -191,12 +186,12 @@ const BreakdownRow = ({
   bold?: boolean;
 }) => (
   <div
-    className={`grid grid-cols-[1fr_140px] gap-3 text-sm ${
-      muted ? "text-stone-500" : "text-stone-800"
+    className={`grid grid-cols-[1fr_140px] gap-3 text-[13px] ${
+      muted ? "text-ink-muted" : "text-ink"
     }`}
   >
     <div className={bold ? "font-medium" : ""}>{label}</div>
-    <div className={`text-right pr-7 tabular-nums ${bold ? "font-semibold" : ""}`}>
+    <div className={`text-right pr-7 font-mono tnum ${bold ? "font-semibold" : ""}`}>
       {fmtEur(value)}
     </div>
   </div>

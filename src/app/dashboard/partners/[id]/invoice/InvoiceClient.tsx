@@ -10,6 +10,11 @@ import {
   Receipt,
 } from "lucide-react";
 import { fmtDate, fmtEur } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Panel, PanelHeader } from "@/components/ui/Panel";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Button } from "@/components/ui/Button";
+import { Plate } from "@/components/ui/Plate";
 import type { SalesPartner } from "@/lib/partners";
 
 type Item = {
@@ -96,37 +101,30 @@ export const InvoiceClient = ({ partner }: { partner: SalesPartner }) => {
     <>
       <Link
         href={`/dashboard/partners/${partner.id}`}
-        className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+        className="inline-flex items-center gap-1.5 text-[13px] text-ink-muted hover:text-ink mb-5"
       >
         <ArrowLeft size={14} /> Zurück zum Partner
       </Link>
 
-      <div className="font-display font-bold text-2xl tracking-tight">
-        Provisionsabrechnung
-      </div>
-      <p className="text-sm text-stone-500 mt-1">
-        Partner: <span className="font-medium text-stone-700">{partner.name}</span>
-      </p>
+      <PageHeader
+        kicker="Provisionsabrechnung"
+        title={partner.name}
+        description="Zeitraumbasierte Provisionsübersicht — als PDF exportierbar."
+      />
 
       {/* Period selector */}
-      <div className="mt-6 rounded-xl bg-white ring-1 ring-stone-200 p-4 sm:p-5">
+      <Panel className="mt-6">
         <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setMonth(0)}
-            className="text-[12.5px] px-3 h-8 rounded-full bg-stone-100 text-stone-700 font-medium hover:bg-stone-200"
-          >
+          <Button type="button" variant="ghost" size="sm" onClick={() => setMonth(0)}>
             Diesen Monat
-          </button>
-          <button
-            type="button"
-            onClick={() => setMonth(-1)}
-            className="text-[12.5px] px-3 h-8 rounded-full bg-stone-100 text-stone-700 font-medium hover:bg-stone-200"
-          >
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setMonth(-1)}>
             Letzten Monat
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => {
               const y = new Date().getFullYear();
               const f = `${y}-01-01`;
@@ -135,72 +133,72 @@ export const InvoiceClient = ({ partner }: { partner: SalesPartner }) => {
               setTo(t);
               void load(f, t);
             }}
-            className="text-[12.5px] px-3 h-8 rounded-full bg-stone-100 text-stone-700 font-medium hover:bg-stone-200"
           >
             Dieses Jahr
-          </button>
+          </Button>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
-            <div className="text-[11.5px] uppercase tracking-wider text-stone-500 font-medium mb-1 inline-flex items-center gap-1.5">
+            <div className="data-label mb-1 inline-flex items-center gap-1.5">
               <Calendar size={11} /> Von
             </div>
             <input
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg bg-white ring-1 ring-stone-200 text-sm outline-none focus:ring-2 focus:ring-teal-500/40"
+              className="field font-mono tnum"
             />
           </label>
           <label className="block">
-            <div className="text-[11.5px] uppercase tracking-wider text-stone-500 font-medium mb-1 inline-flex items-center gap-1.5">
+            <div className="data-label mb-1 inline-flex items-center gap-1.5">
               <Calendar size={11} /> Bis
             </div>
             <input
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg bg-white ring-1 ring-stone-200 text-sm outline-none focus:ring-2 focus:ring-teal-500/40"
+              className="field font-mono tnum"
             />
           </label>
         </div>
         <div className="mt-3 flex items-center justify-end gap-2">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => load(from, to)}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md ring-1 ring-stone-200 hover:bg-stone-50 disabled:opacity-50"
           >
             {loading ? <Loader2 size={13} className="animate-spin" /> : null}
             Aktualisieren
-          </button>
+          </Button>
           <a
             href={`/api/partners/${partner.id}/invoice/pdf?from=${from}&to=${to}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-md bg-stone-900 text-white font-medium hover:bg-stone-800"
+            className="inline-flex items-center justify-center gap-2 h-8 px-3 rounded-btn bg-ink text-white text-[13px] font-medium tracking-tight hover:bg-ink-soft transition-all duration-150"
           >
             <Download size={13} /> PDF generieren
           </a>
         </div>
-      </div>
+      </Panel>
 
       {error && (
-        <div className="mt-4 text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2">
+        <div className="mt-4 text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-panel px-3 py-2">
           {error}
         </div>
       )}
 
       {/* Items table */}
-      <div className="mt-6 rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+      <Panel flush className="mt-6">
+        <PanelHeader Icon={Receipt} title="Positionen" />
         {items.length === 0 && !loading ? (
-          <div className="px-5 py-12 text-center text-sm text-stone-500">
-            <Receipt size={24} className="mx-auto text-stone-300 mb-2" />
-            Keine Verträge im gewählten Zeitraum.
-          </div>
+          <EmptyState
+            Icon={Receipt}
+            title="Keine Verträge im gewählten Zeitraum."
+          />
         ) : (
           <>
-            <div className="grid grid-cols-[120px_1fr_140px_140px_60px_100px_100px] items-center gap-3 px-5 py-2.5 bg-stone-50 border-b border-stone-100 text-[10.5px] uppercase tracking-wider text-stone-500 font-semibold">
+            <div className="hidden md:grid grid-cols-[120px_1fr_140px_140px_60px_100px_100px] items-center gap-3 px-5 py-2.5 border-b border-hairline bg-canvas/60 th">
               <span>Vertrag</span>
               <span>Mieter</span>
               <span>Kennzeichen</span>
@@ -213,55 +211,55 @@ export const InvoiceClient = ({ partner }: { partner: SalesPartner }) => {
               <Link
                 key={it.contract_id}
                 href={`/dashboard/contracts/${it.contract_id}`}
-                className="grid grid-cols-[120px_1fr_140px_140px_60px_100px_100px] items-center gap-3 px-5 py-2.5 border-b border-stone-100 last:border-0 hover:bg-stone-50"
+                className="grid grid-cols-[120px_1fr_140px_140px_60px_100px_100px] items-center gap-3 px-5 py-2.5 border-b border-hairline last:border-0 hover:bg-canvas transition-colors"
               >
-                <span className="font-mono text-xs text-stone-700">
+                <span className="font-mono text-[12px] text-ink-muted tnum">
                   {it.contract_nr}
                 </span>
-                <span className="text-sm text-stone-700 truncate">
+                <span className="text-[13.5px] text-ink truncate">
                   {it.renter_name}
                 </span>
-                <span className="font-mono text-xs text-stone-500">
-                  {it.plate}
-                </span>
-                <span className="text-xs text-stone-500 tabular-nums">
+                {it.plate ? (
+                  <Plate value={it.plate} size="sm" />
+                ) : (
+                  <span className="font-mono text-ink-muted">—</span>
+                )}
+                <span className="text-[12px] text-ink-muted font-mono tnum">
                   {fmtDate(it.pickup_date)} – {fmtDate(it.return_date)}
                 </span>
-                <span className="text-xs text-stone-500 text-right tabular-nums">
+                <span className="text-[12px] text-ink-muted text-right font-mono tnum">
                   {it.days}
                 </span>
-                <span className="text-xs text-stone-500 text-right tabular-nums">
+                <span className="text-[12px] text-ink-muted text-right font-mono tnum">
                   {it.purchase_price_per_day != null
                     ? fmtEur(it.purchase_price_per_day)
                     : "—"}
                 </span>
-                <span className="text-sm text-emerald-700 font-semibold text-right tabular-nums">
+                <span className="text-[13px] text-ink font-semibold text-right font-mono tnum">
                   {fmtEur(it.computed_commission)}
                 </span>
               </Link>
             ))}
             {totals && items.length > 0 && (
-              <div className="grid grid-cols-[120px_1fr_140px_140px_60px_100px_100px] items-center gap-3 px-5 py-3 bg-stone-50 border-t border-stone-200 text-[12.5px] font-medium">
-                <span></span>
-                <span></span>
-                <span></span>
-                <span className="text-stone-500 text-right uppercase tracking-wider text-[10.5px]">
-                  Summe
-                </span>
-                <span className="text-right tabular-nums text-stone-700">
+              <div className="grid grid-cols-[120px_1fr_140px_140px_60px_100px_100px] items-center gap-3 px-5 py-3 border-t border-hairline bg-canvas/60 text-[12.5px] font-medium">
+                <span />
+                <span />
+                <span />
+                <span className="data-label text-right">Summe</span>
+                <span className="text-right font-mono tnum text-ink">
                   {totals.total_days}
                 </span>
-                <span className="text-right tabular-nums text-stone-700">
+                <span className="text-right font-mono tnum text-ink-soft">
                   {fmtEur(totals.total_purchase)}
                 </span>
-                <span className="text-right tabular-nums text-emerald-700 font-bold">
+                <span className="text-right font-mono tnum text-ink font-bold">
                   {fmtEur(totals.total_commission)}
                 </span>
               </div>
             )}
           </>
         )}
-      </div>
+      </Panel>
     </>
   );
 };
