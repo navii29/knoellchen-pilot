@@ -10,7 +10,7 @@ export const LegalShell = ({
   subtitle?: string;
   children: React.ReactNode;
 }) => (
-  <main className="bg-black text-white">
+  <main className="bg-void text-white">
     <Nav />
     <section className="pt-32 pb-12 sm:pt-40 sm:pb-16">
       <div className="max-w-4xl mx-auto px-6 lg:px-10">
@@ -22,7 +22,7 @@ export const LegalShell = ({
         )}
       </div>
     </section>
-    <section className="bg-stone-50 text-stone-900">
+    <section className="bg-canvas text-ink">
       <div className="max-w-3xl mx-auto px-6 lg:px-10 py-20 sm:py-24">
         <article className="prose-legal">{children}</article>
       </div>
@@ -32,7 +32,7 @@ export const LegalShell = ({
 );
 
 export const H2 = ({ children }: { children: React.ReactNode }) => (
-  <h2 className="font-display text-stone-900 text-[28px] sm:text-[34px] leading-[1.15] tracking-[-0.02em] font-medium mt-14 mb-5 first:mt-0">
+  <h2 className="font-display text-ink text-[28px] sm:text-[34px] leading-[1.15] tracking-[-0.02em] font-medium mt-14 mb-5 first:mt-0">
     {children}
   </h2>
 );
@@ -44,8 +44,8 @@ export const NumberedH2 = ({
   number: string;
   children: React.ReactNode;
 }) => (
-  <h2 className="font-display text-stone-900 text-[24px] sm:text-[28px] leading-[1.2] tracking-[-0.02em] font-medium mt-12 mb-4 first:mt-0 flex items-baseline gap-3">
-    <span className="font-mono text-[14px] text-teal-700 font-semibold tabular-nums">
+  <h2 className="font-display text-ink text-[24px] sm:text-[28px] leading-[1.2] tracking-[-0.02em] font-medium mt-12 mb-4 first:mt-0 flex items-baseline gap-3">
+    <span className="font-mono text-[14px] text-signal font-semibold tabular-nums">
       {number}
     </span>
     <span>{children}</span>
@@ -53,23 +53,23 @@ export const NumberedH2 = ({
 );
 
 export const H3 = ({ children }: { children: React.ReactNode }) => (
-  <h3 className="text-stone-900 text-[18px] sm:text-[20px] font-semibold mt-8 mb-3">
+  <h3 className="text-ink text-[18px] sm:text-[20px] font-semibold mt-8 mb-3">
     {children}
   </h3>
 );
 
 export const P = ({ children }: { children: React.ReactNode }) => (
-  <p className="text-[15.5px] leading-[1.7] text-stone-700 mb-4">{children}</p>
+  <p className="text-[15.5px] leading-[1.7] text-ink-soft mb-4">{children}</p>
 );
 
 export const UL = ({ children }: { children: React.ReactNode }) => (
-  <ul className="list-disc pl-6 mb-4 space-y-1.5 text-[15.5px] leading-[1.7] text-stone-700 marker:text-stone-400">
+  <ul className="list-disc pl-6 mb-4 space-y-1.5 text-[15.5px] leading-[1.7] text-ink-soft marker:text-ink-muted">
     {children}
   </ul>
 );
 
 export const Address = ({ children }: { children: React.ReactNode }) => (
-  <div className="not-italic text-[15.5px] leading-[1.7] text-stone-800 mb-4 font-medium">
+  <div className="not-italic text-[15.5px] leading-[1.7] text-ink mb-4 font-medium">
     {children}
   </div>
 );

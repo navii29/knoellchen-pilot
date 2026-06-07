@@ -117,7 +117,7 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
       <div className="mt-4 panel overflow-hidden">
         {/* Desktop */}
         <div className="hidden md:block">
-          <div className="grid grid-cols-[148px_1fr_140px_120px_140px_128px_70px] gap-3 px-5 py-2.5 border-b border-hairline bg-canvas/60 th">
+          <div className="grid grid-cols-[132px_minmax(0,2fr)_minmax(0,1fr)_104px_124px_116px_44px] gap-3 px-5 py-2.5 border-b border-hairline bg-canvas/60 th">
             <span>Kennzeichen</span>
             <span>Hersteller / Modell</span>
             <span>Karosserie</span>
@@ -132,7 +132,7 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
             return (
               <div
                 key={v.id}
-                className="grid grid-cols-[148px_1fr_140px_120px_140px_128px_70px] gap-3 items-center px-5 py-3 border-b border-hairline last:border-0 hover:bg-canvas transition-colors text-[13.5px]"
+                className="grid grid-cols-[132px_minmax(0,2fr)_minmax(0,1fr)_104px_124px_116px_44px] gap-3 items-center px-5 py-3 border-b border-hairline last:border-0 hover:bg-canvas transition-colors text-[13.5px]"
               >
                 <Link href={`/dashboard/vehicles/${v.id}`}>
                   <Plate value={v.plate} size="sm" />

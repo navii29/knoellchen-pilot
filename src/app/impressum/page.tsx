@@ -37,7 +37,7 @@ export default function ImpressumPage() {
         E-Mail:{" "}
         <a
           href="mailto:kontakt@knoellchen-pilot.de"
-          className="text-teal-700 hover:underline"
+          className="text-signal hover:underline"
         >
           kontakt@knoellchen-pilot.de
         </a>
