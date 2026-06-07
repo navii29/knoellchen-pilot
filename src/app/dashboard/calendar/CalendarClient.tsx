@@ -14,6 +14,7 @@ import {
   type LaidContract,
 } from "@/lib/calendar";
 import type { Contract, Vehicle } from "@/lib/types";
+import { Plate } from "@/components/ui/Plate";
 
 const WEEKDAY = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const MONTHS = [
@@ -248,10 +249,8 @@ const VehicleRow = ({
     >
       <div className="px-4 py-3 flex items-center gap-2 border-r border-hairline">
         <div className="min-w-0 w-full">
-          <div className="font-mono font-semibold text-[13px] text-ink truncate">
-            {vehicle.plate}
-          </div>
-          <div className="text-[11px] text-ink-muted truncate mt-0.5">
+          <Plate value={vehicle.plate} size="sm" />
+          <div className="text-[11px] text-ink-muted truncate mt-1.5">
             {vehicle.vehicle_type || "—"}
           </div>
         </div>

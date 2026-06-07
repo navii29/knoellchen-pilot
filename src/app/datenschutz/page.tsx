@@ -41,7 +41,7 @@ export default function DatenschutzPage() {
         E-Mail:{" "}
         <a
           href="mailto:datenschutz@knoellchen-pilot.de"
-          className="text-teal-700 hover:underline"
+          className="text-signal hover:underline"
         >
           datenschutz@knoellchen-pilot.de
         </a>
@@ -229,7 +229,7 @@ export default function DatenschutzPage() {
           href="https://stripe.com/de/privacy"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-teal-700 hover:underline"
+          className="text-signal hover:underline"
         >
           stripe.com/de/privacy
         </a>
