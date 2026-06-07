@@ -58,6 +58,15 @@ const config: Config = {
           weiterbelastet: "#6D28D9",
           bezahlt: "#15803D",
         },
+
+        // ── "Aperture" Apple-grade website palette ──────────────────
+        graphite: { DEFAULT: "#1d1d1f", soft: "#474747", muted: "#86868b" },
+        mist: "#f5f5f7", // light canvas (cool)
+        frost: "#e8e8ed", // tertiary light surface
+        silver: "#d6d6d6", // hairline on light
+        pitch: "#000000", // immersive black hero/section void
+        space: "#161617", // raised dark surface
+        azure: { DEFAULT: "#0071e3", link: "#0066cc", sky: "#2997ff" }, // CTA / link / active
       },
       borderRadius: {
         card: "8px",
@@ -65,6 +74,8 @@ const config: Config = {
         btn: "6px",
         input: "6px",
         frame: "4px", // dark technical frames on the landing
+        apple: "28px", // large soft cards/images
+        pill: "9999px",
       },
       boxShadow: {
         // Restraint: depth comes from tone + hairline, not blur.
@@ -72,6 +83,10 @@ const config: Config = {
         raised: "0 1px 0 0 rgba(20,17,15,0.04), 0 8px 24px -12px rgba(20,17,15,0.12)",
         frame: "0 40px 90px -48px rgba(0,0,0,0.55)",
         signal: "0 8px 24px -10px rgba(255,90,31,0.45)",
+        // Apple-grade soft product elevation + glass.
+        product: "0 30px 80px -24px rgba(0,0,0,0.28), 0 8px 24px -12px rgba(0,0,0,0.12)",
+        glassdark: "0 1px 0 0 rgba(255,255,255,0.06) inset, 0 30px 80px -30px rgba(0,0,0,0.6)",
+        azure: "0 10px 30px -10px rgba(0,113,227,0.5)",
       },
       maxWidth: {
         site: "1200px",
