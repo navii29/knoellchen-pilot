@@ -2,9 +2,12 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, FileSpreadsheet, Plus, Search, Users } from "lucide-react";
+import { ChevronRight, FileSpreadsheet, Plus, Users } from "lucide-react";
 import { CsvImportModal } from "@/components/dashboard/CsvImportModal";
-import { THEME } from "@/lib/theme";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button, ButtonLink } from "@/components/ui/Button";
+import { SearchInput } from "@/components/ui/Toolbar";
+import { EmptyState } from "@/components/ui/EmptyState";
 import type { Customer } from "@/lib/types";
 
 const fullName = (c: Customer) =>
@@ -39,30 +42,25 @@ export const CustomersList = ({ initial }: { initial: Customer[] }) => {
 
   return (
     <>
-      <div className="flex items-end justify-between flex-wrap gap-3">
-        <div>
-          <div className="font-display font-bold text-2xl tracking-tight">Kunden</div>
-          <p className="text-sm text-stone-500 mt-1">
-            Mieterdaten zentral pflegen — bei Vertragsanlage einfach auswählen.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setImportOpen(true)}
-            className="inline-flex items-center gap-1.5 text-sm text-stone-700 px-3.5 py-1.5 rounded-md font-medium ring-1 ring-stone-200 bg-white hover:bg-stone-50"
-          >
-            <FileSpreadsheet size={14} /> CSV importieren
-          </button>
-          <Link
-            href="/dashboard/customers/new"
-            className="inline-flex items-center gap-1.5 text-sm text-white px-3.5 py-1.5 rounded-md font-medium"
-            style={{ background: THEME.primary }}
-          >
-            <Plus size={14} /> Neuer Kunde
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        kicker="CRM"
+        title="Kunden"
+        description="Mieterdaten zentral pflegen — bei Vertragsanlage einfach auswählen."
+        actions={
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setImportOpen(true)}
+            >
+              <FileSpreadsheet size={14} /> CSV importieren
+            </Button>
+            <ButtonLink href="/dashboard/customers/new" variant="signal" size="sm">
+              <Plus size={14} /> Neuer Kunde
+            </ButtonLink>
+          </>
+        }
+      />
 
       {importOpen && (
         <CsvImportModal
@@ -73,88 +71,84 @@ export const CustomersList = ({ initial }: { initial: Customer[] }) => {
       )}
 
       <div className="mt-6 flex items-center justify-end">
-        <div className="relative">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Name, E-Mail, Führerschein, PLZ…"
-            className="pl-8 pr-3 py-2 bg-white rounded-md text-sm ring-1 ring-stone-200 w-72 outline-none focus:ring-stone-400"
-          />
-        </div>
+        <SearchInput
+          value={q}
+          onChange={setQ}
+          placeholder="Name, E-Mail, Führerschein, PLZ…"
+          className="w-72"
+        />
       </div>
 
-      <div className="mt-4 rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+      <div className="mt-4 panel overflow-hidden">
         {/* Desktop */}
         <div className="hidden md:block">
-          <div className="grid grid-cols-[1fr_220px_140px_180px_24px] gap-3 px-5 py-2.5 text-[11px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
+          <div className="grid grid-cols-[1fr_220px_140px_180px_24px] gap-3 px-5 py-2.5 border-b border-hairline bg-canvas/60 th">
             <span>Name</span>
             <span>E-Mail</span>
             <span>Telefon</span>
             <span>Adresse</span>
-            <span></span>
+            <span />
           </div>
           {filtered.map((c) => (
             <Link
               key={c.id}
               href={`/dashboard/customers/${c.id}`}
-              className="grid grid-cols-[1fr_220px_140px_180px_24px] gap-3 items-center px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+              className="grid grid-cols-[1fr_220px_140px_180px_24px] gap-3 items-center px-5 py-3 border-b border-hairline last:border-0 text-[13.5px] hover:bg-canvas transition-colors"
             >
-              <span className="text-stone-900 truncate">
+              <span className="text-ink truncate">
                 {fullName(c) || "—"}
                 {c.salutation && (
-                  <span className="text-stone-400 text-xs ml-2">{c.salutation}</span>
+                  <span className="text-ink-muted text-[12px] ml-2">{c.salutation}</span>
                 )}
               </span>
-              <span className="text-stone-500 text-xs truncate">{c.email || "—"}</span>
-              <span className="text-stone-500 text-xs truncate tabular-nums">{c.phone || "—"}</span>
-              <span className="text-stone-500 text-xs truncate">{fullAddress(c) || "—"}</span>
-              <ChevronRight size={14} className="text-stone-300" />
+              <span className="text-ink-muted text-[12.5px] truncate">{c.email || "—"}</span>
+              <span className="text-ink-muted text-[12.5px] truncate font-mono tnum">{c.phone || "—"}</span>
+              <span className="text-ink-muted text-[12.5px] truncate">{fullAddress(c) || "—"}</span>
+              <ChevronRight size={14} className="text-ink-muted" />
             </Link>
           ))}
         </div>
 
         {/* Mobile */}
-        <div className="md:hidden divide-y divide-stone-100">
+        <div className="md:hidden divide-y divide-hairline">
           {filtered.map((c) => (
             <Link
               key={c.id}
               href={`/dashboard/customers/${c.id}`}
-              className="flex items-start gap-3 px-4 py-3 hover:bg-stone-50 active:bg-stone-100"
+              className="flex items-start gap-3 px-4 py-3 hover:bg-canvas active:bg-canvas"
             >
               <div className="flex-1 min-w-0 space-y-0.5">
-                <div className="text-sm font-medium text-stone-900 truncate">
+                <div className="text-[14px] font-medium text-ink truncate">
                   {fullName(c) || "—"}
                 </div>
-                <div className="text-[11px] text-stone-500 truncate">{c.email || "—"}</div>
+                <div className="text-[12px] text-ink-muted truncate">{c.email || "—"}</div>
                 {c.phone && (
-                  <div className="text-[11px] text-stone-500 truncate tabular-nums">{c.phone}</div>
+                  <div className="text-[12px] text-ink-muted truncate font-mono tnum">{c.phone}</div>
                 )}
                 {fullAddress(c) && (
-                  <div className="text-[11px] text-stone-400 truncate">{fullAddress(c)}</div>
+                  <div className="text-[12px] text-ink-muted truncate">{fullAddress(c)}</div>
                 )}
               </div>
-              <ChevronRight size={16} className="text-stone-300 shrink-0 mt-1" />
+              <ChevronRight size={16} className="text-ink-muted shrink-0 mt-1" />
             </Link>
           ))}
         </div>
 
         {filtered.length === 0 && (
-          <div className="px-5 py-12 text-center text-sm text-stone-500">
-            <Users size={28} className="mx-auto text-stone-300" />
-            <div className="mt-3">
-              {q ? "Keine Kunden gefunden." : "Noch keine Kunden angelegt."}
-            </div>
-            {!q && (
-              <Link
-                href="/dashboard/customers/new"
-                className="inline-flex items-center gap-1.5 text-sm text-white px-3.5 py-1.5 rounded-md font-medium mt-4"
-                style={{ background: THEME.primary }}
-              >
-                <Plus size={14} /> Ersten Kunden anlegen
-              </Link>
-            )}
-          </div>
+          <EmptyState
+            Icon={Users}
+            title={q ? "Keine Kunden gefunden." : "Noch keine Kunden angelegt."}
+            description={
+              !q ? "Legen Sie den ersten Kunden an oder importieren Sie eine CSV-Datei." : undefined
+            }
+            action={
+              !q ? (
+                <ButtonLink href="/dashboard/customers/new" variant="signal" size="sm">
+                  <Plus size={14} /> Ersten Kunden anlegen
+                </ButtonLink>
+              ) : undefined
+            }
+          />
         )}
       </div>
     </>

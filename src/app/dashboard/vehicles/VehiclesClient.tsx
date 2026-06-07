@@ -3,21 +3,37 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Car, ChevronRight, FileSpreadsheet, Plus, Search, Trash2 } from "lucide-react";
+import { Car, ChevronRight, FileSpreadsheet, Plus, Trash2 } from "lucide-react";
 import { CsvImportModal } from "@/components/dashboard/CsvImportModal";
-import { THEME } from "@/lib/theme";
 import { fmtDate } from "@/lib/utils";
 import { computeDecommission } from "@/lib/decommission";
-import { VEHICLE_STATUS_META, VEHICLE_STATUSES, buildVehicleType } from "@/lib/vehicle";
+import { VEHICLE_STATUS_META, buildVehicleType } from "@/lib/vehicle";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { FilterTabs, SearchInput } from "@/components/ui/Toolbar";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Button, ButtonLink } from "@/components/ui/Button";
+import { Plate } from "@/components/ui/Plate";
 
-const FILTERS: Array<VehicleStatus | "alle"> = ["alle", ...VEHICLE_STATUSES];
-const FILTER_LABELS: Record<string, string> = {
-  alle: "Alle",
-  aktiv: "Aktiv",
-  inaktiv: "Inaktiv",
-  werkstatt: "Werkstatt",
-  ausgesteuert: "Ausgesteuert",
+const FILTERS: Array<{ value: VehicleStatus | "alle"; label: string }> = [
+  { value: "alle", label: "Alle" },
+  { value: "aktiv", label: "Aktiv" },
+  { value: "inaktiv", label: "Inaktiv" },
+  { value: "werkstatt", label: "Werkstatt" },
+  { value: "ausgesteuert", label: "Ausgesteuert" },
+];
+
+const VehicleStatusPill = ({ status }: { status: VehicleStatus }) => {
+  const meta = VEHICLE_STATUS_META[status];
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full pl-2 pr-2.5 py-0.5 text-[11px] font-mono font-medium tracking-tight"
+      style={{ background: meta.bg, color: meta.text, boxShadow: `inset 0 0 0 1px ${meta.ring}` }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: meta.color }} />
+      {meta.label}
+    </span>
+  );
 };
 
 export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
@@ -51,32 +67,30 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
     if (res.ok) router.refresh();
   };
 
+  const counts = (v: VehicleStatus | "alle") =>
+    v === "alle" ? initial.length : initial.filter((x) => x.status === v).length;
+
   return (
     <>
-      <div className="flex items-end justify-between flex-wrap gap-3">
-        <div>
-          <div className="font-display font-bold text-2xl tracking-tight">Fahrzeuge</div>
-          <p className="text-sm text-stone-500 mt-1">
-            Stammdaten, Verfügbarkeit, Preise — alles in einem Datensatz pro Auto.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setImportOpen(true)}
-            className="inline-flex items-center gap-1.5 text-sm text-stone-700 px-3.5 py-1.5 rounded-md font-medium ring-1 ring-stone-200 bg-white hover:bg-stone-50"
-          >
-            <FileSpreadsheet size={14} /> CSV importieren
-          </button>
-          <Link
-            href="/dashboard/vehicles/new"
-            className="inline-flex items-center gap-1.5 text-sm text-white px-3.5 py-1.5 rounded-md font-medium"
-            style={{ background: THEME.primary }}
-          >
-            <Plus size={14} /> Neues Fahrzeug
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        kicker="Flotte"
+        title="Fahrzeuge"
+        description="Stammdaten, Verfügbarkeit, Preise — alles in einem Datensatz pro Auto."
+        actions={
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setImportOpen(true)}
+            >
+              <FileSpreadsheet size={14} /> CSV importieren
+            </Button>
+            <ButtonLink href="/dashboard/vehicles/new" variant="signal" size="sm">
+              <Plus size={14} /> Neues Fahrzeug
+            </ButtonLink>
+          </>
+        }
+      />
 
       {importOpen && (
         <CsvImportModal
@@ -87,75 +101,63 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
       )}
 
       <div className="mt-6 flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-1 text-xs flex-wrap">
-          {FILTERS.map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-2.5 py-1.5 rounded-md ${
-                filter === f ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-100"
-              }`}
-            >
-              {FILTER_LABELS[f]}
-            </button>
-          ))}
-        </div>
-        <div className="relative">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Kennzeichen, Modell, FIN…"
-            className="pl-8 pr-3 py-2 bg-white rounded-md text-sm ring-1 ring-stone-200 w-72 outline-none focus:ring-stone-400"
-          />
-        </div>
+        <FilterTabs
+          options={FILTERS.map((f) => ({ ...f, count: counts(f.value) }))}
+          value={filter}
+          onChange={setFilter}
+        />
+        <SearchInput
+          value={q}
+          onChange={setQ}
+          placeholder="Kennzeichen, Modell, FIN…"
+          className="w-64"
+        />
       </div>
 
-      <div className="mt-4 rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+      <div className="mt-4 panel overflow-hidden">
         {/* Desktop */}
         <div className="hidden md:block">
-          <div className="grid grid-cols-[120px_1fr_140px_120px_140px_120px_70px] gap-3 px-5 py-2.5 text-[11px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
+          <div className="grid grid-cols-[148px_1fr_140px_120px_140px_128px_70px] gap-3 px-5 py-2.5 border-b border-hairline bg-canvas/60 th">
             <span>Kennzeichen</span>
             <span>Hersteller / Modell</span>
             <span>Karosserie</span>
             <span className="text-right">Km-Stand</span>
             <span>Erstzulassung</span>
             <span>Status</span>
-            <span></span>
+            <span />
           </div>
           {filtered.map((v) => {
-            const meta = VEHICLE_STATUS_META[v.status];
             const decom = computeDecommission(v);
             const name = buildVehicleType(v.manufacturer, v.model) || v.vehicle_type || "—";
             return (
               <div
                 key={v.id}
-                className="grid grid-cols-[120px_1fr_140px_120px_140px_120px_70px] gap-3 items-center px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+                className="grid grid-cols-[148px_1fr_140px_120px_140px_128px_70px] gap-3 items-center px-5 py-3 border-b border-hairline last:border-0 hover:bg-canvas transition-colors text-[13.5px]"
               >
-                <Link href={`/dashboard/vehicles/${v.id}`} className="font-mono font-semibold">
-                  {v.plate}
+                <Link href={`/dashboard/vehicles/${v.id}`}>
+                  <Plate value={v.plate} size="sm" />
                 </Link>
-                <Link href={`/dashboard/vehicles/${v.id}`} className="text-stone-700 truncate">
+                <Link href={`/dashboard/vehicles/${v.id}`} className="text-ink truncate">
                   {name}
                   {v.color && (
-                    <span className="text-stone-400 text-xs ml-2">· {v.color}</span>
+                    <span className="text-ink-muted text-[12px] ml-2">· {v.color}</span>
                   )}
                 </Link>
-                <Link href={`/dashboard/vehicles/${v.id}`} className="text-xs text-stone-500 truncate">
+                <Link href={`/dashboard/vehicles/${v.id}`} className="text-[12.5px] text-ink-muted truncate">
                   {v.body_type || "—"}
                   {v.category && (
-                    <span className="text-stone-400 ml-1">· {v.category}</span>
+                    <span className="text-ink-muted ml-1">· {v.category}</span>
                   )}
                 </Link>
                 <Link
                   href={`/dashboard/vehicles/${v.id}`}
-                  className="text-xs text-stone-500 text-right tabular-nums"
+                  className="font-mono tnum text-[12.5px] text-ink-muted text-right"
                 >
                   {v.km_at_intake != null ? v.km_at_intake.toLocaleString("de-DE") : "—"}
                 </Link>
                 <Link
                   href={`/dashboard/vehicles/${v.id}`}
-                  className="text-xs text-stone-500 tabular-nums"
+                  className="font-mono tnum text-[12.5px] text-ink-muted"
                 >
                   {v.first_registration ? fmtDate(v.first_registration) : "—"}
                   {v.decommission_date && (
@@ -164,28 +166,18 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
                     </div>
                   )}
                 </Link>
-                <span
-                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium justify-self-start"
-                  style={{
-                    background: meta.bg,
-                    color: meta.text,
-                    boxShadow: `inset 0 0 0 1px ${meta.ring}`,
-                  }}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: meta.color }} />
-                  {meta.label}
-                </span>
+                <VehicleStatusPill status={v.status} />
                 <div className="flex items-center justify-end gap-1">
                   <Link
                     href={`/dashboard/vehicles/${v.id}`}
-                    className="text-stone-400 hover:text-stone-700 p-1.5"
+                    className="text-ink-muted hover:text-ink p-1.5"
                     title="Detail"
                   >
                     <ChevronRight size={14} />
                   </Link>
                   <button
                     onClick={() => remove(v.id)}
-                    className="text-stone-400 hover:text-red-600 p-1.5"
+                    className="text-ink-muted hover:text-red-600 p-1.5"
                     title="Löschen"
                   >
                     <Trash2 size={14} />
@@ -197,36 +189,25 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
         </div>
 
         {/* Mobile */}
-        <div className="md:hidden divide-y divide-stone-100">
+        <div className="md:hidden divide-y divide-hairline">
           {filtered.map((v) => {
-            const meta = VEHICLE_STATUS_META[v.status];
             const name = buildVehicleType(v.manufacturer, v.model) || v.vehicle_type || "—";
             return (
               <div key={v.id} className="flex items-start gap-3 px-4 py-3">
                 <Link
                   href={`/dashboard/vehicles/${v.id}`}
-                  className="flex-1 min-w-0 flex items-start gap-3 active:bg-stone-100 -mx-4 -my-3 px-4 py-3"
+                  className="flex-1 min-w-0 flex items-start gap-3 active:bg-canvas -mx-4 -my-3 px-4 py-3"
                 >
-                  <div className="w-9 h-9 rounded-lg bg-stone-100 text-stone-700 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-panel border border-hairline bg-canvas text-ink-muted flex items-center justify-center shrink-0">
                     <Car size={16} />
                   </div>
-                  <div className="flex-1 min-w-0 space-y-0.5">
+                  <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono font-semibold text-sm">{v.plate}</span>
-                      <span
-                        className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-[10px] font-medium"
-                        style={{
-                          background: meta.bg,
-                          color: meta.text,
-                          boxShadow: `inset 0 0 0 1px ${meta.ring}`,
-                        }}
-                      >
-                        <span className="w-1 h-1 rounded-full" style={{ background: meta.color }} />
-                        {meta.label}
-                      </span>
+                      <Plate value={v.plate} size="sm" />
+                      <VehicleStatusPill status={v.status} />
                     </div>
-                    <div className="text-xs text-stone-700 truncate">{name}</div>
-                    <div className="text-[11px] text-stone-400 truncate">
+                    <div className="text-[13px] text-ink truncate">{name}</div>
+                    <div className="text-[11px] font-mono text-ink-muted truncate">
                       {[v.body_type, v.color, v.first_registration && fmtDate(v.first_registration)]
                         .filter(Boolean)
                         .join(" · ") || "—"}
@@ -235,7 +216,7 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
                 </Link>
                 <button
                   onClick={() => remove(v.id)}
-                  className="touch-target flex items-center justify-center text-stone-400 hover:text-red-600"
+                  className="touch-target flex items-center justify-center text-ink-muted hover:text-red-600"
                   title="Löschen"
                 >
                   <Trash2 size={16} />
@@ -246,21 +227,18 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
         </div>
 
         {filtered.length === 0 && (
-          <div className="px-5 py-12 text-center text-sm text-stone-500">
-            <Car size={28} className="mx-auto text-stone-300" />
-            <div className="mt-3">
-              {q ? "Keine Fahrzeuge gefunden." : "Noch keine Fahrzeuge."}
-            </div>
-            {!q && (
-              <Link
-                href="/dashboard/vehicles/new"
-                className="inline-flex items-center gap-1.5 text-sm text-white px-3.5 py-1.5 rounded-md font-medium mt-4"
-                style={{ background: THEME.primary }}
-              >
-                <Plus size={14} /> Erstes Fahrzeug anlegen
-              </Link>
-            )}
-          </div>
+          <EmptyState
+            Icon={Car}
+            title={q ? "Keine Fahrzeuge gefunden." : "Noch keine Fahrzeuge."}
+            description={q ? undefined : "Legen Sie das erste Fahrzeug an, um die Flotte aufzubauen."}
+            action={
+              !q ? (
+                <ButtonLink href="/dashboard/vehicles/new" variant="signal" size="sm">
+                  <Plus size={14} /> Erstes Fahrzeug anlegen
+                </ButtonLink>
+              ) : undefined
+            }
+          />
         )}
       </div>
     </>

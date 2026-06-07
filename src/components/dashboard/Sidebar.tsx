@@ -14,11 +14,11 @@ import {
   Handshake,
   LayoutDashboard,
   Settings,
-  Sparkles,
   Users,
   WandSparkles,
   X,
 } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 
 type BadgeKey = "tickets" | "contracts" | "customers" | "damage";
 
@@ -89,7 +89,8 @@ export const Sidebar = ({
 
   const navList = (
     <>
-      <div className="text-[10px] uppercase tracking-wider text-stone-500 px-2.5 py-2 font-medium">
+      {/* Section label — mono kicker style on dark */}
+      <div className="font-mono text-[10px] uppercase tracking-wider text-white/40 px-3 py-2.5">
         Arbeitsbereich
       </div>
       {ITEMS.map((it) => {
@@ -109,22 +110,31 @@ export const Sidebar = ({
           <Link
             key={it.href}
             href={it.href}
-            className={`group w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-md text-[13px] transition-all duration-150 ${
+            className={`group relative w-full flex items-center gap-2.5 px-3 py-2.5 rounded-panel text-[13px] transition-all duration-150 ${
               isActive
-                ? "bg-white/10 text-white font-medium"
-                : "text-stone-400 hover:bg-white/5 hover:text-stone-100"
+                ? "bg-white/[0.06] text-white font-medium"
+                : "text-white/55 hover:bg-white/[0.06] hover:text-white"
             }`}
           >
+            {/* Signal bar for active state */}
+            {isActive && (
+              <span
+                aria-hidden
+                className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 bg-signal rounded-r-full"
+              />
+            )}
             <it.Icon
               size={15}
               strokeWidth={isActive ? 2 : 1.75}
-              className={isActive ? "text-white" : "text-stone-500 group-hover:text-stone-300"}
+              className={isActive ? "text-white" : "text-white/40 group-hover:text-white/70"}
             />
             <span>{it.label}</span>
             {badge != null && badge > 0 && (
               <span
-                className={`ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                  isActive ? "bg-white/15 text-white" : "bg-stone-800 text-stone-300"
+                className={`ml-auto font-mono text-[10px] px-1.5 py-0.5 rounded ${
+                  isActive
+                    ? "bg-signal/15 text-signal"
+                    : "bg-white/10 text-white/70"
                 }`}
               >
                 {badge}
@@ -138,37 +148,33 @@ export const Sidebar = ({
 
   const profileBlock = (
     <form action="/auth/signout" method="post">
-      <button className="w-full flex items-center gap-2.5 px-2 py-2 rounded-md hover:bg-white/5 transition-all duration-150">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-stone-600 to-stone-800 text-white flex items-center justify-center font-display text-[11px] font-semibold ring-1 ring-white/10">
+      <button className="w-full flex items-center gap-2.5 px-2 py-2 rounded-panel hover:bg-white/[0.06] transition-all duration-150">
+        {/* Mono avatar with initials */}
+        <div className="w-8 h-8 rounded-frame bg-void-700 border border-hairline-dark text-white flex items-center justify-center font-mono text-[11px] font-semibold shrink-0">
           {orgName.slice(0, 2).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0 text-left">
-          <div className="text-[13px] font-medium text-stone-100 truncate">{orgName}</div>
-          <div className="text-[11px] text-stone-500 truncate">Abmelden</div>
+          <div className="text-[13px] font-medium text-white/90 truncate">{orgName}</div>
+          <div className="font-mono text-[10px] text-white/40 truncate">Abmelden</div>
         </div>
-        <ChevronRight size={13} className="text-stone-600" />
+        <ChevronRight size={13} className="text-white/25 shrink-0" />
       </button>
     </form>
   );
 
   const logoBlock = (
-    <div className="h-14 px-4 flex items-center gap-2.5 border-b border-stone-800">
-      <div className="w-6 h-6 rounded-md flex items-center justify-center bg-gradient-to-br from-teal-400 to-teal-600 shadow-[0_0_12px_rgba(45,212,191,0.4)]">
-        <Sparkles size={13} className="text-white" strokeWidth={2.25} />
-      </div>
-      <div className="font-display font-semibold text-[14px] tracking-tight text-white">
-        Knöllchen-Pilot
-      </div>
+    <div className="h-16 px-4 flex items-center border-b border-hairline-dark">
+      <Logo tone="dark" size={28} />
     </div>
   );
 
   return (
     <>
       {/* Desktop-Sidebar */}
-      <aside className="hidden md:flex w-60 shrink-0 bg-stone-950 text-stone-300 flex-col">
+      <aside className="hidden md:flex w-60 shrink-0 bg-void-800 flex-col">
         {logoBlock}
-        <div className="p-3 space-y-0.5 flex-1 overflow-y-auto">{navList}</div>
-        <div className="p-3 border-t border-stone-800">{profileBlock}</div>
+        <div className="p-2 space-y-0.5 flex-1 overflow-y-auto">{navList}</div>
+        <div className="p-3 border-t border-hairline-dark">{profileBlock}</div>
       </aside>
 
       {/* Mobile-Drawer + Backdrop */}
@@ -179,33 +185,26 @@ export const Sidebar = ({
         aria-hidden={!mobileOpen}
       >
         <div
-          className="absolute inset-0 bg-black/50"
+          className="absolute inset-0 bg-black/60"
           onClick={() => setMobileOpen(false)}
         />
         <aside
-          className={`absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-stone-950 text-stone-300 flex flex-col shadow-2xl transition-transform duration-200 ${
+          className={`absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-void-800 flex flex-col shadow-frame transition-transform duration-200 ${
             mobileOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          <div className="h-14 px-4 flex items-center justify-between border-b border-stone-800">
-            <div className="flex items-center gap-2.5">
-              <div className="w-6 h-6 rounded-md flex items-center justify-center bg-gradient-to-br from-teal-400 to-teal-600 shadow-[0_0_12px_rgba(45,212,191,0.4)]">
-                <Sparkles size={13} className="text-white" strokeWidth={2.25} />
-              </div>
-              <div className="font-display font-semibold text-[14px] tracking-tight text-white">
-                Knöllchen-Pilot
-              </div>
-            </div>
+          <div className="h-16 px-4 flex items-center justify-between border-b border-hairline-dark">
+            <Logo tone="dark" size={28} />
             <button
               onClick={() => setMobileOpen(false)}
-              className="touch-target -mr-2 flex items-center justify-center text-stone-400 hover:text-white"
+              className="touch-target -mr-2 flex items-center justify-center text-white/40 hover:text-white"
               aria-label="Menü schließen"
             >
               <X size={18} />
             </button>
           </div>
-          <div className="p-3 space-y-0.5 flex-1 overflow-y-auto">{navList}</div>
-          <div className="p-3 border-t border-stone-800 safe-bottom">{profileBlock}</div>
+          <div className="p-2 space-y-0.5 flex-1 overflow-y-auto">{navList}</div>
+          <div className="p-3 border-t border-hairline-dark safe-bottom">{profileBlock}</div>
         </aside>
       </div>
     </>

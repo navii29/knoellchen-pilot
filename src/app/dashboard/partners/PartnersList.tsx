@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ChevronRight, Handshake, Plus, Search } from "lucide-react";
-import { THEME } from "@/lib/theme";
+import { ChevronRight, Handshake, Plus } from "lucide-react";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { ButtonLink } from "@/components/ui/Button";
+import { SearchInput } from "@/components/ui/Toolbar";
+import { EmptyState } from "@/components/ui/EmptyState";
 import {
   COMMISSION_TYPE_META,
   PARTNER_TYPE_META,
@@ -34,100 +37,91 @@ export const PartnersList = ({ initial }: { initial: SalesPartner[] }) => {
 
   return (
     <>
-      <div className="flex items-end justify-between flex-wrap gap-3">
-        <div>
-          <div className="font-display font-bold text-2xl tracking-tight">Partner</div>
-          <p className="text-sm text-stone-500 mt-1 max-w-xl">
-            Hotels, Reisebüros, Portale, Werkstätten — alle Vermittler an
-            einer Stelle, mit Provisionsmodell und Fahrzeug-Preisen.
-          </p>
-        </div>
-        <Link
-          href="/dashboard/partners/new"
-          className="inline-flex items-center gap-1.5 text-sm text-white px-3.5 py-1.5 rounded-md font-medium"
-          style={{ background: THEME.primary }}
-        >
-          <Plus size={14} /> Neuer Partner
-        </Link>
-      </div>
+      <PageHeader
+        kicker="Vertrieb"
+        title="Partner"
+        description="Hotels, Reisebüros, Portale, Werkstätten — alle Vermittler an einer Stelle, mit Provisionsmodell und Fahrzeug-Preisen."
+        actions={
+          <ButtonLink href="/dashboard/partners/new" variant="signal" size="sm">
+            <Plus size={14} /> Neuer Partner
+          </ButtonLink>
+        }
+      />
 
       <div className="mt-6 flex items-center justify-end">
-        <div className="relative">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Suchen…"
-            className="h-9 pl-8 pr-3 rounded-md text-sm bg-white outline-none ring-1 ring-stone-200 focus:ring-stone-400 w-64"
-          />
-        </div>
+        <SearchInput
+          value={q}
+          onChange={setQ}
+          placeholder="Suchen…"
+          className="w-64"
+        />
       </div>
 
-      {filtered.length === 0 ? (
-        <div className="mt-6 rounded-xl bg-white ring-1 ring-stone-200 px-5 py-12 text-center text-sm text-stone-500">
-          <Handshake size={28} className="mx-auto text-stone-300 mb-2" />
-          {initial.length === 0
-            ? "Noch keine Partner angelegt."
-            : "Keine Treffer."}
-        </div>
-      ) : (
-        <div className="mt-4 rounded-xl bg-white ring-1 ring-stone-200 divide-y divide-stone-100 overflow-hidden">
-          {filtered.map((p) => {
-            const meta = PARTNER_TYPE_META[p.type];
-            return (
-              <Link
-                key={p.id}
-                href={`/dashboard/partners/${p.id}`}
-                className="grid grid-cols-[40px_1fr_180px_180px_24px] items-center gap-3 px-5 py-3.5 hover:bg-stone-50"
-              >
-                <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center"
-                  style={{ background: meta.bg, color: meta.color }}
+      <div className="mt-4 panel overflow-hidden">
+        {filtered.length === 0 ? (
+          <EmptyState
+            Icon={Handshake}
+            title={initial.length === 0 ? "Noch keine Partner angelegt." : "Keine Treffer."}
+            description={
+              initial.length === 0
+                ? "Legen Sie den ersten Partner an und hinterlegen Sie das Provisionsmodell."
+                : undefined
+            }
+            action={
+              initial.length === 0 ? (
+                <ButtonLink href="/dashboard/partners/new" variant="signal" size="sm">
+                  <Plus size={14} /> Neuer Partner
+                </ButtonLink>
+              ) : undefined
+            }
+          />
+        ) : (
+          <div className="divide-y divide-hairline">
+            {filtered.map((p) => {
+              const meta = PARTNER_TYPE_META[p.type];
+              return (
+                <Link
+                  key={p.id}
+                  href={`/dashboard/partners/${p.id}`}
+                  className="grid grid-cols-[40px_1fr_180px_180px_24px] items-center gap-3 px-5 py-3.5 hover:bg-canvas transition-colors"
                 >
-                  <Handshake size={15} />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[14.5px] font-medium text-stone-900 truncate">
-                      {p.name}
-                    </span>
-                    <span
-                      className="inline-flex items-center px-1.5 h-5 rounded text-[11px] font-medium"
-                      style={{
-                        background: meta.bg,
-                        color: meta.text,
-                        boxShadow: `inset 0 0 0 1px ${meta.ring}`,
-                      }}
-                    >
-                      {meta.short}
-                    </span>
-                    {!p.active && (
-                      <span className="text-[10.5px] uppercase tracking-wider text-stone-400">
-                        inaktiv
+                  <div className="w-9 h-9 rounded-panel border border-hairline bg-canvas flex items-center justify-center text-ink-muted">
+                    <Handshake size={15} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[14.5px] font-medium text-ink truncate">
+                        {p.name}
                       </span>
-                    )}
+                      <span className="inline-flex items-center px-1.5 h-5 rounded-full border border-hairline bg-canvas text-[11px] font-mono text-ink-muted">
+                        {meta.short}
+                      </span>
+                      {!p.active && (
+                        <span className="kicker text-ink-muted">inaktiv</span>
+                      )}
+                    </div>
+                    <div className="text-[12px] text-ink-muted truncate mt-0.5">
+                      {[p.contact_name, p.email].filter(Boolean).join(" · ")}
+                    </div>
                   </div>
-                  <div className="text-[12px] text-stone-500 truncate mt-0.5">
-                    {[p.contact_name, p.email].filter(Boolean).join(" · ")}
+                  <div className="text-[12px] text-ink-soft">
+                    <div className="font-mono tnum font-medium">
+                      {fmtCommission(p)}
+                    </div>
+                    <div className="text-ink-muted truncate">
+                      {COMMISSION_TYPE_META[p.commission_type].label}
+                    </div>
                   </div>
-                </div>
-                <div className="text-[12px] text-stone-600">
-                  <div className="font-medium tabular-nums">
-                    {fmtCommission(p)}
+                  <div className="text-[12px] text-ink-muted truncate">
+                    {p.address ?? "—"}
                   </div>
-                  <div className="text-stone-400 truncate">
-                    {COMMISSION_TYPE_META[p.commission_type].label}
-                  </div>
-                </div>
-                <div className="text-[12px] text-stone-500 truncate">
-                  {p.address ?? "—"}
-                </div>
-                <ChevronRight size={14} className="text-stone-300" />
-              </Link>
-            );
-          })}
-        </div>
-      )}
+                  <ChevronRight size={14} className="text-ink-muted" />
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </>
   );
 };

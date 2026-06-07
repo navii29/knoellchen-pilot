@@ -22,7 +22,7 @@ export default async function PartnerInvoicePage({
   return (
     <>
       <Topbar section={`Provisionsabrechnung · ${(partner as SalesPartner).name}`} />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50 p-4 md:p-10">
+      <div className="flex-1 overflow-auto scroll-thin bg-canvas p-4 md:p-10">
         <div className="max-w-4xl mx-auto">
           <InvoiceClient partner={partner as SalesPartner} />
         </div>

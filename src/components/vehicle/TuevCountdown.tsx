@@ -16,20 +16,17 @@ export const TuevCountdown = ({ events }: { events: VehicleEvent[] }) => {
 
   return (
     <div
-      className="mt-6 rounded-2xl p-5 md:p-6 flex items-center gap-4 md:gap-5"
-      style={{ background: due.bg, boxShadow: `inset 0 0 0 1px ${due.ring}` }}
+      className="mt-6 rounded-card border p-5 md:p-6 flex items-center gap-4 md:gap-5"
+      style={{ background: due.bg, borderColor: due.ring }}
     >
       <div
-        className="w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center shrink-0"
-        style={{ background: "white", color: due.color }}
+        className="w-12 h-12 md:w-14 md:h-14 rounded-frame flex items-center justify-center shrink-0 bg-paper"
+        style={{ color: due.color }}
       >
         <ShieldCheck size={22} />
       </div>
       <div className="flex-1 min-w-0">
-        <div
-          className="text-[11px] uppercase tracking-wider font-semibold"
-          style={{ color: due.textColor }}
-        >
+        <div className="data-label mb-0.5" style={{ color: due.textColor }}>
           Nächste HU / TÜV
         </div>
         <div
@@ -44,15 +41,12 @@ export const TuevCountdown = ({ events }: { events: VehicleEvent[] }) => {
       </div>
       <div className="text-right shrink-0">
         <div
-          className="font-display font-bold text-3xl md:text-4xl tabular-nums"
+          className="font-mono font-bold text-3xl md:text-4xl tabular-nums"
           style={{ color: due.color }}
         >
           {due.daysLeft != null ? Math.abs(due.daysLeft) : "—"}
         </div>
-        <div
-          className="text-[11px] uppercase tracking-wider"
-          style={{ color: due.textColor }}
-        >
+        <div className="data-label" style={{ color: due.textColor }}>
           {due.daysLeft != null && due.daysLeft >= 0 ? "Tage" : "überfällig"}
         </div>
       </div>

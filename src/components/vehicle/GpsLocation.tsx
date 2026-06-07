@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2, MapPin, RefreshCcw, Settings } from "lucide-react";
 import { relTime } from "@/lib/utils";
+import { Panel, PanelHeader } from "@/components/ui/Panel";
 
 const buildOsmEmbedSrc = (lat: number, lng: number, zoom = 0.012) => {
   const bbox = [lng - zoom, lat - zoom, lng + zoom, lat + zoom]
@@ -56,92 +57,93 @@ export const GpsLocation = ({
 
   if (!hasDevice) {
     return (
-      <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold mb-3">
-          <MapPin size={13} />
-          Standort
-        </div>
-        <div className="text-sm text-stone-600">
+      <Panel flush>
+        <PanelHeader title="Standort" Icon={MapPin} />
+        <div className="p-5 text-sm text-ink-soft">
           Diesem Fahrzeug ist kein GPS-Tracker zugeordnet.{" "}
           <Link
             href={`/dashboard/vehicles/${vehicleId}`}
-            className="inline-flex items-center gap-1 text-teal-700 hover:underline"
+            className="inline-flex items-center gap-1 text-signal hover:underline"
           >
             <Settings size={12} /> Tracker-ID im Vertragsformular ergänzen
           </Link>
         </div>
-      </div>
+      </Panel>
     );
   }
 
   const hasPosition = lat != null && lng != null;
 
   return (
-    <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold">
-          <MapPin size={13} />
-          Standort
-          {updatedAt && (
-            <span className="ml-2 text-stone-400 font-normal normal-case tracking-normal">
-              · letztes Update {relTime(updatedAt)}
+    <Panel flush>
+      <PanelHeader
+        title="Standort"
+        Icon={MapPin}
+        actions={
+          updatedAt ? (
+            <span className="text-[11px] text-ink-muted font-mono">
+              {relTime(updatedAt)}
             </span>
-          )}
+          ) : null
+        }
+      />
+      <div className="p-5">
+        <div className="flex items-center justify-end mb-3">
+          <button
+            type="button"
+            onClick={refresh}
+            disabled={refreshing}
+            className="inline-flex items-center gap-1.5 text-[12.5px] h-8 px-3 rounded-btn border border-hairline bg-paper hover:bg-canvas text-ink-soft disabled:opacity-50"
+          >
+            {refreshing ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : (
+              <RefreshCcw size={12} />
+            )}
+            Aktualisieren
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={refresh}
-          disabled={refreshing}
-          className="inline-flex items-center gap-1.5 text-[12.5px] px-2.5 py-1 rounded-md ring-1 ring-stone-200 hover:bg-stone-50 disabled:opacity-50"
-        >
-          {refreshing ? (
-            <Loader2 size={12} className="animate-spin" />
-          ) : (
-            <RefreshCcw size={12} />
-          )}
-          Aktualisieren
-        </button>
+
+        {!hasPosition ? (
+          <div className="py-8 text-center text-sm text-ink-muted">
+            Noch keine Position empfangen. Klick auf „Aktualisieren“ um die letzte
+            Position vom Tracker zu laden.
+          </div>
+        ) : (
+          <div>
+            <div className="rounded-frame overflow-hidden border border-hairline bg-canvas">
+              <iframe
+                key={`${lat}-${lng}-${updatedAt ?? ""}`}
+                title="Fahrzeug-Standort"
+                src={buildOsmEmbedSrc(lat, lng)}
+                width="100%"
+                height="320"
+                loading="lazy"
+                style={{ border: 0 }}
+              />
+            </div>
+            <div className="mt-3 flex items-center justify-between text-[12.5px] text-ink-muted flex-wrap gap-2">
+              <span className="font-mono tabular-nums">
+                {lat.toFixed(6)}, {lng.toFixed(6)}
+              </span>
+              <a
+                href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-signal hover:underline"
+              >
+                In OpenStreetMap öffnen ↗
+              </a>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-3 text-xs rounded-frame px-3 py-2 bg-red-50 border border-red-200 text-red-700">
+            {error}
+          </div>
+        )}
       </div>
-
-      {!hasPosition ? (
-        <div className="py-8 text-center text-sm text-stone-500">
-          Noch keine Position empfangen. Klick auf „Aktualisieren“ um die letzte
-          Position vom Tracker zu laden.
-        </div>
-      ) : (
-        <div>
-          <div className="rounded-lg overflow-hidden ring-1 ring-stone-200 bg-stone-50">
-            <iframe
-              key={`${lat}-${lng}-${updatedAt ?? ""}`}
-              title="Fahrzeug-Standort"
-              src={buildOsmEmbedSrc(lat, lng)}
-              width="100%"
-              height="320"
-              loading="lazy"
-              style={{ border: 0 }}
-            />
-          </div>
-          <div className="mt-3 flex items-center justify-between text-[12.5px] text-stone-500 flex-wrap gap-2">
-            <span className="font-mono tabular-nums">
-              {lat.toFixed(6)}, {lng.toFixed(6)}
-            </span>
-            <a
-              href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-teal-700 hover:underline"
-            >
-              In OpenStreetMap öffnen ↗
-            </a>
-          </div>
-        </div>
-      )}
-
-      {error && (
-        <div className="mt-3 text-xs rounded-md px-3 py-2 bg-rose-50 ring-1 ring-rose-200 text-rose-700">
-          {error}
-        </div>
-      )}
-    </div>
+    </Panel>
   );
 };

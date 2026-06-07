@@ -2,10 +2,14 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertOctagon, ChevronRight, Plus, Search } from "lucide-react";
-import { THEME } from "@/lib/theme";
+import { AlertOctagon, ChevronRight, Plus } from "lucide-react";
 import { fmtDate } from "@/lib/utils";
 import type { Contract, DamageReport, DamageReportStatus, Vehicle } from "@/lib/types";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { FilterTabs, SearchInput } from "@/components/ui/Toolbar";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ButtonLink } from "@/components/ui/Button";
+import { Plate } from "@/components/ui/Plate";
 
 const STATUS_META: Record<
   DamageReportStatus,
@@ -34,13 +38,25 @@ const STATUS_META: Record<
   },
 };
 
-const FILTERS: Array<DamageReportStatus | "alle"> = ["alle", "offen", "gemeldet", "reguliert"];
-const FILTER_LABEL: Record<string, string> = {
-  alle: "Alle",
-  offen: "Offen",
-  gemeldet: "Gemeldet",
-  reguliert: "Reguliert",
+const DamageStatusPill = ({ status }: { status: DamageReportStatus }) => {
+  const meta = STATUS_META[status];
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full pl-2 pr-2.5 py-0.5 text-[11px] font-mono font-medium tracking-tight justify-self-start"
+      style={{ background: meta.bg, color: meta.text, boxShadow: `inset 0 0 0 1px ${meta.ring}` }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: meta.color }} />
+      {meta.label}
+    </span>
+  );
 };
+
+const FILTERS: Array<{ value: DamageReportStatus | "alle"; label: string }> = [
+  { value: "alle", label: "Alle" },
+  { value: "offen", label: "Offen" },
+  { value: "gemeldet", label: "Gemeldet" },
+  { value: "reguliert", label: "Reguliert" },
+];
 
 export const DamageReportsList = ({
   initial,
@@ -80,166 +96,127 @@ export const DamageReportsList = ({
     });
   }, [initial, filter, q, vehicleById, contractById]);
 
+  const counts = (v: DamageReportStatus | "alle") =>
+    v === "alle" ? initial.length : initial.filter((r) => r.status === v).length;
+
   return (
     <>
-      <div className="flex items-end justify-between flex-wrap gap-3">
-        <div>
-          <div className="font-display font-bold text-2xl tracking-tight">Schadensberichte</div>
-          <p className="text-sm text-stone-500 mt-1">
-            Unfälle, Vandalismus, Mietschäden — mit Foto-Dokumentation und Versicherungs-Tracking.
-          </p>
-        </div>
-        <Link
-          href="/dashboard/damage-reports/new"
-          className="inline-flex items-center gap-1.5 text-sm text-white px-3.5 py-1.5 rounded-md font-medium"
-          style={{ background: THEME.primary }}
-        >
-          <Plus size={14} /> Neuer Bericht
-        </Link>
-      </div>
+      <PageHeader
+        kicker="Schadensmanagement"
+        title="Schadensberichte"
+        description="Unfälle, Vandalismus, Mietschäden — mit Foto-Dokumentation und Versicherungs-Tracking."
+        actions={
+          <ButtonLink href="/dashboard/damage-reports/new" variant="signal" size="sm">
+            <Plus size={14} /> Neuer Bericht
+          </ButtonLink>
+        }
+      />
 
       <div className="mt-6 flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-1 text-xs flex-wrap">
-          {FILTERS.map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-2.5 py-1.5 rounded-md ${
-                filter === f ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-100"
-              }`}
-            >
-              {FILTER_LABEL[f]}
-            </button>
-          ))}
-        </div>
-        <div className="relative">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Ort, AZ, Gegner, Vertrag…"
-            className="pl-8 pr-3 py-2 bg-white rounded-md text-sm ring-1 ring-stone-200 w-72 outline-none focus:ring-stone-400"
-          />
-        </div>
+        <FilterTabs
+          options={FILTERS.map((f) => ({ ...f, count: counts(f.value) }))}
+          value={filter}
+          onChange={setFilter}
+        />
+        <SearchInput
+          value={q}
+          onChange={setQ}
+          placeholder="Ort, AZ, Gegner, Vertrag…"
+          className="w-64"
+        />
       </div>
 
-      <div className="mt-4 rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+      <div className="mt-4 panel overflow-hidden">
         {/* Desktop */}
         <div className="hidden md:block">
-          <div className="grid grid-cols-[110px_110px_1fr_180px_120px_24px] gap-3 px-5 py-2.5 text-[11px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
+          <div className="grid grid-cols-[110px_148px_1fr_180px_128px_24px] gap-3 px-5 py-2.5 border-b border-hairline bg-canvas/60 th">
             <span>Datum</span>
             <span>Kennzeichen</span>
             <span>Ort / Beschreibung</span>
             <span>Aktenzeichen</span>
             <span>Status</span>
-            <span></span>
+            <span />
           </div>
           {filtered.map((r) => {
             const v = r.vehicle_id ? vehicleById.get(r.vehicle_id) : null;
-            const meta = STATUS_META[r.status];
             return (
               <Link
                 key={r.id}
                 href={`/dashboard/damage-reports/${r.id}`}
-                className="grid grid-cols-[110px_110px_1fr_180px_120px_24px] gap-3 items-center px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+                className="grid grid-cols-[110px_148px_1fr_180px_128px_24px] gap-3 items-center px-5 py-3 border-b border-hairline last:border-0 text-[13.5px] hover:bg-canvas transition-colors"
               >
-                <span className="tabular-nums text-xs">
+                <span className="font-mono tnum text-[12px] text-ink-muted">
                   {fmtDate(r.date)}
-                  {r.time && <span className="text-stone-400 ml-1">{r.time}</span>}
+                  {r.time && <span className="text-ink-muted ml-1">{r.time}</span>}
                 </span>
-                <span className="font-mono font-semibold">{v?.plate || "—"}</span>
+                {v?.plate ? (
+                  <Plate value={v.plate} size="sm" />
+                ) : (
+                  <span className="font-mono text-ink-muted">—</span>
+                )}
                 <span className="truncate">
-                  {r.location && <span className="text-stone-900">{r.location}</span>}
+                  {r.location && <span className="text-ink">{r.location}</span>}
                   {r.description && (
-                    <span className="text-stone-400 ml-2 text-xs">· {r.description}</span>
+                    <span className="text-ink-muted ml-2 text-[12px]">· {r.description}</span>
                   )}
-                  {!r.location && !r.description && <span className="text-stone-400">—</span>}
+                  {!r.location && !r.description && <span className="text-ink-muted">—</span>}
                 </span>
-                <span className="text-xs text-stone-500 truncate font-mono">
+                <span className="font-mono tnum text-[12px] text-ink-muted truncate">
                   {r.police_reference_nr || r.insurance_claim_nr || "—"}
                 </span>
-                <span
-                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium justify-self-start"
-                  style={{
-                    background: meta.bg,
-                    color: meta.text,
-                    boxShadow: `inset 0 0 0 1px ${meta.ring}`,
-                  }}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: meta.color }} />
-                  {meta.label}
-                </span>
-                <ChevronRight size={14} className="text-stone-300" />
+                <DamageStatusPill status={r.status} />
+                <ChevronRight size={14} className="text-ink-muted" />
               </Link>
             );
           })}
         </div>
 
         {/* Mobile */}
-        <div className="md:hidden divide-y divide-stone-100">
+        <div className="md:hidden divide-y divide-hairline">
           {filtered.map((r) => {
             const v = r.vehicle_id ? vehicleById.get(r.vehicle_id) : null;
-            const meta = STATUS_META[r.status];
             return (
               <Link
                 key={r.id}
                 href={`/dashboard/damage-reports/${r.id}`}
-                className="flex items-start gap-3 px-4 py-3 hover:bg-stone-50 active:bg-stone-100"
+                className="flex items-start gap-3 px-4 py-3 hover:bg-canvas active:bg-canvas"
               >
-                <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex-1 min-w-0 space-y-1.5">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span
-                      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium"
-                      style={{
-                        background: meta.bg,
-                        color: meta.text,
-                        boxShadow: `inset 0 0 0 1px ${meta.ring}`,
-                      }}
-                    >
-                      <span
-                        className="w-1.5 h-1.5 rounded-full"
-                        style={{ background: meta.color }}
-                      />
-                      {meta.label}
-                    </span>
-                    {v?.plate && (
-                      <span className="font-mono font-semibold text-sm">{v.plate}</span>
-                    )}
-                    <span className="ml-auto tabular-nums text-[11px] text-stone-500">
+                    <DamageStatusPill status={r.status} />
+                    {v?.plate && <Plate value={v.plate} size="sm" />}
+                    <span className="ml-auto font-mono tnum text-[11px] text-ink-muted">
                       {fmtDate(r.date)}
                     </span>
                   </div>
-                  <div className="text-sm text-stone-900 truncate">
+                  <div className="text-[13.5px] text-ink truncate">
                     {r.location || r.description || "—"}
                   </div>
                   {(r.police_reference_nr || r.insurance_claim_nr) && (
-                    <div className="text-[11px] text-stone-500 font-mono truncate">
+                    <div className="text-[11px] font-mono text-ink-muted truncate">
                       {r.police_reference_nr || r.insurance_claim_nr}
                     </div>
                   )}
                 </div>
-                <ChevronRight size={16} className="text-stone-300 shrink-0 mt-1" />
+                <ChevronRight size={16} className="text-ink-muted shrink-0 mt-1" />
               </Link>
             );
           })}
         </div>
 
         {filtered.length === 0 && (
-          <div className="px-5 py-12 text-center text-sm text-stone-500">
-            <AlertOctagon size={28} className="mx-auto text-stone-300" />
-            <div className="mt-3">
-              {q ? "Keine Berichte gefunden." : "Noch keine Schadensberichte."}
-            </div>
-            {!q && (
-              <Link
-                href="/dashboard/damage-reports/new"
-                className="inline-flex items-center gap-1.5 text-sm text-white px-3.5 py-1.5 rounded-md font-medium mt-4"
-                style={{ background: THEME.primary }}
-              >
-                <Plus size={14} /> Ersten Bericht erstellen
-              </Link>
-            )}
-          </div>
+          <EmptyState
+            Icon={AlertOctagon}
+            title={q ? "Keine Berichte gefunden." : "Noch keine Schadensberichte."}
+            description={q ? undefined : "Legen Sie den ersten Schadensbericht an."}
+            action={
+              !q ? (
+                <ButtonLink href="/dashboard/damage-reports/new" variant="signal" size="sm">
+                  <Plus size={14} /> Ersten Bericht erstellen
+                </ButtonLink>
+              ) : undefined
+            }
+          />
         )}
       </div>
     </>

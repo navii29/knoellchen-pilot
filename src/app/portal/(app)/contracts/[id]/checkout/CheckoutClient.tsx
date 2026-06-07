@@ -15,6 +15,7 @@ import {
 import type { HandoverPosition } from "@/lib/types";
 import { WizardProgress } from "@/components/portal/WizardProgress";
 import { PhotoGrid } from "@/components/portal/PhotoGrid";
+import { Button } from "@/components/ui/Button";
 
 const STEP_LABELS = ["Fotos", "Kilometer", "Tankstand", "Fertig"];
 const TOTAL = STEP_LABELS.length;
@@ -129,7 +130,7 @@ export const CheckoutClient = ({
       <div className="px-5 pt-3">
         <Link
           href={`/portal/contracts/${contractId}`}
-          className="inline-flex items-center gap-1.5 text-[13px] text-stone-500 hover:text-stone-900"
+          className="inline-flex items-center gap-1.5 text-[13px] text-ink-muted hover:text-ink transition-colors"
         >
           <ArrowLeft size={13} /> Zum Vertrag
         </Link>
@@ -138,8 +139,8 @@ export const CheckoutClient = ({
       <WizardProgress current={step} total={TOTAL} labels={STEP_LABELS} />
 
       <div className="px-5 py-4 space-y-4">
-        <div className="text-[12px] text-stone-500">
-          <span className="font-mono">{plate}</span>
+        <div className="text-[12px] text-ink-muted font-mono">
+          <span>{plate}</span>
           {vehicleType && <span className="ml-2">· {vehicleType}</span>}
           <span className="ml-2 opacity-70">· {contractNr}</span>
         </div>
@@ -149,7 +150,7 @@ export const CheckoutClient = ({
             title="Rückgabe-Fotos"
             subtitle="Mindestens 4 Fotos — alle 10 empfohlen für vollständige Dokumentation."
           >
-            <div className="rounded-2xl bg-amber-50 ring-1 ring-amber-200 px-4 py-2.5 text-[12.5px] text-amber-900 mb-3">
+            <div className="bg-amber-50 border border-amber-200 rounded-panel px-4 py-2.5 text-[12.5px] text-amber-900 mb-3">
               Bitte gleiche Positionen wie beim Check-in fotografieren.
             </div>
             <PhotoGrid
@@ -159,17 +160,12 @@ export const CheckoutClient = ({
               onChange={setPhotoCount}
             />
             <div className="mt-5 flex items-center justify-between gap-3">
-              <div className="text-[12.5px] text-stone-600">
+              <div className="text-[12px] text-ink-muted font-mono tnum">
                 {photoCount}/10 Fotos hochgeladen
               </div>
-              <button
-                type="button"
-                onClick={goNext}
-                disabled={photoCount < 4}
-                className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full bg-stone-900 text-white text-[14px] font-medium hover:bg-stone-800 disabled:opacity-40"
-              >
+              <Button type="button" variant="signal" size="md" onClick={goNext} disabled={photoCount < 4}>
                 <Check size={14} /> Weiter
-              </button>
+              </Button>
             </div>
           </StepCard>
         )}
@@ -180,11 +176,11 @@ export const CheckoutClient = ({
             subtitle="Schau auf den Tacho und gib den aktuellen Stand ein."
             onBack={goBack}
           >
-            <div className="rounded-2xl bg-stone-100 ring-1 ring-stone-200 px-4 py-3 mb-4 flex items-center gap-3">
-              <Gauge size={18} className="text-stone-600" />
-              <div className="text-[13.5px] text-stone-700">
+            <div className="bg-canvas border border-hairline rounded-panel px-4 py-3 mb-4 flex items-center gap-3">
+              <Gauge size={16} className="text-ink-muted" />
+              <div className="text-[13px] text-ink-soft">
                 Stand bei Übergabe:{" "}
-                <span className="font-semibold tabular-nums">
+                <span className="font-mono font-semibold tnum text-ink">
                   {kmPickup != null
                     ? kmPickup.toLocaleString("de-DE")
                     : "—"}{" "}
@@ -194,27 +190,25 @@ export const CheckoutClient = ({
             </div>
 
             <label className="block">
-              <div className="text-[12px] font-medium text-stone-700 mb-1.5">
-                Aktueller Kilometerstand
-              </div>
+              <div className="data-label mb-1.5">Aktueller Kilometerstand</div>
               <div className="relative">
                 <input
                   type="number"
                   inputMode="numeric"
-                  className="w-full h-14 px-4 rounded-xl bg-white ring-1 ring-stone-200 text-[22px] text-stone-900 text-center font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+                  className="w-full h-14 px-4 rounded-input border border-hairline bg-paper text-[22px] text-ink text-center font-mono font-semibold tnum focus:outline-none focus:ring-2 focus:ring-signal/30 transition-shadow"
                   value={kmReturn}
                   onChange={(e) => setKmReturn(e.target.value)}
                   placeholder={kmPickup ? String(kmPickup) : "0"}
                   autoFocus
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[13px] text-stone-400 font-medium">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[13px] text-ink-muted font-medium">
                   km
                 </span>
               </div>
             </label>
 
             {Number.isFinite(km) && km > 0 && (
-              <div className="mt-4 rounded-2xl ring-1 ring-stone-200 bg-white p-4 space-y-1.5">
+              <div className="mt-4 bg-paper border border-hairline rounded-card p-4 space-y-1.5">
                 <SummaryRow
                   label="Gefahren"
                   value={`${driven.toLocaleString("de-DE")} km`}
@@ -234,7 +228,7 @@ export const CheckoutClient = ({
                           className={
                             excess > 0
                               ? "text-rose-700 font-semibold"
-                              : "text-emerald-700 font-semibold"
+                              : "text-ink-soft font-semibold"
                           }
                         >
                           {excess > 0
@@ -250,14 +244,15 @@ export const CheckoutClient = ({
             )}
 
             <div className="mt-5 flex items-center justify-end gap-3">
-              <button
+              <Button
                 type="button"
+                variant="signal"
+                size="md"
                 onClick={goNext}
                 disabled={!Number.isFinite(km) || km <= 0}
-                className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full bg-stone-900 text-white text-[14px] font-medium hover:bg-stone-800 disabled:opacity-40"
               >
                 <Check size={14} /> Weiter
-              </button>
+              </Button>
             </div>
           </StepCard>
         )}
@@ -272,10 +267,10 @@ export const CheckoutClient = ({
             }
             onBack={goBack}
           >
-            <div className="rounded-2xl bg-stone-100 ring-1 ring-stone-200 px-4 py-3 mb-4 flex items-center gap-3">
-              <Fuel size={18} className="text-stone-600" />
-              <div className="text-[13.5px] text-stone-700">
-                Aktueller Tankstand wählen:
+            <div className="bg-canvas border border-hairline rounded-panel px-4 py-3 mb-4 flex items-center gap-3">
+              <Fuel size={16} className="text-ink-muted" />
+              <div className="text-[13px] text-ink-soft">
+                Aktuellen Tankstand wählen:
               </div>
             </div>
             <div className="grid grid-cols-5 gap-2">
@@ -286,10 +281,10 @@ export const CheckoutClient = ({
                     key={opt.value}
                     type="button"
                     onClick={() => setFuel(opt.value)}
-                    className={`h-12 rounded-xl text-[14px] font-medium transition-colors ${
+                    className={`h-12 rounded-input text-[14px] font-medium transition-colors ${
                       active
-                        ? "bg-stone-900 text-white"
-                        : "bg-white text-stone-700 ring-1 ring-stone-200 hover:ring-stone-300"
+                        ? "bg-signal text-white shadow-signal"
+                        : "bg-paper text-ink-soft border border-hairline hover:border-ink/20"
                     }`}
                   >
                     {opt.label}
@@ -298,13 +293,9 @@ export const CheckoutClient = ({
               })}
             </div>
             <div className="mt-5 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={goNext}
-                className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full bg-stone-900 text-white text-[14px] font-medium hover:bg-stone-800"
-              >
+              <Button type="button" variant="signal" size="md" onClick={goNext}>
                 <Check size={14} /> Weiter
-              </button>
+              </Button>
             </div>
           </StepCard>
         )}
@@ -315,7 +306,7 @@ export const CheckoutClient = ({
             subtitle="Letzte Prüfung vor dem Absenden."
             onBack={goBack}
           >
-            <div className="rounded-2xl bg-white ring-1 ring-stone-200 p-4 space-y-1.5">
+            <div className="bg-paper border border-hairline rounded-card p-4 space-y-1.5">
               <SummaryRow
                 label="Fotos"
                 value={`${photoCount}/10 hochgeladen`}
@@ -340,16 +331,18 @@ export const CheckoutClient = ({
             </div>
 
             {error && (
-              <div className="mt-3 flex items-center gap-2 text-sm rounded-lg px-3 py-2 bg-rose-50 ring-1 ring-rose-200 text-rose-700">
+              <div className="mt-3 flex items-center gap-2 text-[13px] rounded-input px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700">
                 <AlertTriangle size={14} /> {error}
               </div>
             )}
 
-            <button
+            <Button
               type="button"
+              variant="signal"
+              size="lg"
               onClick={submitCheckout}
               disabled={submitting}
-              className="mt-5 w-full inline-flex items-center justify-center gap-1.5 h-12 rounded-full bg-stone-900 text-white text-[14.5px] font-medium hover:bg-stone-800 disabled:opacity-40"
+              className="mt-5 w-full"
             >
               {submitting ? (
                 <Loader2 size={16} className="animate-spin" />
@@ -357,29 +350,31 @@ export const CheckoutClient = ({
                 <Check size={16} />
               )}
               Rückgabe abschließen
-            </button>
+            </Button>
           </StepCard>
         )}
 
         {step === TOTAL && !submitting && error == null && (
-          <div className="rounded-2xl bg-white ring-1 ring-stone-200 p-7 text-center">
-            <div className="inline-flex w-14 h-14 rounded-full bg-emerald-50 ring-1 ring-emerald-200 items-center justify-center text-emerald-700 mb-3">
+          <div className="bg-paper border border-hairline rounded-card shadow-panel p-7 text-center">
+            <div className="inline-flex w-14 h-14 rounded-full bg-canvas border border-hairline items-center justify-center text-ink-soft mb-3">
               <PartyPopper size={26} />
             </div>
-            <h2 className="font-display text-stone-900 text-[24px] tracking-tight font-medium">
+            <h2 className="font-display text-ink text-[24px] tracking-tightest font-bold">
               Vielen Dank!
             </h2>
-            <p className="text-[14px] text-stone-600 mt-2 leading-relaxed">
+            <p className="text-[13px] text-ink-muted mt-2 leading-relaxed">
               Deine Rückgabe wurde erfasst. Die KI prüft im Hintergrund, ob es
               neue Schäden gibt — bei Auffälligkeiten meldet sich die Vermietung.
             </p>
-            <button
+            <Button
               type="button"
+              variant="signal"
+              size="lg"
               onClick={() => router.push(`/portal/contracts/${contractId}`)}
-              className="mt-5 inline-flex items-center justify-center h-12 px-6 rounded-full bg-stone-900 text-white text-[14.5px] font-medium hover:bg-stone-800"
+              className="mt-5"
             >
               Zurück zum Vertrag
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -398,13 +393,13 @@ const StepCard = ({
   children: React.ReactNode;
   onBack?: () => void;
 }) => (
-  <div className="rounded-2xl bg-white ring-1 ring-stone-200 p-5 sm:p-6">
+  <div className="bg-paper border border-hairline rounded-card shadow-panel p-5 sm:p-6">
     <div className="mb-4">
-      <h2 className="font-display text-stone-900 text-[22px] sm:text-[24px] tracking-tight font-medium leading-tight">
+      <h2 className="font-display text-ink text-[22px] sm:text-[24px] tracking-tightest font-bold leading-tight">
         {title}
       </h2>
       {subtitle && (
-        <p className="text-[13.5px] text-stone-500 mt-1.5 leading-snug">{subtitle}</p>
+        <p className="text-[13px] text-ink-muted mt-1.5 leading-snug">{subtitle}</p>
       )}
     </div>
     {children}
@@ -413,7 +408,7 @@ const StepCard = ({
         <button
           type="button"
           onClick={onBack}
-          className="text-[13px] text-stone-500 hover:text-stone-900"
+          className="text-[13px] text-ink-muted hover:text-ink transition-colors"
         >
           ← Vorheriger Schritt
         </button>
@@ -431,8 +426,8 @@ const SummaryRow = ({
   value: React.ReactNode;
   mono?: boolean;
 }) => (
-  <div className="grid grid-cols-[140px_1fr] gap-2 text-[13.5px]">
-    <div className="text-stone-500">{label}</div>
-    <div className={mono ? "tabular-nums text-stone-900" : "text-stone-900"}>{value}</div>
+  <div className="grid grid-cols-[140px_1fr] gap-2 text-[13px]">
+    <div className="text-ink-muted">{label}</div>
+    <div className={mono ? "font-mono tnum text-ink" : "text-ink"}>{value}</div>
   </div>
 );

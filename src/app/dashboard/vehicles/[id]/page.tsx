@@ -29,6 +29,9 @@ import { computeDecommission } from "@/lib/decommission";
 import { VEHICLE_STATUS_META, buildVehicleType } from "@/lib/vehicle";
 import type { Contract, Vehicle } from "@/lib/types";
 import type { VehicleEvent } from "@/lib/vehicle-events";
+import { Panel, PanelHeader } from "@/components/ui/Panel";
+import { Plate } from "@/components/ui/Plate";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 export const dynamic = "force-dynamic";
 
@@ -87,7 +90,6 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
     ?.echoes_enabled;
   const tires = (tireRows ?? []) as VehicleTire[];
 
-  // Fotos zu allen Reifen-Sätzen laden
   const tireIds = tires.map((t) => t.id);
   const photosByTire = new Map<string, TirePhoto[]>();
   if (tireIds.length > 0) {
@@ -113,20 +115,20 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
   return (
     <>
       <Topbar section={`Fahrzeug · ${v.plate}`} />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
+      <div className="flex-1 overflow-auto scroll-thin bg-canvas">
         <div className="max-w-4xl mx-auto p-4 md:p-10">
           <Link
             href="/dashboard/vehicles"
-            className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+            className="inline-flex items-center gap-1.5 text-[13px] text-ink-muted hover:text-ink mb-5"
           >
-            <ArrowLeft size={14} /> Zurück zu Fahrzeugen
+            <ArrowLeft size={13} /> Zurück zu Fahrzeugen
           </Link>
 
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="min-w-0">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
                 <span
-                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium"
+                  className="inline-flex items-center gap-1.5 rounded-full pl-2 pr-2.5 py-0.5 text-[11px] font-mono font-medium tracking-tight"
                   style={{
                     background: status.bg,
                     color: status.text,
@@ -137,20 +139,18 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
                   {status.label}
                 </span>
                 {v.category && (
-                  <span className="text-[11px] uppercase tracking-wider text-stone-400 font-medium">
-                    {v.category}
-                  </span>
+                  <span className="kicker text-ink-muted">{v.category}</span>
                 )}
               </div>
-              <h1 className="font-display font-bold text-2xl md:text-3xl tracking-tight">
+              <h1 className="font-display font-extrabold text-ink text-[26px] sm:text-[30px] leading-[1.05] tracking-tightest">
                 {displayName}
               </h1>
-              <div className="mt-1 text-sm text-stone-500 flex items-center gap-2 flex-wrap">
-                <span className="font-mono">{v.plate}</span>
-                {v.color && <span className="font-sans">· {v.color}</span>}
+              <div className="mt-2 flex items-center gap-3 flex-wrap">
+                <Plate value={v.plate} size="md" />
+                {v.color && <span className="text-[13px] text-ink-muted">· {v.color}</span>}
                 {v.lexoffice_product_id && (
                   <span
-                    className="inline-flex items-center gap-1 text-[10.5px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800"
+                    className="inline-flex items-center gap-1 text-[10.5px] font-medium px-1.5 py-0.5 rounded-full border border-hairline text-ink-soft bg-canvas"
                     title={`LexOffice-Artikel · ${v.lexoffice_product_id}`}
                   >
                     <Check size={10} /> In LexOffice
@@ -165,40 +165,40 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
 
           {v.decommission_date && (
             <div
-              className="mt-6 rounded-2xl p-5 md:p-6 flex items-center gap-4 md:gap-5"
+              className="mt-6 rounded-card border border-hairline p-5 md:p-6 flex items-center gap-4 md:gap-5"
               style={{ background: decom.bg, boxShadow: `inset 0 0 0 1px ${decom.ring}` }}
             >
               <div
-                className="w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center shrink-0"
+                className="w-12 h-12 md:w-14 md:h-14 rounded-panel flex items-center justify-center shrink-0"
                 style={{ background: "white", color: decom.color }}
               >
                 <Calendar size={22} />
               </div>
               <div className="flex-1 min-w-0">
                 <div
-                  className="text-[11px] uppercase tracking-wider font-semibold"
+                  className="kicker"
                   style={{ color: decom.textColor }}
                 >
                   Aussteuerung
                 </div>
                 <div
-                  className="font-display font-semibold text-xl md:text-2xl mt-0.5"
+                  className="font-display font-bold text-xl md:text-2xl mt-0.5 tracking-tight"
                   style={{ color: decom.textColor }}
                 >
                   {fmtDate(v.decommission_date)}
                 </div>
-                <div className="text-sm mt-1" style={{ color: decom.textColor }}>
+                <div className="text-[13px] mt-1" style={{ color: decom.textColor }}>
                   {decom.label}
                 </div>
               </div>
               <div className="text-right shrink-0">
                 <div
-                  className="font-display font-bold text-3xl md:text-4xl tabular-nums"
+                  className="font-display font-bold text-3xl md:text-4xl font-mono tnum"
                   style={{ color: decom.color }}
                 >
                   {decom.daysLeft != null ? decom.daysLeft : "—"}
                 </div>
-                <div className="text-[11px] uppercase tracking-wider" style={{ color: decom.textColor }}>
+                <div className="kicker" style={{ color: decom.textColor }}>
                   {decom.daysLeft != null && decom.daysLeft >= 0 ? "Tage" : "überfällig"}
                 </div>
               </div>
@@ -262,12 +262,12 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
             </InfoCard>
 
             {v.accessories && (
-              <div className="sm:col-span-2 rounded-xl bg-white ring-1 ring-stone-200 p-5">
-                <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2">
+              <Panel className="sm:col-span-2">
+                <div className="flex items-center gap-2 kicker text-ink-muted mb-2">
                   <Sparkles size={13} /> Zubehör
                 </div>
-                <div className="text-sm whitespace-pre-wrap">{v.accessories}</div>
-              </div>
+                <div className="text-[13.5px] whitespace-pre-wrap text-ink">{v.accessories}</div>
+              </Panel>
             )}
           </div>
 
@@ -301,7 +301,7 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
           </div>
 
           <details className="mt-6 group">
-            <summary className="cursor-pointer text-sm font-medium text-stone-700 hover:text-stone-900 inline-flex items-center gap-1.5">
+            <summary className="cursor-pointer text-[13px] font-medium text-ink-soft hover:text-ink inline-flex items-center gap-1.5">
               <ChevronRight size={14} className="group-open:rotate-90 transition-transform" />
               Daten bearbeiten
             </summary>
@@ -311,33 +311,34 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
           </details>
 
           <div className="mt-6">
-            <div className="text-xs uppercase tracking-wider text-stone-500 font-medium mb-2 flex items-center gap-2">
-              <FileSignature size={12} />
-              Verträge mit diesem Kennzeichen ({linkedContracts.length})
-            </div>
-            <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
-              {linkedContracts.length === 0 && (
-                <div className="px-5 py-8 text-center text-sm text-stone-500">
-                  <Car size={24} className="mx-auto text-stone-300" />
-                  <div className="mt-2">Noch keine Verträge mit diesem Fahrzeug.</div>
-                </div>
+            <Panel flush>
+              <PanelHeader
+                Icon={FileSignature}
+                title={`Verträge mit diesem Kennzeichen (${linkedContracts.length})`}
+              />
+              {linkedContracts.length === 0 ? (
+                <EmptyState
+                  Icon={Car}
+                  title="Noch keine Verträge mit diesem Fahrzeug."
+                />
+              ) : (
+                linkedContracts.map((ct) => (
+                  <Link
+                    key={ct.id}
+                    href={`/dashboard/contracts/${ct.id}`}
+                    className="grid grid-cols-[140px_1fr_180px_120px_24px] items-center gap-3 px-5 py-3 border-b border-hairline last:border-0 text-[13.5px] hover:bg-canvas transition-colors"
+                  >
+                    <span className="font-mono text-[12px] text-ink-muted">{ct.contract_nr}</span>
+                    <span className="text-ink truncate">{ct.renter_name}</span>
+                    <span className="font-mono tnum text-[12px] text-ink-muted">
+                      {fmtDate(ct.pickup_date)} → {fmtDate(ct.return_date)}
+                    </span>
+                    <ContractStatusBadge status={ct.status} />
+                    <ChevronRight size={14} className="text-ink-muted" />
+                  </Link>
+                ))
               )}
-              {linkedContracts.map((ct) => (
-                <Link
-                  key={ct.id}
-                  href={`/dashboard/contracts/${ct.id}`}
-                  className="grid grid-cols-[140px_1fr_180px_120px_24px] items-center gap-3 px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
-                >
-                  <span className="font-mono text-xs">{ct.contract_nr}</span>
-                  <span className="text-stone-700 truncate">{ct.renter_name}</span>
-                  <span className="text-xs text-stone-500 tabular-nums">
-                    {fmtDate(ct.pickup_date)} → {fmtDate(ct.return_date)}
-                  </span>
-                  <ContractStatusBadge status={ct.status} />
-                  <ChevronRight size={14} className="text-stone-300" />
-                </Link>
-              ))}
-            </div>
+            </Panel>
           </div>
         </div>
       </div>
@@ -354,13 +355,13 @@ const InfoCard = ({
   Icon: LucideIcon;
   children: React.ReactNode;
 }) => (
-  <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
-    <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold mb-3">
+  <Panel>
+    <div className="flex items-center gap-2 kicker text-ink-muted mb-3">
       <Icon size={13} />
       {title}
     </div>
     <div className="space-y-1.5">{children}</div>
-  </div>
+  </Panel>
 );
 
 const Row = ({
@@ -372,8 +373,8 @@ const Row = ({
   value: React.ReactNode;
   mono?: boolean;
 }) => (
-  <div className="grid grid-cols-[140px_1fr] gap-2 text-sm">
-    <div className="text-stone-500 text-xs">{label}</div>
-    <div className={mono ? "tabular-nums text-stone-800" : "text-stone-800"}>{value}</div>
+  <div className="grid grid-cols-[140px_1fr] gap-2 text-[13px]">
+    <div className="data-label text-ink-muted">{label}</div>
+    <div className={mono ? "font-mono tnum text-ink" : "text-ink"}>{value}</div>
   </div>
 );

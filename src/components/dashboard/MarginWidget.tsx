@@ -60,16 +60,16 @@ export const MarginWidget = async ({ orgId }: { orgId: string }) => {
     return (
       <Link
         href="/dashboard/vehicles"
-        className="group block rounded-xl bg-white ring-1 ring-stone-200 p-5 hover:ring-stone-300 transition"
+        className="group block panel hover:border-ink-muted transition-colors"
       >
-        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2">
-          <Wallet size={13} />
+        <div className="kicker text-ink-muted mb-2 flex items-center gap-1.5">
+          <Wallet size={12} strokeWidth={1.75} />
           Margen-Tracking
         </div>
-        <div className="font-display text-[20px] tracking-tight text-stone-900 leading-snug">
+        <div className="font-display font-bold text-[18px] tracking-tight text-ink leading-snug">
           EK-Kosten pflegen, um Margen zu sehen.
         </div>
-        <div className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-emerald-700 group-hover:text-emerald-800">
+        <div className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-signal group-hover:opacity-80 transition-opacity">
           Fahrzeuge öffnen
           <ArrowRight size={13} />
         </div>
@@ -101,22 +101,22 @@ export const MarginWidget = async ({ orgId }: { orgId: string }) => {
   return (
     <Link
       href="/dashboard/reports/margin"
-      className="block rounded-xl bg-white ring-1 ring-stone-200 p-5 hover:ring-stone-300 transition group"
+      className="block panel hover:border-ink-muted transition-colors group"
     >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold">
-          <Wallet size={13} />
+      <div className="flex items-center justify-between mb-3">
+        <div className="kicker text-ink-muted flex items-center gap-1.5">
+          <Wallet size={12} strokeWidth={1.75} />
           Marge diese Woche
         </div>
         <ChevronRight
           size={14}
-          className="text-stone-400 group-hover:text-stone-700 transition"
+          className="text-ink-muted group-hover:text-ink transition-colors"
         />
       </div>
       <div className="grid grid-cols-2 gap-4 items-end">
         <div>
           <div
-            className={`font-display tabular-nums text-[32px] sm:text-[36px] tracking-tight font-medium leading-none ${
+            className={`font-display font-bold font-mono tnum text-[32px] sm:text-[36px] tracking-tight leading-none ${
               positive ? "text-emerald-700" : "text-rose-700"
             }`}
           >
@@ -124,7 +124,7 @@ export const MarginWidget = async ({ orgId }: { orgId: string }) => {
           </div>
           {deltaPct != null && (
             <div
-              className={`mt-1.5 text-[12px] font-medium inline-flex items-center gap-1 tabular-nums ${
+              className={`mt-1.5 text-[12px] font-mono tnum inline-flex items-center gap-1 ${
                 delta >= 0 ? "text-emerald-700" : "text-rose-700"
               }`}
             >
@@ -139,13 +139,11 @@ export const MarginWidget = async ({ orgId }: { orgId: string }) => {
           )}
         </div>
         <div className="text-right">
-          <div className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold">
-            Auslastung
-          </div>
-          <div className="font-display tabular-nums text-[22px] font-medium text-stone-900 leading-none mt-0.5">
+          <div className="data-label text-ink-muted mb-0.5">Auslastung</div>
+          <div className="font-display font-bold font-mono tnum text-[22px] text-ink leading-none">
             {current.avg_utilization_pct.toFixed(0)}%
           </div>
-          <div className="text-[11.5px] text-stone-500 tabular-nums mt-1">
+          <div className="font-mono tnum text-[11.5px] text-ink-muted mt-1">
             {current.total_rented_days}/{current.total_possible_days} Tage
           </div>
         </div>

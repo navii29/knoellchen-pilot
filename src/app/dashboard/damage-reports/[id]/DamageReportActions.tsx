@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Loader2, Trash2 } from "lucide-react";
 import type { DamageReportStatus } from "@/lib/types";
+import { Button } from "@/components/ui/Button";
 
 const NEXT_STATUS: Record<DamageReportStatus, { label: string; next: DamageReportStatus } | null> = {
   offen: { label: "Als gemeldet markieren", next: "gemeldet" },
@@ -86,13 +87,15 @@ export const DamageReportActions = ({
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => fileRef.current?.click()}
         disabled={uploading}
-        className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-stone-200 hover:bg-stone-50 disabled:opacity-50"
       >
-        {uploading ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />} Fotos hinzufügen
-      </button>
+        {uploading ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
+        Fotos hinzufügen
+      </Button>
       <input
         ref={fileRef}
         type="file"
@@ -103,27 +106,28 @@ export const DamageReportActions = ({
       />
 
       {advanceMeta && (
-        <button
+        <Button
+          variant="signal"
+          size="sm"
           onClick={advance}
           disabled={updating}
-          className="inline-flex items-center gap-1.5 text-sm text-white px-3 py-1.5 rounded-md font-medium bg-teal-600 hover:bg-teal-700 disabled:opacity-50"
         >
           {updating && <Loader2 size={14} className="animate-spin" />}
           {advanceMeta.label}
-        </button>
+        </Button>
       )}
 
       <button
         onClick={remove}
         disabled={deleting}
-        className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-red-600 px-2.5 py-1.5 rounded-md disabled:opacity-50"
+        className="inline-flex items-center justify-center w-9 h-9 rounded-btn border border-hairline bg-paper text-ink-muted hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
         title="Bericht löschen"
       >
         {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
       </button>
 
       {error && (
-        <span className="text-xs text-red-700 bg-red-50 ring-1 ring-red-200 rounded px-2 py-1">
+        <span className="text-[12px] text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1">
           {error}
         </span>
       )}

@@ -18,9 +18,7 @@ import {
   type TireType,
   type VehicleTire,
 } from "@/lib/tires";
-
-const inputCls =
-  "w-full h-10 px-3 rounded-lg bg-white ring-1 ring-stone-200 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500 transition-shadow";
+import { Button } from "@/components/ui/Button";
 
 const TIRE_TYPES: TireType[] = ["summer", "winter", "allseason"];
 const CONDITIONS: TireCondition[] = ["new", "good", "worn", "replace"];
@@ -121,27 +119,25 @@ export const TireChangeModal = ({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 sm:px-4">
       <button
         type="button"
-        className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-void/60 backdrop-blur-sm"
         onClick={onClose}
-        aria-label="Schließen"
+        aria-label="Schliessen"
       />
-      <div className="relative w-full sm:max-w-2xl max-h-[92vh] flex flex-col bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl ring-1 ring-stone-200 overflow-hidden">
-        <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100 shrink-0">
+      <div className="relative w-full sm:max-w-2xl max-h-[92vh] flex flex-col rounded-card border border-hairline bg-paper shadow-raised overflow-hidden">
+        <div className="px-6 py-4 flex items-center justify-between border-b border-hairline shrink-0">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] font-semibold text-teal-700">
-              Reifen
-            </div>
-            <h2 className="font-display text-xl tracking-tight font-medium mt-0.5">
+            <div className="kicker text-ink-muted mb-1">Reifen</div>
+            <h2 className="font-display text-xl tracking-tight font-bold text-ink mt-0.5">
               {createdTireId
                 ? "Fotos hochladen"
                 : currentTire
-                ? "Reifenwechsel durchführen"
+                ? "Reifenwechsel durchfuhren"
                 : "Reifensatz anlegen"}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full inline-flex items-center justify-center text-stone-500 hover:bg-stone-100"
+            className="w-9 h-9 rounded-full inline-flex items-center justify-center text-ink-muted hover:bg-canvas"
           >
             <X size={16} />
           </button>
@@ -151,7 +147,7 @@ export const TireChangeModal = ({
           {!createdTireId ? (
             <>
               {currentTire && (
-                <div className="rounded-lg ring-1 ring-amber-200 bg-amber-50 px-4 py-2.5 text-[12.5px] text-amber-900">
+                <div className="rounded-frame border border-amber-200 bg-amber-50 px-4 py-2.5 text-[12.5px] text-amber-900">
                   Der aktuelle Satz ({TIRE_TYPE_META[currentTire.type].label}) wird
                   beim Speichern als demontiert markiert.
                 </div>
@@ -168,10 +164,10 @@ export const TireChangeModal = ({
                         key={t}
                         type="button"
                         onClick={() => setType(t)}
-                        className={`h-12 rounded-lg text-[13px] font-medium flex items-center justify-center gap-1.5 transition-all ${
+                        className={`h-12 rounded-btn text-[13px] font-medium flex items-center justify-center gap-1.5 transition-all border ${
                           active
-                            ? "ring-1"
-                            : "ring-1 ring-stone-200 bg-white text-stone-600 hover:ring-stone-300"
+                            ? "border-transparent"
+                            : "border-hairline bg-paper text-ink-soft hover:bg-canvas"
                         }`}
                         style={
                           active
@@ -194,7 +190,7 @@ export const TireChangeModal = ({
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Marke">
                   <input
-                    className={inputCls}
+                    className="field"
                     value={brand}
                     onChange={(e) => setBrand(e.target.value)}
                     placeholder="Continental"
@@ -202,15 +198,15 @@ export const TireChangeModal = ({
                 </Field>
                 <Field label="Modell">
                   <input
-                    className={inputCls}
+                    className="field"
                     value={model}
                     onChange={(e) => setModel(e.target.value)}
                     placeholder="PremiumContact 6"
                   />
                 </Field>
-                <Field label="Größe">
+                <Field label="Grosse">
                   <input
-                    className={inputCls}
+                    className="field"
                     value={size}
                     onChange={(e) => setSize(e.target.value)}
                     placeholder="225/45 R17"
@@ -218,7 +214,7 @@ export const TireChangeModal = ({
                 </Field>
                 <Field label="DOT-Nummer">
                   <input
-                    className={inputCls}
+                    className="field font-mono"
                     value={dot}
                     onChange={(e) => setDot(e.target.value)}
                     placeholder="3624"
@@ -236,31 +232,31 @@ export const TireChangeModal = ({
                     { label: "Hinten rechts", v: rr, setV: setRr },
                   ].map((f) => (
                     <label key={f.label} className="block">
-                      <div className="text-[11.5px] text-stone-500 mb-1">{f.label}</div>
+                      <div className="text-[11.5px] text-ink-muted mb-1">{f.label}</div>
                       <div className="relative">
                         <input
-                          className={`${inputCls} pr-8`}
+                          className="field pr-8"
                           value={f.v}
                           onChange={(e) => f.setV(e.target.value)}
                           inputMode="decimal"
                           placeholder="0,0"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-stone-400">
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-ink-muted">
                           mm
                         </span>
                       </div>
                     </label>
                   ))}
                 </div>
-                <div className="mt-1.5 text-[11px] text-stone-500">
-                  Grün ≥ 4 mm · Gelb 3–4 mm · Rot &lt; 3 mm (Wechsel empfohlen)
+                <div className="mt-1.5 text-[11px] text-ink-muted">
+                  Grun &ge; 4 mm · Gelb 3–4 mm · Rot &lt; 3 mm (Wechsel empfohlen)
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Km bei Montage">
                   <input
-                    className={inputCls}
+                    className="field font-mono"
                     value={km}
                     onChange={(e) => setKm(e.target.value)}
                     inputMode="numeric"
@@ -270,14 +266,14 @@ export const TireChangeModal = ({
                 <Field label="Datum">
                   <input
                     type="date"
-                    className={inputCls}
+                    className="field"
                     value={mountedAt}
                     onChange={(e) => setMountedAt(e.target.value)}
                   />
                 </Field>
                 <Field label="Lagerort der alten Reifen">
                   <input
-                    className={inputCls}
+                    className="field"
                     value={storageLocation}
                     onChange={(e) => setStorageLocation(e.target.value)}
                     placeholder="z. B. Lager Regal 3"
@@ -285,7 +281,7 @@ export const TireChangeModal = ({
                 </Field>
                 <Field label="Zustand der neuen Reifen">
                   <select
-                    className={inputCls}
+                    className="field"
                     value={condition}
                     onChange={(e) => setCondition(e.target.value as TireCondition)}
                   >
@@ -300,7 +296,7 @@ export const TireChangeModal = ({
 
               <Field label="Notizen">
                 <textarea
-                  className={`${inputCls} h-20 py-2 leading-snug`}
+                  className="field h-20 py-2 leading-snug resize-none"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Optional"
@@ -308,7 +304,7 @@ export const TireChangeModal = ({
               </Field>
 
               {error && (
-                <div className="flex items-center gap-2 text-sm rounded-lg px-3 py-2 bg-rose-50 ring-1 ring-rose-200 text-rose-700">
+                <div className="flex items-center gap-2 text-sm rounded-frame px-3 py-2 bg-red-50 border border-red-200 text-red-700">
                   <AlertTriangle size={14} /> {error}
                 </div>
               )}
@@ -318,38 +314,29 @@ export const TireChangeModal = ({
           )}
         </div>
 
-        <div className="px-6 py-4 flex items-center justify-end gap-3 border-t border-stone-100 shrink-0">
+        <div className="px-6 py-4 flex items-center justify-end gap-3 border-t border-hairline shrink-0">
           {!createdTireId ? (
             <>
               <button
                 type="button"
                 onClick={onClose}
-                className="text-sm text-stone-500 hover:text-stone-800 px-3"
+                className="text-sm text-ink-muted hover:text-ink px-3"
               >
                 Abbrechen
               </button>
-              <button
-                type="button"
-                onClick={submit}
-                disabled={submitting}
-                className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-40"
-              >
+              <Button variant="signal" onClick={submit} disabled={submitting}>
                 {submitting ? (
                   <Loader2 size={14} className="animate-spin" />
                 ) : (
                   <Check size={14} />
                 )}
                 Wechsel speichern
-              </button>
+              </Button>
             </>
           ) : (
-            <button
-              type="button"
-              onClick={finish}
-              className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-stone-900 text-white text-sm font-medium hover:bg-stone-800"
-            >
+            <Button variant="signal" onClick={finish}>
               Fertig
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -405,7 +392,7 @@ const PhotoUploadStep = ({
 
   return (
     <div>
-      <div className="rounded-lg ring-1 ring-emerald-200 bg-emerald-50 px-4 py-2.5 text-[12.5px] text-emerald-800 mb-4 flex items-center gap-2">
+      <div className="rounded-frame border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-[12.5px] text-emerald-800 mb-4 flex items-center gap-2">
         <Check size={13} /> Reifensatz gespeichert. Optional Fotos hochladen.
       </div>
       <div className="grid grid-cols-2 gap-2.5">
@@ -419,12 +406,12 @@ const PhotoUploadStep = ({
               type="button"
               onClick={() => refs.current[p.key]?.click()}
               disabled={isBusy}
-              className={`rounded-2xl ring-1 px-3 py-3 text-left ${
+              className={`rounded-card border px-3 py-3 text-left ${
                 isUploaded
-                  ? "bg-emerald-50 ring-emerald-200"
+                  ? "bg-emerald-50 border-emerald-200"
                   : err
-                  ? "bg-rose-50 ring-rose-200"
-                  : "bg-white ring-stone-200 hover:ring-stone-300"
+                  ? "bg-red-50 border-red-200"
+                  : "bg-paper border-hairline hover:bg-canvas"
               } disabled:opacity-60`}
             >
               <input
@@ -442,12 +429,12 @@ const PhotoUploadStep = ({
               />
               <div className="flex items-center gap-2.5">
                 <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                  className={`w-9 h-9 rounded-frame flex items-center justify-center shrink-0 ${
                     isUploaded
                       ? "bg-emerald-100 text-emerald-700"
                       : err
-                      ? "bg-rose-100 text-rose-700"
-                      : "bg-stone-100 text-stone-600"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-canvas text-ink-muted"
                   }`}
                 >
                   {isBusy ? (
@@ -459,12 +446,12 @@ const PhotoUploadStep = ({
                   )}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-[13.5px] font-medium text-stone-900 leading-tight">
+                  <div className="text-[13.5px] font-medium text-ink leading-tight">
                     {p.label}
                   </div>
                   <div
                     className={`text-[11px] mt-0.5 leading-tight truncate ${
-                      err ? "text-rose-700" : "text-stone-500"
+                      err ? "text-red-700" : "text-ink-muted"
                     }`}
                   >
                     {err
@@ -481,9 +468,9 @@ const PhotoUploadStep = ({
           );
         })}
       </div>
-      <div className="mt-3 text-[11.5px] text-stone-500 flex items-center gap-1.5">
+      <div className="mt-3 text-[11.5px] text-ink-muted flex items-center gap-1.5">
         <Upload size={11} />
-        Fotos können auch später ergänzt werden.
+        Fotos konnen auch spater ergänzt werden.
       </div>
     </div>
   );
@@ -497,7 +484,7 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
 );
 
 const Label = ({ children }: { children: React.ReactNode }) => (
-  <div className="text-[11.5px] uppercase tracking-wider text-stone-500 font-medium mb-1.5">
+  <div className="data-label mb-1.5">
     {children}
   </div>
 );

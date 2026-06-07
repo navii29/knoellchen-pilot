@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Field, StepShell, inputClass } from "./StepShell";
 import { MANUFACTURERS } from "@/lib/vehicle";
+import { Plate } from "@/components/ui/Plate";
 import type { VehicleLite } from "./OnboardingWizard";
 
 export const Step2Vehicle = ({
@@ -111,13 +112,18 @@ export const Step2Vehicle = ({
         <div className="sm:col-span-3">
           <Field label="Kennzeichen" required>
             <input
-              className={`${inputClass} uppercase`}
+              className={`${inputClass} uppercase font-mono tracking-wider`}
               value={plate}
               onChange={(e) => setPlate(e.target.value.toUpperCase())}
               placeholder="M-AB 1234"
               autoFocus
             />
           </Field>
+          {plate.trim() && (
+            <div className="mt-2">
+              <Plate value={plate.trim()} size="sm" />
+            </div>
+          )}
         </div>
         <div className="sm:col-span-3">
           <Field label="Erstzulassung">

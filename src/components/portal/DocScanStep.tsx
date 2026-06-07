@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { AlertTriangle, Camera, Check, Loader2, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 export type ScanField = {
   label: string;
@@ -74,21 +75,19 @@ export const DocScanStep = ({
   if (parsed) {
     return (
       <div className="space-y-4">
-        <div className="rounded-2xl bg-emerald-50 ring-1 ring-emerald-200 px-4 py-3 flex items-center gap-2 text-[13.5px] text-emerald-800">
-          <Check size={14} />
+        <div className="bg-canvas border border-hairline rounded-panel px-4 py-3 flex items-center gap-2 text-[13px] text-ink-soft">
+          <Check size={14} className="text-signal" />
           Daten erkannt — bitte prüfen
         </div>
-        <div className="rounded-2xl bg-white ring-1 ring-stone-200 divide-y divide-stone-100">
+        <div className="bg-paper border border-hairline rounded-card divide-y divide-hairline">
           {parseFields.map((f) => {
             const value = renderValue(f.keys, f.join);
             return (
               <div key={f.label} className="px-4 py-2.5">
-                <div className="text-[11px] uppercase tracking-wider text-stone-500 font-medium">
-                  {f.label}
-                </div>
+                <div className="data-label mb-0.5">{f.label}</div>
                 <div
                   className={`text-[14px] mt-0.5 ${
-                    value ? "text-stone-900" : "text-stone-400"
+                    value ? "text-ink" : "text-ink-muted"
                   }`}
                 >
                   {value ?? "Nicht erkannt"}
@@ -105,18 +104,19 @@ export const DocScanStep = ({
               setParsed(null);
               setError(null);
             }}
-            className="text-sm text-stone-500 hover:text-stone-900 inline-flex items-center gap-1"
+            className="text-[13px] text-ink-muted hover:text-ink inline-flex items-center gap-1 transition-colors"
           >
             <RefreshCw size={13} /> Neu fotografieren
           </button>
           <div className="ml-auto">
-            <button
+            <Button
               type="button"
+              variant="signal"
+              size="md"
               onClick={() => onSuccess(parsed as Record<string, string | null>)}
-              className="inline-flex items-center gap-1.5 h-11 px-5 rounded-full bg-stone-900 text-white text-[14px] font-medium hover:bg-stone-800"
             >
               <Check size={14} /> Daten bestätigen
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -125,9 +125,9 @@ export const DocScanStep = ({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl bg-stone-100 ring-1 ring-stone-200 px-4 py-6 text-center">
-        <Camera size={26} className="mx-auto text-stone-500 mb-2" />
-        <div className="text-[13px] text-stone-600 leading-snug">{exampleHint}</div>
+      <div className="bg-canvas border border-hairline rounded-card px-4 py-6 text-center">
+        <Camera size={24} className="mx-auto text-ink-muted mb-2" />
+        <div className="text-[13px] text-ink-soft leading-snug">{exampleHint}</div>
       </div>
 
       <input
@@ -142,11 +142,13 @@ export const DocScanStep = ({
         }}
       />
 
-      <button
+      <Button
         type="button"
+        variant="signal"
+        size="lg"
         onClick={() => fileRef.current?.click()}
         disabled={busy}
-        className="w-full inline-flex items-center justify-center gap-1.5 h-12 rounded-full bg-stone-900 text-white text-[14.5px] font-medium hover:bg-stone-800 disabled:opacity-40"
+        className="w-full"
       >
         {busy ? (
           <>
@@ -157,10 +159,10 @@ export const DocScanStep = ({
             <Camera size={16} /> {ctaLabel}
           </>
         )}
-      </button>
+      </Button>
 
       {error && (
-        <div className="flex items-center gap-2 text-sm rounded-lg px-3 py-2 bg-rose-50 ring-1 ring-rose-200 text-rose-700">
+        <div className="flex items-center gap-2 text-[13px] rounded-input px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700">
           <AlertTriangle size={14} /> {error}
         </div>
       )}

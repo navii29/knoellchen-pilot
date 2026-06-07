@@ -15,9 +15,10 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { THEME } from "@/lib/theme";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import type { Contract } from "@/lib/types";
+import { Button, ButtonLink } from "@/components/ui/Button";
+import { Panel } from "@/components/ui/Panel";
 
 type ReturnSummary = {
   plannedDays: number;
@@ -114,14 +115,14 @@ export const ContractActions = ({
   };
 
   return (
-    <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
+    <Panel flush className="p-4">
       <div className="flex items-center gap-2 flex-wrap">
         {pdfUrl && (
           <a
             href={pdfUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-stone-200 hover:bg-stone-50"
+            className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn border border-hairline bg-paper text-ink-soft hover:bg-canvas hover:text-ink transition-colors"
           >
             <Download size={14} /> Upload-PDF anzeigen
           </a>
@@ -132,42 +133,42 @@ export const ContractActions = ({
             href={`/api/contracts/${contract.id}/contract-pdf`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800 hover:bg-emerald-100"
+            className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn border border-[#166534]/30 bg-[#E6F4EA] text-[#166534] hover:bg-[#D1FAE5] transition-colors"
           >
             <Download size={14} /> Unterschriebenen Vertrag öffnen
           </a>
         ) : (
-          <Link
+          <ButtonLink
             href={`/dashboard/contracts/${contract.id}/sign`}
-            className="inline-flex items-center gap-1.5 text-sm text-white px-3 py-1.5 rounded-md font-medium"
-            style={{ background: THEME.primary }}
+            variant="signal"
+            size="sm"
           >
             <FileSignature size={14} /> Vertrag generieren & unterschreiben
-          </Link>
+          </ButtonLink>
         )}
 
         <Link
           href={`/dashboard/contracts/${contract.id}/handover`}
-          className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-stone-200 hover:bg-stone-50"
+          className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn border border-hairline bg-paper text-ink-soft hover:bg-canvas hover:text-ink transition-colors"
         >
           <Camera size={14} /> Übergabe-Fotos
         </Link>
 
         {contract.status === "aktiv" && (
-          <button
+          <Button
+            variant="signal"
+            size="sm"
             onClick={() => setReturnOpen(true)}
-            className="inline-flex items-center gap-1.5 text-sm text-white px-3 py-1.5 rounded-md font-medium"
-            style={{ background: THEME.primary }}
           >
             <Check size={14} /> Rückgabe erfassen
-          </button>
+          </Button>
         )}
 
         {contract.status !== "storniert" && (
           <button
             onClick={() => patch("cancel", { status: "storniert" })}
             disabled={busy != null}
-            className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-stone-200 hover:bg-stone-50 text-stone-700"
+            className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn border border-hairline bg-paper text-ink-soft hover:bg-canvas hover:text-ink transition-colors disabled:opacity-50"
           >
             {busy === "cancel" ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />}
             Stornieren
@@ -178,7 +179,7 @@ export const ContractActions = ({
           <button
             onClick={sendCheckinLink}
             disabled={busy != null}
-            className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-stone-200 hover:bg-stone-50 text-stone-700"
+            className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn border border-hairline bg-paper text-ink-soft hover:bg-canvas hover:text-ink transition-colors disabled:opacity-50"
           >
             {busy === "checkin" ? (
               <Loader2 size={14} className="animate-spin" />
@@ -192,18 +193,16 @@ export const ContractActions = ({
         {lexofficeEnabled &&
           contract.status === "abgeschlossen" &&
           (contract.lexoffice_invoice_id ? (
-            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-md bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800">
+            <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 h-8 rounded-btn border border-[#166534]/30 bg-[#E6F4EA] text-[#166534] font-mono">
               <Check size={12} />
               In LexOffice
-              <span className="font-mono text-[11px] opacity-70">
-                · {contract.lexoffice_invoice_id.slice(0, 8)}
-              </span>
+              <span className="opacity-70">· {contract.lexoffice_invoice_id.slice(0, 8)}</span>
             </span>
           ) : (
             <button
               onClick={syncLexoffice}
               disabled={busy != null}
-              className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md ring-1 ring-stone-200 hover:bg-stone-50 text-stone-700"
+              className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn border border-hairline bg-paper text-ink-soft hover:bg-canvas hover:text-ink transition-colors disabled:opacity-50"
             >
               {busy === "lexoffice" ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -218,7 +217,7 @@ export const ContractActions = ({
           <button
             onClick={remove}
             disabled={busy != null}
-            className="inline-flex items-center gap-1.5 text-sm px-2.5 py-1.5 rounded-md text-stone-500 hover:text-red-600"
+            className="inline-flex items-center gap-1.5 text-[13px] px-2.5 h-9 rounded-btn text-ink-muted hover:text-red-600 transition-colors disabled:opacity-50"
           >
             <Trash2 size={14} /> Löschen
           </button>
@@ -226,13 +225,13 @@ export const ContractActions = ({
       </div>
 
       {error && (
-        <div className="mt-3 text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2 inline-flex items-center gap-2">
+        <div className="mt-3 text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-panel px-3 py-2 inline-flex items-center gap-2">
           <AlertTriangle size={14} /> {error}
         </div>
       )}
 
       {sentInfo && (
-        <div className="mt-3 text-sm text-emerald-800 bg-emerald-50 ring-1 ring-emerald-200 rounded-lg px-3 py-2 inline-flex items-center gap-2">
+        <div className="mt-3 text-[13px] text-[#166534] bg-[#E6F4EA] border border-[#166534]/30 rounded-panel px-3 py-2 inline-flex items-center gap-2">
           <Check size={14} /> {sentInfo}
         </div>
       )}
@@ -247,7 +246,7 @@ export const ContractActions = ({
           }}
         />
       )}
-    </div>
+    </Panel>
   );
 };
 
@@ -267,7 +266,6 @@ const ReturnModal = ({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Live-Preview bei jeder Änderung (debounced)
   useEffect(() => {
     if (!returnDate || !kmReturn) {
       setSummary(null);
@@ -321,34 +319,33 @@ const ReturnModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white w-full md:w-[560px] md:rounded-2xl rounded-t-2xl shadow-2xl max-h-[92vh] overflow-y-auto">
-        <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between sticky top-0 bg-white">
-          <div className="font-display font-semibold text-lg">Rückgabe erfassen</div>
+      <div className="relative bg-paper w-full md:w-[560px] md:rounded-card rounded-t-card border border-hairline shadow-panel max-h-[92vh] overflow-y-auto">
+        <div className="px-5 py-4 border-b border-hairline flex items-center justify-between sticky top-0 bg-paper">
+          <div className="font-display font-bold text-[15px] tracking-tight text-ink">Rückgabe erfassen</div>
           <button
             onClick={onClose}
-            className="touch-target flex items-center justify-center text-stone-400 hover:text-stone-700"
+            className="w-8 h-8 inline-flex items-center justify-center rounded-btn text-ink-muted hover:text-ink hover:bg-canvas transition-colors"
             aria-label="Schließen"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
         <div className="p-5 space-y-5">
-          <div className="text-xs text-stone-500">
-            <span className="font-mono">{contract.contract_nr}</span> ·{" "}
-            <span className="font-mono">{contract.plate}</span> · {contract.renter_name}
+          <div className="font-mono tnum text-[12px] text-ink-muted">
+            {contract.contract_nr} · {contract.plate} · {contract.renter_name}
           </div>
 
           <div className="grid sm:grid-cols-2 gap-3">
-            <Field label="Tatsächliches Rückgabedatum">
+            <ModalField label="Tatsächliches Rückgabedatum">
               <input
                 type="date"
                 value={returnDate}
                 onChange={(e) => setReturnDate(e.target.value)}
-                className="input tabular-nums"
+                className="field font-mono tnum"
               />
-            </Field>
-            <Field label="Km bei Rückgabe *">
+            </ModalField>
+            <ModalField label="Km bei Rückgabe *">
               <div className="relative">
                 <input
                   required
@@ -356,14 +353,13 @@ const ReturnModal = ({
                   value={kmReturn}
                   onChange={(e) => setKmReturn(e.target.value)}
                   placeholder="z.B. 5890"
-                  className="input tabular-nums pr-9"
+                  className="field font-mono tnum pr-9"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">km</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-ink-muted">km</span>
               </div>
-            </Field>
+            </ModalField>
           </div>
 
-          {/* Live Preview */}
           {summary && (
             <SummaryPanel
               summary={summary}
@@ -372,50 +368,35 @@ const ReturnModal = ({
             />
           )}
           {previewBusy && (
-            <div className="text-xs text-stone-400 inline-flex items-center gap-1.5">
+            <div className="font-mono text-[12px] text-ink-muted inline-flex items-center gap-1.5">
               <Loader2 size={12} className="animate-spin" /> Berechne…
             </div>
           )}
 
           {error && (
-            <div className="text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-md px-3 py-2">
+            <div className="text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-panel px-3 py-2">
               {error}
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-2 pt-2 sticky bottom-0 bg-white pb-1">
+          <div className="flex items-center justify-end gap-2 pt-2 sticky bottom-0 bg-paper pb-1">
             <button
               onClick={onClose}
-              className="text-sm px-3 py-2 rounded-md text-stone-600 hover:bg-stone-100"
+              className="text-[13px] px-3 h-9 rounded-btn text-ink-muted hover:text-ink hover:bg-canvas transition-colors"
             >
               Abbrechen
             </button>
-            <button
+            <Button
               onClick={submit}
               disabled={saving || !kmReturn}
-              className="inline-flex items-center gap-1.5 text-white text-sm px-4 py-2 rounded-lg font-medium disabled:opacity-50"
-              style={{ background: THEME.primary }}
+              variant="signal"
+              size="sm"
             >
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
               Rückgabe abschließen
-            </button>
+            </Button>
           </div>
         </div>
-
-        <style jsx>{`
-          .input {
-            width: 100%;
-            padding: 0.5rem 0.75rem;
-            font-size: 0.875rem;
-            border-radius: 0.5rem;
-            outline: none;
-            background: white;
-            box-shadow: inset 0 0 0 1px rgb(231 229 228);
-          }
-          .input:focus {
-            box-shadow: inset 0 0 0 1px rgb(168 162 158);
-          }
-        `}</style>
       </div>
     </div>
   );
@@ -438,40 +419,40 @@ const SummaryPanel = ({
       : `(${Math.abs(summary.daysDiff)} Tage früher)`;
 
   return (
-    <div className="rounded-xl bg-stone-50 ring-1 ring-stone-200 p-4 space-y-3">
-      <Section title="Zeitraum">
-        <Row label="Geplante Rückgabe" value={fmtDate(plannedReturn)} mono />
-        <Row label="Tatsächliche Rückgabe" value={`${fmtDate(actualReturn)} ${diffLabel}`} mono />
-        <Row label="Miettage" value={`${summary.actualDays}`} mono bold />
-      </Section>
+    <div className="panel bg-canvas p-4 space-y-3">
+      <ModalSection title="Zeitraum">
+        <ModalRow label="Geplante Rückgabe" value={fmtDate(plannedReturn)} mono />
+        <ModalRow label="Tatsächliche Rückgabe" value={`${fmtDate(actualReturn)} ${diffLabel}`} mono />
+        <ModalRow label="Miettage" value={`${summary.actualDays}`} mono bold />
+      </ModalSection>
 
       {summary.drivenKm != null ? (
         <>
-          <div className="border-t border-stone-200" />
-          <Section title="Kilometer">
-            <Row
+          <div className="border-t border-hairline" />
+          <ModalSection title="Kilometer">
+            <ModalRow
               label="Km bei Übergabe"
               value={summary.kmPickup != null ? summary.kmPickup.toLocaleString("de-DE") : "—"}
               mono
             />
-            <Row
+            <ModalRow
               label="Km bei Rückgabe"
               value={summary.kmReturn != null ? summary.kmReturn.toLocaleString("de-DE") : "—"}
               mono
             />
-            <Row
+            <ModalRow
               label="Gefahren"
               value={`${summary.drivenKm.toLocaleString("de-DE")} km`}
               mono
               bold
             />
-          </Section>
+          </ModalSection>
 
-          <div className="border-t border-stone-200" />
-          <Section title="Mehrkilometer">
+          <div className="border-t border-hairline" />
+          <ModalSection title="Mehrkilometer">
             {summary.allowedKm != null ? (
               <>
-                <Row
+                <ModalRow
                   label="Erlaubt"
                   value={
                     summary.source === "inclusive_month" && summary.inclusiveKmMonth
@@ -480,7 +461,7 @@ const SummaryPanel = ({
                   }
                   mono
                 />
-                <Row
+                <ModalRow
                   label="Mehrkilometer"
                   value={`${summary.excessKm.toLocaleString("de-DE")} km`}
                   mono
@@ -488,10 +469,10 @@ const SummaryPanel = ({
                   highlight={summary.excessKm > 0 ? "amber" : undefined}
                 />
                 {summary.excessKm > 0 && (
-                  <Row
+                  <ModalRow
                     label="Mehrkosten"
                     value={
-                      <span className="font-display font-semibold text-amber-700 text-base">
+                      <span className="font-display font-semibold text-[#92400E] text-[15px]">
                         {summary.excessKm.toLocaleString("de-DE")} × {summary.pricePerKm.toFixed(2).replace(".", ",")} € ={" "}
                         {fmtEur(summary.cost)}
                       </span>
@@ -500,14 +481,14 @@ const SummaryPanel = ({
                 )}
               </>
             ) : (
-              <div className="text-xs text-stone-500 italic">
+              <div className="text-[12px] text-ink-muted italic">
                 Kein Inklusiv-km-Limit definiert (am Fahrzeug einstellen oder Vertrags-Freikilometer setzen).
               </div>
             )}
-          </Section>
+          </ModalSection>
         </>
       ) : (
-        <div className="text-xs text-stone-500 italic">
+        <div className="text-[12px] text-ink-muted italic">
           Km-Stand bei Übergabe fehlt — Mehrkilometer können nicht berechnet werden.
         </div>
       )}
@@ -515,14 +496,14 @@ const SummaryPanel = ({
   );
 };
 
-const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+const ModalSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div>
-    <div className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-2">{title}</div>
+    <div className="data-label text-ink-muted mb-2">{title}</div>
     <div className="space-y-1">{children}</div>
   </div>
 );
 
-const Row = ({
+const ModalRow = ({
   label,
   value,
   mono,
@@ -535,13 +516,13 @@ const Row = ({
   bold?: boolean;
   highlight?: "amber";
 }) => (
-  <div className="grid grid-cols-[140px_1fr] gap-2 text-sm">
-    <div className="text-stone-500 text-xs">{label}</div>
+  <div className="grid grid-cols-[140px_1fr] gap-2 text-[13px]">
+    <div className="text-ink-muted text-[12px]">{label}</div>
     <div
       className={[
-        mono ? "tabular-nums" : "",
+        mono ? "font-mono tnum" : "",
         bold ? "font-semibold" : "",
-        highlight === "amber" ? "text-amber-700" : "text-stone-800",
+        highlight === "amber" ? "text-[#92400E]" : "text-ink",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -551,9 +532,9 @@ const Row = ({
   </div>
 );
 
-const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+const ModalField = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <label className="block">
-    <div className="text-[11px] uppercase tracking-wider text-stone-500 font-medium mb-1">{label}</div>
+    <div className="data-label text-ink-muted mb-1">{label}</div>
     {children}
   </label>
 );

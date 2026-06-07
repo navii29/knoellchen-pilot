@@ -4,9 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X, Upload } from "lucide-react";
 import { EVENT_TYPE_META, type VehicleEventType } from "@/lib/vehicle-events";
-
-const inputCls =
-  "w-full h-10 px-3 rounded-lg bg-white ring-1 ring-stone-200 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500 transition-shadow";
+import { Button } from "@/components/ui/Button";
 
 const TYPE_ORDER: VehicleEventType[] = [
   "service",
@@ -108,32 +106,28 @@ export const AddEventModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <button
-        className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-void/60 backdrop-blur-sm"
         onClick={onClose}
-        aria-label="Schließen"
+        aria-label="Schliessen"
       />
-      <div className="relative w-full sm:max-w-2xl max-h-[90vh] flex flex-col bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl ring-1 ring-stone-200 overflow-hidden">
-        <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100 shrink-0">
+      <div className="relative w-full sm:max-w-2xl max-h-[90vh] flex flex-col rounded-card border border-hairline bg-paper shadow-raised overflow-hidden">
+        <div className="px-6 py-4 flex items-center justify-between border-b border-hairline shrink-0">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] font-semibold text-teal-700">
-              Historie
-            </div>
-            <h2 className="font-display text-xl tracking-tight font-medium mt-0.5">
+            <div className="kicker text-ink-muted mb-1">Historie</div>
+            <h2 className="font-display text-xl tracking-tight font-bold text-ink mt-0.5">
               Eintrag hinzufügen
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full inline-flex items-center justify-center text-stone-500 hover:bg-stone-100"
+            className="w-9 h-9 rounded-full inline-flex items-center justify-center text-ink-muted hover:bg-canvas"
           >
             <X size={16} />
           </button>
         </div>
 
         <div className="px-6 py-5 overflow-auto scroll-thin grow">
-          <div className="text-[11px] uppercase tracking-wider font-semibold text-stone-500 mb-2">
-            Typ
-          </div>
+          <div className="data-label mb-2">Typ</div>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-5">
             {TYPE_ORDER.map((t) => {
               const meta = EVENT_TYPE_META[t];
@@ -143,10 +137,10 @@ export const AddEventModal = ({
                   key={t}
                   type="button"
                   onClick={() => setType(t)}
-                  className={`px-2 py-2 rounded-lg text-[12px] font-medium transition-all ${
+                  className={`px-2 py-2 rounded-btn text-[12px] font-medium transition-all border ${
                     active
-                      ? "ring-1 shadow-sm"
-                      : "ring-1 ring-stone-200 bg-white text-stone-600 hover:ring-stone-300"
+                      ? "border-transparent shadow-sm"
+                      : "border-hairline bg-paper text-ink-soft hover:bg-canvas"
                   }`}
                   style={
                     active
@@ -168,14 +162,14 @@ export const AddEventModal = ({
             <Field label="Datum" required>
               <input
                 type="date"
-                className={inputCls}
+                className="field"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
             </Field>
             <Field label="Km-Stand">
               <input
-                className={inputCls}
+                className="field"
                 value={km}
                 onChange={(e) => setKm(e.target.value)}
                 inputMode="numeric"
@@ -186,17 +180,17 @@ export const AddEventModal = ({
             <div className="col-span-2">
               <Field label="Beschreibung">
                 <textarea
-                  className={`${inputCls} h-20 py-2 leading-snug`}
+                  className="field h-20 py-2 leading-snug resize-none"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="z. B. Inspektion 60.000 km, Ölwechsel, Bremsbeläge"
+                  placeholder="z. B. Inspektion 60.000 km, Olwechsel, Bremsbelage"
                 />
               </Field>
             </div>
 
-            <Field label="Kosten" hint="brutto in €">
+            <Field label="Kosten" hint="brutto in EUR">
               <input
-                className={inputCls}
+                className="field"
                 value={cost}
                 onChange={(e) => setCost(e.target.value)}
                 inputMode="decimal"
@@ -205,7 +199,7 @@ export const AddEventModal = ({
             </Field>
             <Field label="Anbieter / Werkstatt">
               <input
-                className={inputCls}
+                className="field"
                 value={provider}
                 onChange={(e) => setProvider(e.target.value)}
                 placeholder="z. B. ATU Augsburg"
@@ -215,14 +209,14 @@ export const AddEventModal = ({
             <Field label="Nächster Termin">
               <input
                 type="date"
-                className={inputCls}
+                className="field"
                 value={nextDate}
                 onChange={(e) => setNextDate(e.target.value)}
               />
             </Field>
             <Field label="Nächster Km-Stand">
               <input
-                className={inputCls}
+                className="field"
                 value={nextKm}
                 onChange={(e) => setNextKm(e.target.value)}
                 inputMode="numeric"
@@ -232,11 +226,9 @@ export const AddEventModal = ({
           </div>
 
           <div className="mt-5">
-            <div className="text-[11px] uppercase tracking-wider font-semibold text-stone-500 mb-2">
-              Beleg / Rechnung
-            </div>
-            <label className="flex items-center gap-3 px-3 py-2.5 rounded-lg ring-1 ring-stone-200 hover:ring-stone-300 cursor-pointer text-sm text-stone-700">
-              <Upload size={14} className="text-stone-400" />
+            <div className="data-label mb-2">Beleg / Rechnung</div>
+            <label className="flex items-center gap-3 px-3 py-2.5 rounded-btn border border-hairline hover:bg-canvas cursor-pointer text-sm text-ink-soft">
+              <Upload size={14} className="text-ink-muted" />
               <span className="truncate">
                 {file ? file.name : "PDF oder Foto auswählen (max 12 MB)"}
               </span>
@@ -251,28 +243,23 @@ export const AddEventModal = ({
           </div>
 
           {error && (
-            <div className="mt-4 px-3 py-2 rounded-lg bg-rose-50 ring-1 ring-rose-200 text-[13px] text-rose-700">
+            <div className="mt-4 px-3 py-2 rounded-frame bg-red-50 border border-red-200 text-[13px] text-red-700">
               {error}
             </div>
           )}
         </div>
 
-        <div className="px-6 py-4 flex items-center justify-end gap-3 border-t border-stone-100 shrink-0">
+        <div className="px-6 py-4 flex items-center justify-end gap-3 border-t border-hairline shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="text-sm text-stone-500 hover:text-stone-800 px-3"
+            className="text-sm text-ink-muted hover:text-ink px-3"
           >
             Abbrechen
           </button>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={loading}
-            className="inline-flex items-center justify-center h-10 px-5 rounded-full bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-40"
-          >
+          <Button variant="signal" onClick={submit} disabled={loading}>
             {loading ? "Speichern…" : "Eintrag speichern"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -292,11 +279,11 @@ const Field = ({
 }) => (
   <label className="block">
     <div className="flex items-baseline justify-between mb-1">
-      <span className="text-[12px] font-medium text-stone-700">
+      <span className="data-label">
         {label}
-        {required && <span className="text-rose-500 ml-0.5">*</span>}
+        {required && <span className="text-red-500 ml-0.5">*</span>}
       </span>
-      {hint && <span className="text-[11px] text-stone-400">{hint}</span>}
+      {hint && <span className="text-[11px] text-ink-muted">{hint}</span>}
     </div>
     {children}
   </label>

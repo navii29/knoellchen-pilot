@@ -17,9 +17,9 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import { THEME } from "@/lib/theme";
 import { fmtEur, fmtDate } from "@/lib/utils";
 import type { Ticket } from "@/lib/types";
+import { Button } from "@/components/ui/Button";
 
 export const TicketActions = ({
   ticket,
@@ -111,7 +111,6 @@ export const TicketActions = ({
     if (await handleSendResponse(res)) router.refresh();
   };
 
-  // Auto-Pilot: ein Klick, ohne Confirm, nur möglich wenn Behörden-E-Mail bereits im Ticket
   const autoSendToAuthority = async () => {
     if (!ticket.authority_email) {
       setError("Behörden-E-Mail nicht im Ticket — manuell über 'An Behörde senden' eintragen");
@@ -155,25 +154,28 @@ export const TicketActions = ({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-xs uppercase tracking-wider text-stone-500 font-medium">Aktionen</div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="kicker text-ink-muted">Aktionen</div>
         <TestModeBadge />
       </div>
 
-      {/* Auto-Pilot Button — wenn Auslesung Behörden-Adresse erkannt hat, prominent oben */}
+      {/* Auto-Pilot — prominent if authority email known and not yet sent */}
       {autoReady && !ticket.authority_sent && (
         <button
           onClick={autoSendToAuthority}
           disabled={loading != null}
-          className="w-full mb-3 flex items-center gap-3 p-3.5 rounded-lg text-white text-left disabled:opacity-50"
-          style={{ background: THEME.primary }}
+          className="w-full mb-3 flex items-center gap-3 p-3.5 rounded-card bg-signal text-white text-left disabled:opacity-50 shadow-signal hover:bg-signal-strong transition-colors"
         >
-          <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-            {loading === "auto_authority" ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
+          <div className="w-9 h-9 rounded-panel bg-white/20 flex items-center justify-center shrink-0">
+            {loading === "auto_authority" ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Zap size={16} />
+            )}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold">Automatisch an Behörde senden</div>
-            <div className="text-xs opacity-90 truncate">
+            <div className="text-[13.5px] font-semibold">Automatisch an Behörde senden</div>
+            <div className="text-[12px] opacity-90 truncate">
               Zeugenfragebogen direkt an {ticket.authority_email}
             </div>
           </div>
@@ -229,18 +231,19 @@ export const TicketActions = ({
       {lexofficeEnabled && (ticket.charge_fine || ticket.charge_fee) && (
         <div className="mt-3">
           {ticket.lexoffice_invoice_id ? (
-            <div className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800">
-              <Check size={14} />
-              <span className="font-medium">In LexOffice</span>
-              <span className="font-mono text-[11px] opacity-70">
+            <div className="inline-flex items-center gap-2 text-[13px] px-3 py-2 rounded-card border border-hairline bg-canvas text-ink-soft">
+              <Check size={13} className="text-ink-muted" />
+              <span className="font-medium text-ink">In LexOffice</span>
+              <span className="font-mono tnum text-[11px] text-ink-muted">
                 · {ticket.lexoffice_invoice_id.slice(0, 8)}
               </span>
             </div>
           ) : (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={syncLexoffice}
               disabled={loading != null}
-              className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md ring-1 ring-stone-200 hover:bg-stone-50 text-stone-700 disabled:opacity-50"
             >
               {loading === "lexoffice" ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -248,7 +251,7 @@ export const TicketActions = ({
                 <Calculator size={14} />
               )}
               An LexOffice übertragen
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -260,21 +263,21 @@ export const TicketActions = ({
             value={authorityInput}
             onChange={(e) => setAuthorityInput(e.target.value)}
             placeholder="bussgeld@behoerde.de"
-            className="flex-1 px-3 py-2 text-sm rounded-lg ring-1 ring-stone-200 outline-none focus:ring-stone-400"
+            className="field flex-1 text-[13px]"
           />
-          <button
+          <Button
             onClick={sendToAuthority}
             disabled={!authorityInput || loading != null || !ticket.questionnaire_path}
-            className="inline-flex items-center gap-1.5 text-sm text-white px-3 py-2 rounded-md font-medium disabled:opacity-50"
-            style={{ background: THEME.primary }}
+            variant="signal"
+            size="sm"
           >
             <Send size={13} /> Senden
-          </button>
+          </Button>
         </div>
       )}
 
       {ticket.letter_path && (
-        <div className="mt-3 grid sm:grid-cols-3 gap-2 text-sm">
+        <div className="mt-3 grid sm:grid-cols-3 gap-2">
           <DocLink label="Anschreiben" Icon={FileText} url={`/api/tickets/${ticket.id}/files/letter`} />
           <DocLink label="Rechnung" Icon={ReceiptText} url={`/api/tickets/${ticket.id}/files/invoice`} />
           <DocLink
@@ -286,24 +289,24 @@ export const TicketActions = ({
       )}
 
       {(ticket.letter_sent || ticket.authority_sent) && (
-        <div className="mt-4 rounded-lg ring-1 ring-emerald-200 bg-emerald-50/50 p-3 space-y-1.5 text-sm">
+        <div className="mt-4 rounded-card border border-hairline bg-canvas p-3 space-y-1.5 text-[13px]">
           {ticket.letter_sent && ticket.letter_sent_at && (
-            <div className="flex items-center gap-2 text-emerald-800">
-              <Check size={14} />
+            <div className="flex items-center gap-2 text-ink-soft">
+              <Check size={13} className="text-ink-muted" />
               <span>
                 Anschreiben gesendet am{" "}
-                <strong>{fmtDate(ticket.letter_sent_at)}</strong> an{" "}
-                <span className="text-xs">{ticket.letter_sent_to}</span>
+                <strong className="text-ink font-mono tnum">{fmtDate(ticket.letter_sent_at)}</strong> an{" "}
+                <span className="text-ink-muted text-[12px]">{ticket.letter_sent_to}</span>
               </span>
             </div>
           )}
           {ticket.authority_sent && ticket.authority_sent_at && (
-            <div className="flex items-center gap-2 text-emerald-800">
-              <Check size={14} />
+            <div className="flex items-center gap-2 text-ink-soft">
+              <Check size={13} className="text-ink-muted" />
               <span>
                 Zeugenfragebogen gesendet am{" "}
-                <strong>{fmtDate(ticket.authority_sent_at)}</strong> an{" "}
-                <span className="text-xs">{ticket.authority_sent_to}</span>
+                <strong className="text-ink font-mono tnum">{fmtDate(ticket.authority_sent_at)}</strong> an{" "}
+                <span className="text-ink-muted text-[12px]">{ticket.authority_sent_to}</span>
               </span>
             </div>
           )}
@@ -311,14 +314,14 @@ export const TicketActions = ({
       )}
 
       {info && (
-        <div className="mt-3 text-sm text-amber-800 bg-amber-50 ring-1 ring-amber-200 rounded-lg px-3 py-2 flex items-center gap-2">
+        <div className="mt-3 text-[13px] text-amber-800 bg-amber-50 border border-amber-200 rounded-card px-3 py-2 flex items-center gap-2">
           <FlaskConical size={14} />
           <span>{info}</span>
         </div>
       )}
 
       {error && (
-        <div className="mt-3 text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2">
+        <div className="mt-3 text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-card px-3 py-2">
           {error}
         </div>
       )}
@@ -326,9 +329,6 @@ export const TicketActions = ({
   );
 };
 
-// Wird auf Detail-Seite (Server Component) per Body-Daten oder via separater Probe injiziert.
-// Hier: passive Heuristik — wenn das URL-Hash oder window.localStorage es signalisiert.
-// Der echte Test-Modus wird vom Server zurückgegeben (siehe info-State).
 const TestModeBadge = () => null;
 
 const ActionButton = ({
@@ -349,17 +349,14 @@ const ActionButton = ({
   <button
     onClick={onClick}
     disabled={disabled || loading}
-    className="flex items-start gap-3 p-3.5 rounded-lg ring-1 ring-stone-200 bg-white hover:bg-stone-50 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+    className="flex items-start gap-3 p-3.5 rounded-card border border-hairline bg-paper hover:bg-canvas text-left disabled:opacity-50 disabled:cursor-not-allowed shadow-panel transition-colors"
   >
-    <div
-      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-      style={{ background: THEME.primaryTint, color: THEME.primary }}
-    >
+    <div className="w-9 h-9 rounded-panel border border-hairline bg-canvas text-ink-muted flex items-center justify-center shrink-0">
       {loading ? <Loader2 size={15} className="animate-spin" /> : <Icon size={15} />}
     </div>
     <div className="flex-1 min-w-0">
-      <div className="text-sm font-medium">{label}</div>
-      <div className="text-xs text-stone-500 truncate">{hint}</div>
+      <div className="text-[13.5px] font-medium text-ink">{label}</div>
+      <div className="text-[12px] text-ink-muted truncate">{hint}</div>
     </div>
   </button>
 );
@@ -369,9 +366,9 @@ const DocLink = ({ label, Icon, url }: { label: string; Icon: LucideIcon; url: s
     href={url}
     target="_blank"
     rel="noreferrer"
-    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg ring-1 ring-stone-200 hover:bg-stone-50 text-stone-700"
+    className="inline-flex items-center gap-2 px-3 py-2 rounded-btn border border-hairline bg-paper hover:bg-canvas text-ink-soft text-[13px] transition-colors"
   >
-    <Icon size={14} />
+    <Icon size={13} />
     {label}
   </a>
 );

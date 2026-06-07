@@ -15,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { Topbar } from "@/components/dashboard/Topbar";
-import { THEME } from "@/lib/theme";
+import { Button } from "@/components/ui/Button";
 
 type Phase = "idle" | "uploading" | "ocr" | "matching" | "done" | "error";
 
@@ -90,14 +90,15 @@ export const UploadClient = ({ inboundEmail }: { inboundEmail: string | null }) 
   return (
     <>
       <Topbar section="Strafzettel hochladen" />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
+      <div className="flex-1 overflow-auto scroll-thin bg-canvas">
         <div className="max-w-2xl mx-auto p-6 md:p-10">
-          <div className="font-display font-bold text-2xl tracking-tight">Strafzettel hochladen</div>
-          <p className="text-sm text-stone-500 mt-1">
+          <div className="kicker text-ink-muted mb-2">Leitstelle · Eingang</div>
+          <h1 className="font-display font-extrabold text-ink text-[28px] leading-[1.05] tracking-tightest">Strafzettel hochladen</h1>
+          <p className="text-[14px] text-ink-muted mt-1.5">
             PDF, JPG oder PNG. KI liest die Daten aus und ordnet automatisch dem richtigen Mieter zu.
           </p>
 
-          <div className="mt-8 rounded-2xl bg-white ring-1 ring-stone-200 p-6 md:p-8">
+          <div className="mt-8 panel p-6 md:p-8">
             {phase === "idle" && (
               <>
                 <input
@@ -109,14 +110,14 @@ export const UploadClient = ({ inboundEmail }: { inboundEmail: string | null }) 
                 />
                 <DropZone onFile={onChoose} onClick={() => inputRef.current?.click()} />
                 {inboundEmail && (
-                  <div className="mt-5 flex items-center gap-2 text-xs text-stone-500">
+                  <div className="mt-5 flex items-center gap-2 text-[12px] text-ink-muted">
                     <Mail size={13} />
                     Oder direkt weiterleiten an{" "}
-                    <span className="font-mono text-stone-700">{inboundEmail}</span>
+                    <span className="font-mono text-ink">{inboundEmail}</span>
                   </div>
                 )}
                 {error && (
-                  <div className="mt-3 text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2">
+                  <div className="mt-3 text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-panel px-3 py-2">
                     {error}
                   </div>
                 )}
@@ -163,19 +164,18 @@ const DropZone = ({ onFile, onClick }: { onFile: (f: File) => void; onClick: () 
         const f = e.dataTransfer.files?.[0];
         if (f) onFile(f);
       }}
-      className={`border-2 border-dashed rounded-xl py-12 px-6 text-center cursor-pointer transition ${
-        over ? "border-stone-500 bg-stone-50" : "border-stone-300 hover:border-stone-400 hover:bg-stone-50"
+      className={`border-2 border-dashed rounded-card py-12 px-6 text-center cursor-pointer transition ${
+        over
+          ? "border-signal bg-signal/5"
+          : "border-hairline hover:border-ink/20 hover:bg-canvas/80"
       }`}
     >
-      <div
-        className="w-12 h-12 mx-auto rounded-full flex items-center justify-center"
-        style={{ background: THEME.primaryTint, color: THEME.primary }}
-      >
-        <UploadCloud size={22} />
+      <div className="w-12 h-12 mx-auto rounded-panel border border-hairline bg-canvas flex items-center justify-center text-ink-muted">
+        <UploadCloud size={22} strokeWidth={1.75} />
       </div>
-      <div className="mt-4 font-display font-semibold">PDF, JPG oder PNG hier ablegen</div>
-      <div className="text-sm text-stone-500 mt-1">oder klicken, um Datei auszuwählen</div>
-      <div className="text-xs text-stone-400 mt-4">Max. 12 MB · Behördliche Zeugenfragebögen bevorzugt</div>
+      <div className="mt-4 font-display font-semibold text-[15px] tracking-tight text-ink">PDF, JPG oder PNG hier ablegen</div>
+      <div className="text-[13.5px] text-ink-muted mt-1">oder klicken, um Datei auszuwählen</div>
+      <div className="text-[12px] text-ink-muted mt-4">Max. 12 MB · Behördliche Zeugenfragebögen bevorzugt</div>
     </div>
   );
 };
@@ -202,11 +202,11 @@ const ProgressView = ({
   const isError = phase === "error";
   return (
     <>
-      <div className="flex items-center gap-3 p-3 rounded-lg bg-stone-50">
-        <FileText size={18} className="text-stone-500" />
-        <div className="flex-1 text-sm min-w-0">
-          <div className="font-medium truncate">{file?.name || "Strafzettel"}</div>
-          <div className="text-xs text-stone-500">{file ? `${Math.round(file.size / 1024)} KB` : ""}</div>
+      <div className="flex items-center gap-3 p-3 rounded-panel border border-hairline bg-canvas">
+        <FileText size={18} className="text-ink-muted" strokeWidth={1.75} />
+        <div className="flex-1 text-[13.5px] min-w-0">
+          <div className="font-medium text-ink truncate">{file?.name || "Strafzettel"}</div>
+          <div className="text-[12px] text-ink-muted font-mono tnum">{file ? `${Math.round(file.size / 1024)} KB` : ""}</div>
         </div>
         {isDone ? (
           <Check size={18} className="text-emerald-600" />
@@ -214,8 +214,7 @@ const ProgressView = ({
           <X size={18} className="text-red-600" />
         ) : (
           <div
-            className="w-5 h-5 rounded-full border-2 border-stone-200"
-            style={{ borderTopColor: THEME.primary, animation: "spin .7s linear infinite" }}
+            className="w-5 h-5 rounded-full border-2 border-hairline border-t-signal animate-spin"
           />
         )}
       </div>
@@ -227,50 +226,53 @@ const ProgressView = ({
           return (
             <div
               key={p.key}
-              className={`flex items-center gap-3 p-2.5 rounded-lg ${active ? "bg-white ring-1 ring-stone-200" : ""}`}
+              className={`flex items-center gap-3 p-2.5 rounded-panel transition-colors ${active ? "bg-canvas border border-hairline" : ""}`}
             >
               <div
                 className={`w-7 h-7 rounded-full flex items-center justify-center ${
-                  done ? "bg-emerald-100 text-emerald-700" : active ? "text-white" : "bg-stone-100 text-stone-400"
+                  done
+                    ? "bg-emerald-100 text-emerald-700"
+                    : active
+                    ? "bg-signal text-white"
+                    : "bg-canvas border border-hairline text-ink-muted"
                 }`}
-                style={active ? { background: THEME.primary } : {}}
               >
                 {done ? <Check size={13} /> : <p.Icon size={13} />}
               </div>
-              <div className={`text-sm flex-1 ${done ? "text-stone-500" : active ? "font-medium" : "text-stone-400"}`}>
+              <div className={`text-[13.5px] flex-1 ${done ? "text-ink-muted" : active ? "font-medium text-ink" : "text-ink-muted/60"}`}>
                 {p.label}
               </div>
               {active && (
-                <div className="w-16 h-1 bg-stone-100 rounded-full overflow-hidden">
-                  <div className="h-full shimmer" style={{ background: THEME.primary, width: "60%" }} />
+                <div className="w-16 h-1 bg-canvas rounded-full overflow-hidden border border-hairline">
+                  <div className="h-full bg-signal shimmer" style={{ width: "60%" }} />
                 </div>
               )}
             </div>
           );
         })}
         <div
-          className={`flex items-center gap-3 p-2.5 rounded-lg ${isDone ? "bg-white ring-1 ring-stone-200" : ""}`}
+          className={`flex items-center gap-3 p-2.5 rounded-panel transition-colors ${isDone ? "bg-canvas border border-hairline" : ""}`}
         >
           <div
             className={`w-7 h-7 rounded-full flex items-center justify-center ${
-              isDone ? "bg-emerald-100 text-emerald-700" : "bg-stone-100 text-stone-400"
+              isDone ? "bg-emerald-100 text-emerald-700" : "bg-canvas border border-hairline text-ink-muted"
             }`}
           >
             {isDone ? <Check size={13} /> : <FileStack size={13} />}
           </div>
-          <div className={`text-sm flex-1 ${isDone ? "text-stone-500" : "text-stone-400"}`}>
+          <div className={`text-[13.5px] flex-1 ${isDone ? "text-ink-muted" : "text-ink-muted/60"}`}>
             Bereit für Dokumenten-Erstellung
           </div>
         </div>
       </div>
 
       {isDone && (
-        <div className="mt-4 p-4 rounded-lg text-white" style={{ background: THEME.primary }}>
+        <div className="mt-4 p-4 rounded-panel bg-signal text-white shadow-signal">
           <div className="flex items-center gap-3">
-            <CheckCircle2 size={22} />
+            <CheckCircle2 size={20} strokeWidth={1.75} />
             <div className="flex-1">
-              <div className="font-display font-semibold">Bereit zur Freigabe</div>
-              <div className="text-xs opacity-90">
+              <div className="font-display font-semibold text-[14px] tracking-tight">Bereit zur Freigabe</div>
+              <div className="text-[12px] opacity-90 mt-0.5">
                 {resultMatched
                   ? "Fahrer wurde automatisch zugeordnet · weiter zur Detailansicht"
                   : "Fahrer noch nicht zugeordnet — manuell prüfen"}
@@ -281,23 +283,23 @@ const ProgressView = ({
       )}
 
       {isError && error && (
-        <div className="mt-4 text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2">
+        <div className="mt-4 text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-panel px-3 py-2">
           {error}
         </div>
       )}
 
       <div className="mt-6 flex items-center justify-end gap-2">
-        <button onClick={onCancel} className="text-sm px-3 py-1.5 rounded-md hover:bg-stone-100">
+        <Button variant="ghost" size="sm" onClick={onCancel}>
           Neuer Upload
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="signal"
+          size="sm"
           onClick={onContinue}
           disabled={!isDone && !isError}
-          className="text-sm px-3.5 py-1.5 rounded-md text-white font-medium disabled:opacity-40"
-          style={{ background: THEME.primary }}
         >
           {isDone ? "Zum Strafzettel" : isError ? "Trotzdem öffnen" : "Wird verarbeitet…"}
-        </button>
+        </Button>
       </div>
     </>
   );

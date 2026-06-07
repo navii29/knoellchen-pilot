@@ -14,6 +14,8 @@ import { Topbar } from "@/components/dashboard/Topbar";
 import { fmtDate } from "@/lib/utils";
 import { DamageReportActions } from "./DamageReportActions";
 import type { Contract, DamageReport, Vehicle } from "@/lib/types";
+import { Panel } from "@/components/ui/Panel";
+import { Plate } from "@/components/ui/Plate";
 
 export const dynamic = "force-dynamic";
 
@@ -74,21 +76,21 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
   return (
     <>
       <Topbar section={`Schadensbericht · ${fmtDate(r.date)}`} />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
+      <div className="flex-1 overflow-auto scroll-thin bg-canvas">
         <div className="max-w-4xl mx-auto p-4 md:p-10">
           <Link
             href="/dashboard/damage-reports"
-            className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+            className="inline-flex items-center gap-1.5 text-[13px] text-ink-muted hover:text-ink mb-5"
           >
-            <ArrowLeft size={14} /> Zurück zur Liste
+            <ArrowLeft size={13} /> Zurück zur Liste
           </Link>
 
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="min-w-0">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertOctagon size={18} style={{ color: meta.color }} />
+              <div className="flex items-center gap-2 mb-3">
+                <AlertOctagon size={16} style={{ color: meta.color }} />
                 <span
-                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium"
+                  className="inline-flex items-center gap-1.5 rounded-full pl-2 pr-2.5 py-0.5 text-[11px] font-mono font-medium tracking-tight"
                   style={{
                     background: meta.bg,
                     color: meta.text,
@@ -99,10 +101,10 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
                   {meta.label}
                 </span>
               </div>
-              <h1 className="font-display font-bold text-2xl md:text-3xl tracking-tight break-words">
+              <h1 className="font-display font-extrabold text-ink text-[26px] sm:text-[30px] leading-[1.05] tracking-tightest break-words">
                 {r.location || "Unbekannter Ort"}
               </h1>
-              <div className="mt-1 text-sm text-stone-500 tabular-nums">
+              <div className="mt-1.5 font-mono tnum text-[13px] text-ink-muted">
                 {fmtDate(r.date)}
                 {r.time && <span className="ml-2">{r.time}</span>}
               </div>
@@ -119,14 +121,23 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
             </InfoCard>
 
             <InfoCard Icon={ShieldAlert} title="Aktenzeichen">
-              <Row label="Polizei" value={r.police_reference_nr ? <span className="font-mono">{r.police_reference_nr}</span> : "—"} />
-              <Row label="Versicherung" value={r.insurance_claim_nr ? <span className="font-mono">{r.insurance_claim_nr}</span> : "—"} />
+              <Row label="Polizei" value={r.police_reference_nr ? <span className="font-mono tnum">{r.police_reference_nr}</span> : "—"} />
+              <Row label="Versicherung" value={r.insurance_claim_nr ? <span className="font-mono tnum">{r.insurance_claim_nr}</span> : "—"} />
             </InfoCard>
 
             {(r.other_party_name || r.other_party_plate || r.other_party_insurance) && (
               <InfoCard Icon={User} title="Unfallgegner">
                 <Row label="Name" value={r.other_party_name || "—"} />
-                <Row label="Kennzeichen" value={r.other_party_plate ? <span className="font-mono font-semibold">{r.other_party_plate}</span> : "—"} />
+                <Row
+                  label="Kennzeichen"
+                  value={
+                    r.other_party_plate ? (
+                      <Plate value={r.other_party_plate} size="sm" />
+                    ) : (
+                      "—"
+                    )
+                  }
+                />
                 <Row label="Versicherung" value={r.other_party_insurance || "—"} />
               </InfoCard>
             )}
@@ -139,11 +150,11 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
                     value={
                       <Link
                         href={`/dashboard/vehicles/${vehicle.id}`}
-                        className="text-teal-700 hover:underline font-mono"
+                        className="hover:underline"
                       >
-                        {vehicle.plate}
+                        <Plate value={vehicle.plate} size="sm" />
                         {vehicle.vehicle_type && (
-                          <span className="text-stone-500 ml-2 font-sans text-xs">
+                          <span className="text-ink-muted ml-2 text-[12px] font-sans">
                             {vehicle.vehicle_type}
                           </span>
                         )}
@@ -158,7 +169,7 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
                       value={
                         <Link
                           href={`/dashboard/contracts/${contract.id}`}
-                          className="text-teal-700 hover:underline font-mono"
+                          className="font-mono text-ink hover:underline"
                         >
                           {contract.contract_nr}
                         </Link>
@@ -168,7 +179,7 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
                     <Row
                       label="Mietzeitraum"
                       value={
-                        <span className="tabular-nums text-xs">
+                        <span className="font-mono tnum text-[12px]">
                           {fmtDate(contract.pickup_date)} → {fmtDate(contract.return_date)}
                         </span>
                       }
@@ -180,15 +191,17 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
           </div>
 
           <div className="mt-6">
-            <div className="flex items-end justify-between mb-2">
-              <div className="text-xs uppercase tracking-wider text-stone-500 font-medium">
+            <div className="flex items-end justify-between mb-3">
+              <div className="kicker text-ink-muted">
                 Fotos ({photoUrls.length})
               </div>
             </div>
             {photoUrls.length === 0 ? (
-              <div className="rounded-xl bg-white ring-1 ring-stone-200 px-5 py-10 text-center text-sm text-stone-500">
-                Noch keine Fotos zu diesem Bericht.
-              </div>
+              <Panel>
+                <div className="py-6 text-center text-[13px] text-ink-muted">
+                  Noch keine Fotos zu diesem Bericht.
+                </div>
+              </Panel>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {photoUrls.map((p) => (
@@ -197,7 +210,7 @@ export default async function DamageReportDetailPage({ params }: { params: { id:
                     href={p.url || "#"}
                     target="_blank"
                     rel="noreferrer"
-                    className="relative aspect-square block rounded-lg overflow-hidden bg-stone-100 ring-1 ring-stone-200 hover:ring-stone-400 transition"
+                    className="relative aspect-square block rounded-panel overflow-hidden bg-canvas border border-hairline hover:border-ink/20 transition"
                   >
                     {p.url && (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -223,13 +236,13 @@ const InfoCard = ({
   Icon: typeof Calendar;
   children: React.ReactNode;
 }) => (
-  <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
-    <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold mb-3">
+  <Panel>
+    <div className="flex items-center gap-2 kicker text-ink-muted mb-3">
       <Icon size={13} />
       {title}
     </div>
     <div className="space-y-1.5">{children}</div>
-  </div>
+  </Panel>
 );
 
 const Row = ({
@@ -241,8 +254,8 @@ const Row = ({
   value: React.ReactNode;
   mono?: boolean;
 }) => (
-  <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-    <div className="text-stone-500 text-xs">{label}</div>
-    <div className={mono ? "tabular-nums text-stone-800" : "text-stone-800"}>{value}</div>
+  <div className="grid grid-cols-[120px_1fr] gap-2 text-[13px]">
+    <div className="data-label text-ink-muted">{label}</div>
+    <div className={mono ? "font-mono tnum text-ink" : "text-ink"}>{value}</div>
   </div>
 );

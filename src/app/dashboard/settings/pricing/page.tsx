@@ -16,7 +16,7 @@ export default async function PricingSettingsPage() {
   return (
     <>
       <Topbar section="Preisregeln" />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50 p-4 md:p-10">
+      <div className="flex-1 overflow-auto scroll-thin bg-canvas p-4 md:p-10">
         <div className="max-w-4xl mx-auto">
           <PricingClient initialRules={(data ?? []) as PricingRule[]} />
         </div>

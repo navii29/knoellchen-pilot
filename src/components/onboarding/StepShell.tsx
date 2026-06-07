@@ -1,6 +1,8 @@
 "use client";
 
 import { ReactNode } from "react";
+import { Button } from "@/components/ui/Button";
+import { Loader2 } from "lucide-react";
 
 export const StepShell = ({
   eyebrow,
@@ -28,36 +30,34 @@ export const StepShell = ({
   error?: string | null;
 }) => {
   return (
-    <div className="bg-white rounded-3xl ring-1 ring-stone-200/70 shadow-sm overflow-hidden">
-      <div className="px-7 sm:px-10 pt-9 sm:pt-12 pb-2">
-        <div className="text-[12px] uppercase tracking-[0.1em] font-semibold text-teal-700 mb-3">
-          {eyebrow}
-        </div>
-        <h1 className="font-display text-stone-900 text-[30px] sm:text-[40px] leading-[1.1] tracking-[-0.02em] font-medium">
+    <div className="bg-paper border border-hairline rounded-card shadow-panel overflow-hidden">
+      <div className="px-7 sm:px-10 pt-9 sm:pt-11 pb-2">
+        <div className="kicker text-ink-muted mb-3">{eyebrow}</div>
+        <h1 className="font-display font-extrabold text-ink text-[26px] sm:text-[34px] leading-[1.06] tracking-tightest">
           {title}
         </h1>
         {subtitle && (
-          <p className="mt-3 text-[15.5px] leading-[1.55] text-stone-600 max-w-xl">
+          <p className="mt-3 text-[14.5px] leading-[1.55] text-ink-soft max-w-xl">
             {subtitle}
           </p>
         )}
       </div>
 
-      <div className="px-7 sm:px-10 py-8">{children}</div>
+      <div className="px-7 sm:px-10 py-7">{children}</div>
 
       {error && (
-        <div className="mx-7 sm:mx-10 mb-4 px-4 py-3 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-[14px] text-rose-700">
+        <div className="mx-7 sm:mx-10 mb-4 px-4 py-3 rounded-input bg-red-50 border border-red-200 text-[13.5px] text-red-700">
           {error}
         </div>
       )}
 
-      <div className="px-7 sm:px-10 pb-8 pt-2 flex items-center justify-between gap-3 border-t border-stone-100">
+      <div className="px-7 sm:px-10 pb-8 pt-3 flex items-center justify-between gap-3 border-t border-hairline">
         <div className="flex items-center gap-3">
           {onBack && (
             <button
               type="button"
               onClick={onBack}
-              className="text-[14px] text-stone-500 hover:text-stone-800 transition-colors"
+              className="text-[13.5px] text-ink-muted hover:text-ink transition-colors"
             >
               Zurück
             </button>
@@ -68,19 +68,20 @@ export const StepShell = ({
             <button
               type="button"
               onClick={onSkip}
-              className="text-[14px] text-stone-500 hover:text-stone-800 transition-colors"
+              className="text-[13.5px] text-ink-muted hover:text-ink transition-colors"
             >
               Später einrichten
             </button>
           )}
-          <button
+          <Button
             type="button"
+            variant="signal"
+            size="md"
             onClick={onPrimary}
             disabled={primaryDisabled || primaryLoading}
-            className="inline-flex items-center justify-center h-11 px-6 rounded-full bg-stone-900 text-white text-[14px] font-medium hover:bg-stone-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {primaryLoading ? "…" : primaryLabel}
-          </button>
+            {primaryLoading ? <Loader2 size={14} className="animate-spin" /> : primaryLabel}
+          </Button>
         </div>
       </div>
     </div>
@@ -100,15 +101,15 @@ export const Field = ({
 }) => (
   <label className="block">
     <div className="flex items-baseline justify-between mb-1.5">
-      <span className="text-[13px] font-medium text-stone-700">
+      <span className="data-label">
         {label}
-        {required && <span className="text-rose-500 ml-0.5">*</span>}
+        {required && <span className="text-signal ml-0.5">*</span>}
       </span>
-      {hint && <span className="text-[12px] text-stone-400">{hint}</span>}
+      {hint && <span className="font-mono text-[11px] text-ink-muted">{hint}</span>}
     </div>
     {children}
   </label>
 );
 
 export const inputClass =
-  "w-full h-11 px-3.5 rounded-xl bg-white ring-1 ring-stone-200 text-[14.5px] text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500 transition-shadow";
+  "field";

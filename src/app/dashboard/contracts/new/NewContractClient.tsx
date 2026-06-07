@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, FileSignature, FileText, Handshake, Loader2, Save, ScanText, Sparkles, TrendingUp, UserCheck, X } from "lucide-react";
 import Link from "next/link";
-import { THEME } from "@/lib/theme";
 import type {
   Customer,
   ParsedContractData,
@@ -19,6 +18,7 @@ import {
   type SalesPartner,
 } from "@/lib/partners";
 import { fmtEur } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
 
 type Mode = "choose" | "ai" | "manual";
 type FormState = {
@@ -128,8 +128,6 @@ const fillFromCustomer = (prev: FormState, c: Customer): FormState => {
   } as FormState;
 };
 
-// Default-Vorauswahl-Titel — passend zu den ersten 16 Standard-Templates.
-// Beim Mount werden alle Templates mit diesen Titeln vorausgewählt.
 const DEFAULT_SELECTED_TITLES = new Set([
   "Nichtraucherfahrzeug",
   "Versicherungsschutz Diebstahl",
@@ -201,10 +199,7 @@ export const NewContractClient = ({
 
   const pickCustomer = (id: string) => {
     if (!id) {
-      setData((prev) => ({
-        ...prev,
-        customer_id: "",
-      }));
+      setData((prev) => ({ ...prev, customer_id: "" }));
       return;
     }
     const c = customers.find((x) => x.id === id);
@@ -274,7 +269,6 @@ export const NewContractClient = ({
     setError(null);
     setSaving(true);
     const numeric = (v: string) => (v.trim() === "" ? null : Number(v));
-    // Provision live berechnen, falls Partner zugeordnet
     const partner = partners.find((p) => p.id === data.partner_id) ?? null;
     const purchasePerDay = numeric(data.partner_purchase_price);
     const sellingPerDay = numeric(data.partner_selling_price);
@@ -343,13 +337,15 @@ export const NewContractClient = ({
     <>
       <Link
         href="/dashboard/contracts"
-        className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+        className="inline-flex items-center gap-1.5 text-[13px] text-ink-muted hover:text-ink mb-5"
       >
         <ArrowLeft size={14} /> Zurück zu Verträgen
       </Link>
 
-      <div className="font-display font-bold text-2xl tracking-tight">Neuer Vertrag</div>
-      <p className="text-sm text-stone-500 mt-1">
+      <div className="font-display font-extrabold text-ink text-[26px] sm:text-[30px] leading-[1.05] tracking-tightest">
+        Neuer Vertrag
+      </div>
+      <p className="text-[13px] text-ink-muted mt-1">
         Vertrag-PDF hochladen — KI füllt das Formular automatisch — oder manuell anlegen.
       </p>
 
@@ -357,28 +353,25 @@ export const NewContractClient = ({
         <div className="mt-8 grid sm:grid-cols-2 gap-4">
           <button
             onClick={() => fileRef.current?.click()}
-            className="rounded-2xl bg-white ring-1 ring-stone-200 p-6 text-left hover:ring-stone-400 transition"
+            className="panel p-6 text-left hover:border-ink/20 hover:shadow-md transition"
           >
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center"
-              style={{ background: THEME.primaryTint, color: THEME.primary }}
-            >
+            <div className="w-12 h-12 rounded-panel border border-hairline bg-[#FFEDE4] text-signal flex items-center justify-center">
               <Sparkles size={22} />
             </div>
-            <div className="font-display font-semibold text-lg mt-4">PDF hochladen</div>
-            <div className="text-sm text-stone-500 mt-1">
+            <div className="font-display font-bold text-[17px] tracking-tight text-ink mt-4">PDF hochladen</div>
+            <div className="text-[13px] text-ink-muted mt-1">
               Unterschriebenen Mietvertrag als PDF — Claude liest die Daten aus.
             </div>
           </button>
           <button
             onClick={() => setMode("manual")}
-            className="rounded-2xl bg-white ring-1 ring-stone-200 p-6 text-left hover:ring-stone-400 transition"
+            className="panel p-6 text-left hover:border-ink/20 hover:shadow-md transition"
           >
-            <div className="w-12 h-12 rounded-xl bg-stone-100 text-stone-700 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-panel border border-hairline bg-canvas text-ink-soft flex items-center justify-center">
               <FileText size={22} />
             </div>
-            <div className="font-display font-semibold text-lg mt-4">Manuell anlegen</div>
-            <div className="text-sm text-stone-500 mt-1">Alle Felder direkt in das Formular eintragen.</div>
+            <div className="font-display font-bold text-[17px] tracking-tight text-ink mt-4">Manuell anlegen</div>
+            <div className="text-[13px] text-ink-muted mt-1">Alle Felder direkt in das Formular eintragen.</div>
           </button>
 
           <input
@@ -399,39 +392,33 @@ export const NewContractClient = ({
       )}
 
       {mode === "ai" && parsing && (
-        <div className="mt-8 rounded-2xl bg-white ring-1 ring-stone-200 p-8 flex items-center gap-4">
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center"
-            style={{ background: THEME.primaryTint, color: THEME.primary }}
-          >
+        <div className="mt-8 panel p-8 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-panel border border-hairline bg-[#FFEDE4] text-signal flex items-center justify-center">
             <ScanText size={22} className="animate-pulse" />
           </div>
           <div>
-            <div className="font-display font-semibold">Claude liest den Vertrag aus…</div>
-            <div className="text-xs text-stone-500 mt-1">Das dauert meist 5–15 Sekunden.</div>
+            <div className="font-display font-bold text-[15px] text-ink">Claude liest den Vertrag aus…</div>
+            <div className="text-[12px] text-ink-muted mt-1">Das dauert meist 5–15 Sekunden.</div>
           </div>
         </div>
       )}
 
       {mode === "ai" && error && (
-        <div className="mt-8 text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2">
+        <div className="mt-8 text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-panel px-3 py-2">
           {error}
           <button onClick={() => setMode("choose")} className="ml-2 underline">Zurück</button>
         </div>
       )}
 
       {mode === "manual" && (
-        <form onSubmit={submit} className="mt-6 rounded-2xl bg-white ring-1 ring-stone-200 p-6 space-y-6">
+        <form onSubmit={submit} className="mt-6 panel p-6 space-y-6">
           {parsedFromAI && (
-            <div
-              className="flex items-center gap-3 p-3 rounded-lg"
-              style={{ background: THEME.primaryTint, color: "#0f5b54" }}
-            >
-              <Sparkles size={16} />
-              <div className="flex-1 text-sm">
+            <div className="flex items-center gap-3 p-3 rounded-panel border border-[#FF5A1F]/20 bg-[#FFEDE4]">
+              <Sparkles size={16} className="text-signal shrink-0" />
+              <div className="flex-1 text-[13px] text-ink">
                 <span className="font-medium">Vorgefüllt von KI</span>
                 {aiConfidence != null && (
-                  <span className="text-xs ml-2 opacity-80">
+                  <span className="text-[12px] text-ink-muted ml-2">
                     Confidence {Math.round(aiConfidence * 100)} % — bitte prüfen
                   </span>
                 )}
@@ -440,15 +427,15 @@ export const NewContractClient = ({
           )}
 
           {customers.length > 0 && (
-            <div className="rounded-lg bg-stone-50 ring-1 ring-stone-200 p-4">
+            <div className="rounded-panel border border-hairline bg-canvas p-4">
               <label className="block">
-                <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-2">
+                <div className="flex items-center gap-1.5 data-label text-ink-muted mb-2">
                   <UserCheck size={12} /> Bestehender Kunde
                 </div>
                 <select
                   value={data.customer_id}
                   onChange={(e) => pickCustomer(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg bg-white outline-none ring-1 ring-stone-200 focus:ring-stone-400"
+                  className="field"
                 >
                   <option value="">— Neuer Mieter (Daten unten eintragen) —</option>
                   {customers.map((c) => (
@@ -458,20 +445,20 @@ export const NewContractClient = ({
                   ))}
                 </select>
                 {data.customer_id && (
-                  <div className="mt-2 text-xs text-stone-500">
+                  <div className="mt-2 text-[12px] text-ink-muted">
                     Mieterdaten unten wurden automatisch übernommen — du kannst sie für diesen Vertrag noch anpassen.{" "}
                     <Link
                       href={`/dashboard/customers/${data.customer_id}`}
-                      className="text-teal-700 hover:underline"
+                      className="text-ink hover:underline"
                     >
                       Kundendaten dauerhaft ändern →
                     </Link>
                   </div>
                 )}
                 {!data.customer_id && (
-                  <div className="mt-2 text-xs text-stone-500">
+                  <div className="mt-2 text-[12px] text-ink-muted">
                     Noch nicht angelegt?{" "}
-                    <Link href="/dashboard/customers/new" className="text-teal-700 hover:underline">
+                    <Link href="/dashboard/customers/new" className="text-ink hover:underline">
                       Kunden zuerst anlegen →
                     </Link>
                   </div>
@@ -480,66 +467,66 @@ export const NewContractClient = ({
             </div>
           )}
 
-          <Section title="Vertrag">
+          <FormSection title="Vertrag">
             <Field label="Vertrags-Nr">
               <input
                 value={data.contract_nr}
                 onChange={set("contract_nr")}
                 placeholder="MV-2026-0042 (leer = automatisch)"
-                className="input tabular-nums"
+                className="field font-mono tnum"
               />
             </Field>
             <Field label="Notizen">
-              <input value={data.notes} onChange={set("notes")} className="input" />
+              <input value={data.notes} onChange={set("notes")} className="field" />
             </Field>
-          </Section>
+          </FormSection>
 
-          <Section title="Fahrzeug">
+          <FormSection title="Fahrzeug">
             <Field label="Kennzeichen *">
-              <input required value={data.plate} onChange={set("plate")} placeholder="M-KP 2847" className="input font-mono uppercase" />
+              <input required value={data.plate} onChange={set("plate")} placeholder="M-KP 2847" className="field font-mono uppercase" />
             </Field>
             <Field label="Fahrzeugtyp">
-              <input value={data.vehicle_type} onChange={set("vehicle_type")} placeholder="VW Golf VIII" className="input" />
+              <input value={data.vehicle_type} onChange={set("vehicle_type")} placeholder="VW Golf VIII" className="field" />
             </Field>
-          </Section>
+          </FormSection>
 
-          <Section title="Mieter">
+          <FormSection title="Mieter">
             <Field label="Name *">
-              <input required value={data.renter_name} onChange={set("renter_name")} className="input" />
+              <input required value={data.renter_name} onChange={set("renter_name")} className="field" />
             </Field>
             <Field label="Geburtsdatum">
-              <input value={data.renter_birthday} onChange={set("renter_birthday")} placeholder="YYYY-MM-DD" className="input tabular-nums" />
+              <input value={data.renter_birthday} onChange={set("renter_birthday")} placeholder="YYYY-MM-DD" className="field font-mono tnum" />
             </Field>
             <Field label="Adresse">
-              <input value={data.renter_address} onChange={set("renter_address")} className="input" />
+              <input value={data.renter_address} onChange={set("renter_address")} className="field" />
             </Field>
             <Field label="Führerschein-Nr.">
-              <input value={data.renter_license_nr} onChange={set("renter_license_nr")} className="input tabular-nums" />
+              <input value={data.renter_license_nr} onChange={set("renter_license_nr")} className="field font-mono tnum" />
             </Field>
             <Field label="E-Mail">
-              <input type="email" value={data.renter_email} onChange={set("renter_email")} className="input" />
+              <input type="email" value={data.renter_email} onChange={set("renter_email")} className="field" />
             </Field>
             <Field label="Telefon">
-              <input value={data.renter_phone} onChange={set("renter_phone")} className="input tabular-nums" />
+              <input value={data.renter_phone} onChange={set("renter_phone")} className="field font-mono tnum" />
             </Field>
-          </Section>
+          </FormSection>
 
-          <Section title="Zeitraum">
+          <FormSection title="Zeitraum">
             <Field label="Mietbeginn *">
-              <input type="date" required value={data.pickup_date} onChange={set("pickup_date")} className="input" />
+              <input type="date" required value={data.pickup_date} onChange={set("pickup_date")} className="field font-mono tnum" />
             </Field>
             <Field label="Uhrzeit Abholung">
-              <input type="time" value={data.pickup_time} onChange={set("pickup_time")} className="input tabular-nums" />
+              <input type="time" value={data.pickup_time} onChange={set("pickup_time")} className="field font-mono tnum" />
             </Field>
             <Field label="Mietende *">
-              <input type="date" required value={data.return_date} onChange={set("return_date")} className="input" />
+              <input type="date" required value={data.return_date} onChange={set("return_date")} className="field font-mono tnum" />
             </Field>
             <Field label="Uhrzeit Rückgabe">
-              <input type="time" value={data.return_time} onChange={set("return_time")} className="input tabular-nums" />
+              <input type="time" value={data.return_time} onChange={set("return_time")} className="field font-mono tnum" />
             </Field>
-          </Section>
+          </FormSection>
 
-          <Section title="Vertriebspartner (optional)">
+          <FormSection title="Vertriebspartner (optional)">
             <div className="sm:col-span-2">
               <PartnerPicker
                 partners={partners}
@@ -575,9 +562,9 @@ export const NewContractClient = ({
                 }
               />
             </div>
-          </Section>
+          </FormSection>
 
-          <Section title="Kosten & Kilometer">
+          <FormSection title="Kosten & Kilometer">
             <div className="sm:col-span-2">
               <PriceRecommendation
                 plate={data.plate}
@@ -589,34 +576,30 @@ export const NewContractClient = ({
               />
             </div>
             <Field label="Tagespreis (€)">
-              <input value={data.daily_rate} onChange={set("daily_rate")} className="input tabular-nums" />
+              <input value={data.daily_rate} onChange={set("daily_rate")} className="field font-mono tnum" />
             </Field>
             <Field label="Gesamtbetrag (€)">
-              <input value={data.total_amount} onChange={set("total_amount")} className="input tabular-nums" />
+              <input value={data.total_amount} onChange={set("total_amount")} className="field font-mono tnum" />
             </Field>
             <Field label="Kaution (€)">
-              <input value={data.deposit} onChange={set("deposit")} className="input tabular-nums" />
+              <input value={data.deposit} onChange={set("deposit")} className="field font-mono tnum" />
             </Field>
             <Field label="km bei Abholung">
-              <input value={data.km_pickup} onChange={set("km_pickup")} className="input tabular-nums" />
+              <input value={data.km_pickup} onChange={set("km_pickup")} className="field font-mono tnum" />
             </Field>
             <Field label="Freikilometer">
               <input
                 value={data.km_limit}
                 onChange={set("km_limit")}
                 placeholder="z.B. 1500 (leer = unbegrenzt)"
-                className="input tabular-nums"
+                className="field font-mono tnum"
               />
             </Field>
-          </Section>
+          </FormSection>
 
-          <Section title="Zahlung & Versicherung">
+          <FormSection title="Zahlung & Versicherung">
             <Field label="Zahlungsart">
-              <select
-                value={data.payment_method}
-                onChange={set("payment_method")}
-                className="input"
-              >
+              <select value={data.payment_method} onChange={set("payment_method")} className="field">
                 <option value="bank_transfer">Vorabüberweisung</option>
                 <option value="cash">Bar</option>
                 <option value="credit_card">Kreditkarte</option>
@@ -625,11 +608,7 @@ export const NewContractClient = ({
               </select>
             </Field>
             <Field label="Versicherung">
-              <select
-                value={data.insurance_type}
-                onChange={set("insurance_type")}
-                className="input"
-              >
+              <select value={data.insurance_type} onChange={set("insurance_type")} className="field">
                 <option value="full">Haftpflicht, TK + VK</option>
                 <option value="basic">Haftpflicht</option>
                 <option value="none">Keine</option>
@@ -640,56 +619,47 @@ export const NewContractClient = ({
                 value={data.insurance_deductible}
                 onChange={set("insurance_deductible")}
                 placeholder="z.B. 1000"
-                className="input tabular-nums"
+                className="field font-mono tnum"
               />
             </Field>
-          </Section>
+          </FormSection>
 
-          <Section title="Sondervereinbarungen">
+          <FormSection title="Sondervereinbarungen">
             <div className="sm:col-span-2 space-y-4">
-              <p className="text-xs text-stone-500 leading-relaxed">
-                Wähle die Textbausteine, die auf Seite 3 des Mietvertrags
-                erscheinen sollen. Eigene Vereinbarungen kannst du unten als
-                Freitext ergänzen.{" "}
-                <Link
-                  href="/dashboard/settings/special-terms"
-                  className="text-teal-700 hover:underline"
-                >
+              <p className="text-[12px] text-ink-muted leading-relaxed">
+                Wähle die Textbausteine, die auf Seite 3 des Mietvertrags erscheinen sollen.
+                Eigene Vereinbarungen kannst du unten als Freitext ergänzen.{" "}
+                <Link href="/dashboard/settings/special-terms" className="text-ink hover:underline">
                   Textbausteine verwalten →
                 </Link>
               </p>
               {groupedTerms.length === 0 && (
-                <div className="text-xs text-stone-500 bg-stone-50 ring-1 ring-stone-200 rounded-lg p-3">
-                  Noch keine Textbausteine angelegt — lege sie in den
-                  Einstellungen an.
+                <div className="text-[12px] text-ink-muted border border-hairline bg-canvas rounded-panel p-3">
+                  Noch keine Textbausteine angelegt — lege sie in den Einstellungen an.
                 </div>
               )}
               {groupedTerms.map(([cat, items]) => (
                 <div key={cat}>
-                  <div className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-2">
+                  <div className="data-label text-ink-muted mb-2">
                     {SPECIAL_TERMS_CATEGORY_LABEL[cat]}
                   </div>
-                  <div className="rounded-lg ring-1 ring-stone-200 bg-white divide-y divide-stone-100">
+                  <div className="rounded-panel border border-hairline bg-paper divide-y divide-hairline">
                     {items.map((t) => {
                       const checked = selectedTerms.has(t.id);
                       return (
                         <label
                           key={t.id}
-                          className="flex items-start gap-3 p-2.5 cursor-pointer hover:bg-stone-50"
+                          className="flex items-start gap-3 p-2.5 cursor-pointer hover:bg-canvas"
                         >
                           <input
                             type="checkbox"
                             checked={checked}
                             onChange={() => toggleTerm(t.id)}
-                            className="mt-0.5 w-4 h-4 accent-teal-600 shrink-0"
+                            className="mt-0.5 w-4 h-4 accent-ink shrink-0"
                           />
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium text-stone-900">
-                              {t.title}
-                            </div>
-                            <div className="text-[11px] text-stone-500 mt-0.5 leading-snug">
-                              {t.text}
-                            </div>
+                            <div className="text-[13px] font-medium text-ink">{t.title}</div>
+                            <div className="text-[11px] text-ink-muted mt-0.5 leading-snug">{t.text}</div>
                           </div>
                         </label>
                       );
@@ -703,94 +673,60 @@ export const NewContractClient = ({
                   onChange={set("special_terms")}
                   rows={3}
                   placeholder="Ein Eintrag pro Zeile — wird als zusätzlicher Punkt auf Seite 3 nummeriert."
-                  className="input"
+                  className="field"
                 />
               </Field>
             </div>
-          </Section>
+          </FormSection>
 
-          <Section title="Übergabe-Details">
+          <FormSection title="Übergabe-Details">
             <Field label="Lieferkosten (€)">
-              <input
-                value={data.delivery_cost}
-                onChange={set("delivery_cost")}
-                className="input tabular-nums"
-              />
+              <input value={data.delivery_cost} onChange={set("delivery_cost")} className="field font-mono tnum" />
             </Field>
             <Field label="Abholkosten (€)">
-              <input
-                value={data.pickup_cost}
-                onChange={set("pickup_cost")}
-                className="input tabular-nums"
-              />
+              <input value={data.pickup_cost} onChange={set("pickup_cost")} className="field font-mono tnum" />
             </Field>
             <Field label="Anzahl Schlüssel">
-              <input
-                value={data.keys_count}
-                onChange={set("keys_count")}
-                className="input tabular-nums"
-              />
+              <input value={data.keys_count} onChange={set("keys_count")} className="field font-mono tnum" />
             </Field>
             <Field label="Schäden bei Übergabe">
               <input
                 value={data.damages_at_handover}
                 onChange={set("damages_at_handover")}
                 placeholder="Keine / Neuwagen"
-                className="input"
+                className="field"
               />
             </Field>
-          </Section>
+          </FormSection>
 
-          <Section title="Zweiter Fahrer (optional)">
+          <FormSection title="Zweiter Fahrer (optional)">
             <Field label="Name Fahrer 2">
-              <input
-                value={data.driver2_name}
-                onChange={set("driver2_name")}
-                className="input"
-              />
+              <input value={data.driver2_name} onChange={set("driver2_name")} className="field" />
             </Field>
             <Field label="Führerschein-Nr. Fahrer 2">
-              <input
-                value={data.driver2_license}
-                onChange={set("driver2_license")}
-                className="input tabular-nums"
-              />
+              <input value={data.driver2_license} onChange={set("driver2_license")} className="field font-mono tnum" />
             </Field>
-          </Section>
+          </FormSection>
 
           {error && (
-            <div className="text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2">{error}</div>
+            <div className="text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-panel px-3 py-2">
+              {error}
+            </div>
           )}
 
           <div className="flex items-center justify-between">
             <button
               type="button"
               onClick={() => setMode("choose")}
-              className="text-sm text-stone-500 hover:text-stone-900"
+              className="text-[13px] text-ink-muted hover:text-ink transition-colors"
             >
               Eingabe abbrechen
             </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex items-center gap-1.5 text-white text-sm px-4 py-2 rounded-lg font-medium disabled:opacity-50"
-              style={{ background: THEME.primary }}
-            >
-              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Vertrag speichern
-            </button>
+            <Button type="submit" disabled={saving} variant="signal" size="sm">
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+              Vertrag speichern
+            </Button>
           </div>
-
-          <style jsx>{`
-            .input {
-              width: 100%;
-              padding: 0.5rem 0.75rem;
-              font-size: 0.875rem;
-              border-radius: 0.5rem;
-              outline: none;
-              box-shadow: inset 0 0 0 1px rgb(231 229 228);
-            }
-            .input:focus { box-shadow: inset 0 0 0 1px rgb(168 162 158); }
-          `}</style>
         </form>
       )}
 
@@ -799,26 +735,26 @@ export const NewContractClient = ({
           <button
             type="button"
             onClick={goToDetail}
-            className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-ink/40 backdrop-blur-sm"
             aria-label="Schließen"
           />
-          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl ring-1 ring-stone-200 overflow-hidden">
+          <div className="relative w-full max-w-md bg-paper rounded-card border border-hairline shadow-panel overflow-hidden">
             <div className="px-6 pt-6 pb-2 flex items-start justify-between gap-3">
               <div>
-                <div className="w-10 h-10 rounded-full bg-emerald-50 ring-1 ring-emerald-200 flex items-center justify-center mb-3">
-                  <Check size={18} className="text-emerald-700" />
+                <div className="w-10 h-10 rounded-panel border border-hairline bg-[#E6F4EA] flex items-center justify-center mb-3">
+                  <Check size={18} className="text-[#15803D]" />
                 </div>
-                <h2 className="font-display text-[22px] tracking-tight font-medium">
+                <h2 className="font-display font-bold text-[20px] tracking-tight text-ink">
                   Vertrag erstellt
                 </h2>
-                <p className="text-sm text-stone-500 mt-1 leading-snug">
+                <p className="text-[13px] text-ink-muted mt-1 leading-snug">
                   Möchtest du den Vertrag jetzt direkt vom Kunden unterschreiben lassen? Funktioniert auf Tablet oder Handy.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={goToDetail}
-                className="w-8 h-8 rounded-full inline-flex items-center justify-center text-stone-500 hover:bg-stone-100 -mt-1 -mr-1"
+                className="w-8 h-8 rounded-btn inline-flex items-center justify-center text-ink-muted hover:bg-canvas -mt-1 -mr-1"
               >
                 <X size={15} />
               </button>
@@ -827,17 +763,13 @@ export const NewContractClient = ({
               <button
                 type="button"
                 onClick={goToDetail}
-                className="text-sm text-stone-600 hover:text-stone-900 px-3 py-2"
+                className="text-[13px] text-ink-muted hover:text-ink px-3 py-2"
               >
                 Später
               </button>
-              <button
-                type="button"
-                onClick={goToSign}
-                className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-stone-900 text-white text-sm font-medium hover:bg-stone-800"
-              >
+              <Button type="button" onClick={goToSign} variant="ink" size="sm">
                 <FileSignature size={14} /> Jetzt unterschreiben
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -846,19 +778,23 @@ export const NewContractClient = ({
   );
 };
 
-const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+/* ── Form sub-components ── */
+
+const FormSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div>
-    <div className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mb-3">{title}</div>
+    <div className="data-label text-ink-muted mb-3">{title}</div>
     <div className="grid sm:grid-cols-2 gap-4">{children}</div>
   </div>
 );
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <label className="block">
-    <div className="text-[11px] uppercase tracking-wider text-stone-500 font-medium mb-1">{label}</div>
+    <div className="data-label text-ink-muted mb-1">{label}</div>
     {children}
   </label>
 );
+
+/* ── Price recommendation widget ── */
 
 type CalcResponse =
   | {
@@ -896,9 +832,7 @@ const PriceRecommendation = ({
     const handle = setTimeout(async () => {
       setLoading(true);
       try {
-        const url = `/api/pricing/calculate?plate=${encodeURIComponent(
-          plate
-        )}&pickup_date=${pickupDate}&return_date=${returnDate}`;
+        const url = `/api/pricing/calculate?plate=${encodeURIComponent(plate)}&pickup_date=${pickupDate}&return_date=${returnDate}`;
         const res = await fetch(url);
         const j = (await res.json().catch(() => ({}))) as CalcResponse;
         if (!cancelled) setData(j);
@@ -915,7 +849,7 @@ const PriceRecommendation = ({
   if (!plate.trim() || !pickupDate || !returnDate) return null;
   if (loading && !data) {
     return (
-      <div className="rounded-lg ring-1 ring-stone-200 bg-stone-50 px-4 py-3 text-[12.5px] text-stone-500 flex items-center gap-2">
+      <div className="rounded-panel border border-hairline bg-canvas px-4 py-3 text-[12.5px] text-ink-muted flex items-center gap-2">
         <Loader2 size={13} className="animate-spin" />
         Berechne Preisempfehlung…
       </div>
@@ -924,9 +858,8 @@ const PriceRecommendation = ({
   if (!data) return null;
   if (!data.ok) {
     return (
-      <div className="rounded-lg ring-1 ring-amber-200 bg-amber-50 px-4 py-3 text-[12.5px] text-amber-800">
-        Keine Empfehlung verfügbar
-        {"error" in data && data.error ? `: ${data.error}` : "."}
+      <div className="rounded-panel border border-[#F59E0B]/40 bg-[#FFFBEB] px-4 py-3 text-[12.5px] text-[#92400E]">
+        Keine Empfehlung verfügbar{"error" in data && data.error ? `: ${data.error}` : "."}
       </div>
     );
   }
@@ -935,47 +868,35 @@ const PriceRecommendation = ({
     data.mode === "day" ? data.recommendation.final_price : data.period.average_daily_price;
   const explanation =
     data.mode === "day" ? data.recommendation.explanation : data.period.explanation;
-  const totalPct =
-    data.mode === "day" ? data.recommendation.total_percent : null;
+  const totalPct = data.mode === "day" ? data.recommendation.total_percent : null;
   const periodTotal = data.mode === "period" ? data.period.total_price : null;
   const days = data.mode === "period" ? data.period.days : 1;
 
+  const bgColor =
+    totalPct == null || totalPct === 0 ? "#F0FDF4"
+    : totalPct > 15 ? "#FEF2F2"
+    : "#FEFCE8";
+  const borderColor =
+    totalPct == null || totalPct === 0 ? "#BBF7D0"
+    : totalPct > 15 ? "#FECACA"
+    : "#FDE68A";
+
   return (
     <div
-      className="rounded-lg ring-1 px-4 py-3"
-      style={{
-        background:
-          totalPct == null || totalPct === 0
-            ? "#f0fdf4"
-            : totalPct > 15
-            ? "#fef2f2"
-            : "#fefce8",
-        boxShadow: `inset 0 0 0 1px ${
-          totalPct == null || totalPct === 0
-            ? "#bbf7d0"
-            : totalPct > 15
-            ? "#fecaca"
-            : "#fde68a"
-        }`,
-      }}
+      className="rounded-panel px-4 py-3"
+      style={{ background: bgColor, boxShadow: `inset 0 0 0 1px ${borderColor}` }}
     >
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2.5 min-w-0">
-          <TrendingUp size={14} className="text-stone-700 shrink-0" />
+          <TrendingUp size={14} className="text-ink shrink-0" />
           <div className="min-w-0">
-            <div className="text-[12px] uppercase tracking-[0.06em] font-semibold text-stone-700">
-              KI-Empfehlung
-            </div>
-            <div className="font-display text-[20px] tracking-tight font-medium text-stone-900 leading-tight">
-              {price.toLocaleString("de-DE", {
-                style: "currency",
-                currency: "EUR",
-                minimumFractionDigits: 2,
-              })}
-              <span className="text-[12px] text-stone-500 ml-1">/ Tag</span>
+            <div className="data-label text-ink-muted">KI-Empfehlung</div>
+            <div className="font-display font-bold text-[18px] tracking-tight text-ink leading-tight">
+              {price.toLocaleString("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 })}
+              <span className="font-mono text-[12px] text-ink-muted ml-1">/ Tag</span>
             </div>
             {periodTotal != null && (
-              <div className="text-[11.5px] text-stone-500 tabular-nums mt-0.5">
+              <div className="font-mono tnum text-[11.5px] text-ink-muted mt-0.5">
                 ≈ {periodTotal.toFixed(2).replace(".", ",")} € gesamt ({days} Tage)
               </div>
             )}
@@ -984,21 +905,18 @@ const PriceRecommendation = ({
         <button
           type="button"
           onClick={() => onApply(price)}
-          className="inline-flex items-center gap-1 text-[12.5px] px-3 py-1.5 rounded-md bg-stone-900 text-white font-medium hover:bg-stone-800"
+          className="inline-flex items-center gap-1 text-[12.5px] px-3 h-8 rounded-btn bg-ink text-white font-medium hover:bg-ink-soft transition-colors"
         >
           <Check size={12} /> Übernehmen
         </button>
       </div>
-      <div className="mt-2 text-[11.5px] text-stone-600 leading-snug">
-        {explanation}
-      </div>
+      <div className="mt-2 text-[11.5px] text-ink-soft leading-snug">{explanation}</div>
     </div>
   );
 };
 
-// =====================================================
-// PartnerPicker — Auswahl + Auto-Pricing
-// =====================================================
+/* ── Partner picker ── */
+
 const PartnerPicker = ({
   partners,
   plate,
@@ -1032,7 +950,6 @@ const PartnerPicker = ({
   const [loadingPricing, setLoadingPricing] = useState(false);
   const [pricingHint, setPricingHint] = useState<string | null>(null);
 
-  // Pricing automatisch laden, wenn Partner + Kennzeichen wechseln
   useEffect(() => {
     if (!partnerId || !plate.trim()) return;
     setLoadingPricing(true);
@@ -1056,17 +973,13 @@ const PartnerPicker = ({
           onPartnerChange(partnerId, j.pricing);
           setPricingHint("Preise aus Fahrzeug-Stammdaten übernommen.");
         } else {
-          setPricingHint(
-            "Kein Partner-Preis für dieses Fahrzeug hinterlegt — bitte manuell eintragen."
-          );
+          setPricingHint("Kein Partner-Preis für dieses Fahrzeug hinterlegt — bitte manuell eintragen.");
         }
       } finally {
         if (!cancelled) setLoadingPricing(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partnerId, plate]);
 
@@ -1101,10 +1014,9 @@ const PartnerPicker = ({
               setPricingHint(null);
               return;
             }
-            // Selecting a partner triggers the effect above — no immediate pricing
             onPartnerChange(id, null);
           }}
-          className="input"
+          className="field"
         >
           <option value="">— ohne Partner —</option>
           {partners.map((p) => (
@@ -1123,7 +1035,7 @@ const PartnerPicker = ({
               onChange={(e) => onPurchaseChange(e.target.value)}
               inputMode="decimal"
               placeholder="z. B. 45,00"
-              className="input tabular-nums"
+              className="field font-mono tnum"
             />
           </Field>
           <Field label="VK-Preis / Tag (€)">
@@ -1132,41 +1044,37 @@ const PartnerPicker = ({
               onChange={(e) => onSellingChange(e.target.value)}
               inputMode="decimal"
               placeholder="z. B. 65,00"
-              className="input tabular-nums"
+              className="field font-mono tnum"
             />
           </Field>
         </div>
       )}
 
       {(loadingPricing || pricingHint) && partner && (
-        <div className="mt-2 text-[11.5px] text-stone-500 inline-flex items-center gap-1.5">
+        <div className="mt-2 font-mono text-[11.5px] text-ink-muted inline-flex items-center gap-1.5">
           {loadingPricing && <Loader2 size={11} className="animate-spin" />}
           {loadingPricing ? "Lade Partner-Preise…" : pricingHint}
         </div>
       )}
 
       {commission && days > 0 && (
-        <div className="mt-3 rounded-lg bg-stone-900 text-white px-4 py-3">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.06em] font-semibold text-teal-300 mb-1.5">
+        <div className="mt-3 rounded-panel bg-ink text-white px-4 py-3">
+          <div className="flex items-center gap-2 data-label text-white/50 mb-1.5">
             <Handshake size={12} />
             Provisionsberechnung · {days} {days === 1 ? "Tag" : "Tage"}
           </div>
           <div className="grid grid-cols-3 gap-3 text-[12.5px]">
             <div>
               <div className="text-white/50">Einstand</div>
-              <div className="font-mono tabular-nums text-white">
-                {fmtEur(commission.total_purchase)}
-              </div>
+              <div className="font-mono tnum text-white">{fmtEur(commission.total_purchase)}</div>
             </div>
             <div>
               <div className="text-white/50">VK</div>
-              <div className="font-mono tabular-nums text-white">
-                {fmtEur(commission.total_selling)}
-              </div>
+              <div className="font-mono tnum text-white">{fmtEur(commission.total_selling)}</div>
             </div>
             <div>
               <div className="text-white/50">Provision</div>
-              <div className="font-display text-[18px] tracking-tight font-medium text-emerald-300 tabular-nums leading-none mt-0.5">
+              <div className="font-display font-bold text-[18px] tracking-tight text-signal tnum leading-none mt-0.5">
                 {fmtEur(commission.commission_eur)}
               </div>
             </div>

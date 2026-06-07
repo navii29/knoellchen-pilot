@@ -3,15 +3,49 @@ import Link from "next/link";
 import { AlertOctagon, ArrowLeft, Calendar, Camera, ChevronRight, Coins, Plus, ScrollText, User } from "lucide-react";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
-import { ContractStatusBadge } from "@/components/contract/StatusBadge";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ContractActions } from "./ContractActions";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeReturnSummary } from "@/lib/km";
 import { POSITIONS } from "@/lib/handover";
+import { Panel, PanelHeader } from "@/components/ui/Panel";
+import { Plate } from "@/components/ui/Plate";
 import type { Contract, DamageReport, HandoverPhoto, Ticket, Vehicle } from "@/lib/types";
+import type { ContractStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+/* ── Contract status pill (contract-specific states) ── */
+const CONTRACT_STATUS_META: Record<
+  ContractStatus,
+  { label: string; dot: string; soft: string; ink: string }
+> = {
+  aktiv:        { label: "Aktiv",         dot: "#059669", soft: "#E6F4EA", ink: "#166534" },
+  abgeschlossen:{ label: "Abgeschlossen", dot: "#6B7280", soft: "#F3F4F6", ink: "#374151" },
+  storniert:    { label: "Storniert",     dot: "#DC2626", soft: "#FEF2F2", ink: "#B91C1C" },
+};
+
+const ContractPill = ({ status }: { status: ContractStatus }) => {
+  const m = CONTRACT_STATUS_META[status] ?? CONTRACT_STATUS_META.aktiv;
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full pl-2 pr-2.5 py-0.5 text-[11px] font-mono font-medium tracking-tight"
+      style={{ background: m.soft, color: m.ink }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: m.dot }} />
+      {m.label}
+    </span>
+  );
+};
+
+const DAMAGE_STATUS_META: Record<
+  DamageReport["status"],
+  { label: string; bg: string; ring: string; color: string; text: string }
+> = {
+  offen:     { label: "Offen",     bg: "#fef2f2", ring: "#fecaca", color: "#dc2626", text: "#b91c1c" },
+  gemeldet:  { label: "Gemeldet",  bg: "#fefce8", ring: "#fde68a", color: "#ca8a04", text: "#a16207" },
+  reguliert: { label: "Reguliert", bg: "#f0fdf4", ring: "#bbf7d0", color: "#16a34a", text: "#15803d" },
+};
 
 export default async function ContractDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -61,7 +95,6 @@ export default async function ContractDetailPage({ params }: { params: { id: str
   const pricePerKm = vRow?.extra_km_price ?? null;
   const inclusiveKmMonth = vRow?.inclusive_km_month ?? null;
 
-  // Marge berechnen (nur wenn abgeschlossen + Kostendaten vorhanden)
   const costDaily =
     vRow?.cost_daily != null && Number(vRow.cost_daily) > 0
       ? Number(vRow.cost_daily)
@@ -129,61 +162,67 @@ export default async function ContractDetailPage({ params }: { params: { id: str
   return (
     <>
       <Topbar section={`Vertrag · ${c.contract_nr}`} />
-      <div className="flex-1 overflow-auto scroll-thin bg-stone-50">
+      <div className="flex-1 overflow-auto scroll-thin bg-canvas">
         <div className="max-w-4xl mx-auto p-4 md:p-10">
           <Link
             href="/dashboard/contracts"
-            className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 mb-4"
+            className="inline-flex items-center gap-1.5 text-[13px] text-ink-muted hover:text-ink mb-5"
           >
             <ArrowLeft size={14} /> Zurück zu Verträgen
           </Link>
 
-          <div className="flex items-center gap-3 mb-2 flex-wrap">
-            <span className="font-mono text-xs text-stone-500">{c.contract_nr}</span>
-            <ContractStatusBadge status={c.status} />
-            <span className="font-mono text-xs text-stone-500">· {c.plate}</span>
+          {/* Page title row */}
+          <div className="flex items-center gap-3 mb-1.5 flex-wrap">
+            <span className="font-mono tnum text-[12px] text-ink-muted">{c.contract_nr}</span>
+            <ContractPill status={c.status} />
+            <Plate value={c.plate} size="sm" />
           </div>
-          <h1 className="font-display font-bold text-3xl tracking-tight">{c.renter_name}</h1>
-          {c.renter_address && <div className="mt-1 text-sm text-stone-500">{c.renter_address}</div>}
+          <h1 className="font-display font-extrabold text-ink text-[26px] sm:text-[30px] leading-[1.05] tracking-tightest">
+            {c.renter_name}
+          </h1>
+          {c.renter_address && (
+            <div className="mt-1 text-[13px] text-ink-muted">{c.renter_address}</div>
+          )}
 
+          {/* Signed banner */}
           {c.signed_at && (
-            <div className="mt-5 rounded-xl bg-emerald-50 ring-1 ring-emerald-200 px-5 py-4 flex items-center gap-4 flex-wrap">
-              <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center shrink-0">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[12px] uppercase tracking-wider font-semibold text-emerald-800">
-                  Unterschrieben
+            <div className="mt-5 panel p-0 overflow-hidden">
+              <div className="px-5 py-4 flex items-center gap-4 flex-wrap bg-[#E6F4EA]">
+                <div className="w-10 h-10 rounded-panel border border-hairline bg-paper flex items-center justify-center shrink-0">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
                 </div>
-                <div className="font-display font-semibold text-emerald-900 text-lg leading-tight">
-                  {fmtDate(c.signed_at)}
+                <div className="flex-1 min-w-0">
+                  <div className="data-label text-[#166534] mb-0.5">Unterschrieben</div>
+                  <div className="font-display font-bold text-[#166534] text-[15px] leading-tight">
+                    {fmtDate(c.signed_at)}
+                  </div>
+                  {c.signed_ip && (
+                    <div className="font-mono tnum text-[11px] text-[#166534]/70 mt-0.5">
+                      IP {c.signed_ip}
+                    </div>
+                  )}
                 </div>
-                {c.signed_ip && (
-                  <div className="text-[11px] text-emerald-700 font-mono mt-0.5">
-                    IP {c.signed_ip}
+                {c.signature_data && (
+                  <div className="bg-paper rounded-panel px-2 py-1 border border-hairline">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={c.signature_data}
+                      alt="Unterschrift"
+                      style={{ height: 48, maxWidth: 220, display: "block" }}
+                    />
                   </div>
                 )}
+                <a
+                  href={`/api/contracts/${c.id}/contract-pdf`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[13px] px-3 py-2 rounded-btn border border-[#166534]/30 bg-paper text-[#166534] hover:bg-[#E6F4EA]/50 transition-colors"
+                >
+                  Vertrag öffnen ↗
+                </a>
               </div>
-              {c.signature_data && (
-                <div className="bg-white rounded-md px-2 py-1 ring-1 ring-emerald-200">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={c.signature_data}
-                    alt="Unterschrift"
-                    style={{ height: 48, maxWidth: 220, display: "block" }}
-                  />
-                </div>
-              )}
-              <a
-                href={`/api/contracts/${c.id}/contract-pdf`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md bg-white ring-1 ring-emerald-200 text-emerald-800 hover:bg-emerald-100"
-              >
-                Vertrag öffnen ↗
-              </a>
             </div>
           )}
 
@@ -196,6 +235,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
             />
           ) : null}
 
+          {/* Info cards */}
           <div className="mt-6 grid sm:grid-cols-2 gap-3">
             <InfoCard Icon={User} title="Mieter">
               <Row label="Name" value={c.renter_name} />
@@ -215,7 +255,10 @@ export default async function ContractDetailPage({ params }: { params: { id: str
                 <Row label="Tatsächliche Rückgabe" value={fmtDate(c.actual_return_date)} />
               )}
               <Row label="Fahrzeug" value={c.vehicle_type || "—"} />
-              <Row label="Kennzeichen" value={<span className="font-mono font-semibold">{c.plate}</span>} />
+              <Row
+                label="Kennzeichen"
+                value={<Plate value={c.plate} size="sm" />}
+              />
             </InfoCard>
 
             <InfoCard Icon={Coins} title="Kosten">
@@ -224,15 +267,15 @@ export default async function ContractDetailPage({ params }: { params: { id: str
               <Row label="Kaution" value={fmtEur(c.deposit)} mono />
               {marginInfo && (
                 <>
-                  <div className="mt-2 pt-2 border-t border-stone-100" />
+                  <div className="mt-2 pt-2 border-t border-hairline" />
                   <Row label="Realisierter VK" value={fmtEur(marginInfo.istVk)} mono />
                   <Row label="EK für Zeitraum" value={fmtEur(marginInfo.ek)} mono />
                   <Row
                     label="Marge"
                     value={
                       <span
-                        className={`tabular-nums font-semibold ${
-                          marginInfo.margin >= 0 ? "text-emerald-700" : "text-rose-700"
+                        className={`font-mono tnum font-semibold ${
+                          marginInfo.margin >= 0 ? "text-[#15803D]" : "text-[#BE123C]"
                         }`}
                       >
                         {fmtEur(marginInfo.margin)}
@@ -249,7 +292,15 @@ export default async function ContractDetailPage({ params }: { params: { id: str
               <Row label="km Abholung" value={c.km_pickup ?? "—"} mono />
               <Row label="km Rückgabe" value={c.km_return ?? "—"} mono />
               {!isReturned && (
-                <Row label="Freikilometer / Monat" value={inclusiveKmMonth ? inclusiveKmMonth.toLocaleString("de-DE") : c.km_limit ?? "unbegrenzt"} mono />
+                <Row
+                  label="Freikilometer / Monat"
+                  value={
+                    inclusiveKmMonth
+                      ? inclusiveKmMonth.toLocaleString("de-DE")
+                      : c.km_limit ?? "unbegrenzt"
+                  }
+                  mono
+                />
               )}
               {km && (
                 <>
@@ -272,7 +323,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
                     <Row
                       label="Mehrkilometer"
                       value={
-                        <span className="text-amber-700 tabular-nums">
+                        <span className="font-mono tnum text-[#92400E]">
                           {km.excessKm.toLocaleString("de-DE")} km × {km.pricePerKm.toFixed(2).replace(".", ",")} € ={" "}
                           <strong>{fmtEur(km.cost)}</strong>
                         </span>
@@ -285,25 +336,24 @@ export default async function ContractDetailPage({ params }: { params: { id: str
             </InfoCard>
           </div>
 
+          {/* Excess km alert */}
           {km && km.excessKm > 0 && (
-            <div className="mt-6 rounded-xl bg-amber-50 ring-1 ring-amber-200 p-5">
+            <div className="mt-6 panel border-[#F59E0B]/40 bg-[#FFFBEB] p-5">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-white text-amber-700 flex items-center justify-center shrink-0 ring-1 ring-amber-200">
+                <div className="w-10 h-10 rounded-panel border border-[#F59E0B]/30 bg-paper flex items-center justify-center shrink-0 text-[#92400E]">
                   <ScrollText size={18} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[11px] uppercase tracking-wider text-amber-800 font-semibold">
-                    Mehrkilometer
-                  </div>
-                  <div className="font-display font-semibold text-lg text-amber-900 mt-0.5">
+                  <div className="data-label text-[#92400E] mb-0.5">Mehrkilometer</div>
+                  <div className="font-display font-semibold text-[15px] text-[#78350F] mt-0.5">
                     {km.actualDays} Tage · {km.drivenKm?.toLocaleString("de-DE")} km gefahren ·{" "}
                     {km.allowedKm?.toLocaleString("de-DE")} km erlaubt · {km.excessKm.toLocaleString("de-DE")} km zusätzlich
                   </div>
-                  <div className="text-sm text-amber-800 mt-1">
+                  <div className="text-[13px] text-[#78350F] mt-1">
                     {km.excessKm.toLocaleString("de-DE")} km × {km.pricePerKm.toFixed(2).replace(".", ",")} €/km ={" "}
-                    <strong className="tabular-nums">{fmtEur(km.cost)}</strong>
+                    <strong className="font-mono tnum">{fmtEur(km.cost)}</strong>
                     {pricePerKm == null && (
-                      <span className="text-xs ml-2 opacity-80">
+                      <span className="text-[12px] ml-2 opacity-80">
                         (Fahrzeug-Preis fehlt — bitte am Fahrzeug eintragen)
                       </span>
                     )}
@@ -313,6 +363,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
             </div>
           )}
 
+          {/* Actions */}
           <div className="mt-6">
             <ContractActions
               contract={c}
@@ -321,15 +372,16 @@ export default async function ContractDetailPage({ params }: { params: { id: str
             />
           </div>
 
+          {/* Handover photos */}
           <div className="mt-6">
-            <div className="flex items-end justify-between mb-2">
-              <div className="text-xs uppercase tracking-wider text-stone-500 font-medium flex items-center gap-1.5">
+            <div className="flex items-end justify-between mb-3">
+              <div className="flex items-center gap-1.5 data-label text-ink-muted">
                 <Camera size={12} />
                 Fahrzeugzustand · {pickupCount}/10 Übergabe · {returnCount}/10 Rücknahme
               </div>
               <Link
                 href={`/dashboard/contracts/${c.id}/handover`}
-                className="text-xs text-teal-700 hover:underline inline-flex items-center gap-1"
+                className="text-[12px] text-ink-soft hover:text-ink inline-flex items-center gap-1 transition-colors"
               >
                 Fotos verwalten <ChevronRight size={12} />
               </Link>
@@ -337,14 +389,14 @@ export default async function ContractDetailPage({ params }: { params: { id: str
             {handoverPhotos.length === 0 ? (
               <Link
                 href={`/dashboard/contracts/${c.id}/handover`}
-                className="block rounded-xl bg-white ring-1 ring-stone-200 hover:ring-stone-400 transition px-5 py-8 text-center text-sm text-stone-500"
+                className="block panel hover:border-ink/20 transition px-5 py-8 text-center text-[13px] text-ink-muted"
               >
-                <Camera size={24} className="mx-auto text-stone-300" />
-                <div className="mt-2">Noch keine Übergabe-Fotos</div>
-                <div className="text-xs text-teal-700 mt-1">Fotos jetzt aufnehmen →</div>
+                <Camera size={22} className="mx-auto text-ink-muted mb-2" />
+                <div>Noch keine Übergabe-Fotos</div>
+                <div className="text-[12px] text-ink-soft mt-1">Fotos jetzt aufnehmen →</div>
               </Link>
             ) : (
-              <div className="rounded-xl bg-white ring-1 ring-stone-200 p-4">
+              <Panel flush className="p-4">
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   {POSITIONS.map((pos) => {
                     const pickup = handoverPhotos.find(
@@ -355,9 +407,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
                     );
                     return (
                       <div key={pos.key} className="space-y-1">
-                        <div className="text-[10px] uppercase tracking-wider text-stone-500 font-medium">
-                          {pos.label}
-                        </div>
+                        <div className="data-label text-ink-muted">{pos.label}</div>
                         <div className="grid grid-cols-2 gap-1">
                           <PhotoThumb url={pickup?.url || null} label="Vor" />
                           <PhotoThumb url={ret?.url || null} label="Nach" />
@@ -366,72 +416,74 @@ export default async function ContractDetailPage({ params }: { params: { id: str
                     );
                   })}
                 </div>
-              </div>
+              </Panel>
             )}
           </div>
 
+          {/* Damage reports */}
           <div className="mt-6">
-            <div className="flex items-end justify-between mb-2">
-              <div className="text-xs uppercase tracking-wider text-stone-500 font-medium flex items-center gap-1.5">
+            <div className="flex items-end justify-between mb-3">
+              <div className="flex items-center gap-1.5 data-label text-ink-muted">
                 <AlertOctagon size={12} />
                 Schadensberichte ({damageReports.length})
               </div>
               <Link
                 href={`/dashboard/damage-reports/new?contract_id=${c.id}`}
-                className="text-xs text-teal-700 hover:underline inline-flex items-center gap-1"
+                className="text-[12px] text-ink-soft hover:text-ink inline-flex items-center gap-1 transition-colors"
               >
                 <Plus size={12} /> Neuer Bericht
               </Link>
             </div>
             {damageReports.length === 0 ? (
-              <div className="rounded-xl bg-white ring-1 ring-stone-200 px-5 py-6 text-center text-xs text-stone-500">
-                Keine Schäden zu diesem Vertrag dokumentiert.
-              </div>
+              <Panel className="py-6 text-center">
+                <p className="text-[13px] text-ink-muted">Keine Schäden zu diesem Vertrag dokumentiert.</p>
+              </Panel>
             ) : (
-              <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+              <Panel flush className="overflow-hidden">
                 {damageReports.map((d) => {
                   const meta = DAMAGE_STATUS_META[d.status];
                   return (
                     <Link
                       key={d.id}
                       href={`/dashboard/damage-reports/${d.id}`}
-                      className="grid grid-cols-[100px_1fr_120px_24px] items-center gap-3 px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+                      className="grid grid-cols-[100px_1fr_120px_24px] items-center gap-3 px-5 py-3 border-b border-hairline last:border-0 text-[13.5px] hover:bg-canvas transition-colors"
                     >
-                      <span className="tabular-nums text-xs">{fmtDate(d.date)}</span>
-                      <span className="truncate">
+                      <span className="font-mono tnum text-[12px] text-ink-soft">{fmtDate(d.date)}</span>
+                      <span className="truncate text-ink">
                         {d.location || d.description || "—"}
                         {d.photos && d.photos.length > 0 && (
-                          <span className="text-stone-400 ml-2 text-xs">
+                          <span className="text-ink-muted ml-2 text-[12px]">
                             · {d.photos.length} {d.photos.length === 1 ? "Foto" : "Fotos"}
                           </span>
                         )}
                       </span>
                       <span
-                        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium justify-self-start"
+                        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-mono font-medium justify-self-start"
                         style={{
                           background: meta.bg,
                           color: meta.text,
                           boxShadow: `inset 0 0 0 1px ${meta.ring}`,
                         }}
                       >
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: meta.color }} />
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: meta.color }} />
                         {meta.label}
                       </span>
-                      <ChevronRight size={14} className="text-stone-300" />
+                      <ChevronRight size={14} className="text-ink-muted" />
                     </Link>
                   );
                 })}
-              </div>
+              </Panel>
             )}
           </div>
 
+          {/* Linked tickets */}
           <div className="mt-6">
-            <div className="text-xs uppercase tracking-wider text-stone-500 font-medium mb-2">
+            <div className="data-label text-ink-muted mb-3">
               Verknüpfte Strafzettel ({linkedTickets.length})
             </div>
-            <div className="rounded-xl bg-white ring-1 ring-stone-200 overflow-hidden">
+            <Panel flush className="overflow-hidden">
               {linkedTickets.length === 0 && (
-                <div className="px-5 py-8 text-center text-sm text-stone-500">
+                <div className="px-5 py-8 text-center text-[13px] text-ink-muted">
                   Noch keine Strafzettel diesem Vertrag zugeordnet.
                 </div>
               )}
@@ -439,22 +491,24 @@ export default async function ContractDetailPage({ params }: { params: { id: str
                 <Link
                   key={t.id}
                   href={`/dashboard/tickets/${t.id}`}
-                  className="grid grid-cols-[100px_1fr_120px_100px_24px] items-center gap-3 px-5 py-3 border-b border-stone-50 last:border-0 text-sm hover:bg-stone-50"
+                  className="grid grid-cols-[100px_1fr_120px_100px_24px] items-center gap-3 px-5 py-3 border-b border-hairline last:border-0 text-[13.5px] hover:bg-canvas transition-colors"
                 >
-                  <span className="font-mono text-xs">{t.ticket_nr}</span>
-                  <span className="truncate">{t.offense || "—"}</span>
-                  <span className="text-xs text-stone-500 tabular-nums">{fmtDate(t.offense_date)}</span>
+                  <span className="font-mono tnum text-[12px] text-ink-soft">{t.ticket_nr}</span>
+                  <span className="truncate text-ink">{t.offense || "—"}</span>
+                  <span className="font-mono tnum text-[12px] text-ink-muted">{fmtDate(t.offense_date)}</span>
                   <StatusBadge status={t.status} />
-                  <ChevronRight size={14} className="text-stone-300" />
+                  <ChevronRight size={14} className="text-ink-muted" />
                 </Link>
               ))}
-            </div>
+            </Panel>
           </div>
         </div>
       </div>
     </>
   );
 }
+
+/* ── Sub-components ── */
 
 const InfoCard = ({
   title,
@@ -465,13 +519,10 @@ const InfoCard = ({
   Icon: typeof User;
   children: React.ReactNode;
 }) => (
-  <div className="rounded-xl bg-white ring-1 ring-stone-200 p-5">
-    <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-stone-500 font-semibold mb-3">
-      <Icon size={13} />
-      {title}
-    </div>
+  <Panel>
+    <PanelHeader title={title} Icon={Icon} className="-mx-5 -mt-5 mb-4 rounded-t-card" />
     <div className="space-y-1.5">{children}</div>
-  </div>
+  </Panel>
 );
 
 const Row = ({
@@ -483,9 +534,9 @@ const Row = ({
   value: React.ReactNode;
   mono?: boolean;
 }) => (
-  <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-    <div className="text-stone-500 text-xs">{label}</div>
-    <div className={mono ? "tabular-nums text-stone-800" : "text-stone-800"}>{value}</div>
+  <div className="grid grid-cols-[120px_1fr] gap-2 text-[13px]">
+    <div className="text-ink-muted text-[12px]">{label}</div>
+    <div className={mono ? "font-mono tnum text-ink" : "text-ink"}>{value}</div>
   </div>
 );
 
@@ -519,7 +570,7 @@ const SelfServiceStatus = ({
   }) => {
     const pct = Math.max(0, Math.min(100, (value / total) * 100));
     return (
-      <div className="h-1.5 rounded-full bg-stone-200 overflow-hidden mt-1.5">
+      <div className="h-1 rounded-full bg-canvas border border-hairline overflow-hidden mt-1.5">
         <div
           className="h-full rounded-full transition-[width] duration-500 ease-out"
           style={{ width: `${pct}%`, background: color }}
@@ -545,17 +596,15 @@ const SelfServiceStatus = ({
   }) => (
     <div className="flex-1 min-w-[180px]">
       <div className="flex items-center justify-between gap-2">
-        <div className="text-[12px] uppercase tracking-wider text-stone-500 font-semibold">
-          {title}
-        </div>
+        <div className="data-label text-ink-muted">{title}</div>
         <span
-          className="inline-flex items-center px-2 h-5 rounded-full text-[11px] font-medium"
+          className="inline-flex items-center px-2 h-5 rounded-full text-[11px] font-mono font-medium"
           style={{ background: `${color}1a`, color }}
         >
           {badge}
         </span>
       </div>
-      <div className="text-[13px] text-stone-700 mt-1 tabular-nums">
+      <div className="font-mono tnum text-[13px] text-ink-soft mt-1">
         {step} / {total} Schritte
       </div>
       <ProgressBar value={step} total={total} color={color} />
@@ -564,25 +613,17 @@ const SelfServiceStatus = ({
   );
 
   const checkinBadge =
-    checkinStep === 0
-      ? "Nicht gestartet"
-      : checkinStep >= 5
-      ? "Abgeschlossen"
-      : "Läuft";
+    checkinStep === 0 ? "Nicht gestartet" : checkinStep >= 5 ? "Abgeschlossen" : "Läuft";
   const checkinColor =
     checkinStep >= 5 ? "#16a34a" : checkinStep > 0 ? "#ca8a04" : "#a8a29e";
 
   const checkoutBadge =
-    checkoutStep === 0
-      ? "Nicht gestartet"
-      : checkoutStep >= 4
-      ? "Abgeschlossen"
-      : "Läuft";
+    checkoutStep === 0 ? "Nicht gestartet" : checkoutStep >= 4 ? "Abgeschlossen" : "Läuft";
   const checkoutColor =
     checkoutStep >= 4 ? "#16a34a" : checkoutStep > 0 ? "#ca8a04" : "#a8a29e";
 
   return (
-    <div className="mt-5 rounded-xl bg-white ring-1 ring-stone-200 px-5 py-4">
+    <Panel className="mt-5">
       <div className="flex flex-wrap gap-6">
         <Block
           title="Self-Check-in"
@@ -592,7 +633,7 @@ const SelfServiceStatus = ({
           color={checkinColor}
           extra={
             fuelPickup ? (
-              <div className="text-[11.5px] text-stone-500 mt-1">
+              <div className="font-mono text-[11.5px] text-ink-muted mt-1">
                 Tankstand bei Übergabe: {FUEL_LABEL[fuelPickup] ?? fuelPickup}
               </div>
             ) : null
@@ -606,30 +647,21 @@ const SelfServiceStatus = ({
           color={checkoutColor}
           extra={
             fuelReturn ? (
-              <div className="text-[11.5px] text-stone-500 mt-1">
+              <div className="font-mono text-[11.5px] text-ink-muted mt-1">
                 Tankstand bei Rückgabe: {FUEL_LABEL[fuelReturn] ?? fuelReturn}
               </div>
             ) : null
           }
         />
       </div>
-    </div>
+    </Panel>
   );
-};
-
-const DAMAGE_STATUS_META: Record<
-  DamageReport["status"],
-  { label: string; bg: string; ring: string; color: string; text: string }
-> = {
-  offen: { label: "Offen", bg: "#fef2f2", ring: "#fecaca", color: "#dc2626", text: "#b91c1c" },
-  gemeldet: { label: "Gemeldet", bg: "#fefce8", ring: "#fde68a", color: "#ca8a04", text: "#a16207" },
-  reguliert: { label: "Reguliert", bg: "#f0fdf4", ring: "#bbf7d0", color: "#16a34a", text: "#15803d" },
 };
 
 const PhotoThumb = ({ url, label }: { url: string | null; label: string }) => {
   if (!url) {
     return (
-      <div className="aspect-square bg-stone-50 rounded-md flex items-center justify-center text-[9px] uppercase tracking-wider text-stone-300">
+      <div className="aspect-square bg-canvas rounded-panel border border-hairline flex items-center justify-center text-[9px] uppercase tracking-wider text-ink-muted">
         {label}
       </div>
     );
@@ -639,7 +671,7 @@ const PhotoThumb = ({ url, label }: { url: string | null; label: string }) => {
       href={url}
       target="_blank"
       rel="noreferrer"
-      className="relative aspect-square block rounded-md overflow-hidden bg-stone-100"
+      className="relative aspect-square block rounded-panel overflow-hidden bg-canvas border border-hairline"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={url} alt={label} className="w-full h-full object-cover" />
