@@ -27,9 +27,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Knöllchen-Pilot — Die Leitstelle für Autovermietungen",
+  title: "Knöllchen-Pilot — Strafzettel automatisch an den Mieter weiterbelasten",
   description:
-    "Verträge, Flotte, Übergaben und Strafzettel — eine Leitstelle, die den Papierkram selbst abarbeitet. Das Betriebssystem für moderne Autovermietungen.",
+    "Bußgeldbescheid für einen Mietwagen? Knöllchen-Pilot liest ihn aus, ordnet den Mieter über den Mietvertrag zu und belastet Bußgeld plus Bearbeitungsgebühr automatisch weiter. Für Autovermietungen in Deutschland. 14 Tage gratis.",
 };
 
 export const viewport: Viewport = {

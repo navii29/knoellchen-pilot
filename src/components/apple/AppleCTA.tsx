@@ -28,14 +28,14 @@ export const AppleCTA = () => {
           </div>
 
           {/* headline */}
-          <h2 className="apple-display text-[38px] sm:text-[58px] lg:text-[68px] text-white mx-auto max-w-[14ch]">
-            Bereit, den Papierkram abzugeben?
+          <h2 className="apple-display text-[34px] sm:text-[52px] lg:text-[62px] text-white mx-auto max-w-[16ch]">
+            Bereit, kein fremdes Bußgeld mehr zu zahlen?
           </h2>
 
           {/* sub-copy */}
-          <p className="mt-6 text-[18px] sm:text-[20px] leading-[1.45] text-white/60 max-w-[38ch] mx-auto">
-            Knöllchen-Pilot übernimmt. Von der KI-Auslese bis zur Weiterbelastung
-            &mdash; vollständig automatisiert.
+          <p className="mt-6 text-[18px] sm:text-[20px] leading-[1.45] text-white/60 max-w-[42ch] mx-auto">
+            Von der KI-Auslese bis zur Weiterbelastung übernimmt Knöllchen-Pilot jeden
+            Schritt. Sie reichen nur den Bescheid ein.
           </p>
 
           {/* CTAs */}

@@ -51,8 +51,8 @@ export const AppleFooter = () => {
           {/* brand */}
           <div className="sm:col-span-1">
             <LogoMark />
-            <p className="mt-3 text-[13px] leading-[1.55] text-graphite-muted max-w-[22ch]">
-              KI-gestützte Strafzettel-Verwaltung für Autovermietungen.
+            <p className="mt-3 text-[13px] leading-[1.55] text-graphite-muted max-w-[24ch]">
+              Strafzettel automatisch an den richtigen Mieter weiterbelasten. Für Autovermietungen.
             </p>
           </div>
 

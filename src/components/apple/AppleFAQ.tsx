@@ -16,6 +16,10 @@ const ITEMS: FAQItem[] = [
     a: "Knöllchen-Pilot nutzt Claude Vision (Anthropic) um hochgeladene Fotos oder PDFs von Bußgeldbescheiden und Anhörungsbögen vollständig zu analysieren. Kennzeichen, Tatzeit, Verstoßkategorie, Betrag und Behörden-Aktenzeichen werden automatisch erkannt und dem passenden Mietvertrag zugeordnet.",
   },
   {
+    q: "Darf ich das Bußgeld überhaupt an den Mieter weiterbelasten?",
+    a: "Ja. Als Halter benennen Sie der Behörde über den Zeugenfragebogen den verantwortlichen Fahrer (Halterauskunft) — das ist der übliche, rechtlich vorgesehene Weg. Die im Mietvertrag vereinbarte Bearbeitungsgebühr stellen Sie dem Mieter zusätzlich in Rechnung. Knöllchen-Pilot erzeugt die nötigen Dokumente passend zu Ihren Vertragsbedingungen.",
+  },
+  {
     q: "Wann kommt Stripe-Zahlung und E-Mail-Inbound?",
     a: "Stripe-Integration und automatischer E-Mail-Inbound (Mailgun) befinden sich aktuell in der Beta-Phase und werden in Kürze für alle Pläne freigeschaltet. Bis dahin werden Pläne manuell aktiviert. Sie werden per E-Mail informiert, sobald die Features verfügbar sind.",
   },
