@@ -7,12 +7,18 @@ import { Reveal } from "./Reveal";
 export const CinematicBand = () => {
   return (
     <section className="relative bg-black overflow-hidden">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/brand/car-cinematic.webp"
-        alt="Modernes Mietfahrzeug in stimmungsvollem Licht"
+      {/* Cinematic loop — the still is the poster, so it is never blank. */}
+      <video
         className="absolute inset-0 w-full h-full object-cover opacity-90"
-      />
+        autoPlay
+        muted
+        loop
+        playsInline
+        poster="/brand/car-cinematic.webp"
+        aria-hidden
+      >
+        <source src="/brand/car-loop.mp4" type="video/mp4" />
+      </video>
       {/* legibility + vignette */}
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-black/30" />
       <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent" />

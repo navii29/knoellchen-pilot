@@ -5,12 +5,18 @@ import { Reveal } from "./Reveal";
 export const AppleCTA = () => {
   return (
     <section className="relative mesh-dark text-white overflow-hidden">
-      {/* subtle iridescent bloom top-center */}
-      <div
-        className="absolute inset-x-0 top-0 flex justify-center pointer-events-none"
-        aria-hidden
-      >
-        <div className="aurora w-[700px] h-[360px] -mt-16 opacity-50" />
+      {/* iridescent ribbon — ambient flair, floating above the headline */}
+      <div className="absolute inset-x-0 -top-16 flex justify-center pointer-events-none" aria-hidden>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/brand/aurora-ribbon.webp"
+          alt=""
+          className="w-[520px] max-w-[90%] opacity-70 blur-[1px] select-none"
+          style={{ maskImage: "radial-gradient(closest-side, #000 55%, transparent)" }}
+        />
+      </div>
+      <div className="absolute inset-x-0 top-0 flex justify-center pointer-events-none" aria-hidden>
+        <div className="aurora w-[640px] h-[300px] -mt-10 opacity-40" />
       </div>
 
       <div className="relative max-w-[760px] mx-auto px-5 py-32 sm:py-40 text-center">
