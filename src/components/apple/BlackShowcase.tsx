@@ -25,15 +25,15 @@ export const BlackShowcase = () => {
       <div className="relative max-w-[1080px] mx-auto px-5 py-24 sm:py-32 text-center">
         <Reveal as="div">
           <div className="inline-flex items-center gap-2 text-[13px] text-white/55 mb-5">
-            <span className="w-1.5 h-1.5 rounded-full bg-azure-sky" /> Eine Plattform
+            <span className="w-1.5 h-1.5 rounded-full bg-azure-sky" /> Und es hört beim Strafzettel nicht auf
           </div>
-          <h2 className="apple-display text-[34px] sm:text-[52px] lg:text-[60px] text-white mx-auto max-w-[16ch]">
-            Der ganze Betrieb,
-            <br className="hidden sm:block" /> an einem Ort.
+          <h2 className="apple-display text-[32px] sm:text-[48px] lg:text-[56px] text-white mx-auto max-w-[18ch]">
+            Wenn der Papierkram eh digital ist, machen Sie gleich weiter.
           </h2>
-          <p className="mt-5 text-[18px] sm:text-[20px] leading-[1.45] text-white/60 max-w-[44ch] mx-auto">
-            Schluss mit dem Flickenteppich aus Tools. Knöllchen-Pilot verbindet jeden
-            Schritt zu einem ruhigen, durchgängigen Ablauf.
+          <p className="mt-5 text-[18px] sm:text-[20px] leading-[1.45] text-white/60 max-w-[48ch] mx-auto">
+            Verträge mit E-Signatur, Fahrzeugübergabe mit Fotos, Schadensberichte —
+            derselbe Mietvertrag, den Knöllchen-Pilot für die Weiterbelastung nutzt, trägt
+            auch den Rest Ihres Betriebs.
           </p>
         </Reveal>
 

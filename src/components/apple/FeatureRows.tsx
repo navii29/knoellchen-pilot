@@ -3,16 +3,16 @@ import { Reveal } from "./Reveal";
 
 const Stat = ({ k, v }: { k: string; v: string }) => (
   <div>
-    <div className="text-[28px] font-semibold tracking-tight text-graphite tabular-nums">{v}</div>
-    <div className="text-[12.5px] text-graphite-muted mt-0.5">{k}</div>
+    <div className="text-[26px] font-semibold tracking-tight text-graphite tabular-nums">{v}</div>
+    <div className="text-[12.5px] text-graphite-muted mt-0.5 max-w-[16ch]">{k}</div>
   </div>
 );
 
+/** Row 1 — the wedge: the fine gets re-billed to the right renter. */
 export const FeatureRows = () => {
   return (
     <section className="bg-white">
-      <div className="max-w-[1080px] mx-auto px-5 py-24 sm:py-28 space-y-24 sm:space-y-32">
-        {/* Row 1 — weiterbelastung */}
+      <div className="max-w-[1080px] mx-auto px-5 py-24 sm:py-28">
         <Reveal as="div" className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div>
             <div className="text-[13px] font-medium text-azure-link mb-3">Automatisch</div>
@@ -21,14 +21,18 @@ export const FeatureRows = () => {
             </h2>
             <p className="mt-5 text-[17px] leading-[1.5] text-graphite-soft max-w-[46ch]">
               Die Tatzeit trifft auf den Mietvertrag — und Knöllchen-Pilot weiß sofort, wer
-              gefahren ist. Anschreiben, Rechnung und Gebühr entstehen von selbst.
+              gefahren ist. Anschreiben, Rechnung und Bearbeitungsgebühr entstehen von
+              selbst, bevor die Frist zum Problem wird.
+            </p>
+            <p className="mt-4 text-[15px] font-medium text-graphite max-w-[44ch]">
+              Sonst bleibt der Bescheid — und das Bußgeld — an Ihnen hängen.
             </p>
             <a href="#preise" className="mt-6 inline-flex items-center gap-1.5 text-[16px] text-azure-link hover:opacity-70">
               Preise ansehen <ArrowRight size={16} />
             </a>
             <div className="mt-9 flex gap-10">
-              <Stat v="7 Min" k="gespart pro Fall" />
-              <Stat v="98%" k="automatisch zugeordnet" />
+              <Stat v="~10 Min" k="Handarbeit pro Bescheid — bisher" />
+              <Stat v="Sekunden" k="mit Knöllchen-Pilot" />
             </div>
           </div>
 
@@ -55,8 +59,16 @@ export const FeatureRows = () => {
             </div>
           </div>
         </Reveal>
+      </div>
+    </section>
+  );
+};
 
-        {/* Row 2 — dynamic pricing */}
+/** A platform capability — shown AFTER the platform showcase, not in the wedge zone. */
+export const DynamicPricingRow = () => {
+  return (
+    <section className="bg-white">
+      <div className="max-w-[1080px] mx-auto px-5 pb-24 sm:pb-28">
         <Reveal as="div" className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div className="lg:order-2">
             <div className="text-[13px] font-medium text-azure-link mb-3">Mehr Marge</div>

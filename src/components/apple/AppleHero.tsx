@@ -22,14 +22,15 @@ export const AppleHero = () => {
       <div className="relative z-[1] max-w-[1120px] mx-auto px-5 pt-36 sm:pt-44 text-center">
         <Reveal as="div">
           <p className="text-[15px] sm:text-[17px] font-medium text-azure-sky tracking-tight">
-            Knöllchen-Pilot für Autovermietungen
+            Strafzettel-Verwaltung für Autovermietungen
           </p>
-          <h1 className="apple-display mt-3 text-[46px] sm:text-[72px] lg:text-[88px] text-white mx-auto max-w-[13ch] leading-[1.02]">
-            Der Papierkram erledigt sich von selbst.
+          <h1 className="apple-display mt-3 text-[42px] sm:text-[64px] lg:text-[78px] text-white mx-auto max-w-[16ch] leading-[1.04]">
+            Der Strafzettel ist nicht Ihrer. Aber die Rechnung schon.
           </h1>
-          <p className="mt-6 text-[19px] sm:text-[22px] leading-[1.4] text-white/65 max-w-[44ch] mx-auto">
-            Strafzettel auslesen, Fahrer zuordnen, weiterbelasten — und die Verträge
-            gleich mit. Eine Plattform für den ganzen Betrieb.
+          <p className="mt-6 text-[18px] sm:text-[21px] leading-[1.45] text-white/65 max-w-[52ch] mx-auto">
+            Als Halter bekommen Sie jeden Bußgeldbescheid Ihrer Mietwagen. Knöllchen-Pilot
+            liest den Bescheid aus, findet den Mieter über den Mietvertrag und belastet ihm
+            Bußgeld plus Bearbeitungsgebühr weiter — automatisch.
           </p>
 
           <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-x-7 gap-y-3">

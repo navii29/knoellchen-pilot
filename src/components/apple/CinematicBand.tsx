@@ -31,7 +31,7 @@ export const CinematicBand = () => {
           </h2>
           <p className="mt-5 text-[18px] sm:text-[20px] leading-[1.45] text-white/70 max-w-[42ch]">
             Während Sie Schlüssel übergeben, kümmert sich Knöllchen-Pilot um Bescheide,
-            Fristen und Rechnungen. Leise im Hintergrund. Zuverlässig.
+            Fristen und die Weiterbelastung. Leise im Hintergrund. Zuverlässig.
           </p>
         </Reveal>
       </div>
