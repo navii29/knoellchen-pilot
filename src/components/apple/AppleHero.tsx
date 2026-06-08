@@ -10,12 +10,12 @@ import { Reveal } from "./Reveal";
 export const AppleHero = () => {
   return (
     <section id="produkt" className="grain relative bg-black text-white overflow-hidden">
-      {/* faint ambient light so the void has depth, not flat black */}
+      {/* ambient light so the void has depth, not flat black */}
       <div
-        className="absolute left-1/2 -translate-x-1/2 top-0 w-[1100px] h-[620px] pointer-events-none"
+        className="absolute left-1/2 -translate-x-1/2 -top-20 w-[1200px] h-[760px] pointer-events-none"
         style={{
           background:
-            "radial-gradient(60% 60% at 50% 30%, rgba(120,150,255,0.10), transparent 70%)",
+            "radial-gradient(55% 55% at 50% 35%, rgba(110,140,255,0.22), rgba(60,90,200,0.08) 45%, transparent 72%)",
         }}
         aria-hidden
       />
