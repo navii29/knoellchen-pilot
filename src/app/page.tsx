@@ -2,6 +2,7 @@ import { AppleNav } from "@/components/apple/AppleNav";
 import { AppleHero } from "@/components/apple/AppleHero";
 import { BlackShowcase } from "@/components/apple/BlackShowcase";
 import { FeatureRows } from "@/components/apple/FeatureRows";
+import { HowItWorks } from "@/components/apple/HowItWorks";
 import { CinematicBand } from "@/components/apple/CinematicBand";
 import { ApplePricing } from "@/components/apple/ApplePricing";
 import { AppleFAQ } from "@/components/apple/AppleFAQ";
@@ -14,6 +15,7 @@ export default function Home() {
       <AppleNav />
       <AppleHero />
       <FeatureRows />
+      <HowItWorks />
       <BlackShowcase />
       <CinematicBand />
       <ApplePricing />
