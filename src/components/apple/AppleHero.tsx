@@ -9,8 +9,17 @@ import { Reveal } from "./Reveal";
  */
 export const AppleHero = () => {
   return (
-    <section id="produkt" className="relative bg-black text-white overflow-hidden">
-      <div className="relative max-w-[1120px] mx-auto px-5 pt-36 sm:pt-44 text-center">
+    <section id="produkt" className="grain relative bg-black text-white overflow-hidden">
+      {/* faint ambient light so the void has depth, not flat black */}
+      <div
+        className="absolute left-1/2 -translate-x-1/2 top-0 w-[1100px] h-[620px] pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(60% 60% at 50% 30%, rgba(120,150,255,0.10), transparent 70%)",
+        }}
+        aria-hidden
+      />
+      <div className="relative z-[1] max-w-[1120px] mx-auto px-5 pt-36 sm:pt-44 text-center">
         <Reveal as="div">
           <p className="text-[15px] sm:text-[17px] font-medium text-azure-sky tracking-tight">
             Knöllchen-Pilot für Autovermietungen
@@ -39,7 +48,7 @@ export const AppleHero = () => {
       </div>
 
       {/* the product, glowing in the dark — bleeds off the bottom edge */}
-      <Reveal as="div" delay={140} className="relative mt-16 sm:mt-20">
+      <Reveal as="div" delay={140} className="relative z-[1] mt-16 sm:mt-20">
         <div className="relative max-w-[1040px] mx-auto px-5">
           {/* intentional single-hue light from the screen, not a rainbow blob */}
           <div
