@@ -89,8 +89,7 @@ export const Sidebar = ({
 
   const navList = (
     <>
-      {/* Section label — mono kicker style on dark */}
-      <div className="font-mono text-[10px] uppercase tracking-wider text-white/40 px-3 py-2.5">
+      <div className="text-[11px] font-medium uppercase tracking-wider text-ink-muted px-3 py-2.5">
         Arbeitsbereich
       </div>
       {ITEMS.map((it) => {
@@ -110,31 +109,22 @@ export const Sidebar = ({
           <Link
             key={it.href}
             href={it.href}
-            className={`group relative w-full flex items-center gap-2.5 px-3 py-2.5 rounded-panel text-[13px] transition-all duration-150 ${
+            className={`group w-full flex items-center gap-2.5 px-3 py-2 rounded-btn text-[13.5px] transition-all duration-150 ${
               isActive
-                ? "bg-white/[0.06] text-white font-medium"
-                : "text-white/55 hover:bg-white/[0.06] hover:text-white"
+                ? "bg-signal-soft text-signal font-medium"
+                : "text-ink-soft hover:bg-black/[0.04] hover:text-ink"
             }`}
           >
-            {/* Signal bar for active state */}
-            {isActive && (
-              <span
-                aria-hidden
-                className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 bg-signal rounded-r-full"
-              />
-            )}
             <it.Icon
-              size={15}
-              strokeWidth={isActive ? 2 : 1.75}
-              className={isActive ? "text-white" : "text-white/40 group-hover:text-white/70"}
+              size={16}
+              strokeWidth={isActive ? 2.1 : 1.85}
+              className={isActive ? "text-signal" : "text-ink-muted group-hover:text-ink-soft"}
             />
             <span>{it.label}</span>
             {badge != null && badge > 0 && (
               <span
-                className={`ml-auto font-mono text-[10px] px-1.5 py-0.5 rounded ${
-                  isActive
-                    ? "bg-signal/15 text-signal"
-                    : "bg-white/10 text-white/70"
+                className={`ml-auto text-[10.5px] font-medium tabular-nums px-1.5 py-0.5 rounded-full ${
+                  isActive ? "bg-signal/15 text-signal" : "bg-black/[0.05] text-ink-muted"
                 }`}
               >
                 {badge}
@@ -148,33 +138,32 @@ export const Sidebar = ({
 
   const profileBlock = (
     <form action="/auth/signout" method="post">
-      <button className="w-full flex items-center gap-2.5 px-2 py-2 rounded-panel hover:bg-white/[0.06] transition-all duration-150">
-        {/* Mono avatar with initials */}
-        <div className="w-8 h-8 rounded-frame bg-void-700 border border-hairline-dark text-white flex items-center justify-center font-mono text-[11px] font-semibold shrink-0">
+      <button className="w-full flex items-center gap-2.5 px-2 py-2 rounded-btn hover:bg-black/[0.04] transition-all duration-150">
+        <div className="w-8 h-8 rounded-full bg-graphite text-white flex items-center justify-center text-[11px] font-semibold shrink-0">
           {orgName.slice(0, 2).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0 text-left">
-          <div className="text-[13px] font-medium text-white/90 truncate">{orgName}</div>
-          <div className="font-mono text-[10px] text-white/40 truncate">Abmelden</div>
+          <div className="text-[13px] font-medium text-ink truncate">{orgName}</div>
+          <div className="text-[11px] text-ink-muted truncate">Abmelden</div>
         </div>
-        <ChevronRight size={13} className="text-white/25 shrink-0" />
+        <ChevronRight size={14} className="text-ink-muted shrink-0" />
       </button>
     </form>
   );
 
   const logoBlock = (
-    <div className="h-16 px-4 flex items-center border-b border-hairline-dark">
-      <Logo tone="dark" size={28} />
+    <div className="h-16 px-4 flex items-center border-b border-hairline">
+      <Logo tone="light" size={28} />
     </div>
   );
 
   return (
     <>
       {/* Desktop-Sidebar */}
-      <aside className="hidden md:flex w-60 shrink-0 bg-void-800 flex-col">
+      <aside className="hidden md:flex w-60 shrink-0 bg-paper border-r border-hairline flex-col">
         {logoBlock}
         <div className="p-2 space-y-0.5 flex-1 overflow-y-auto">{navList}</div>
-        <div className="p-3 border-t border-hairline-dark">{profileBlock}</div>
+        <div className="p-3 border-t border-hairline">{profileBlock}</div>
       </aside>
 
       {/* Mobile-Drawer + Backdrop */}
@@ -185,26 +174,26 @@ export const Sidebar = ({
         aria-hidden={!mobileOpen}
       >
         <div
-          className="absolute inset-0 bg-black/60"
+          className="absolute inset-0 bg-black/30 backdrop-blur-sm"
           onClick={() => setMobileOpen(false)}
         />
         <aside
-          className={`absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-void-800 flex flex-col shadow-frame transition-transform duration-200 ${
+          className={`absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-paper flex flex-col shadow-product transition-transform duration-200 ${
             mobileOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          <div className="h-16 px-4 flex items-center justify-between border-b border-hairline-dark">
-            <Logo tone="dark" size={28} />
+          <div className="h-16 px-4 flex items-center justify-between border-b border-hairline">
+            <Logo tone="light" size={28} />
             <button
               onClick={() => setMobileOpen(false)}
-              className="touch-target -mr-2 flex items-center justify-center text-white/40 hover:text-white"
+              className="touch-target -mr-2 flex items-center justify-center text-ink-muted hover:text-ink"
               aria-label="Menü schließen"
             >
               <X size={18} />
             </button>
           </div>
           <div className="p-2 space-y-0.5 flex-1 overflow-y-auto">{navList}</div>
-          <div className="p-3 border-t border-hairline-dark safe-bottom">{profileBlock}</div>
+          <div className="p-3 border-t border-hairline safe-bottom">{profileBlock}</div>
         </aside>
       </div>
     </>

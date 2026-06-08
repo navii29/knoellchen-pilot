@@ -7,7 +7,6 @@ import { ArrowRight, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
-import { Plate } from "@/components/ui/Plate";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -62,46 +61,38 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex">
-      {/* ── dark void side panel ── */}
-      <div className="hidden lg:flex lg:w-[44%] xl:w-[40%] flex-col bg-void text-on-dark relative overflow-hidden">
-        <div className="absolute inset-0 grid-dark [mask-image:radial-gradient(110%_80%_at_50%_10%,#000_30%,transparent_85%)]" />
+      {/* ── cinematic side panel ── */}
+      <div className="hidden lg:flex lg:w-[44%] xl:w-[40%] flex-col bg-black text-white relative overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/brand/car-cinematic.webp"
+          alt=""
+          aria-hidden
+          className="absolute inset-0 w-full h-full object-cover opacity-80"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/40" />
         <div className="relative flex flex-col h-full px-10 py-10">
           <Link href="/">
             <Logo tone="dark" size={32} />
           </Link>
-          <div className="flex-1 flex flex-col justify-center">
-            <span className="kicker text-white/45 mb-5">14 Tage gratis testen</span>
-            <h2 className="font-display font-extrabold text-white text-[36px] leading-[1.05] tracking-tightest mb-6">
-              Der Papierkram<br />fährt ab heute.
+          <div className="flex-1 flex flex-col justify-end pb-2">
+            <p className="text-[14px] font-medium text-azure-sky mb-5">14 Tage gratis testen</p>
+            <h2 className="apple-display text-white text-[40px] leading-[1.05] mb-6 max-w-[12ch]">
+              Der Papierkram fährt ab heute.
             </h2>
-            <ul className="space-y-3 text-[14.5px] text-white/55">
-              <li className="flex items-center gap-2.5">
-                <span className="w-1 h-1 rounded-full bg-signal shrink-0" />
-                Strafzettel automatisch auslesen (KI)
-              </li>
-              <li className="flex items-center gap-2.5">
-                <span className="w-1 h-1 rounded-full bg-signal shrink-0" />
-                Fahrer in Sekunden zuordnen
-              </li>
-              <li className="flex items-center gap-2.5">
-                <span className="w-1 h-1 rounded-full bg-signal shrink-0" />
-                Verträge, Übergaben, Schäden — alles digital
-              </li>
-              <li className="flex items-center gap-2.5">
-                <span className="w-1 h-1 rounded-full bg-signal shrink-0" />
-                Keine Kreditkarte erforderlich
-              </li>
+            <ul className="space-y-2.5 text-[15px] text-white/70">
+              {[
+                "Strafzettel automatisch auslesen (KI)",
+                "Fahrer in Sekunden zuordnen",
+                "Verträge, Übergaben, Schäden — alles digital",
+                "Keine Kreditkarte erforderlich",
+              ].map((t) => (
+                <li key={t} className="flex items-center gap-2.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-azure-sky shrink-0" />
+                  {t}
+                </li>
+              ))}
             </ul>
-          </div>
-          {/* plate motif */}
-          <div className="flex items-end justify-between">
-            <div className="flex flex-col gap-2">
-              <Plate value="B-KP 2041" size="md" />
-              <span className="font-mono text-[11px] text-white/30">AZ · KP-2041 · 55,00 €</span>
-            </div>
-            <div className="font-mono text-[11px] text-white/25 text-right leading-relaxed">
-              DSGVO-konform<br />Daten in der EU
-            </div>
           </div>
         </div>
       </div>
@@ -115,11 +106,10 @@ export default function RegisterPage() {
           </div>
 
           <div className="mb-8">
-            <span className="kicker text-ink-muted mb-3 block">Konto anlegen</span>
-            <h1 className="font-display font-extrabold text-ink text-[28px] tracking-tightest leading-[1.05]">
-              Leitstelle einrichten
+            <h1 className="apple-display text-ink text-[32px] leading-[1.05]">
+              Konto erstellen
             </h1>
-            <p className="text-[14px] text-ink-muted mt-1.5">30 Tage gratis · keine Kreditkarte</p>
+            <p className="text-[15px] text-ink-muted mt-2">14 Tage gratis · keine Kreditkarte</p>
           </div>
 
           <div className="bg-paper border border-hairline rounded-card shadow-panel p-6">

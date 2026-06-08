@@ -8,29 +8,33 @@
    workspace, one signal accent, monospace telemetry, hairline structure.
    ════════════════════════════════════════════════════════════════ */
 :root {
-  /* dark side */
-  --void: #0b0a0c;
-  --void-800: #131215;
-  --void-700: #1a181c;
-  --void-600: #232026;
-  --hairline-dark: rgba(255, 255, 255, 0.1);
-  --on-dark: #f4f2ef;
-  --on-dark-soft: #a8a4a0;
-  --on-dark-muted: #6e6a67;
+  /* System SF Pro stack (real SF on Apple devices, Inter fallback). */
+  --sf: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    var(--font-sans), "Helvetica Neue", Arial, sans-serif;
 
-  /* light side */
-  --canvas: #f4f3f0;
+  /* dark side (kept for occasional dark surfaces) */
+  --void: #000000;
+  --void-800: #0a0a0a;
+  --void-700: #161617;
+  --void-600: #1d1d1f;
+  --hairline-dark: rgba(255, 255, 255, 0.12);
+  --on-dark: #f5f5f7;
+  --on-dark-soft: #a1a1a6;
+  --on-dark-muted: #6e6e73;
+
+  /* light side — Apple */
+  --canvas: #f5f5f7;
   --paper: #ffffff;
-  --ink: #14110f;
-  --ink-soft: #423d39;
-  --ink-muted: #8a847e;
-  --hairline: #e4e1db;
+  --ink: #1d1d1f;
+  --ink-soft: #424245;
+  --ink-muted: #86868b;
+  --hairline: #d2d2d7;
 
-  /* signal — CTA / active / live ONLY */
-  --signal: #ff5a1f;
-  --signal-strong: #e84a12;
-  --signal-soft: #ffede4;
-  --signal-ink: #9a3a12;
+  /* signal — now Apple vivid blue (CTA / active / link) */
+  --signal: #0071e3;
+  --signal-strong: #0066cc;
+  --signal-soft: #e9f2fe;
+  --signal-ink: #0066cc;
 
   /* license-plate chrome */
   --plate-eu: #003399;
@@ -42,8 +46,7 @@ html {
 }
 
 body {
-  font-family: var(--font-sans), system-ui, sans-serif;
-  font-feature-settings: "cv05", "cv11", "ss01", "kern";
+  font-family: var(--sf);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -51,12 +54,13 @@ body {
   color: var(--ink-soft);
   font-size: 14px;
   line-height: 1.55;
+  letter-spacing: -0.01em;
 }
 
 @layer base {
   h1, h2, h3, h4 {
-    font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
-    font-weight: 700;
+    font-family: var(--sf);
+    font-weight: 600;
     letter-spacing: -0.022em;
     color: var(--ink);
     text-wrap: balance;
@@ -70,30 +74,29 @@ body {
 
 /* ── Typographic atoms ─────────────────────────────────────────── */
 .font-display {
-  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
-  letter-spacing: -0.03em;
-  font-weight: 700;
+  font-family: var(--sf);
+  letter-spacing: -0.025em;
+  font-weight: 600;
 }
 .font-mono { font-family: var(--font-mono), ui-monospace, monospace; }
 .tnum { font-feature-settings: "tnum", "zero"; }
 
-/* Mono eyebrow / kicker with a signal tick — "// LEITSTELLE". */
+/* Eyebrow / kicker — clean SF small caps with a signal tick. */
 .kicker {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   display: inline-flex;
   align-items: center;
-  gap: 0.55em;
+  gap: 0.5em;
 }
 .kicker::before {
   content: "";
   width: 6px;
   height: 6px;
   background: var(--signal);
-  border-radius: 1px;
+  border-radius: 9999px;
   flex: none;
 }
 
@@ -294,38 +297,37 @@ body {
 
 /* ── Workspace primitives (dashboard) ──────────────────────────── */
 @layer components {
-  /* Standard paper surface. */
+  /* Standard paper surface — Apple soft card. */
   .panel {
     background: var(--paper);
     border: 1px solid var(--hairline);
-    border-radius: 8px;
-    box-shadow: 0 1px 2px 0 rgba(20, 17, 15, 0.04);
+    border-radius: 14px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
   }
-  /* Table head cell. */
+  /* Table head cell — clean SF small label. */
   .th {
-    font-family: var(--font-mono), ui-monospace, monospace;
-    font-size: 10.5px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.04em;
     color: var(--ink-muted);
     font-weight: 500;
   }
-  /* Soft data label (mono uppercase). */
+  /* Soft data label. */
   .data-label {
-    font-family: var(--font-mono), ui-monospace, monospace;
-    font-size: 10.5px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.09em;
+    letter-spacing: 0.04em;
     color: var(--ink-muted);
+    font-weight: 500;
   }
   /* Form field on the light workspace. */
   .field {
     width: 100%;
-    height: 40px;
-    padding: 0 12px;
+    height: 42px;
+    padding: 0 14px;
     background: var(--paper);
     border: 1px solid var(--hairline);
-    border-radius: 6px;
+    border-radius: 10px;
     font-size: 14px;
     color: var(--ink);
     transition: border-color .15s, box-shadow .15s;
@@ -333,10 +335,10 @@ body {
   .field::placeholder { color: var(--ink-muted); }
   .field:focus {
     outline: none;
-    border-color: rgba(20, 17, 15, 0.3);
-    box-shadow: 0 0 0 3px rgba(255, 90, 31, 0.13);
+    border-color: var(--signal);
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.18);
   }
-  textarea.field { height: auto; padding: 10px 12px; line-height: 1.5; }
+  textarea.field { height: auto; padding: 11px 14px; line-height: 1.5; }
   select.field { appearance: none; }
 }
 
