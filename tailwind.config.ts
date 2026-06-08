@@ -19,33 +19,33 @@ const config: Config = {
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
       colors: {
-        // Dark side — landing + app chrome (sidebar / topbar).
+        // Dark side — occasional dark surfaces (now true Apple blacks).
         void: {
-          DEFAULT: "#0B0A0C", // page background, deepest layer
-          800: "#131215", // raised chrome (sidebar/topbar surface)
-          700: "#1A181C", // cards / panels on dark
-          600: "#232026", // hover surface on dark
+          DEFAULT: "#000000", // page background, deepest layer
+          800: "#0a0a0a", // raised chrome
+          700: "#161617", // cards / panels on dark
+          600: "#1d1d1f", // hover surface on dark
         },
-        // Light side — the engineered workspace + light marketing bands.
-        canvas: "#F4F3F0", // warm paper-gray app/page background
+        // Light side — Apple workspace.
+        canvas: "#f5f5f7", // app/page background (cool mist)
         paper: "#FFFFFF", // cards, inputs, elevated surfaces
-        // Primary text/icons on the dark void chrome.
-        "on-dark": "#F4F2EF",
+        // Primary text/icons on dark chrome.
+        "on-dark": "#f5f5f7",
         ink: {
-          DEFAULT: "#14110F", // primary text on light (warm near-black)
-          soft: "#423D39", // body text
-          muted: "#8A847E", // secondary / meta text
+          DEFAULT: "#1d1d1f", // primary text (graphite)
+          soft: "#424245", // body text
+          muted: "#86868b", // secondary / meta text
         },
         hairline: {
-          DEFAULT: "#E4E1DB", // light borders / dividers
-          dark: "rgba(255,255,255,0.10)", // dark borders / dividers
+          DEFAULT: "#d2d2d7", // light borders / dividers (Apple silver)
+          dark: "rgba(255,255,255,0.12)", // dark borders / dividers
         },
-        // Single brand signal — CTA / active / live status ONLY.
+        // "signal" is now Apple vivid blue (CTA / active / link).
         signal: {
-          DEFAULT: "#FF5A1F",
-          strong: "#E84A12",
-          soft: "#FFEDE4", // tint background on light
-          ink: "#9A3A12", // text on signal-soft
+          DEFAULT: "#0071e3",
+          strong: "#0066cc",
+          soft: "#e9f2fe", // tint background on light
+          ink: "#0066cc", // text on signal-soft
         },
         // License-plate chrome — EU strip ONLY, never a UI accent.
         plate: {
@@ -69,11 +69,11 @@ const config: Config = {
         azure: { DEFAULT: "#0071e3", link: "#0066cc", sky: "#2997ff" }, // CTA / link / active
       },
       borderRadius: {
-        card: "8px",
-        panel: "6px",
-        btn: "6px",
-        input: "6px",
-        frame: "4px", // dark technical frames on the landing
+        card: "16px", // Apple soft cards
+        panel: "12px",
+        btn: "10px",
+        input: "10px",
+        frame: "12px",
         apple: "28px", // large soft cards/images
         pill: "9999px",
       },
