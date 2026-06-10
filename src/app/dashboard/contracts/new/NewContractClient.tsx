@@ -19,6 +19,7 @@ import {
 } from "@/lib/partners";
 import { fmtEur } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import { VehiclePicker } from "@/components/contract/VehiclePicker";
 
 type Mode = "choose" | "ai" | "manual";
 type FormState = {
@@ -482,9 +483,25 @@ export const NewContractClient = ({
           </FormSection>
 
           <FormSection title="Fahrzeug">
-            <Field label="Kennzeichen *">
-              <input required value={data.plate} onChange={set("plate")} placeholder="M-KP 2847" className="field font-mono uppercase" />
-            </Field>
+            {/* div statt <label>: Klicks im Dropdown duerfen nicht auf das Input zurueckspringen */}
+            <div className="block">
+              <div className="data-label text-ink-muted mb-1">Kennzeichen *</div>
+              <VehiclePicker
+                plate={data.plate}
+                vehicleType={data.vehicle_type}
+                pickupDate={data.pickup_date}
+                returnDate={data.return_date}
+                required
+                onSelect={(v) =>
+                  setData((d) => ({
+                    ...d,
+                    plate: v.plate,
+                    vehicle_type: v.vehicle_type || d.vehicle_type,
+                  }))
+                }
+                onPlateChange={(plate) => setData((d) => ({ ...d, plate }))}
+              />
+            </div>
             <Field label="Fahrzeugtyp">
               <input value={data.vehicle_type} onChange={set("vehicle_type")} placeholder="VW Golf VIII" className="field" />
             </Field>

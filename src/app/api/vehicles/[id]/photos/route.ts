@@ -60,15 +60,28 @@ export const POST = async (req: Request, { params }: Ctx) => {
   const files = form.getAll("file").filter((f): f is File => f instanceof File && f.size > 0);
   if (!files.length) return NextResponse.json({ error: "Keine Datei übermittelt" }, { status: 400 });
 
+  // Allow-list sicherer Raster-Formate — explizit KEIN SVG (Stored-XSS-Vektor).
+  const ALLOWED: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif",
+    "image/heic": "heic",
+    "image/heif": "heif",
+  };
+
   const created: string[] = [];
   for (const file of files) {
-    if (!file.type.startsWith("image/")) {
-      return NextResponse.json({ error: `Kein Bild: ${file.name}` }, { status: 400 });
+    const ext = ALLOWED[file.type];
+    if (!ext) {
+      return NextResponse.json(
+        { error: `Ungültiger Dateityp (erlaubt: JPG, PNG, WebP, GIF, HEIC): ${file.name}` },
+        { status: 400 }
+      );
     }
     if (file.size > 12 * 1024 * 1024) {
       return NextResponse.json({ error: `Datei zu groß (max 12 MB): ${file.name}` }, { status: 400 });
     }
-    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
     const path = `${auth.org_id}/${params.id}/${Date.now().toString(36)}-${Math.random()
       .toString(36)
       .slice(2, 8)}.${ext}`;

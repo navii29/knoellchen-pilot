@@ -46,9 +46,24 @@ export const POST = async (req: Request, { params }: Ctx) => {
   if (file.size > 12 * 1024 * 1024) {
     return NextResponse.json({ error: "Datei zu groß (max 12 MB)" }, { status: 400 });
   }
+  // Allow-list erwarteter Dokumentformate — kein SVG/HTML (Stored-XSS-Vektor).
+  const ALLOWED: Record<string, string> = {
+    "application/pdf": "pdf",
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/heic": "heic",
+    "image/heif": "heif",
+  };
+  const ext = ALLOWED[file.type];
+  if (!ext) {
+    return NextResponse.json(
+      { error: "Ungültiger Dateityp (erlaubt: PDF, JPG, PNG, WebP, HEIC)" },
+      { status: 400 }
+    );
+  }
 
   const admin = createAdminClient();
-  const ext = (file.name.split(".").pop() || "bin").toLowerCase();
   const path = `${auth.org_id}/${params.id}/fahrzeugschein-${Date.now().toString(36)}.${ext}`;
   const buf = Buffer.from(await file.arrayBuffer());
   const { error: upErr } = await admin.storage
