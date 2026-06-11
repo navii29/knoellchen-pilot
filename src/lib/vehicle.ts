@@ -113,3 +113,22 @@ export const buildVehicleType = (
   if (parts.length === 0) return null;
   return parts.join(" ");
 };
+
+/**
+ * Ausgeflottet? — true wenn der Status explizit "ausgesteuert" ist ODER das
+ * Ausflottungsdatum (decommission_date) erreicht/überschritten wurde.
+ * Ausgeflottete Fahrzeuge verschwinden aus aktiven Listen & der Fahrzeugsuche,
+ * bleiben aber für Rückfragen über den Archiv-Tab einsehbar.
+ */
+export const isDecommissioned = (
+  v: { status?: VehicleStatus | string | null; decommission_date?: string | null },
+  today: Date = new Date()
+): boolean => {
+  if (v.status === "ausgesteuert") return true;
+  if (!v.decommission_date) return false;
+  const d = new Date(v.decommission_date);
+  d.setHours(0, 0, 0, 0);
+  const t = new Date(today);
+  t.setHours(0, 0, 0, 0);
+  return d.getTime() <= t.getTime();
+};

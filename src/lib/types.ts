@@ -75,6 +75,13 @@ export interface Vehicle {
   accessories: string | null;
   status: VehicleStatus;
 
+  // Logistik & Dokumente (Migration 026)
+  registration_doc_path: string | null; // Fahrzeugschein (ZB Teil I)
+  pickup_location: string | null; // Abhollager
+  return_location: string | null; // Rückgabeort
+  internal_return_at: string | null; // "Rückgabe erfolgt am/um" — rein intern
+  internal_return_note: string | null;
+
   echoes_device_id: string | null;
   last_gps_lat: number | null;
   last_gps_lng: number | null;
@@ -84,6 +91,14 @@ export interface Vehicle {
 
   created_at: string;
   updated_at: string;
+}
+
+export interface VehiclePhoto {
+  id: string;
+  vehicle_id: string;
+  org_id: string;
+  photo_path: string;
+  created_at: string;
 }
 
 export type PricingRuleType = "season" | "weekday" | "demand" | "custom";

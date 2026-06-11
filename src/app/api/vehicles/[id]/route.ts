@@ -42,6 +42,7 @@ const TEXT_FIELDS = [
   "vehicle_type",
   "color",
   "first_registration",
+  "decommission_date",
   "manufacturer",
   "model",
   "fuel_type",
@@ -53,6 +54,11 @@ const TEXT_FIELDS = [
   "available_from",
   "accessories",
   "echoes_device_id",
+  // Logistik & Intern (Migration 026)
+  "pickup_location",
+  "return_location",
+  "internal_return_at",
+  "internal_return_note",
 ] as const;
 
 const NUMBER_FIELDS = [

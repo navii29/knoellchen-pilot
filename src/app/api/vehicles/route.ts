@@ -85,6 +85,13 @@ export const POST = async (req: Request) => {
 
     accessories: trimOrNull(body.accessories),
     status,
+    decommission_date: trimOrNull(body.decommission_date),
+
+    // Logistik & Intern (Migration 026)
+    pickup_location: trimOrNull(body.pickup_location),
+    return_location: trimOrNull(body.return_location),
+    internal_return_at: trimOrNull(body.internal_return_at),
+    internal_return_note: trimOrNull(body.internal_return_note),
 
     echoes_device_id: trimOrNull(body.echoes_device_id),
 
