@@ -9,6 +9,7 @@ import {
   Coins,
   FileSignature,
   Gauge,
+  MapPin,
   Settings2,
   Sparkles,
   type LucideIcon,
@@ -22,6 +23,8 @@ import { VehicleEventsTimeline } from "@/components/vehicle/VehicleEventsTimelin
 import { TuevCountdown } from "@/components/vehicle/TuevCountdown";
 import { GpsLocation } from "@/components/vehicle/GpsLocation";
 import { TiresSection, type TireWithPhotos } from "@/components/vehicle/TiresSection";
+import { RegistrationDocCard } from "@/components/vehicle/RegistrationDocCard";
+import { VehiclePhotosCard } from "@/components/vehicle/VehiclePhotosCard";
 import type { TirePhoto, VehicleTire } from "@/lib/tires";
 import { PartnerPricingSection } from "@/components/vehicle/PartnerPricingSection";
 import { fmtDate, fmtEur } from "@/lib/utils";
@@ -261,6 +264,22 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
               <Row label="Kaution" value={fmtEur(v.deposit)} mono />
             </InfoCard>
 
+            <InfoCard Icon={MapPin} title="Logistik & Intern">
+              <Row label="Abhollager" value={v.pickup_location || "—"} />
+              <Row label="Rückgabeort" value={v.return_location || "—"} />
+              <Row label="Rückgabe erfolgt" value={fmtTimestamp(v.internal_return_at)} mono />
+              <Row
+                label="Interne Notiz"
+                value={
+                  v.internal_return_note ? (
+                    <span className="whitespace-pre-wrap">{v.internal_return_note}</span>
+                  ) : (
+                    "—"
+                  )
+                }
+              />
+            </InfoCard>
+
             {v.accessories && (
               <Panel className="sm:col-span-2">
                 <div className="flex items-center gap-2 kicker text-ink-muted mb-2">
@@ -269,6 +288,17 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
                 <div className="text-[13.5px] whitespace-pre-wrap text-ink">{v.accessories}</div>
               </Panel>
             )}
+          </div>
+
+          <div className="mt-6">
+            <RegistrationDocCard
+              vehicleId={v.id}
+              registrationDocPath={v.registration_doc_path}
+            />
+          </div>
+
+          <div className="mt-6">
+            <VehiclePhotosCard vehicleId={v.id} />
           </div>
 
           {echoesEnabled && (
@@ -345,6 +375,20 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
     </>
   );
 }
+
+/** TIMESTAMPTZ -> "10.06.2026, 14:30 Uhr" (deutsche Lokalzeit-Anzeige). */
+const fmtTimestamp = (iso: string | null): string => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const date = d.toLocaleDateString("de-DE", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const time = d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  return `${date}, ${time} Uhr`;
+};
 
 const InfoCard = ({
   title,

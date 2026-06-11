@@ -57,9 +57,16 @@ export type VehicleFormState = {
   cost_monthly: string;
   target_daily_rate: string;
 
+  // Logistik & Intern
+  pickup_location: string;
+  return_location: string;
+  internal_return_at: string;
+  internal_return_note: string;
+
   // Sonstiges
   accessories: string;
   status: VehicleStatus;
+  decommission_date: string;
 
   // GPS-Tracking
   echoes_device_id: string;
@@ -91,9 +98,25 @@ const empty: VehicleFormState = {
   deposit: "",
   cost_monthly: "",
   target_daily_rate: "",
+  pickup_location: "",
+  return_location: "",
+  internal_return_at: "",
+  internal_return_note: "",
   accessories: "",
   status: "aktiv",
+  decommission_date: "",
   echoes_device_id: "",
+};
+
+/** TIMESTAMPTZ-ISO -> Wert für <input type="datetime-local"> (lokale Zeit). */
+const toDatetimeLocal = (iso: string | null | undefined): string => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
 };
 
 const fromVehicle = (v: Vehicle): VehicleFormState => ({
@@ -123,8 +146,13 @@ const fromVehicle = (v: Vehicle): VehicleFormState => ({
   cost_monthly: v.cost_monthly != null ? String(v.cost_monthly) : "",
   target_daily_rate:
     v.target_daily_rate != null ? String(v.target_daily_rate) : "",
+  pickup_location: v.pickup_location || "",
+  return_location: v.return_location || "",
+  internal_return_at: toDatetimeLocal(v.internal_return_at),
+  internal_return_note: v.internal_return_note || "",
   accessories: v.accessories || "",
   status: v.status || "aktiv",
+  decommission_date: v.decommission_date || "",
   echoes_device_id: v.echoes_device_id || "",
 });
 
@@ -175,7 +203,13 @@ export const VehicleForm = ({
     setSaving(true);
     setSaved(false);
 
-    const payload = { ...data };
+    const payload = {
+      ...data,
+      // datetime-local liefert lokale Zeit ohne Zone -> als ISO (UTC) speichern
+      internal_return_at: data.internal_return_at
+        ? new Date(data.internal_return_at).toISOString()
+        : "",
+    };
     const url = mode === "create" ? "/api/vehicles" : `/api/vehicles/${initial!.id}`;
     const method = mode === "create" ? "POST" : "PATCH";
     const res = await fetch(url, {
@@ -521,6 +555,47 @@ export const VehicleForm = ({
           </Field>
         </FormSection>
 
+        <FormSection title="Logistik & Intern">
+          <Field label="Abhollager">
+            <input
+              value={data.pickup_location}
+              onChange={set("pickup_location")}
+              placeholder="z. B. Lager Nord, Halle 2"
+              className="field"
+            />
+          </Field>
+          <Field label="Rückgabeort">
+            <input
+              value={data.return_location}
+              onChange={set("return_location")}
+              placeholder="z. B. Hauptstandort München"
+              className="field"
+            />
+          </Field>
+          <Field label="Rückgabe erfolgt am/um">
+            <input
+              type="datetime-local"
+              value={data.internal_return_at}
+              onChange={set("internal_return_at")}
+              className="field font-mono tabular-nums"
+            />
+            <div className="text-[11px] text-ink-muted mt-1">
+              Nur intern — erscheint nicht im Vertrag.
+            </div>
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Interne Notiz">
+              <textarea
+                value={data.internal_return_note}
+                onChange={set("internal_return_note")}
+                rows={3}
+                placeholder="z. B. Schlüssel im Tresor, Rückgabe ohne Kunde…"
+                className="field resize-none"
+              />
+            </Field>
+          </div>
+        </FormSection>
+
         <FormSection title="Sonstiges">
           <div className="sm:col-span-2">
             <Field label="Zubehör">
@@ -534,7 +609,21 @@ export const VehicleForm = ({
             </Field>
           </div>
           <Field label="Status">
-            <select value={data.status} onChange={set("status")} className="field">
+            <select
+              value={data.status}
+              onChange={(e) => {
+                const next = e.target.value as VehicleStatus;
+                setData((d) => ({
+                  ...d,
+                  status: next,
+                  decommission_date:
+                    next === "ausgesteuert" && !d.decommission_date
+                      ? new Date().toISOString().slice(0, 10)
+                      : d.decommission_date,
+                }));
+              }}
+              className="field"
+            >
               {VEHICLE_STATUSES.map((s) => (
                 <option key={s} value={s}>
                   {VEHICLE_STATUS_META[s].label}
@@ -542,6 +631,20 @@ export const VehicleForm = ({
               ))}
             </select>
           </Field>
+          {data.status === "ausgesteuert" && (
+            <Field label="Ausgeflottet zum">
+              <input
+                type="date"
+                value={data.decommission_date}
+                onChange={set("decommission_date")}
+                className="field font-mono tabular-nums"
+              />
+              <div className="text-[11px] text-ink-muted mt-1">
+                Ab diesem Datum erscheint das Fahrzeug nicht mehr in aktiven Listen,
+                bleibt aber im Archiv einsehbar.
+              </div>
+            </Field>
+          )}
           <Field label="GPS-Tracker ID (Echoes)">
             <input
               value={data.echoes_device_id}

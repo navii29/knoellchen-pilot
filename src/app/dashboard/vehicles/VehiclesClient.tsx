@@ -7,7 +7,7 @@ import { Car, ChevronRight, FileSpreadsheet, Plus, Trash2 } from "lucide-react";
 import { CsvImportModal } from "@/components/dashboard/CsvImportModal";
 import { fmtDate } from "@/lib/utils";
 import { computeDecommission } from "@/lib/decommission";
-import { VEHICLE_STATUS_META, buildVehicleType } from "@/lib/vehicle";
+import { VEHICLE_STATUS_META, buildVehicleType, isDecommissioned } from "@/lib/vehicle";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FilterTabs, SearchInput } from "@/components/ui/Toolbar";
@@ -20,7 +20,7 @@ const FILTERS: Array<{ value: VehicleStatus | "alle"; label: string }> = [
   { value: "aktiv", label: "Aktiv" },
   { value: "inaktiv", label: "Inaktiv" },
   { value: "werkstatt", label: "Werkstatt" },
-  { value: "ausgesteuert", label: "Ausgesteuert" },
+  { value: "ausgesteuert", label: "Archiv" },
 ];
 
 const VehicleStatusPill = ({ status }: { status: VehicleStatus }) => {
@@ -45,7 +45,15 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return initial.filter((v) => {
-      if (filter !== "alle" && v.status !== filter) return false;
+      // Ausgeflottete Fahrzeuge (Status ODER erreichtes Ausflottungsdatum)
+      // erscheinen ausschliesslich im Archiv-Tab.
+      const archived = isDecommissioned(v);
+      if (filter === "ausgesteuert") {
+        if (!archived) return false;
+      } else {
+        if (archived) return false;
+        if (filter !== "alle" && v.status !== filter) return false;
+      }
       if (!needle) return true;
       const name = buildVehicleType(v.manufacturer, v.model) || v.vehicle_type || "";
       return [
@@ -67,8 +75,11 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
     if (res.ok) router.refresh();
   };
 
-  const counts = (v: VehicleStatus | "alle") =>
-    v === "alle" ? initial.length : initial.filter((x) => x.status === v).length;
+  const counts = (v: VehicleStatus | "alle") => {
+    if (v === "ausgesteuert") return initial.filter((x) => isDecommissioned(x)).length;
+    const active = initial.filter((x) => !isDecommissioned(x));
+    return v === "alle" ? active.length : active.filter((x) => x.status === v).length;
+  };
 
   return (
     <>
@@ -128,11 +139,14 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
           </div>
           {filtered.map((v) => {
             const decom = computeDecommission(v);
+            const archived = isDecommissioned(v);
             const name = buildVehicleType(v.manufacturer, v.model) || v.vehicle_type || "—";
             return (
               <div
                 key={v.id}
-                className="grid grid-cols-[132px_minmax(0,2fr)_minmax(0,1fr)_104px_124px_116px_44px] gap-3 items-center px-5 py-3 border-b border-hairline last:border-0 hover:bg-canvas transition-colors text-[13.5px]"
+                className={`grid grid-cols-[132px_minmax(0,2fr)_minmax(0,1fr)_104px_124px_116px_44px] gap-3 items-center px-5 py-3 border-b border-hairline last:border-0 hover:bg-canvas transition-colors text-[13.5px] ${
+                  archived ? "opacity-75" : ""
+                }`}
               >
                 <Link href={`/dashboard/vehicles/${v.id}`}>
                   <Plate value={v.plate} size="sm" />
@@ -160,11 +174,17 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
                   className="font-mono tnum text-[12.5px] text-ink-muted"
                 >
                   {v.first_registration ? fmtDate(v.first_registration) : "—"}
-                  {v.decommission_date && (
-                    <div className="text-[10px]" style={{ color: decom.textColor }}>
-                      {decom.label}
-                    </div>
-                  )}
+                  {archived
+                    ? v.decommission_date && (
+                        <div className="text-[10px] text-ink-muted">
+                          Ausgeflottet zum {fmtDate(v.decommission_date)}
+                        </div>
+                      )
+                    : v.decommission_date && (
+                        <div className="text-[10px]" style={{ color: decom.textColor }}>
+                          {decom.label}
+                        </div>
+                      )}
                 </Link>
                 <VehicleStatusPill status={v.status} />
                 <div className="flex items-center justify-end gap-1">
@@ -191,9 +211,13 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
         {/* Mobile */}
         <div className="md:hidden divide-y divide-hairline">
           {filtered.map((v) => {
+            const archived = isDecommissioned(v);
             const name = buildVehicleType(v.manufacturer, v.model) || v.vehicle_type || "—";
             return (
-              <div key={v.id} className="flex items-start gap-3 px-4 py-3">
+              <div
+                key={v.id}
+                className={`flex items-start gap-3 px-4 py-3 ${archived ? "opacity-75" : ""}`}
+              >
                 <Link
                   href={`/dashboard/vehicles/${v.id}`}
                   className="flex-1 min-w-0 flex items-start gap-3 active:bg-canvas -mx-4 -my-3 px-4 py-3"
@@ -212,6 +236,11 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
                         .filter(Boolean)
                         .join(" · ") || "—"}
                     </div>
+                    {archived && v.decommission_date && (
+                      <div className="text-[11px] text-ink-muted">
+                        Ausgeflottet zum {fmtDate(v.decommission_date)}
+                      </div>
+                    )}
                   </div>
                 </Link>
                 <button
