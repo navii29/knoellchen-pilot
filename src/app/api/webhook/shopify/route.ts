@@ -318,11 +318,14 @@ export const POST = async (req: Request) => {
     customerId = byShopId?.id ?? null;
   }
   if (!customerId && email) {
+    // ilike nur für Case-Insensitivität — LIKE-Metazeichen (%/_) aus dem
+    // Shopify-Payload escapen, sonst matcht z. B. "%@%" fremde Kunden.
+    const escapedEmail = email.replace(/[\\%_]/g, "\\$&");
     const { data: byMail } = await admin
       .from("customers")
       .select("id")
       .eq("org_id", orgId)
-      .ilike("email", email)
+      .ilike("email", escapedEmail)
       .maybeSingle();
     customerId = byMail?.id ?? null;
     if (customerId && sc?.id) {
