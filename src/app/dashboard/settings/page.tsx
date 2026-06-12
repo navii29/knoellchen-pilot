@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { SettingsClient } from "./SettingsClient";
+import { ShopifyImportCard } from "@/components/dashboard/ShopifyImportCard";
 import type { Organization } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,12 @@ export default async function SettingsPage() {
             org={safe as unknown as Organization}
             lexofficeHasKey={lexofficeHasKey}
             echoesHasKey={echoesHasKey}
+          />
+          <ShopifyImportCard
+            configured={Boolean(
+              process.env.SHOPIFY_SHOP_DOMAIN && process.env.SHOPIFY_ADMIN_TOKEN
+            )}
+            domain={process.env.SHOPIFY_SHOP_DOMAIN ?? null}
           />
         </div>
       </div>
