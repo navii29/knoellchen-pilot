@@ -87,14 +87,32 @@ export const POST = async (req: Request) => {
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-  const domain = process.env.SHOPIFY_SHOP_DOMAIN ?? "";
-  const token = process.env.SHOPIFY_ADMIN_TOKEN ?? "";
+  // Zugangsdaten der Organisation (Self-Service, Einstellungen) — Env nur noch
+  // als Fallback für lokale Entwicklung/Tests.
+  const adminPre = createAdminClient();
+  const { data: orgRow } = await adminPre
+    .from("organizations")
+    .select("shopify_shop_domain, shopify_admin_token")
+    .eq("id", auth.org_id)
+    .single();
+
+  let domain = orgRow?.shopify_shop_domain ?? "";
+  let token = orgRow?.shopify_admin_token ?? "";
+  if (domain && !/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/i.test(domain)) {
+    // Org-Domains sind strikt auf *.myshopify.com begrenzt (SSRF-Schutz).
+    return NextResponse.json({ error: "Hinterlegte Shop-Domain ist ungültig." }, { status: 400 });
+  }
+  if (!domain || !token) {
+    domain = process.env.SHOPIFY_SHOP_DOMAIN ?? "";
+    token = process.env.SHOPIFY_ADMIN_TOKEN ?? "";
+  }
+
   const base = shopBaseUrl(domain);
   if (!base || !token) {
     return NextResponse.json(
       {
         error:
-          "Shopify-Import nicht konfiguriert — SHOPIFY_SHOP_DOMAIN und SHOPIFY_ADMIN_TOKEN setzen.",
+          "Shopify ist noch nicht verbunden — bitte Shop-Domain und Admin-API-Token in den Einstellungen speichern.",
       },
       { status: 503 }
     );

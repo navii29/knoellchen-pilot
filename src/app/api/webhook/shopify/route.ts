@@ -23,32 +23,66 @@ import {
  * Test: ?dryrun=1 parst und mappt, schreibt aber nichts.
  */
 
-const verifyAuth = (rawBody: string, req: Request, url: URL): { ok: boolean; mode: string } => {
+const safeEqual = (a: string, b: string): boolean => {
+  const ba = Buffer.from(a);
+  const bb = Buffer.from(b);
+  return ba.length === bb.length && timingSafeEqual(ba, bb);
+};
+
+/**
+ * Auth-Reihenfolge:
+ *  1) Org-eigener Webhook-Token (Self-Service, in den Einstellungen generiert)
+ *  2) Globales HMAC-Secret (Env)
+ *  3) Globaler URL-Token (Env)
+ */
+const verifyAuth = (
+  rawBody: string,
+  req: Request,
+  url: URL,
+  orgToken: string | null
+): { ok: boolean; mode: string } => {
+  const provided = url.searchParams.get("token") ?? "";
+
+  if (orgToken && provided && safeEqual(provided, orgToken)) {
+    return { ok: true, mode: "org-token" };
+  }
+
   const secret = process.env.SHOPIFY_WEBHOOK_SECRET;
   if (secret) {
     const header = req.headers.get("x-shopify-hmac-sha256") ?? "";
     const digest = createHmac("sha256", secret).update(rawBody, "utf8").digest("base64");
     try {
-      const a = Buffer.from(digest);
-      const b = Buffer.from(header);
-      if (a.length === b.length && timingSafeEqual(a, b)) return { ok: true, mode: "hmac" };
+      if (safeEqual(digest, header)) return { ok: true, mode: "hmac" };
     } catch {
       /* fallthrough */
     }
-    return { ok: false, mode: "hmac" };
   }
-  const token = process.env.SHOPIFY_WEBHOOK_TOKEN;
-  if (token) {
-    return { ok: url.searchParams.get("token") === token, mode: "token" };
+
+  const envToken = process.env.SHOPIFY_WEBHOOK_TOKEN;
+  if (envToken && provided && safeEqual(provided, envToken)) {
+    return { ok: true, mode: "token" };
   }
-  return { ok: false, mode: "unconfigured" };
+
+  const anyConfigured = Boolean(orgToken || secret || envToken);
+  return { ok: false, mode: anyConfigured ? "denied" : "unconfigured" };
 };
 
 export const POST = async (req: Request) => {
   const url = new URL(req.url);
   const rawBody = await req.text();
+  const admin = createAdminClient();
 
-  const auth = verifyAuth(rawBody, req, url);
+  // Organisation zuerst auflösen — ihr Webhook-Token ist der primäre Auth-Weg.
+  const orgId = url.searchParams.get("org") ?? process.env.SHOPIFY_DEFAULT_ORG_ID ?? null;
+  if (!orgId) return NextResponse.json({ error: "Keine Organisation (?org=…)" }, { status: 400 });
+
+  const { data: org } = await admin
+    .from("organizations")
+    .select("id, shopify_webhook_token")
+    .eq("id", orgId)
+    .maybeSingle();
+
+  const auth = verifyAuth(rawBody, req, url, org?.shopify_webhook_token ?? null);
   if (!auth.ok) {
     const status = auth.mode === "unconfigured" ? 503 : 401;
     return NextResponse.json(
@@ -56,6 +90,7 @@ export const POST = async (req: Request) => {
       { status }
     );
   }
+  if (!org) return NextResponse.json({ error: "Organisation unbekannt" }, { status: 400 });
 
   const topic = req.headers.get("x-shopify-topic") ?? "orders/create";
   const isOrder = /^orders\/(create|paid)$/.test(topic);
@@ -63,9 +98,6 @@ export const POST = async (req: Request) => {
   if (!isOrder && !isProduct) {
     return NextResponse.json({ ok: true, skipped: `Topic ${topic} wird ignoriert` });
   }
-
-  const orgId = url.searchParams.get("org") ?? process.env.SHOPIFY_DEFAULT_ORG_ID ?? null;
-  if (!orgId) return NextResponse.json({ error: "Keine Organisation (?org=…)" }, { status: 400 });
 
   let payload: { id?: number | string };
   try {
@@ -76,15 +108,6 @@ export const POST = async (req: Request) => {
   if (!payload?.id) return NextResponse.json({ error: "Keine ID im Payload" }, { status: 400 });
 
   const dryrun = url.searchParams.get("dryrun") === "1";
-  const admin = createAdminClient();
-
-  // Organisation validieren
-  const { data: org } = await admin
-    .from("organizations")
-    .select("id")
-    .eq("id", orgId)
-    .maybeSingle();
-  if (!org) return NextResponse.json({ error: "Organisation unbekannt" }, { status: 400 });
 
   // ── products/create: neues Shop-Produkt → Fahrzeug ──
   if (isProduct) {
