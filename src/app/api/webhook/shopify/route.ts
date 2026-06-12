@@ -540,6 +540,31 @@ const handleProductCreate = async (
   const plate = normalizePlate(variant.sku!);
   const vehicleType = product.title?.trim() || null;
   const manufacturer = product.vendor?.trim() || null;
+  // Modell aus dem Titel ableiten: Vendor-Präfix(e) abschneiden
+  // ("Mercedes C-Klasse Limousine" + Vendor "Mercedes-Benz" -> "C-Klasse Limousine").
+  // Sonst baut der vehicle_type-Trigger nur "Mercedes-Benz" ohne Modell.
+  const deriveModel = (): string | null => {
+    if (!vehicleType) return null;
+    let rest = vehicleType;
+    if (manufacturer) {
+      const tokens = new Set<string>([manufacturer.toLowerCase()]);
+      for (const part of manufacturer.split(/[\s-]+/)) {
+        if (part.length > 2) tokens.add(part.toLowerCase());
+      }
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const t of tokens) {
+          if (rest.toLowerCase().startsWith(t)) {
+            rest = rest.slice(t.length).replace(/^[\s-]+/, "");
+            changed = true;
+          }
+        }
+      }
+    }
+    return rest.trim() || vehicleType;
+  };
+  const model = deriveModel();
   const dailyRate = variant.price != null && variant.price !== "" ? Number(variant.price) : null;
   const status = product.status === "active" ? "aktiv" : "inaktiv";
 
@@ -556,6 +581,7 @@ const handleProductCreate = async (
     plate,
     vehicle_type: vehicleType,
     manufacturer,
+    model,
     daily_rate: dailyRate,
     status,
     images_total: images.length,
@@ -598,6 +624,7 @@ const handleProductCreate = async (
       plate,
       vehicle_type: vehicleType,
       manufacturer,
+      model,
       daily_rate: dailyRate,
       status,
       shopify_product_id: String(product.id),
