@@ -88,6 +88,7 @@ export interface Vehicle {
   last_gps_update: string | null;
 
   lexoffice_product_id: string | null;
+  shopify_product_id: string | null;
 
   created_at: string;
   updated_at: string;

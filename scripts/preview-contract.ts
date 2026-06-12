@@ -64,6 +64,7 @@ const vehicle: Vehicle = {
   decommission_date: null,
   decommission_reminded: false,
   registration_doc_path: null,
+  shopify_product_id: null,
   pickup_location: null,
   return_location: null,
   internal_return_at: null,

@@ -65,6 +65,10 @@ type ShopifyOrder = {
   line_items?: ShopifyLineItem[] | null;
 };
 
+// Kanonisches deutsches Kennzeichen nach Normalisierung: "M-KP2847", optional E/H.
+const looksLikePlate = (s: string): boolean =>
+  /^[A-ZÄÖÜ]{1,3}-[A-ZÄÖÜ]{1,2}\d{1,4}[EH]?$/.test(s);
+
 const START_KEYS = /(abhol|mietbeginn|beginn|pickup|start|^von$|von\b)/i;
 const END_KEYS = /(rückgabe|rueckgabe|mietende|ende|return|^bis$|bis\b)/i;
 const RANGE_KEYS = /(zeitraum|mietzeitraum|daterange|rental)/i;
@@ -165,20 +169,22 @@ export const POST = async (req: Request) => {
   }
 
   const topic = req.headers.get("x-shopify-topic") ?? "orders/create";
-  if (!/^orders\/(create|paid)$/.test(topic)) {
+  const isOrder = /^orders\/(create|paid)$/.test(topic);
+  const isProduct = topic === "products/create";
+  if (!isOrder && !isProduct) {
     return NextResponse.json({ ok: true, skipped: `Topic ${topic} wird ignoriert` });
   }
 
   const orgId = url.searchParams.get("org") ?? process.env.SHOPIFY_DEFAULT_ORG_ID ?? null;
   if (!orgId) return NextResponse.json({ error: "Keine Organisation (?org=…)" }, { status: 400 });
 
-  let order: ShopifyOrder;
+  let payload: { id?: number | string };
   try {
-    order = JSON.parse(rawBody) as ShopifyOrder;
+    payload = JSON.parse(rawBody) as { id?: number | string };
   } catch {
     return NextResponse.json({ error: "Ungültiges JSON" }, { status: 400 });
   }
-  if (!order?.id) return NextResponse.json({ error: "Keine Bestell-ID" }, { status: 400 });
+  if (!payload?.id) return NextResponse.json({ error: "Keine ID im Payload" }, { status: 400 });
 
   const dryrun = url.searchParams.get("dryrun") === "1";
   const admin = createAdminClient();
@@ -190,6 +196,13 @@ export const POST = async (req: Request) => {
     .eq("id", orgId)
     .maybeSingle();
   if (!org) return NextResponse.json({ error: "Organisation unbekannt" }, { status: 400 });
+
+  // ── products/create: neues Shop-Produkt → Fahrzeug im CRM ──
+  if (isProduct) {
+    return handleProductCreate(admin, orgId, payload as ShopifyProduct, dryrun);
+  }
+
+  const order = payload as ShopifyOrder;
 
   // Idempotenz: Bestellung schon übernommen?
   if (!dryrun) {
@@ -217,10 +230,6 @@ export const POST = async (req: Request) => {
   }
 
   // ── Fahrzeug / Kennzeichen ──
-  // Kanonisches deutsches Format nach Normalisierung: "M-KP2847", optional E/H.
-  const looksLikePlate = (s: string): boolean =>
-    /^[A-ZÄÖÜ]{1,3}-[A-ZÄÖÜ]{1,2}\d{1,4}[EH]?$/.test(s);
-
   const items = order.line_items ?? [];
   let plate: string | null = null;
   let vehicleType: string | null = null;
@@ -412,4 +421,200 @@ export const POST = async (req: Request) => {
     customer_id: customerId,
     mapped: result,
   });
+};
+
+// ════════════════════════════════════════════════════════════════
+// products/create — Shop-Produkt → Fahrzeug
+// Konvention: Varianten-SKU = Kennzeichen (wie bei Bestellungen).
+// Produktfotos (Shopify-CDN) werden in die Fahrzeug-Galerie übernommen.
+// ════════════════════════════════════════════════════════════════
+
+type ShopifyProduct = {
+  id: number | string;
+  title?: string | null;
+  vendor?: string | null;
+  status?: string | null; // active | draft | archived
+  variants?: { sku?: string | null; price?: string | null }[] | null;
+  images?: { src?: string | null }[] | null;
+};
+
+/** SSRF-Schutz: Bilder nur vom Shopify-CDN (lokal zusätzlich localhost für Tests). */
+const photoUrlAllowed = (u: URL): boolean => {
+  if (u.protocol === "https:" && u.hostname === "cdn.shopify.com") return true;
+  if (
+    process.env.NODE_ENV !== "production" &&
+    (u.hostname === "localhost" || u.hostname === "127.0.0.1")
+  )
+    return true;
+  return false;
+};
+
+const IMG_TYPES: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+const importProductPhotos = async (
+  admin: ReturnType<typeof createAdminClient>,
+  orgId: string,
+  vehicleId: string,
+  images: { src?: string | null }[]
+): Promise<{ imported: number; skipped: number }> => {
+  let imported = 0;
+  let skipped = 0;
+  for (const [i, img] of images.slice(0, 8).entries()) {
+    try {
+      if (!img.src) {
+        skipped++;
+        continue;
+      }
+      const u = new URL(img.src);
+      if (!photoUrlAllowed(u)) {
+        skipped++;
+        continue;
+      }
+      // redirect:"error" — keine Weiterleitungen, kein SSRF-Bounce
+      const res = await fetch(u, { redirect: "error" });
+      const ct = (res.headers.get("content-type") ?? "").split(";")[0].trim();
+      const ext = IMG_TYPES[ct];
+      if (!res.ok || !ext) {
+        skipped++;
+        continue;
+      }
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (buf.length === 0 || buf.length > 12 * 1024 * 1024) {
+        skipped++;
+        continue;
+      }
+      const path = `${orgId}/${vehicleId}/shopify-${Date.now().toString(36)}-${i}.${ext}`;
+      const { error: upErr } = await admin.storage
+        .from("vehicle-photos")
+        .upload(path, buf, { contentType: ct, upsert: false });
+      if (upErr) {
+        skipped++;
+        continue;
+      }
+      const { error: dbErr } = await admin
+        .from("vehicle_photos")
+        .insert({ vehicle_id: vehicleId, org_id: orgId, photo_path: path });
+      if (dbErr) {
+        skipped++;
+        continue;
+      }
+      imported++;
+    } catch {
+      skipped++;
+    }
+  }
+  return { imported, skipped };
+};
+
+const handleProductCreate = async (
+  admin: ReturnType<typeof createAdminClient>,
+  orgId: string,
+  product: ShopifyProduct,
+  dryrun: boolean
+) => {
+  // Kennzeichen aus der ersten Variante, deren SKU wie ein Kennzeichen aussieht.
+  // Bei Produkten strenger als bei Bestellungen: schon die ROHE SKU muss dem
+  // Schild-Format entsprechen (max. 3 Buchstaben + Trennzeichen) — sonst wird
+  // z. B. "GIFT-50" (Gutschein) fälschlich zum Fahrzeug "GIF-T50".
+  const rawLooksLikePlate = (raw: string): boolean =>
+    /^[A-ZÄÖÜ]{1,3}[-\s][A-ZÄÖÜ]{1,2}[-\s]?\d{1,4}[EH]?$/i.test(raw.trim());
+  const variant = (product.variants ?? []).find((v) => {
+    if (!v.sku || !rawLooksLikePlate(v.sku)) return false;
+    const p = normalizePlate(v.sku);
+    return p !== "" && looksLikePlate(p);
+  });
+  if (!variant) {
+    return NextResponse.json({
+      ok: true,
+      skipped:
+        "Kein Kennzeichen erkennbar — die Varianten-SKU sollte das Kennzeichen sein (z. B. 'B-KP 2041')",
+      product: product.title ?? product.id,
+    });
+  }
+
+  const plate = normalizePlate(variant.sku!);
+  const vehicleType = product.title?.trim() || null;
+  const manufacturer = product.vendor?.trim() || null;
+  const dailyRate = variant.price != null && variant.price !== "" ? Number(variant.price) : null;
+  const status = product.status === "active" ? "aktiv" : "inaktiv";
+
+  const images = (product.images ?? []).filter((im) => im.src);
+  const importable = images.filter((im) => {
+    try {
+      return photoUrlAllowed(new URL(im.src!));
+    } catch {
+      return false;
+    }
+  }).length;
+
+  const mapped = {
+    plate,
+    vehicle_type: vehicleType,
+    manufacturer,
+    daily_rate: dailyRate,
+    status,
+    images_total: images.length,
+    images_importable: importable,
+  };
+  if (dryrun) return NextResponse.json({ ok: true, dryrun: true, mapped });
+
+  // Idempotenz: Produkt schon übernommen?
+  const { data: byProduct } = await admin
+    .from("vehicles")
+    .select("id, plate")
+    .eq("org_id", orgId)
+    .eq("shopify_product_id", String(product.id))
+    .maybeSingle();
+  if (byProduct) {
+    return NextResponse.json({ ok: true, duplicate: true, plate: byProduct.plate });
+  }
+
+  // Kennzeichen existiert bereits? Dann nur verknüpfen, nichts überschreiben.
+  const { data: byPlate } = await admin
+    .from("vehicles")
+    .select("id, shopify_product_id")
+    .eq("org_id", orgId)
+    .eq("plate", plate)
+    .maybeSingle();
+  if (byPlate) {
+    if (!byPlate.shopify_product_id) {
+      await admin
+        .from("vehicles")
+        .update({ shopify_product_id: String(product.id) })
+        .eq("id", byPlate.id);
+    }
+    return NextResponse.json({ ok: true, linked: true, plate, mapped });
+  }
+
+  const { data: vehicle, error: insErr } = await admin
+    .from("vehicles")
+    .insert({
+      org_id: orgId,
+      plate,
+      vehicle_type: vehicleType,
+      manufacturer,
+      daily_rate: dailyRate,
+      status,
+      shopify_product_id: String(product.id),
+    })
+    .select("id")
+    .single();
+  if (insErr) {
+    if (insErr.message.includes("idx_vehicles_shopify_product")) {
+      return NextResponse.json({ ok: true, duplicate: true });
+    }
+    return NextResponse.json({ error: `Fahrzeug: ${insErr.message}` }, { status: 500 });
+  }
+
+  // Produktfotos in die Galerie (best effort — Fehler brechen den Webhook nicht)
+  const photos = images.length
+    ? await importProductPhotos(admin, orgId, vehicle.id, images)
+    : { imported: 0, skipped: 0 };
+
+  return NextResponse.json({ ok: true, vehicle_id: vehicle.id, mapped, photos });
 };
