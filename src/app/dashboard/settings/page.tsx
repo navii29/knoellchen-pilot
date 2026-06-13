@@ -13,21 +13,44 @@ export default async function SettingsPage() {
   const supabase = createClient();
   const { data } = await supabase
     .from("organizations")
-    .select(`${SAFE_COLUMNS}, lexoffice_api_key, echoes_api_key`)
+    .select(
+      `${SAFE_COLUMNS}, lexoffice_api_key, echoes_api_key, shopify_shop_domain, shopify_admin_token, shopify_webhook_token`
+    )
     .single();
 
   const {
     lexoffice_api_key,
     echoes_api_key,
+    shopify_admin_token,
+    shopify_shop_domain,
+    shopify_webhook_token,
     ...safe
   } = (data ?? {}) as {
     lexoffice_api_key?: string | null;
     echoes_api_key?: string | null;
+    shopify_admin_token?: string | null;
+    shopify_shop_domain?: string | null;
+    shopify_webhook_token?: string | null;
   } & Record<string, unknown>;
   const lexofficeHasKey =
     typeof lexoffice_api_key === "string" && lexoffice_api_key.length > 0;
   const echoesHasKey =
     typeof echoes_api_key === "string" && echoes_api_key.length > 0;
+
+  // Self-Service-Zugangsdaten der Organisation; Env nur als Dev-/Test-Fallback.
+  const shopifyDomain =
+    (typeof shopify_shop_domain === "string" && shopify_shop_domain) ||
+    process.env.SHOPIFY_SHOP_DOMAIN ||
+    null;
+  const shopifyHasToken =
+    (typeof shopify_admin_token === "string" && shopify_admin_token.length > 0) ||
+    Boolean(process.env.SHOPIFY_ADMIN_TOKEN);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.knoellchen-pilot.de";
+  const orgId = (safe as { id?: string }).id;
+  const webhookUrl =
+    orgId && shopify_webhook_token
+      ? `${appUrl.replace(/\/+$/, "")}/api/webhook/shopify?org=${orgId}&token=${shopify_webhook_token}`
+      : null;
 
   return (
     <>
@@ -40,10 +63,9 @@ export default async function SettingsPage() {
             echoesHasKey={echoesHasKey}
           />
           <ShopifyImportCard
-            configured={Boolean(
-              process.env.SHOPIFY_SHOP_DOMAIN && process.env.SHOPIFY_ADMIN_TOKEN
-            )}
-            domain={process.env.SHOPIFY_SHOP_DOMAIN ?? null}
+            domain={shopifyDomain}
+            hasToken={shopifyHasToken}
+            webhookUrl={webhookUrl}
           />
         </div>
       </div>

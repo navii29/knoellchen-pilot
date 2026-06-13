@@ -1,17 +1,35 @@
 import { NextResponse } from "next/server";
+import { randomBytes } from "crypto";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 const SAFE_COLUMNS =
-  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, echoes_account_id, echoes_enabled, rental_terms, onboarding_completed, onboarding_step, created_at";
+  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, echoes_account_id, echoes_enabled, rental_terms, onboarding_completed, onboarding_step, shopify_shop_domain, shopify_webhook_token, created_at";
 
 const stripSecrets = <T extends Record<string, unknown>>(row: T) => {
   const copy = { ...row } as T & {
     lexoffice_api_key?: string;
     echoes_api_key?: string;
+    shopify_admin_token?: string;
   };
   delete copy.lexoffice_api_key;
   delete copy.echoes_api_key;
-  return copy as Omit<T, "lexoffice_api_key" | "echoes_api_key">;
+  delete copy.shopify_admin_token;
+  return copy as Omit<T, "lexoffice_api_key" | "echoes_api_key" | "shopify_admin_token">;
+};
+
+/**
+ * Shop-Domain normalisieren + validieren. Die Admin-API läuft ausschließlich
+ * über *.myshopify.com — das ist gleichzeitig der SSRF-Schutz für den Import
+ * (Nutzer können den Server nicht auf interne Adressen zeigen lassen).
+ */
+const normalizeShopDomain = (raw: string): string | null => {
+  const d = raw
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/\/.*$/, "");
+  if (!d) return null;
+  return /^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(d) ? d : null;
 };
 
 export const PATCH = async (req: Request) => {
@@ -46,6 +64,8 @@ export const PATCH = async (req: Request) => {
     "echoes_account_id",
     "echoes_enabled",
     "rental_terms",
+    "shopify_shop_domain",
+    "shopify_admin_token",
   ];
   const update: Record<string, unknown> = {};
   for (const k of allowed) if (k in body) update[k] = body[k];
@@ -71,8 +91,41 @@ export const PATCH = async (req: Request) => {
     update.echoes_account_id =
       typeof v === "string" && v.trim().length > 0 ? v.trim() : null;
   }
+  if ("shopify_shop_domain" in update) {
+    const v = update.shopify_shop_domain;
+    if (typeof v === "string" && v.trim().length > 0) {
+      const normalized = normalizeShopDomain(v);
+      if (!normalized) {
+        return NextResponse.json(
+          { error: "Ungültige Shop-Domain — erwartet wird z. B. mein-shop.myshopify.com" },
+          { status: 400 }
+        );
+      }
+      update.shopify_shop_domain = normalized;
+    } else {
+      update.shopify_shop_domain = null;
+    }
+  }
+  if ("shopify_admin_token" in update) {
+    const v = update.shopify_admin_token;
+    update.shopify_admin_token =
+      typeof v === "string" && v.trim().length > 0 ? v.trim() : null;
+  }
 
   const admin = createAdminClient();
+
+  // Webhook-Token einmalig generieren, sobald Shopify konfiguriert wird —
+  // damit hat jede Organisation ihre eigene, abgesicherte Webhook-URL.
+  if (update.shopify_shop_domain || update.shopify_admin_token) {
+    const { data: existing } = await admin
+      .from("organizations")
+      .select("shopify_webhook_token")
+      .eq("id", profile.org_id)
+      .single();
+    if (!existing?.shopify_webhook_token) {
+      update.shopify_webhook_token = randomBytes(24).toString("hex");
+    }
+  }
   const { data, error } = await admin
     .from("organizations")
     .update(update)
