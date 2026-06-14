@@ -18,26 +18,26 @@ export const StatCard = ({
   accent?: boolean;
   sub?: string;
 }) => (
-  <div className="bg-paper border border-hairline rounded-card shadow-panel p-5 flex flex-col min-h-[140px]">
-    <div className="flex items-start justify-between gap-3">
-      <span className="text-[13px] font-medium text-ink-soft min-w-0 leading-tight line-clamp-2 [overflow-wrap:anywhere]">
-        {label}
-      </span>
+  <div className="bg-paper border border-hairline rounded-card shadow-panel p-5 flex flex-col gap-4 min-h-[150px]">
+    {/* Icon + Label als ruhige Kopfzeile, beide links bündig — kein Icon mehr
+        in der Ecke, das an der Kartenrundung abgeschnitten wirkt. */}
+    <div className="flex items-center gap-2.5">
       <span
         className={`shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-xl ${
-          accent
-            ? "bg-signal-soft text-signal"
-            : "bg-canvas border border-hairline text-ink-muted"
+          accent ? "bg-signal text-white" : "bg-signal-soft text-signal"
         }`}
       >
-        <Icon size={16} strokeWidth={1.9} />
+        <Icon size={17} strokeWidth={2} />
+      </span>
+      <span className="text-[13px] font-medium text-ink-soft leading-tight [overflow-wrap:anywhere]">
+        {label}
       </span>
     </div>
-    <div className="mt-auto pt-6">
+    <div className="mt-auto">
       <div className="font-display font-semibold text-[30px] leading-none tracking-tight tabular-nums text-ink">
         {value}
       </div>
-      {sub && <div className="mt-2 text-[12.5px] text-ink-muted">{sub}</div>}
+      {sub && <div className="mt-1.5 text-[12.5px] text-ink-muted">{sub}</div>}
     </div>
   </div>
 );
