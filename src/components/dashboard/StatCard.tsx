@@ -1,5 +1,10 @@
 import { type LucideIcon } from "lucide-react";
 
+/**
+ * Kompakte Kennzahl-Karte (helle Workspace-Fläche).
+ * Label + definierte Icon-Kachel oben, große Zahl unten (per mt-auto an den
+ * Kartenboden gepinnt — füllt auch gestreckte Grid-Höhen sauber aus).
+ */
 export const StatCard = ({
   label,
   value,
@@ -13,24 +18,34 @@ export const StatCard = ({
   accent?: boolean;
   sub?: string;
 }) => (
-  <div className="bg-paper border border-hairline rounded-card shadow-panel p-5 flex flex-col gap-4">
-    <div className="flex items-start justify-between">
-      <span className="text-[12px] font-medium text-ink-muted">{label}</span>
-      <div
-        className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
-          accent ? "bg-signal-soft text-signal" : "bg-canvas text-ink-muted"
+  <div className="bg-paper border border-hairline rounded-card shadow-panel p-5 flex flex-col min-h-[140px]">
+    <div className="flex items-start justify-between gap-3">
+      <span className="text-[13px] font-medium text-ink-soft min-w-0 leading-tight line-clamp-2 [overflow-wrap:anywhere]">
+        {label}
+      </span>
+      <span
+        className={`shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-xl ${
+          accent
+            ? "bg-signal-soft text-signal"
+            : "bg-canvas border border-hairline text-ink-muted"
         }`}
       >
-        <Icon size={15} strokeWidth={1.9} />
+        <Icon size={16} strokeWidth={1.9} />
+      </span>
+    </div>
+    <div className="mt-auto pt-6">
+      <div className="font-display font-semibold text-[30px] leading-none tracking-tight tabular-nums text-ink">
+        {value}
       </div>
+      {sub && <div className="mt-2 text-[12.5px] text-ink-muted">{sub}</div>}
     </div>
-    <div className="font-display font-semibold text-[34px] leading-none tracking-tight tabular-nums text-ink">
-      {value}
-    </div>
-    {sub && <div className="text-[12px] text-ink-muted">{sub}</div>}
   </div>
 );
 
+/**
+ * Hervorgehobene Kennzahl — dunkle Karte mit blauem Ambient-Glow.
+ * Gleiche Anatomie wie StatCard (Label+Icon oben, große Zahl unten).
+ */
 export const HeroStat = ({
   label,
   value,
@@ -44,16 +59,16 @@ export const HeroStat = ({
   sub?: string;
   pulse?: boolean;
 }) => (
-  <div className="relative bg-graphite text-white rounded-card shadow-product overflow-hidden p-6 md:p-8 flex flex-col gap-5">
+  <div className="relative bg-graphite text-white rounded-card shadow-product overflow-hidden p-6 md:p-8 flex flex-col min-h-[180px]">
     {/* ambient blue glow */}
     <div
       aria-hidden
-      className="absolute -right-10 -top-10 w-44 h-44 rounded-full pointer-events-none"
+      className="absolute -right-12 -top-12 w-48 h-48 rounded-full pointer-events-none"
       style={{ background: "radial-gradient(closest-side, rgba(0,113,227,0.45), transparent)" }}
     />
-    <div className="relative flex items-start justify-between">
-      <div className="flex items-center gap-2">
-        <span className="text-[12px] font-medium text-white/55">{label}</span>
+    <div className="relative flex items-start justify-between gap-3">
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="text-[13px] font-medium text-white/60 truncate">{label}</span>
         {pulse && (
           <span className="relative inline-flex w-2 h-2 shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-azure-sky opacity-60" />
@@ -61,15 +76,16 @@ export const HeroStat = ({
           </span>
         )}
       </div>
-      <div className="w-9 h-9 rounded-full bg-white/10 text-white flex items-center justify-center shrink-0">
-        <Icon size={16} strokeWidth={1.9} />
+      <span className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 border border-white/10 text-white">
+        <Icon size={18} strokeWidth={1.9} />
+      </span>
+    </div>
+
+    <div className="relative mt-auto pt-6">
+      <div className="font-display font-semibold text-[64px] md:text-[84px] leading-none tracking-tight tabular-nums text-white">
+        {value}
       </div>
+      {sub && <div className="mt-3 text-[13px] text-white/60">{sub}</div>}
     </div>
-
-    <div className="relative font-display font-semibold text-[68px] md:text-[88px] leading-none tracking-tight tabular-nums text-white">
-      {value}
-    </div>
-
-    {sub && <div className="relative text-[12px] text-white/55">{sub}</div>}
   </div>
 );
