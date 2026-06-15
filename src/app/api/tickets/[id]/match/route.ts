@@ -12,13 +12,25 @@ export const POST = async (
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
+  const { data: profile } = await supabase
+    .from("users")
+    .select("org_id")
+    .eq("id", user.id)
+    .single();
+  if (!profile) return NextResponse.json({ error: "No profile" }, { status: 401 });
+
   const admin = createAdminClient();
   const { data: ticket } = await admin
     .from("tickets")
     .select("*")
     .eq("id", params.id)
     .single();
-  if (!ticket) return NextResponse.json({ error: "Ticket nicht gefunden" }, { status: 404 });
+  // Mandanten-Isolation: ohne org-Prüfung könnte ein eingeloggter Nutzer
+  // fremde Tickets zuordnen und bekäme den passenden Vertrag samt Mieter-PII
+  // (Name, E-Mail, Adresse) in der Response zurück.
+  if (!ticket || ticket.org_id !== profile.org_id) {
+    return NextResponse.json({ error: "Ticket nicht gefunden" }, { status: 404 });
+  }
   if (!ticket.plate || !ticket.offense_date) {
     return NextResponse.json(
       { error: "Kennzeichen oder Tatdatum fehlt — zuerst /parse aufrufen" },
