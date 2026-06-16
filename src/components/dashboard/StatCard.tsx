@@ -18,7 +18,7 @@ export const StatCard = ({
   accent?: boolean;
   sub?: string;
 }) => (
-  <div className="bg-paper border border-hairline rounded-card shadow-panel p-5 flex flex-col gap-4 min-h-[150px]">
+  <div className="glass-card glass-sheen rounded-card p-5 flex flex-col gap-4 min-h-[150px]">
     {/* Icon + Label als ruhige Kopfzeile, beide links bündig — kein Icon mehr
         in der Ecke, das an der Kartenrundung abgeschnitten wirkt. */}
     <div className="flex items-center gap-2.5">

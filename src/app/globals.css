@@ -23,12 +23,38 @@
   --on-dark-muted: #6e6e73;
 
   /* light side — Apple */
-  --canvas: #f5f5f7;
+  --canvas: #eef1f6;
   --paper: #ffffff;
   --ink: #1d1d1f;
   --ink-soft: #424245;
   --ink-muted: #86868b;
   --hairline: #d2d2d7;
+
+  /* ── Liquid Glass (Aurora Glass) ──────────────────────────────────
+     Apple-style translucent material. Frosted panels float over a soft
+     teal→blue→indigo aurora; depth comes from a specular top-edge glint
+     plus a feather-light drop, not heavy shadow. */
+  --glass-card: rgba(255, 255, 255, 0.55);
+  --glass-chrome: rgba(255, 255, 255, 0.62);
+  --glass-raised: rgba(255, 255, 255, 0.78);
+  --glass-edge: rgba(255, 255, 255, 0.75);   /* bright frosted rim */
+  --glass-hairline: rgba(15, 23, 42, 0.06);  /* cool structural ring */
+  /* specular highlight (top) + faint base shade + float + hairline ring */
+  --glass-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.90),
+    inset 0 -1px 0 0 rgba(15, 23, 42, 0.04),
+    0 8px 32px -12px rgba(15, 23, 42, 0.16),
+    0 0 0 0.5px rgba(15, 23, 42, 0.04);
+  --glass-shadow-raised:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 0 rgba(15, 23, 42, 0.05),
+    0 24px 60px -18px rgba(15, 23, 42, 0.30),
+    0 0 0 0.5px rgba(15, 23, 42, 0.05);
+  --glass-blur: 28px;
+  /* aurora tints — teal leads (brand), blue + indigo support */
+  --aurora-teal: rgba(13, 148, 136, 0.34);
+  --aurora-blue: rgba(0, 113, 227, 0.30);
+  --aurora-indigo: rgba(124, 108, 255, 0.24);
 
   /* signal — now Apple vivid blue (CTA / active / link) */
   --signal: #0071e3;
@@ -114,6 +140,40 @@ body {
   height: 0.16em;
   background: var(--signal);
   border-radius: 1px;
+}
+
+/* ── Aurora field — the luminous light the Liquid Glass refracts ──
+   Fixed, full-viewport, sits behind the whole workspace. Soft teal-led
+   blobs (brand) with blue + indigo support. Pure CSS, no images. */
+.workspace-aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(55% 55% at 6% 2%, var(--aurora-teal) 0%, transparent 70%),
+    radial-gradient(55% 55% at 98% 10%, var(--aurora-blue) 0%, transparent 72%),
+    radial-gradient(50% 48% at 60% 38%, var(--aurora-indigo) 0%, transparent 70%),
+    radial-gradient(60% 55% at 78% 100%, var(--aurora-teal) 0%, transparent 74%),
+    radial-gradient(50% 48% at 22% 92%, var(--aurora-blue) 0%, transparent 76%);
+  filter: saturate(130%);
+}
+/* faint cool grain so the large gradients never band on wide displays */
+.workspace-aurora::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .workspace-aurora { animation: aurora-drift 26s ease-in-out infinite alternate; }
+}
+@keyframes aurora-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(0, -1.5%, 0) scale(1.06); }
 }
 
 /* ── Textures ──────────────────────────────────────────────────── */
@@ -317,12 +377,75 @@ body {
 
 /* ── Workspace primitives (dashboard) ──────────────────────────── */
 @layer components {
-  /* Standard paper surface — Apple soft card. */
+  /* Standard surface — now Liquid Glass. Translucent frosted panel that
+     refracts the aurora behind it, with a specular top edge. Every widget
+     built on .panel upgrades to glass for free. */
   .panel {
-    background: var(--paper);
-    border: 1px solid var(--hairline);
-    border-radius: 14px;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+    background: var(--glass-card);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    border: 1px solid var(--glass-edge);
+    border-radius: 18px;
+    box-shadow: var(--glass-shadow);
+  }
+
+  /* ── Liquid Glass surface system ─────────────────────────────────
+     glass-card   → content cards / widgets (default depth)
+     glass-chrome → fixed app chrome (sidebar, topbar): brighter, opaque-er
+     glass-raised → modals, popovers, drawers: top layer, strongest blur
+     Pair any of them with rounded-* utilities. */
+  .glass-card,
+  .glass-chrome,
+  .glass-raised {
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-shadow);
+  }
+  .glass-card { background: var(--glass-card); }
+  .glass-chrome {
+    background: var(--glass-chrome);
+    -webkit-backdrop-filter: blur(36px) saturate(180%);
+    backdrop-filter: blur(36px) saturate(180%);
+  }
+  .glass-raised {
+    background: var(--glass-raised);
+    -webkit-backdrop-filter: blur(40px) saturate(190%);
+    backdrop-filter: blur(40px) saturate(190%);
+    box-shadow: var(--glass-shadow-raised);
+  }
+
+  /* Specular sheen — a faint diagonal light glint across the top of a
+     glass surface. Apply to a position:relative glass panel; decorative. */
+  .glass-sheen { position: relative; isolation: isolate; }
+  .glass-sheen::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 255, 255, 0.08) 22%,
+      transparent 46%
+    );
+    mix-blend-mode: screen;
+  }
+  .glass-sheen > * { position: relative; z-index: 1; }
+
+  /* Glass nav pill — active sidebar item. Frosted tint + specular rim. */
+  .glass-active {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.85),
+      rgba(255, 255, 255, 0.55)
+    );
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
+      0 1px 2px 0 rgba(15, 23, 42, 0.06),
+      0 0 0 0.5px rgba(15, 23, 42, 0.05);
   }
   /* Table head cell — clean SF small label. */
   .th {
