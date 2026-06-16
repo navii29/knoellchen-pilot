@@ -34,10 +34,10 @@
      Apple-style translucent material. Frosted panels float over a soft
      teal→blue→indigo aurora; depth comes from a specular top-edge glint
      plus a feather-light drop, not heavy shadow. */
-  --glass-card: rgba(255, 255, 255, 0.55);
-  --glass-chrome: rgba(255, 255, 255, 0.62);
-  --glass-raised: rgba(255, 255, 255, 0.78);
-  --glass-edge: rgba(255, 255, 255, 0.75);   /* bright frosted rim */
+  --glass-card: rgba(255, 255, 255, 0.38);
+  --glass-chrome: rgba(255, 255, 255, 0.46);
+  --glass-raised: rgba(255, 255, 255, 0.62);
+  --glass-edge: rgba(255, 255, 255, 0.70);   /* bright frosted rim */
   --glass-hairline: rgba(15, 23, 42, 0.06);  /* cool structural ring */
   /* specular highlight (top) + faint base shade + float + hairline ring */
   --glass-shadow:
@@ -50,7 +50,7 @@
     inset 0 -1px 0 0 rgba(15, 23, 42, 0.05),
     0 24px 60px -18px rgba(15, 23, 42, 0.30),
     0 0 0 0.5px rgba(15, 23, 42, 0.05);
-  --glass-blur: 28px;
+  --glass-blur: 34px;
   /* aurora tints — teal leads (brand), blue + indigo support */
   --aurora-teal: rgba(13, 148, 136, 0.34);
   --aurora-blue: rgba(0, 113, 227, 0.30);
