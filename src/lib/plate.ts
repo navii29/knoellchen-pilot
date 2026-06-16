@@ -23,16 +23,31 @@ export const normalizePlate = (raw: string | null | undefined): string => {
   // Erkennungs-Letters: 1-2 Buchstaben (z.B. "C", "KP", "AV")
   // Ziffern: 1-4 Ziffern (z.B. "1", "9999")
   // Einige Plates haben optional am Ende noch "E" (Elektro) oder "H" (Historisch)
+  // Bevorzugt: Stadt-Grenze aus dem ersten Trenner im Original ableiten.
+  // Deutsche Kennzeichen schreiben "STADT-ERKENNUNG NUMMER"; der erste Bindestrich
+  // bzw. das erste Leerzeichen markiert das Ende des Stadtcodes. Wird der Trenner
+  // vor dem Zusammenziehen verworfen, rät eine reine Längen-Heuristik die Grenze
+  // falsch, sobald die Erkennungsbuchstaben zweistellig sind
+  // (z.B. "M-QA 1234" → fälschlich "MQ-A1234", "M-KP2847" → "MK-P2847").
+  const sep = p.match(/^([A-ZÄÖÜ]{1,3})[\s\-]+([A-ZÄÖÜ]{1,2})[\s\-]*(\d{1,4})([EH]?)$/);
+  if (sep) {
+    const [, city, letters, numbers, suffix] = sep;
+    return `${city}-${letters}${numbers}${suffix}`;
+  }
+
   const cleaned = p.replace(/[\s\-]+/g, ""); // alles raus
 
-  // Versuch: Pattern erkennen (Stadt + Letters + Numbers + Suffix)
-  const match = cleaned.match(/^([A-ZÄÖÜ]{1,3})([A-ZÄÖÜ]{1,2})(\d{1,4})([EH]?)$/);
+  // Fallback ohne brauchbaren Trenner: zusammenziehen und Grenze raten.
+  // Stadt non-greedy ({1,3}?), damit der häufige Fall "ein-Buchstaben-Stadt +
+  // zwei Erkennungsbuchstaben" korrekt erkannt wird (z.B. "MQA1234" → "M-QA1234").
+  // Backtracking erzwingt bei Bedarf längere Stadtcodes ("HHAB1234" → "HH-AB1234").
+  const match = cleaned.match(/^([A-ZÄÖÜ]{1,3}?)([A-ZÄÖÜ]{1,2})(\d{1,4})([EH]?)$/);
   if (match) {
     const [, city, letters, numbers, suffix] = match;
     return `${city}-${letters}${numbers}${suffix}`;
   }
 
-  // Fallback: kein Standard-Format erkannt — nur uppercase und whitespace raus
+  // Kein Standard-Format erkannt — nur uppercase und whitespace raus
   return cleaned;
 };
 

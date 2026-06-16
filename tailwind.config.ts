@@ -26,9 +26,11 @@ const config: Config = {
           700: "#161617", // cards / panels on dark
           600: "#1d1d1f", // hover surface on dark
         },
-        // Light side — Apple workspace.
-        canvas: "#f5f5f7", // app/page background (cool mist)
-        paper: "#FFFFFF", // cards, inputs, elevated surfaces
+        // Light side — Liquid Glass workspace. `canvas` is a translucent veil
+        // (not opaque) so the fixed aurora field shows through every page;
+        // the <body> keeps an opaque --canvas backstop behind it.
+        canvas: "rgba(248,250,253,0.20)", // page/scroll wash over the aurora
+        paper: "#FFFFFF", // solid surfaces: inputs, overlays, drawers
         // Primary text/icons on dark chrome.
         "on-dark": "#f5f5f7",
         ink: {
@@ -69,22 +71,27 @@ const config: Config = {
         azure: { DEFAULT: "#0071e3", link: "#0066cc", sky: "#2997ff" }, // CTA / link / active
       },
       borderRadius: {
-        card: "16px", // Apple soft cards
-        panel: "12px",
-        btn: "10px",
-        input: "10px",
+        card: "20px", // Liquid Glass — softer than the old 16px
+        panel: "18px",
+        btn: "12px",
+        input: "12px",
         frame: "12px",
         apple: "28px", // large soft cards/images
         pill: "9999px",
       },
       boxShadow: {
-        // Restraint: depth comes from tone + hairline, not blur.
-        panel: "0 1px 2px 0 rgba(20,17,15,0.04)",
-        raised: "0 1px 0 0 rgba(20,17,15,0.04), 0 8px 24px -12px rgba(20,17,15,0.12)",
+        // Liquid Glass — depth is a specular top edge + a feather drop + a
+        // cool hairline ring (not a heavy blur). Raw `bg-paper shadow-panel`
+        // cards inherit the glass edge centrally.
+        panel:
+          "inset 0 1px 0 0 rgba(255,255,255,0.9), inset 0 -1px 0 0 rgba(15,23,42,0.04), 0 8px 32px -12px rgba(15,23,42,0.16), 0 0 0 0.5px rgba(15,23,42,0.04)",
+        raised:
+          "inset 0 1px 0 0 rgba(255,255,255,0.95), 0 24px 60px -18px rgba(15,23,42,0.30), 0 0 0 0.5px rgba(15,23,42,0.05)",
         frame: "0 40px 90px -48px rgba(0,0,0,0.55)",
         signal: "0 8px 24px -10px rgba(255,90,31,0.45)",
-        // Apple-grade soft product elevation + glass.
-        product: "0 30px 80px -24px rgba(0,0,0,0.28), 0 8px 24px -12px rgba(0,0,0,0.12)",
+        // Raised glass — modals, drawers, popovers.
+        product:
+          "inset 0 1px 0 0 rgba(255,255,255,0.95), 0 24px 60px -18px rgba(15,23,42,0.30), 0 0 0 0.5px rgba(15,23,42,0.05)",
         glassdark: "0 1px 0 0 rgba(255,255,255,0.06) inset, 0 30px 80px -30px rgba(0,0,0,0.6)",
         azure: "0 10px 30px -10px rgba(0,113,227,0.5)",
       },

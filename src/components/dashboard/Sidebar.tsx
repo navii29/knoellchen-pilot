@@ -111,8 +111,8 @@ export const Sidebar = ({
             href={it.href}
             className={`group w-full flex items-center gap-2.5 px-3 py-2 rounded-btn text-[13.5px] transition-all duration-150 ${
               isActive
-                ? "bg-signal-soft text-signal font-medium"
-                : "text-ink-soft hover:bg-black/[0.04] hover:text-ink"
+                ? "glass-active text-signal font-medium"
+                : "text-ink-soft hover:bg-white/40 hover:text-ink"
             }`}
           >
             <it.Icon
@@ -159,8 +159,8 @@ export const Sidebar = ({
 
   return (
     <>
-      {/* Desktop-Sidebar */}
-      <aside className="hidden md:flex w-60 shrink-0 bg-paper border-r border-hairline flex-col">
+      {/* Desktop-Sidebar — frosted glass chrome */}
+      <aside className="hidden md:flex w-60 shrink-0 glass-chrome border-y-0 border-l-0 flex-col relative z-10">
         {logoBlock}
         <div className="p-2 space-y-0.5 flex-1 overflow-y-auto">{navList}</div>
         <div className="p-3 border-t border-hairline">{profileBlock}</div>
@@ -178,7 +178,7 @@ export const Sidebar = ({
           onClick={() => setMobileOpen(false)}
         />
         <aside
-          className={`absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-paper flex flex-col shadow-product transition-transform duration-200 ${
+          className={`absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] glass-raised flex flex-col transition-transform duration-200 ${
             mobileOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >

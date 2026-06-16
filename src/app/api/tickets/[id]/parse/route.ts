@@ -16,13 +16,25 @@ export const POST = async (
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
+  const { data: profile } = await supabase
+    .from("users")
+    .select("org_id")
+    .eq("id", user.id)
+    .single();
+  if (!profile) return NextResponse.json({ error: "No profile" }, { status: 401 });
+
   const admin = createAdminClient();
   const { data: ticket, error: tErr } = await admin
     .from("tickets")
     .select("*")
     .eq("id", params.id)
     .single();
-  if (tErr || !ticket) return NextResponse.json({ error: "Ticket nicht gefunden" }, { status: 404 });
+  // Mandanten-Isolation: Ticket muss zur Organisation des Aufrufers gehören.
+  // Ohne diese Prüfung könnte ein eingeloggter Nutzer fremde Strafzettel
+  // auslesen (PII), deren Daten überschreiben und fremdes KI-Budget verbrauchen.
+  if (tErr || !ticket || ticket.org_id !== profile.org_id) {
+    return NextResponse.json({ error: "Ticket nicht gefunden" }, { status: 404 });
+  }
   if (!ticket.upload_path)
     return NextResponse.json({ error: "Kein Upload vorhanden" }, { status: 400 });
 

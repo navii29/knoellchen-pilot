@@ -13,7 +13,7 @@ export const Topbar = ({ section }: { section?: string }) => {
   };
 
   return (
-    <div className="h-16 bg-paper/80 backdrop-blur-xl border-b border-hairline px-4 md:px-8 flex items-center justify-between gap-3 sticky top-0 z-30">
+    <div className="h-16 glass-chrome border-x-0 border-t-0 px-4 md:px-8 flex items-center justify-between gap-3 sticky top-0 z-30">
       <div className="flex items-center gap-3 min-w-0">
         <button
           onClick={openSidebar}

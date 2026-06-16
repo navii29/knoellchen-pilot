@@ -44,7 +44,9 @@ export default async function DashboardLayout({
   if (org && org.onboarding_completed === false) redirect("/onboarding");
 
   return (
-    <div className="md:h-screen md:flex bg-canvas min-h-screen">
+    <div className="md:h-screen md:flex bg-canvas min-h-screen relative isolate">
+      {/* Aurora field — the luminous light the Liquid Glass refracts. */}
+      <div className="workspace-aurora" aria-hidden />
       <Sidebar
         orgName={org?.name || "Mein Konto"}
         ticketCount={openTickets || 0}
@@ -52,7 +54,7 @@ export default async function DashboardLayout({
         customerCount={customers || 0}
         damageCount={openDamages || 0}
       />
-      <div className="flex-1 flex flex-col min-w-0 w-full">{children}</div>
+      <div className="relative z-10 flex-1 flex flex-col min-w-0 w-full">{children}</div>
     </div>
   );
 }
