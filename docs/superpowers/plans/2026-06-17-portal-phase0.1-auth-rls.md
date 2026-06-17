@@ -193,7 +193,9 @@ CREATE POLICY "portal own uploads read" ON storage.objects
 
 - [ ] **Step 2: Apply the migration** (Supabase SQL editor, or `supabase db push` if the CLI is wired)
 
-Expected: no errors; `portal_sessions` exists; `select public.portal_customer_id();` returns `NULL` when no JWT claims are set.
+Expected: no errors; `portal_sessions` exists; `select public.portal_customer_id();` returns `NULL` when no JWT claims are set. Note: creating a policy on `storage.objects` needs sufficient privileges — the Supabase SQL editor works; if `supabase db push` errors on the storage policy under a restricted role, run that statement in the SQL editor.
+
+- [ ] **Step 2b: Verify the storage path convention** — grep the existing code that writes into the `portal-uploads` bucket and confirm objects are keyed as `org_id/customer_id/...` (the two segments the read policy checks). If writes use a different prefix, align either the policy or the write paths **before** relying on portal reads — this is the same class of bug as the `generated-docs` / `ticket-documents` mismatch (spec §2).
 
 - [ ] **Step 3: Commit**
 
@@ -275,6 +277,15 @@ test("token signed with wrong secret fails", async () => {
   expect(await verifyAccessToken(token)).toBeNull();
   process.env.SUPABASE_JWT_SECRET = "test-secret-at-least-32-chars-long-xxxx";
 });
+
+test("access token NEVER carries a `sub` claim (RLS safety)", async () => {
+  const token = await signAccessToken({
+    customer_id: "1", org_id: "2", session_id: "3", email: "a@b.de",
+  });
+  const claims = JSON.parse(Buffer.from(token.split(".")[1], "base64").toString());
+  expect(claims.sub).toBeUndefined();          // ← auth.uid() must stay NULL
+  expect(claims.role).toBe("authenticated");
+});
 ```
 
 - [ ] **Step 2: Run, verify it fails**
@@ -312,6 +323,8 @@ export const verifyAccessToken = async (t: string): Promise<PortalClaims | null>
 };
 ```
 
+> **Invariant (security-critical):** the portal access JWT MUST NOT set `sub` (and `customer_id`/`org_id` must never be mapped onto `sub`). The whole RLS coexistence relies on `auth.uid()` being NULL for portal tokens so the operator policies (`current_org_id()`) match zero rows; a `sub` would silently grant portal tokens operator-level reads. The Step 1 test asserts `sub` is absent — keep it.
+
 Remove the old `PortalSession`/`signSessionToken`/`verifySessionToken` and the dead `createMagicToken` (magic-link route is gone). Keep `PORTAL_COOKIE`, cookie helpers (now for the access token), `hashPassword`/`verifyPassword`, `checkRateLimit`, `ipFromHeaders`. Add a `REFRESH_COOKIE = "kp_portal_refresh"`.
 
 - [ ] **Step 4: Run, verify pass**
@@ -334,7 +347,7 @@ git commit -m "feat(portal-auth): sign access JWT with Supabase secret + claims"
 
 ```ts
 import { hashRefresh, randomRefresh } from "./portal-auth";
-test("refresh hash is deterministic + 64 hex", () => {
+test("hashRefresh is deterministic; randomRefresh is 64 hex", () => {
   const r = randomRefresh();
   expect(r).toMatch(/^[a-f0-9]{64}$/);
   expect(hashRefresh(r)).toBe(hashRefresh(r));
@@ -344,6 +357,8 @@ test("refresh hash is deterministic + 64 hex", () => {
 - [ ] **Step 2: Run, verify fail.** `npm test -- portal-auth`
 
 - [ ] **Step 3: Implement** `randomRefresh` (`randomBytes(32).hex`), `hashRefresh` (`createHash('sha256')`), `createSession`, `getPortalSession` (verify access JWT **and** confirm the `portal_sessions` row is non-revoked + unexpired), `revokeSession`, `revokeAllForCustomer`. `getPortalSession` returns the `PortalClaims` (now session-row-checked).
+
+> **Client note (important):** `portal_sessions` has only a `FOR SELECT` RLS policy (migration 031) and these helpers run before/around a valid portal JWT exists (login, refresh, revoke). So `createSession`, the session-row check inside `getPortalSession`, the refresh lookup-by-`hashRefresh`, `revokeSession`, and `revokeAllForCustomer` all use **`createAdminClient()`** (the spec §7.2 carve-out for privileged server actions) — NOT `createPortalClient`. Wiring them to the RLS client would make the refresh lookup silently return nothing.
 
 - [ ] **Step 4: Run, verify pass.**
 
@@ -380,7 +395,7 @@ export const createPortalClient = (accessToken: string) =>
 - [ ] **Step 1:** `login/route.ts` — after `verifyPassword`, call `createSession(login, {ua, ip})`, then set the access cookie (`kp_portal`, 15m) **and** the refresh cookie (`kp_portal_refresh`, httpOnly, 30d). Keep rate-limit.
 - [ ] **Step 2:** `logout/route.ts` — `revokeSession(session_id)` from the current access token; clear both cookies.
 - [ ] **Step 3:** `logout-all/route.ts` — `revokeAllForCustomer(customer_id)`; clear cookies.
-- [ ] **Step 4:** `session/refresh/route.ts` — read refresh cookie, look up the matching non-revoked `portal_sessions` row by `hashRefresh`, rotate (new refresh + new access), update `last_seen`.
+- [ ] **Step 4:** `session/refresh/route.ts` — read refresh cookie, look up the matching non-revoked `portal_sessions` row by `hashRefresh` (**admin client** — see Task 6 client note), rotate (new refresh + new access), update `last_seen`.
 - [ ] **Step 5:** `password/route.ts` — requires a valid session; verifies old password, `hashPassword(new)`, updates `customer_logins.password_hash`; optionally `revokeAllForCustomer` except current.
 - [ ] **Step 6: Manual verification** — `npm run build`; then log in (cookies set), hit `/api/portal/me`, call logout, confirm `/api/portal/me` now 401s. Document.
 - [ ] **Step 7: Commit** `git commit -am "feat(portal): session login/logout/refresh/password on portal_sessions"`
