@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { SettingsClient } from "./SettingsClient";
 import { ShopifyImportCard } from "@/components/dashboard/ShopifyImportCard";
+import { TeamCard } from "@/components/dashboard/TeamCard";
+import { DangerZone } from "@/components/dashboard/DangerZone";
 import type { Organization } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -67,6 +69,12 @@ export default async function SettingsPage() {
             hasToken={shopifyHasToken}
             webhookUrl={webhookUrl}
           />
+          <div className="mt-6">
+            <TeamCard />
+          </div>
+          <div className="mt-6">
+            <DangerZone orgName={(safe as { name?: string }).name ?? ""} />
+          </div>
         </div>
       </div>
     </>
