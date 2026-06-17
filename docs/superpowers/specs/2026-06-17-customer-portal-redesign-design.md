@@ -3,7 +3,7 @@
 - **Project:** Knöllchen-Pilot — customer (renter/driver) self-service portal
 - **Date:** 2026-06-17
 - **Branch:** `feat/customer-portal-rebuild` (off `main`)
-- **Status:** Design — pending spec review & user approval
+- **Status:** Approved (spec reviewed) — Phase 0 implementation starting. **Update:** email sending removed by owner decision (see §1.7, §7.3).
 - **Type:** Vision doc. Implementation proceeds **phase by phase**; each phase gets its own focused spec → plan → build. This document is the single source of truth for the whole portal; per-phase specs derive from it.
 
 ---
@@ -21,6 +21,7 @@ Knöllchen-Pilot is a multi-tenant SaaS for German car-rental companies ("orgs")
 4. **Features:** Feature **parity + new features + improve existing** (full catalog in §11).
 5. **Payments:** **Architect now, build Stripe later.** Build the data model + UI seams + open-amounts model now; defer the actual Stripe integration to a later phase.
 6. **Delivery:** **One complete vision doc (this) + phased specs.** Build & ship incrementally.
+7. **Email:** **Removed entirely** (later decision, commit `35c6da0`). No outbound or inbound email — the Postmark layer, the emailed magic-link, and `postmark-inbound` are deleted. Delivery is **operator-mediated links** (operator shares portal/check-in links) + **password login**; all customer notification is **in-portal only**.
 
 ---
 
@@ -31,9 +32,9 @@ The portal lives under `src/app/portal/**` (route group `(app)`) with APIs under
 **Auth/session today:** a *standalone* JWT system (not Supabase Auth). `customer_logins` rows (bcrypt password and/or single-use magic token) → an HS256 JWT `{customer_id, org_id, email}` in the httpOnly `kp_portal` cookie (30-day TTL). All portal DB access uses the **service-role client (RLS bypassed)**; isolation is enforced *only* by explicit `.eq('customer_id', …).eq('org_id', …)` filters and `loadPortalContract`'s triple-scope guard.
 
 ### Verified gaps & bugs (ground-truthed, not assumed)
-> **Branch note (important):** these facts are verified against **`main`** — the PR base and this rebuild's foundation. The `launch-fixes` branch *removes* the email-automation layer (deletes `postmark.ts`, `email-templates.ts`, the `magic-link` route, and `postmark-inbound`) and rewrites `tickets/send`. Any analysis run against `launch-fixes` sees a different, **emailless** picture. The base-branch question is the key open item in §13.
+> **Branch note:** facts verified against **`main`** (this rebuild's base). **Email update:** this rebuild has now *removed* the email layer entirely on `feat/customer-portal-rebuild` (commit `35c6da0`), aligning with the `launch-fixes` direction. The email bullet below is superseded by that removal; the other bullets still hold.
 
-- **Email sending EXISTS — extend, don't build.** `src/lib/postmark.ts` (`sendEmail`, with attachments / ReplyTo / test-override) and `src/lib/email-templates.ts` (`renterEmail`, `authorityEmail`) are present; `postmark@^4.0.7` is in `package.json`. Three routes already send via Postmark on `main`: ticket `/send` (emails the Anschreiben+Rechnung to the renter), portal `magic-link` (emails the login link, line 59), and `checkin-link` (emails the portal deep-link, line 70). **What is missing** is broader template coverage (dunning/reminders, document-ready, notification digests, support), **auto-provision-on-create** triggers (contract/Shopify → create login + send magic link), and an in-portal notification center (§7.5). So email is **extended**, not greenfield.
+- **Email sending REMOVED (by decision, commit `35c6da0`).** The Postmark layer that existed on `main` is deleted: `postmark.ts`, `email-templates.ts`, the emailed `magic-link` route, the `postmark-inbound` webhook, and the `postmark` dependency. **Consequences baked into this design:** login is **password-only** (operator-provisioned; no emailed magic link); the operator's ticket-forwarding (`tickets/send`) now **marks the ticket weiterbelastet / authority-sent** and the operator delivers the PDFs manually; `checkin-link` **returns the link** for the operator to share; all customer notification is **in-portal only**. No email is sent or received anywhere.
 - **No Stripe.** Not in `package.json` or code; only "coming soon / später" text in the marketing FAQ and AGB/Datenschutz legal pages.
 - **Broken ticket-document download.** `/documents` writes the 3 ticket PDFs to the `generated-docs` bucket, but the portal download route reads a different bucket (`meta.bucket`) → portal ticket-document downloads are effectively broken.
 - **`reminder_level` is dead** — referenced only in `types.ts`; no dunning logic.
@@ -49,7 +50,7 @@ These gaps directly shape the foundation (§7) and phasing (§12).
 
 **Goals**
 - Rebuild the portal UI from scratch, mobile-first, in the dashboard's glass design language.
-- Rebuild the portal backend: revocable sessions, DB-enforced isolation (RLS), notification infrastructure + extended email templates/triggers (the Postmark layer already exists on `main`), payment seams.
+- Rebuild the portal backend: revocable sessions, DB-enforced isolation (RLS), an **in-portal notification center** (no email), payment seams.
 - Maximize self-service: collect money, offload counter/data-entry work, structure disputes/damage, deflect support.
 - Maintain strict multi-tenant + per-customer isolation and a hard operator/customer redaction boundary (§10).
 
@@ -59,6 +60,7 @@ These gaps directly shape the foundation (§7) and phasing (§12).
 - Operator/dashboard features (this project is the renter-facing portal only).
 - Customer-facing AI assistant (catalogued as "Could", later phase).
 - Replacing the operator's Supabase-Auth identity model (operators stay as-is).
+- **Any email or SMS sending** (removed by decision — operator-mediated link delivery + in-portal notifications instead).
 
 ---
 
@@ -85,7 +87,7 @@ These gaps directly shape the foundation (§7) and phasing (§12).
 
 **Sitemap**
 ```
-/portal/login                      Magic-link first; password optional
+/portal/login                      Password login (operator-provisioned); no magic-link (email removed)
 /portal/start                      Home: to-dos + active rental + open amounts
 /portal/mieten                     Rentals list (active / upcoming / past)
 /portal/mieten/[id]                Contract detail — TIMELINE-centric (status, costs, docs, actions)
@@ -110,7 +112,7 @@ Screen states are specified per screen in §6; every list/detail screen defines 
 
 For each screen: **purpose · key elements · primary actions · states · data source**.
 
-- **Login** — Purpose: passwordless entry. Elements: email field → "Link senden", optional password toggle. Actions: request magic link, password login. States: sent/cooldown, rate-limited, invalid. Data: `customer_logins`. (Self-service link request replaces operator-issued passwords.)
+- **Login** — Purpose: password entry (email + password); credentials are operator-provisioned (no emailed magic link). Elements: email + password → "Einloggen". States: invalid, rate-limited. Data: `customer_logins`. Forgot-password is operator-reissued (no email channel).
 - **Start (home)** — Attention band (ActionCards from open tasks), RentalHero (active contract + status pill), open-amounts AmountRow, rentals shortcuts. Actions: deep-link into the relevant task. Empty: "Keine offenen Aufgaben". Data: contracts, tickets, notifications.
 - **Mieten (list)** — Grouped active/upcoming/past contract cards. Actions: open detail, start check-in/out. Empty: "Noch keine Mieten".
 - **Mieten/[id] (contract detail)** — **StatusTimeline** centerpiece (reserviert → unterschrieben → abgeholt → aktiv → zurückgegeben → abgerechnet), cost card (Tagespreis, Gesamt, Kaution, extra-km after return), documents, action buttons (sign, check-in/out, extend, report damage, pay). Redacted timeline (not raw `ticket_logs`).
@@ -129,7 +131,7 @@ For each screen: **purpose · key elements · primary actions · states · data 
 - Keep a **dedicated portal identity** (renters are **not** operator Supabase-Auth users).
 - Issue a **portal JWT signed with the Supabase JWT secret**, carrying `role: "authenticated"` + custom claims `customer_id`, `org_id`, `session_id`. This lets PostgREST/RLS read the claims (§7.2).
 - **Short-lived access token (~15 min) + rotating refresh token**, backed by a **`portal_sessions`** table (one row per device/login) → enables **revocation** and **logout-everywhere**. `getPortalSession` validates the JWT **and** checks the session row is still active (cheap, cacheable).
-- **Magic-link is the primary path**; password optional & self-managed (set/change/reset by the customer, not the operator).
+- **Password login** (operator-provisioned). The customer can **change** their password while logged in; there is **no** emailed magic-link and **no** self-service email reset (email removed) — forgot-password is operator-reissued. One-click login links can still be generated server-side and shared by the operator out-of-band.
 - **Rate limiting** moves from in-memory to a DB-backed (or Upstash) store so it holds across serverless instances. IPs captured for audit on sign/acknowledge.
 
 ### 7.2 Isolation via real RLS (the core backend fix)
@@ -138,11 +140,11 @@ For each screen: **purpose · key elements · primary actions · states · data 
 - Service-role is used **only** for explicitly privileged server actions (e.g. provisioning a login, webhook handlers) with their own guards — never for general portal reads.
 - `loadPortalContract` / `getPortalCustomer` remain as defense-in-depth but are no longer the *only* line of defense.
 
-### 7.3 Email infrastructure (extend existing)
-- **Already exists on `main`:** `src/lib/postmark.ts` (`sendEmail`) + `src/lib/email-templates.ts` (`renterEmail`, `authorityEmail`); `postmark@^4.0.7`; inbound `webhook/postmark-inbound`. Reuse this layer.
-- **Add:** typed German templates for magic-link (factor out the inline HTML in `magic-link`/`checkin-link`), document-ready, reminder/dunning, notification digests, and support acknowledgement — organized under `src/lib/email/`.
-- **Wire triggers:** contract created / Shopify order imported → auto-provision login + send magic link; document ready; reminders (cron); support replies.
-- Provider: **Postmark** — already chosen and in production use (`postmark@^4.0.7`). Not an open question.
+### 7.3 Delivery & notifications (no email)
+- **Email removed entirely** (commit `35c6da0`): no `postmark.ts`/`email-templates.ts`, no `magic-link`/`postmark-inbound`, no `postmark` dependency. Nothing in the portal sends or receives email.
+- **Link delivery is operator-mediated:** server actions (e.g. `checkin-link`) return the portal/check-in URL; the operator shares it via their own channel (WhatsApp/SMS/in-person). Logins are operator-provisioned.
+- **Notifications are in-portal only:** the notification center (§7.5) is the single customer-facing channel for reminders, document-ready, and status changes — surfaced on next visit, not pushed.
+- An outbound channel (email or SMS), if ever wanted, is a fresh separate decision; explicitly out of scope here.
 
 ### 7.4 Payment seams (build now, Stripe later)
 - A unified **"open amounts"** model: a single server function aggregates everything a customer owes (rental total, extra-km, ticket fine + processing fee, later deposit) into typed line items with `payment_status`.
@@ -150,7 +152,7 @@ For each screen: **purpose · key elements · primary actions · states · data 
 - `/api/portal/**/pay` endpoints + Pay UI exist but return **"Zahlung noch nicht verfügbar"** until Stripe lands; the Stripe integration point is a future `/api/webhook/stripe` + Stripe Elements. No `@stripe/*` dependency added yet.
 
 ### 7.5 Notifications
-- `notifications` table (per-customer, RLS-scoped) + in-portal notification center + email fan-out. A **Vercel cron** (`/api/cron/reminders`, pattern exists for `/api/health`) populates reminders (return due, ticket unpaid, contract unsigned, check-in incomplete) and activates the dead `reminder_level`.
+- `notifications` table (per-customer, RLS-scoped) + **in-portal** notification center (no email fan-out). A **Vercel cron** (`/api/cron/reminders`, pattern exists for `/api/health`) populates reminders (return due, ticket unpaid, contract unsigned, check-in incomplete) and activates the dead `reminder_level` — surfaced in-portal on next visit.
 
 ### 7.6 Storage & buckets
 - **Fix the bucket mismatch** so ticket-document downloads work.
@@ -201,9 +203,9 @@ Reuse the dashboard's tokens **verbatim** (defined in `src/app/globals.css` + `t
 
 Tiers: **Must** (highest CEO value) · **Should** · **Could** · **Won't (v1)**. Type: new / improve / parity. (Effort S/M/L.)
 
-**Phase 0 — Foundation:** rebuilt auth/session + revocation/logout-everywhere (rebuild, M); RLS-backed isolation (harden, M); glass design-system shell (rebuild, M); **extend** Postmark email layer — templates + auto-provision triggers (improve, S); payment seams + columns (new, M); Stripe infra deferred; self-service login (magic-link request + password self-manage) (Should/new, S).
+**Phase 0 — Foundation:** rebuilt auth/session + revocation/logout-everywhere (rebuild, M); RLS-backed isolation (harden, M); glass design-system shell (rebuild, M); in-portal notification center scaffold (new, S); payment seams + columns (new, M); Stripe infra deferred; **password login + in-session password change** (operator-provisioned; no email) (Should/improve, S).
 
-**Phase 1 — Collect the money:** portal ticket-detail + status timeline (Must/new, M); online payment of all open amounts — *seam now, Stripe later* (Must/new, L); fix ticket document downloads (Must/fix, S); auto portal-access + magic-link on contract/Shopify create (Must/improve, M); automated reminder/dunning engine + one-click pay (Should/new, L); real Lexoffice invoice retrieval + download (Should/new, M).
+**Phase 1 — Collect the money:** portal ticket-detail + status timeline (Must/new, M); online payment of all open amounts — *seam now, Stripe later* (Must/new, L); fix ticket document downloads (Must/fix, S); auto-create portal login on contract/Shopify create + operator-shared access link, no email (Must/improve, M); **in-portal** reminder/dunning surface + one-click pay, no email (Should/new, M); real Lexoffice invoice retrieval + download (Should/new, M).
 
 **Phase 2 — Offload the counter:** pre-arrival data + license/ID self-fill (Must/improve, M); self-service reservation/booking request (Should/new, L); explicit AGB + special-terms acceptance (Should/new, M); pickup km + fuel capture at check-in (Should/improve, S); live contract status timeline + notification center (Should/improve, M); harden signed-contract & document inbox (Should/harden, S).
 
@@ -211,15 +213,15 @@ Tiers: **Must** (highest CEO value) · **Should** · **Could** · **Won't (v1)**
 
 **Phase 4 — Depth & deflection:** saved payment method + Kautions-Hold via Stripe (Could/new, L); customer-facing read-only AI assistant (Could/improve, L); in-portal FAQ/help + support request (Could/new, M); self-maintain KYC master data (Could/improve, S); consent/marketing opt-in (Could/new, M); two-factor auth (**Won't v1**, L).
 
-**Parity to rebuild** (carried, not lost): magic-token/password auth (decoupled, +revocation); dashboard cards + open-amounts banner; documents tab (fixed bucket); 5-step check-in; 4-step check-out; in-portal e-signature; signed-contract PDF download; profile self-edit; per-contract cost card; multi-tenant scoping; 10-position handover photo capture.
+**Parity to rebuild** (carried, not lost): password auth (operator-provisioned, decoupled, +revocation); dashboard cards + open-amounts banner; documents tab (fixed bucket); 5-step check-in; 4-step check-out; in-portal e-signature; signed-contract PDF download; profile self-edit; per-contract cost card; multi-tenant scoping; 10-position handover photo capture.
 
 ---
 
 ## 12. Phasing & delivery
 
-Each phase below becomes its **own spec → plan → build increment**. Phase 0 is the next deliverable after this vision doc is approved. **Gate:** §13 Q6 (base branch / email layer) must be resolved *before* the Phase 0 spec is written, since it determines whether email is "extend" (small) or "rebuild."
+Each phase below becomes its **own spec → plan → build increment**. Phase 0 is the next deliverable. *(The earlier email base-branch gate is resolved: email is removed entirely — see §1.7 / §7.3.)*
 
-- **Phase 0 — Foundation:** auth/session + RLS + email infra + glass shell + payment seams. *Unblocks everything; ships the rebuilt shell with parity flows on the new substrate.*
+- **Phase 0 — Foundation:** auth/session + RLS + glass shell + in-portal notifications + payment seams. *Unblocks everything; ships the rebuilt shell with parity flows on the new substrate.*
 - **Phase 1 — Collect the money:** ticket detail, payment seams live, document fix, auto-provisioning, reminders, Lexoffice invoice retrieval.
 - **Phase 2 — Offload the counter:** pre-arrival self-fill, reservation, terms acceptance, pickup km/fuel, status timeline + notifications.
 - **Phase 3 — Disputes, damage & revenue capture.**
@@ -235,7 +237,7 @@ Each phase below becomes its **own spec → plan → build increment**. Phase 0 
 3. **Customer-typed vs document-derived KYC** — which fields are free-typed? *Default: license_nr/class/expiry document-derived; contact/address free-typed.*
 4. **Reservation confirmation** — auto-confirm against availability or always operator-reviewed draft? *Default: operator-reviewed draft for v1.*
 5. **Payments v1 scope** — SEPA vs card/Apple Pay first (when Stripe is built). *Default: card + Apple/Google Pay first; SEPA later.*
-6. **Base branch / email layer (decide first).** This rebuild targets **`main`**, where the Postmark email layer exists. The active `launch-fixes` branch **removes** that layer (and rewrites `tickets/send`). Confirm `main` is the base and that `launch-fixes`'s email removal will **not** land on `main` — otherwise the email work reverts from "extend" to "build," and the Phase 0 effort/risk rises. *(Email provider itself is settled: Postmark, already installed & in use.)*
+6. **Email — resolved (removed).** Per owner decision, all email sending/receiving is removed (commit `35c6da0`). Delivery = operator-mediated links + password login; notifications = in-portal only. Any future outbound channel (email/SMS) is a separate, later decision.
 
 ---
 
@@ -243,8 +245,7 @@ Each phase below becomes its **own spec → plan → build increment**. Phase 0 
 - **RLS migration risk** (switching portal off service-role) → ship Phase 0 behind thorough isolation tests; keep app-level guards as defense-in-depth.
 - **Match-ambiguity for tickets** (overlapping rentals on a plate/date) → surface a needs-review state instead of silently picking one (operator-side; portal only shows confirmed matches).
 - **Deferred Stripe** → seams must be real (data model + open-amounts) so the later build is drop-in, not a refactor.
-- **Email deliverability** → branded sender domain + DKIM/SPF (likely already configured for the existing Postmark sender on `main`); generic responses to avoid account enumeration.
-- **Branch divergence** → `launch-fixes` deletes the email layer that `main` (our base) relies on. If `launch-fixes` merges to `main`, Phase 0's email work changes from "extend" to "rebuild." Mitigation: confirm base branch up front (§13 Q6) and, if needed, cherry-pick/retain the Postmark layer.
+- **No outbound channel** (email removed) → customers must visit the portal to see reminders/status, and logins/links are operator-delivered. Mitigation: a strong in-portal "Zu erledigen" surface + operator UX to copy/share links; revisit an SMS/email channel only as a separate later decision.
 - **Scope creep** → MoSCoW tiers + phase gates; "Could/Won't" items explicitly deferred.
 
 ## 15. Success metrics (CEO value)
