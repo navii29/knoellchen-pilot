@@ -42,9 +42,10 @@ export const SettingsClient = ({
     email: org?.email || "",
     tax_number: org?.tax_number || "",
     processing_fee: String(org?.processing_fee ?? 25),
-    sender_name: org?.sender_name || "",
-    sender_email: org?.sender_email || "",
-    email_automation_enabled: org?.email_automation_enabled || false,
+    iban: org?.iban || "",
+    bic: org?.bic || "",
+    account_holder: org?.account_holder || "",
+    kleinunternehmer: org?.kleinunternehmer || false,
     lexoffice_enabled: org?.lexoffice_enabled || false,
     echoes_account_id: org?.echoes_account_id || "",
     echoes_enabled: org?.echoes_enabled || false,
@@ -82,7 +83,7 @@ export const SettingsClient = ({
         <div className="kicker text-ink-muted mb-2">Leitstelle · Konfiguration</div>
         <h1 className="font-display font-extrabold text-ink text-[28px] leading-[1.05] tracking-tightest">Einstellungen</h1>
         <p className="text-[14px] text-ink-muted mt-1.5">
-          Diese Daten erscheinen auf allen erstellten PDFs und gesendeten E-Mails.
+          Diese Daten erscheinen auf allen erstellten PDFs (Anschreiben, Rechnung).
         </p>
       </div>
 
@@ -135,6 +136,38 @@ export const SettingsClient = ({
               <input value={data.tax_number} onChange={set("tax_number")} className="input tabular-nums" />
             </Field>
           </div>
+        </Section>
+
+        <Section
+          title="Bankverbindung & Steuer"
+          subtitle="Pflicht auf Rechnungen — ohne IBAN kann keine Rechnung erstellt werden."
+        >
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Kontoinhaber">
+              <input value={data.account_holder} onChange={set("account_holder")} className="input" placeholder={data.name || "Firmenname"} />
+            </Field>
+            <Field label="IBAN *">
+              <input value={data.iban} onChange={set("iban")} className="input tabular-nums" placeholder="DE00 0000 0000 0000 0000 00" />
+            </Field>
+            <Field label="BIC">
+              <input value={data.bic} onChange={set("bic")} className="input tabular-nums" placeholder="XXXXDEXXXXX" />
+            </Field>
+          </div>
+          <label className="mt-5 flex items-start gap-3 p-3 rounded-panel border border-hairline cursor-pointer">
+            <input
+              type="checkbox"
+              checked={data.kleinunternehmer}
+              onChange={(e) => setData((d) => ({ ...d, kleinunternehmer: e.target.checked }))}
+              className="mt-0.5 w-4 h-4 accent-signal"
+            />
+            <div className="flex-1">
+              <div className="font-medium text-[13.5px] text-ink">Kleinunternehmer (§ 19 UStG)</div>
+              <div className="text-[12px] text-ink-muted mt-1">
+                Aktivieren, wenn Sie keine Umsatzsteuer ausweisen. Rechnungen zeigen
+                dann den §-19-Hinweis und keine MwSt.
+              </div>
+            </div>
+          </label>
         </Section>
 
         <Section

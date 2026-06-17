@@ -55,9 +55,10 @@ export const PATCH = async (req: Request) => {
     "email",
     "tax_number",
     "processing_fee",
-    "sender_name",
-    "sender_email",
-    "email_automation_enabled",
+    "iban",
+    "bic",
+    "account_holder",
+    "kleinunternehmer",
     "lexoffice_api_key",
     "lexoffice_enabled",
     "echoes_api_key",
@@ -70,8 +71,8 @@ export const PATCH = async (req: Request) => {
   const update: Record<string, unknown> = {};
   for (const k of allowed) if (k in body) update[k] = body[k];
   if ("processing_fee" in update) update.processing_fee = Number(update.processing_fee);
-  if ("email_automation_enabled" in update)
-    update.email_automation_enabled = Boolean(update.email_automation_enabled);
+  if ("kleinunternehmer" in update)
+    update.kleinunternehmer = Boolean(update.kleinunternehmer);
   if ("lexoffice_enabled" in update)
     update.lexoffice_enabled = Boolean(update.lexoffice_enabled);
   if ("lexoffice_api_key" in update) {

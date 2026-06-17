@@ -10,6 +10,14 @@ export interface Organization {
   email: string | null;
   tax_number: string | null;
   processing_fee: number;
+  // Bankverbindung — Pflicht auf Rechnungen (§14 UStG Zahlungsweg).
+  iban: string | null;
+  bic: string | null;
+  account_holder: string | null;
+  // Kleinunternehmer (§19 UStG): keine USt. ausweisen.
+  kleinunternehmer: boolean;
+  // Fortlaufende Rechnungsnummer (Zähler, atomar via next_invoice_nr()).
+  invoice_seq: number;
   slug: string | null;
   inbound_email: string | null;
   sender_email: string | null;
@@ -376,6 +384,9 @@ export interface Ticket {
   id: string;
   org_id: string;
   ticket_nr: string;
+  // Fortlaufende, eindeutige Rechnungsnummer (§14 UStG) — bei PDF-Erstellung
+  // via next_invoice_nr() vergeben. null bis Rechnung erzeugt wurde.
+  invoice_nr: string | null;
   status: TicketStatus;
   plate: string | null;
   vehicle_type: string | null;

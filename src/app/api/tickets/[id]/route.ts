@@ -68,6 +68,11 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
       .eq("org_id", auth.org_id)
       .maybeSingle();
     if (current) {
+      const { data: org } = await admin
+        .from("organizations")
+        .select("kleinunternehmer")
+        .eq("id", auth.org_id)
+        .maybeSingle();
       const chargeFine =
         "charge_fine" in update ? Boolean(update.charge_fine) : Boolean(current.charge_fine);
       const chargeFee =
@@ -86,6 +91,7 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
         chargeFine,
         feeNet,
         chargeFee,
+        vatRate: org?.kleinunternehmer ? 0 : undefined,
       });
       update.charge_fine = breakdown.charge_fine;
       update.charge_fee = breakdown.charge_fee;
