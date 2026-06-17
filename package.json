@@ -20,7 +20,6 @@
     "lucide-react": "^1.8.0",
     "next": "14.2.35",
     "papaparse": "^5.5.3",
-    "postmark": "^4.0.7",
     "puppeteer-core": "^24.43.1",
     "react": "^18",
     "react-dom": "^18",
