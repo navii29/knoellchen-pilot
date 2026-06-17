@@ -29,7 +29,7 @@ export const AppleNav = () => {
           <Link href="/" className="flex items-center gap-2 group" aria-label="Knöllchen-Pilot">
             <span
               className="inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-[12px] font-semibold"
-              style={{ background: "linear-gradient(135deg,#0894ff,#8668ff)" }}
+              style={{ background: "linear-gradient(135deg,#0a84ff,#0066cc)" }}
             >
               K
             </span>

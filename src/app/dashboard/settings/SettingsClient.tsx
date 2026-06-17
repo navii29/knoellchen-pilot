@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   Calculator,
   Check,
   ChevronDown,
@@ -834,8 +835,9 @@ const EchoesCard = ({
             </ul>
           )}
           {stubWarning && (
-            <div className="mt-2 text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-              ⚠ {stubWarning}
+            <div className="mt-2 flex items-start gap-1.5 text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+              <AlertTriangle size={13} strokeWidth={2} className="mt-px shrink-0" />
+              <span>{stubWarning}</span>
             </div>
           )}
         </div>
