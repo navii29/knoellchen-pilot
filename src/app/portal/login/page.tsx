@@ -43,6 +43,12 @@ export default async function PortalLoginPage({
           </p>
         </div>
         <LoginClient initialError={initialError} />
+
+        <div className="mt-6 flex items-center justify-center gap-x-4 text-[11px] text-ink-muted">
+          <a href="/impressum" className="hover:text-ink-soft transition-colors">Impressum</a>
+          <a href="/datenschutz" className="hover:text-ink-soft transition-colors">Datenschutz</a>
+          <a href="/agb" className="hover:text-ink-soft transition-colors">AGB</a>
+        </div>
       </div>
     </div>
   );

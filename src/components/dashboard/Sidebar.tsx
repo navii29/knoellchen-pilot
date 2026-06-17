@@ -157,13 +157,21 @@ export const Sidebar = ({
     </div>
   );
 
+  const legalLinks = (
+    <div className="flex items-center gap-x-3 gap-y-1 flex-wrap px-3 pt-2 text-[11px] text-ink-muted">
+      <Link href="/impressum" className="hover:text-ink-soft transition-colors">Impressum</Link>
+      <Link href="/datenschutz" className="hover:text-ink-soft transition-colors">Datenschutz</Link>
+      <Link href="/agb" className="hover:text-ink-soft transition-colors">AGB</Link>
+    </div>
+  );
+
   return (
     <>
       {/* Desktop-Sidebar — frosted glass chrome */}
       <aside className="hidden md:flex w-60 shrink-0 glass-chrome border-y-0 border-l-0 flex-col relative z-10">
         {logoBlock}
         <div className="p-2 space-y-0.5 flex-1 overflow-y-auto">{navList}</div>
-        <div className="p-3 border-t border-hairline">{profileBlock}</div>
+        <div className="p-3 border-t border-hairline">{profileBlock}{legalLinks}</div>
       </aside>
 
       {/* Mobile-Drawer + Backdrop */}
@@ -193,7 +201,7 @@ export const Sidebar = ({
             </button>
           </div>
           <div className="p-2 space-y-0.5 flex-1 overflow-y-auto">{navList}</div>
-          <div className="p-3 border-t border-hairline safe-bottom">{profileBlock}</div>
+          <div className="p-3 border-t border-hairline safe-bottom">{profileBlock}{legalLinks}</div>
         </aside>
       </div>
     </>
