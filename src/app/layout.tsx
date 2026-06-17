@@ -26,10 +26,35 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
 });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+  "https://knoellchen-pilot.vercel.app";
+const siteTitle =
+  "Knöllchen-Pilot — Strafzettel automatisch an den Mieter weiterbelasten";
+const siteDescription =
+  "Bußgeldbescheid für einen Mietwagen? Knöllchen-Pilot liest ihn aus, ordnet den Mieter über den Mietvertrag zu und belastet Bußgeld plus Bearbeitungsgebühr automatisch weiter. Für Autovermietungen in Deutschland.";
+
 export const metadata: Metadata = {
-  title: "Knöllchen-Pilot — Strafzettel automatisch an den Mieter weiterbelasten",
-  description:
-    "Bußgeldbescheid für einen Mietwagen? Knöllchen-Pilot liest ihn aus, ordnet den Mieter über den Mietvertrag zu und belastet Bußgeld plus Bearbeitungsgebühr automatisch weiter. Für Autovermietungen in Deutschland. 14 Tage gratis.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: siteTitle,
+    template: "%s · Knöllchen-Pilot",
+  },
+  description: siteDescription,
+  applicationName: "Knöllchen-Pilot",
+  openGraph: {
+    type: "website",
+    locale: "de_DE",
+    siteName: "Knöllchen-Pilot",
+    title: siteTitle,
+    description: siteDescription,
+    url: siteUrl,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteTitle,
+    description: siteDescription,
+  },
 };
 
 export const viewport: Viewport = {

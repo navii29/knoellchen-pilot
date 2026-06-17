@@ -27,7 +27,9 @@
   --paper: #ffffff;
   --ink: #1d1d1f;
   --ink-soft: #424245;
-  --ink-muted: #86868b;
+  /* WCAG AA: darkened from #86868b (~3:1 on glass) to clear 4.5:1 for
+     secondary/meta text over the translucent Liquid Glass surfaces. */
+  --ink-muted: #66666e;
   --hairline: #d2d2d7;
 
   /* ── Liquid Glass (Aurora Glass) ──────────────────────────────────
