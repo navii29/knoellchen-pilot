@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 
 export default function GlobalError({
   error,
@@ -10,7 +11,8 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Server-Logs erfassen den Fehler; hier nur clientseitige Notiz.
+    // An Sentry melden (No-Op ohne DSN) + lokal loggen.
+    Sentry.captureException(error);
     console.error(error);
   }, [error]);
 
