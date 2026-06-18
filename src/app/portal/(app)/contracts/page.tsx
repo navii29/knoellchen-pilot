@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Car, ChevronRight } from "lucide-react";
-import { getPortalCustomer } from "@/lib/portal-auth";
-import { createAdminClient } from "@/lib/supabase/server";
+import { requirePortal } from "@/lib/portal-auth";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { Plate } from "@/components/ui/Plate";
 import { Surface } from "@/components/portal/kit/Surface";
@@ -22,11 +21,10 @@ type CRow = {
 };
 
 export default async function PortalMietenPage() {
-  const ctx = await getPortalCustomer();
+  const ctx = await requirePortal();
   if (!ctx) return null;
 
-  const admin = createAdminClient();
-  const { data: contracts } = await admin
+  const { data: contracts } = await ctx.supa
     .from("contracts")
     .select("id, plate, vehicle_type, pickup_date, return_date, status, total_amount")
     .eq("org_id", ctx.session.org_id)

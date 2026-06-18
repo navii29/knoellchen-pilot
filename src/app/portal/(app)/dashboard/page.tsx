@@ -1,8 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Car, ChevronRight, ClipboardCheck, FileSignature, Ticket } from "lucide-react";
-import { getPortalCustomer } from "@/lib/portal-auth";
-import { createAdminClient } from "@/lib/supabase/server";
+import { requirePortal } from "@/lib/portal-auth";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { Plate } from "@/components/ui/Plate";
 import { ActionCard } from "@/components/portal/kit/ActionCard";
@@ -27,12 +26,11 @@ type CRow = {
 };
 
 export default async function PortalStartPage() {
-  const ctx = await getPortalCustomer();
+  const ctx = await requirePortal();
   if (!ctx) return null;
 
-  const admin = createAdminClient();
   const [{ data: contracts }, { data: tickets }] = await Promise.all([
-    admin
+    ctx.supa
       .from("contracts")
       .select(
         "id, plate, vehicle_type, pickup_date, return_date, status, signed_at, checkin_step, total_amount"
@@ -41,7 +39,7 @@ export default async function PortalStartPage() {
       .eq("customer_id", ctx.session.customer_id)
       .order("pickup_date", { ascending: false })
       .limit(20),
-    admin
+    ctx.supa
       .from("tickets")
       .select("id, total_charge, paid, contracts!inner(customer_id)")
       .eq("org_id", ctx.session.org_id)

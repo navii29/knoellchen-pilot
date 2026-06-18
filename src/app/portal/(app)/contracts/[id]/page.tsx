@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Check, FileSignature, KeyRound, LogOut, type LucideIcon } from "lucide-react";
-import { getPortalCustomer } from "@/lib/portal-auth";
-import { createAdminClient } from "@/lib/supabase/server";
+import { requirePortal } from "@/lib/portal-auth";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import type { Contract } from "@/lib/types";
 import { ButtonLink } from "@/components/ui/Button";
@@ -19,11 +18,10 @@ export default async function PortalContractDetail({
 }: {
   params: { id: string };
 }) {
-  const ctx = await getPortalCustomer();
+  const ctx = await requirePortal();
   if (!ctx) return null;
 
-  const admin = createAdminClient();
-  const { data: contract } = await admin
+  const { data: contract } = await ctx.supa
     .from("contracts")
     .select("*")
     .eq("id", params.id)

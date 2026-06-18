@@ -1,6 +1,5 @@
 import { Download, FileText } from "lucide-react";
-import { getPortalCustomer } from "@/lib/portal-auth";
-import { createAdminClient } from "@/lib/supabase/server";
+import { requirePortal } from "@/lib/portal-auth";
 import { fmtDate } from "@/lib/utils";
 import { Plate } from "@/components/ui/Plate";
 import { Surface } from "@/components/portal/kit/Surface";
@@ -17,18 +16,17 @@ type Doc = {
 };
 
 export default async function PortalDocumentsPage() {
-  const ctx = await getPortalCustomer();
+  const ctx = await requirePortal();
   if (!ctx) return null;
 
-  const admin = createAdminClient();
   const [{ data: contracts }, { data: tickets }] = await Promise.all([
-    admin
+    ctx.supa
       .from("contracts")
       .select("id, contract_nr, plate, signed_contract_path, signed_at, pickup_date")
       .eq("org_id", ctx.session.org_id)
       .eq("customer_id", ctx.session.customer_id)
       .order("pickup_date", { ascending: false }),
-    admin
+    ctx.supa
       .from("tickets")
       .select(
         "id, ticket_nr, plate, letter_path, invoice_path, questionnaire_path, contract_id, created_at, contracts!inner(customer_id)"

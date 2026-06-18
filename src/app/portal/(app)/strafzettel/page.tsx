@@ -1,6 +1,5 @@
 import { Ticket } from "lucide-react";
-import { getPortalCustomer } from "@/lib/portal-auth";
-import { createAdminClient } from "@/lib/supabase/server";
+import { requirePortal } from "@/lib/portal-auth";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { Surface } from "@/components/portal/kit/Surface";
 import { StatusBadge } from "@/components/portal/kit/StatusBadge";
@@ -20,11 +19,10 @@ type TRow = {
 };
 
 export default async function PortalStrafzettelPage() {
-  const ctx = await getPortalCustomer();
+  const ctx = await requirePortal();
   if (!ctx) return null;
 
-  const admin = createAdminClient();
-  const { data: tickets } = await admin
+  const { data: tickets } = await ctx.supa
     .from("tickets")
     .select(
       "id, ticket_nr, status, offense, offense_date, total_charge, fine_amount, paid, created_at, contracts!inner(customer_id)"
