@@ -1,6 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Check, FileSignature, KeyRound, LogOut, type LucideIcon } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Check,
+  ChevronRight,
+  FileSignature,
+  KeyRound,
+  LogOut,
+  type LucideIcon,
+} from "lucide-react";
 import { requirePortal } from "@/lib/portal-auth";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import type { Contract } from "@/lib/types";
@@ -122,6 +131,19 @@ export default async function PortalContractDetail({
           title={(c.checkout_step ?? 0) > 0 ? "Check-out fortsetzen" : "Self-Check-out starten"}
           subtitle="Fotos · Kilometerstand · Tank — in 4 Schritten."
         />
+      )}
+
+      {c.status === "aktiv" && (
+        <Link
+          href={`/portal/contracts/${c.id}/schaden`}
+          className="glass-card rounded-card px-4 py-3 flex items-center gap-3 hover:bg-paper/40 transition-colors"
+        >
+          <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+            <AlertTriangle size={16} />
+          </div>
+          <span className="flex-1 text-[14px] font-medium text-ink">Schaden melden</span>
+          <ChevronRight size={14} className="text-ink-muted shrink-0" />
+        </Link>
       )}
 
       <div>
