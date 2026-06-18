@@ -1,30 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-// Body / UI — legible workhorse for dense product surfaces.
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-  variable: "--font-sans",
-});
-
-// Display — compact industrial grotesque, the voice of the "Leitstelle".
-const archivo = Archivo({
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
-  display: "swap",
-  variable: "--font-display",
-});
-
-// Data / IDs / plates / telemetry — the control-center texture.
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  display: "swap",
-  variable: "--font-mono",
-});
+// Eine Schrift überall: San Francisco (System-Stack). Keine Google-Fonts mehr —
+// SF rendert nativ auf Apple-Geräten, fällt sonst sauber zurück. Die Font-
+// Variablen (--font-sans/-display/-mono) zeigen in globals.css alle auf den
+// SF-Stack, damit Tailwind-Klassen font-sans/-display/-mono identisch sind.
 
 const siteUrl =
   process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
@@ -68,10 +48,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang="de"
-      className={`${inter.variable} ${archivo.variable} ${jetbrainsMono.variable}`}
-    >
+    <html lang="de">
       <body className="overflow-x-hidden">{children}</body>
     </html>
   );

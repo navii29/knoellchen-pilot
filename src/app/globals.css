@@ -8,9 +8,15 @@
    workspace, one signal accent, monospace telemetry, hairline structure.
    ════════════════════════════════════════════════════════════════ */
 :root {
-  /* System SF Pro stack (real SF on Apple devices, Inter fallback). */
+  /* EINE Schrift überall: San Francisco. Echtes SF auf Apple-Geräten,
+     native Fallbacks (Segoe UI / Roboto) auf Windows/Android — kein Webfont.
+     Alle Font-Rollen (sans/display/mono) zeigen auf denselben Stack, damit
+     Tailwind-Klassen font-sans/-display/-mono identisch rendern. */
   --sf: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-    var(--font-sans), "Helvetica Neue", Arial, sans-serif;
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--sf);
+  --font-display: var(--sf);
+  --font-mono: var(--sf);
 
   /* dark side (kept for occasional dark surfaces) */
   --void: #000000;
@@ -283,7 +289,7 @@ body {
    ════════════════════════════════════════════════════════════════ */
 .apple {
   --sf: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-    var(--font-sans), "Helvetica Neue", Arial, sans-serif;
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --azure: #0071e3;
   --azure-link: #0066cc;
   --graphite: #1d1d1f;
