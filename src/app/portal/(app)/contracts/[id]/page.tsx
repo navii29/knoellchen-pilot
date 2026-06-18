@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import {
   AlertTriangle,
   ArrowLeft,
+  CalendarPlus,
   Check,
   ChevronRight,
   FileSignature,
@@ -131,6 +132,19 @@ export default async function PortalContractDetail({
           title={(c.checkout_step ?? 0) > 0 ? "Check-out fortsetzen" : "Self-Check-out starten"}
           subtitle="Fotos · Kilometerstand · Tank — in 4 Schritten."
         />
+      )}
+
+      {c.status === "aktiv" && (
+        <Link
+          href={`/portal/contracts/${c.id}/verlaengern`}
+          className="glass-card rounded-card px-4 py-3 flex items-center gap-3 hover:bg-paper/40 transition-colors"
+        >
+          <div className="w-9 h-9 rounded-xl bg-signal-soft text-signal-ink flex items-center justify-center shrink-0">
+            <CalendarPlus size={16} />
+          </div>
+          <span className="flex-1 text-[14px] font-medium text-ink">Miete verlängern</span>
+          <ChevronRight size={14} className="text-ink-muted shrink-0" />
+        </Link>
       )}
 
       {c.status === "aktiv" && (
