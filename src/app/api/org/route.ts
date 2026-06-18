@@ -1,6 +1,41 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { getMembership } from "@/lib/team";
+
+/** Rekursiv alle Storage-Objekte unter `${orgId}/` eines Buckets löschen. */
+const removeOrgFolder = async (
+  admin: ReturnType<typeof createAdminClient>,
+  bucket: string,
+  orgId: string
+) => {
+  const toRemove: string[] = [];
+  const walk = async (prefix: string) => {
+    const { data, error } = await admin.storage.from(bucket).list(prefix, { limit: 1000 });
+    if (error || !data) return;
+    for (const item of data) {
+      const path = prefix ? `${prefix}/${item.name}` : item.name;
+      // Ordner haben keine id; Dateien schon.
+      if ((item as { id: string | null }).id === null) await walk(path);
+      else toRemove.push(path);
+    }
+  };
+  await walk(orgId);
+  for (let i = 0; i < toRemove.length; i += 100) {
+    await admin.storage.from(bucket).remove(toRemove.slice(i, i + 100));
+  }
+};
+
+const ALL_BUCKETS = [
+  "ticket-uploads",
+  "generated-docs",
+  "customer-documents",
+  "handover-photos",
+  "tire-photos",
+  "vehicle-documents",
+  "vehicle-photos",
+  "brand",
+];
 
 const SAFE_COLUMNS =
   "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, echoes_account_id, echoes_enabled, rental_terms, onboarding_completed, onboarding_step, shopify_shop_domain, shopify_webhook_token, created_at";
@@ -55,9 +90,10 @@ export const PATCH = async (req: Request) => {
     "email",
     "tax_number",
     "processing_fee",
-    "sender_name",
-    "sender_email",
-    "email_automation_enabled",
+    "iban",
+    "bic",
+    "account_holder",
+    "kleinunternehmer",
     "lexoffice_api_key",
     "lexoffice_enabled",
     "echoes_api_key",
@@ -70,8 +106,8 @@ export const PATCH = async (req: Request) => {
   const update: Record<string, unknown> = {};
   for (const k of allowed) if (k in body) update[k] = body[k];
   if ("processing_fee" in update) update.processing_fee = Number(update.processing_fee);
-  if ("email_automation_enabled" in update)
-    update.email_automation_enabled = Boolean(update.email_automation_enabled);
+  if ("kleinunternehmer" in update)
+    update.kleinunternehmer = Boolean(update.kleinunternehmer);
   if ("lexoffice_enabled" in update)
     update.lexoffice_enabled = Boolean(update.lexoffice_enabled);
   if ("lexoffice_api_key" in update) {
@@ -179,4 +215,53 @@ export const GET = async () => {
     lexoffice_has_key: lexofficeHasKey,
     echoes_has_key: echoesHasKey,
   });
+};
+
+/**
+ * DSGVO Art. 17 — Konto-Löschung (Selbstbedienung). Nur Inhaber.
+ * Erfordert Bestätigung durch exakte Eingabe des Firmennamens. Löscht alle
+ * Storage-Objekte der Org, dann atomar alle DB-Daten (delete_org), dann die
+ * Auth-User. Unwiderruflich.
+ */
+export const DELETE = async (req: Request) => {
+  const me = await getMembership();
+  if (!me) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  if (me.role !== "owner")
+    return NextResponse.json({ error: "Nur Inhaber können das Konto löschen." }, { status: 403 });
+
+  const body = (await req.json().catch(() => ({}))) as { confirm?: string };
+  const admin = createAdminClient();
+
+  const { data: org } = await admin
+    .from("organizations")
+    .select("name")
+    .eq("id", me.orgId)
+    .single();
+  if (!org) return NextResponse.json({ error: "Organisation nicht gefunden" }, { status: 404 });
+  if ((body.confirm ?? "").trim() !== (org.name ?? "").trim()) {
+    return NextResponse.json(
+      { error: "Zur Bestätigung bitte den Firmennamen exakt eingeben." },
+      { status: 400 }
+    );
+  }
+
+  // Alle Auth-User der Org einsammeln (vor der Löschung von public.users).
+  const { data: members } = await admin.from("users").select("id").eq("org_id", me.orgId);
+  const userIds = (members ?? []).map((m) => m.id as string);
+
+  // 1) Storage leeren (alle Buckets, Präfix orgId/).
+  for (const b of ALL_BUCKETS) {
+    await removeOrgFolder(admin, b, me.orgId).catch(() => {});
+  }
+
+  // 2) Alle DB-Daten atomar löschen (inkl. organizations + public.users).
+  const { error } = await admin.rpc("delete_org", { p_org: me.orgId });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // 3) Auth-User entfernen (public.users ist jetzt weg → FK frei).
+  for (const id of userIds) {
+    await admin.auth.admin.deleteUser(id).catch(() => {});
+  }
+
+  return NextResponse.json({ ok: true });
 };

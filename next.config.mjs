@@ -1,7 +1,11 @@
+import { withSentryConfig } from "@sentry/nextjs";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
     serverActions: { bodySizeLimit: "12mb" },
+    // instrumentation.ts (Sentry-Init) in Next 14 aktivieren.
+    instrumentationHook: true,
     // Chromium-Binary nicht durch Webpack ziehen — wird zur Laufzeit aus
     // node_modules geladen. Sonst kommt Vercel an die 50 MB Function-Size-
     // Grenze.
@@ -15,4 +19,10 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// Sentry umschließt die Config. Ohne DSN/Auth-Token werden keine Source-Maps
+// hochgeladen — die Instrumentierung bleibt trotzdem aktiv (No-Op ohne DSN).
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  telemetry: false,
+  sourcemaps: { disable: true },
+});

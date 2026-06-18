@@ -5,6 +5,7 @@ import {
   generateLetterPdf,
   generateQuestionnairePdf,
 } from "@/lib/pdf-generator";
+import { computeCharge } from "@/lib/charge";
 import type { Contract, Customer, Organization, Ticket } from "@/lib/types";
 
 export const POST = async (
@@ -51,11 +52,52 @@ export const POST = async (
     : { data: null };
   const customer = (customerData as Pick<Customer, "salutation"> | null) ?? null;
 
+  // §14 UStG: ohne Bankverbindung ist die Rechnung nicht zahlbar → blockieren.
+  if (!o.iban || !o.iban.trim()) {
+    return NextResponse.json(
+      {
+        error:
+          "Bankverbindung fehlt — bitte zuerst IBAN in den Einstellungen hinterlegen, damit die Rechnung zahlbar ist.",
+      },
+      { status: 400 }
+    );
+  }
+
+  // Charge mit aktuellem USt-Status der Org neu berechnen (Kleinunternehmer → 0%),
+  // damit die Rechnung immer zur aktuellen Steuerlage passt.
+  const breakdown = computeCharge({
+    fineAmount: t.fine_amount,
+    chargeFine: t.charge_fine ?? true,
+    feeNet: t.fee_net ?? o.processing_fee,
+    chargeFee: t.charge_fee ?? true,
+    vatRate: o.kleinunternehmer ? 0 : undefined,
+  });
+  t.fee_net = breakdown.fee_net;
+  t.fee_vat = breakdown.fee_vat;
+  t.fee_gross = breakdown.fee_gross;
+  t.total_charge = breakdown.total_charge;
+
+  // Fortlaufende, eindeutige Rechnungsnummer vergeben (einmalig, dann stabil).
+  if (!t.invoice_nr) {
+    const { data: nr, error: nrErr } = await admin.rpc("next_invoice_nr", {
+      p_org: t.org_id,
+    });
+    if (nrErr || !nr) {
+      return NextResponse.json(
+        { error: `Rechnungsnummer konnte nicht vergeben werden: ${nrErr?.message ?? "unbekannt"}` },
+        { status: 500 }
+      );
+    }
+    t.invoice_nr = nr as string;
+  }
+
   const letter = generateLetterPdf(o, t, contract, customer);
   const invoice = generateInvoicePdf(o, t, contract);
   const questionnaire = generateQuestionnairePdf(o, t, contract);
 
-  const base = `${t.org_id}/${t.ticket_nr}`;
+  // Storage-Pfad auf die UUID des Tickets — verhindert das Überschreiben fremder
+  // Belege bei kollidierender Vorgangs-Nr. (ticket_nr ist nur ein Anzeige-Label).
+  const base = `${t.org_id}/${t.id}`;
   const paths = {
     letter_path: `${base}/anschreiben.pdf`,
     invoice_path: `${base}/rechnung.pdf`,
@@ -80,7 +122,18 @@ export const POST = async (
   if (errored?.error)
     return NextResponse.json({ error: errored.error.message }, { status: 500 });
 
-  await admin.from("tickets").update({ ...paths, updated_at: new Date().toISOString() }).eq("id", t.id);
+  await admin
+    .from("tickets")
+    .update({
+      ...paths,
+      invoice_nr: t.invoice_nr,
+      fee_net: t.fee_net,
+      fee_vat: t.fee_vat,
+      fee_gross: t.fee_gross,
+      total_charge: t.total_charge,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", t.id);
   await admin.from("ticket_logs").insert({
     ticket_id: t.id,
     action: "documents",

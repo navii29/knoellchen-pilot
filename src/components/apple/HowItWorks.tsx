@@ -10,7 +10,7 @@ const STEPS = [
   { Icon: Inbox, label: "Eingang & KI-Auslese", desc: "Bescheid kommt per Upload oder E-Mail. Die KI liest alles aus." },
   { Icon: UserCheck, label: "Fahrer zuordnen", desc: "Tatzeit trifft auf Mietvertrag — der richtige Mieter steht fest." },
   { Icon: BadgeEuro, label: "Weiterbelastung", desc: "Anschreiben, Rechnung und Ihre Gebühr entstehen automatisch." },
-  { Icon: Check, label: "Bezahlt & erledigt", desc: "Zahlungseingang und Mahnstufen laufen mit. Der Fall schließt sich." },
+  { Icon: Check, label: "Bezahlt & erledigt", desc: "Zahlungseingang wird erfasst — der Fall schließt sich." },
 ];
 
 const RAIL = [

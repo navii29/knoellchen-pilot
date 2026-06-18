@@ -247,7 +247,11 @@ const drawFooter = (doc: jsPDF, org: Organization) => {
     },
     {
       title: "Bankverbindung",
-      lines: ["Bitte Bankdaten in den Einstellungen ergänzen", "Verwendungszweck: Vorgangs-Nr."].filter(Boolean),
+      lines: [
+        org.account_holder ? "Kontoinhaber: " + org.account_holder : "",
+        org.iban ? "IBAN  " + org.iban : "Bitte Bankdaten in den Einstellungen ergänzen",
+        org.bic ? "BIC  " + org.bic : "",
+      ].filter(Boolean),
     },
     {
       title: "Steuerliche Angaben",
@@ -347,12 +351,16 @@ export const generateLetterPdf = (
     summaryRows.push({ label: "Bußgeld (durchlaufender Posten)", amount: charge.fine_amount });
   }
   if (charge.charge_fee) {
-    summaryRows.push({ label: "Bearbeitungsgebühr (netto)", amount: charge.fee_net });
-    summaryRows.push({
-      label: `zzgl. ${Math.round(VAT_RATE * 100)}% MwSt`,
-      amount: charge.fee_vat,
-    });
-    summaryRows.push({ label: "Bearbeitungsgebühr (brutto)", amount: charge.fee_gross });
+    if (org.kleinunternehmer) {
+      summaryRows.push({ label: "Bearbeitungsgebühr", amount: charge.fee_net });
+    } else {
+      summaryRows.push({ label: "Bearbeitungsgebühr (netto)", amount: charge.fee_net });
+      summaryRows.push({
+        label: `zzgl. ${Math.round(VAT_RATE * 100)}% MwSt`,
+        amount: charge.fee_vat,
+      });
+      summaryRows.push({ label: "Bearbeitungsgebühr (brutto)", amount: charge.fee_gross });
+    }
   }
   if (summaryRows.length > 0) {
     summaryRows.push({ label: "Gesamtbetrag", amount: charge.total_charge, bold: true });
@@ -360,11 +368,14 @@ export const generateLetterPdf = (
   }
 
   // Schlusssatz abhängig davon, ob etwas zu zahlen ist
+  const invoiceRef = ticket.invoice_nr ?? ticket.ticket_nr;
   const restParagraphs: string[] =
     charge.total_charge > 0
       ? [
-          `Bitte überweisen Sie den Gesamtbetrag innerhalb von 14 Tagen unter Angabe der Vorgangs-Nr. ${ticket.ticket_nr}. Details zur Bankverbindung finden Sie in der beigefügten Rechnung.`,
-          `Hinweis: Das Bußgeld ist ein durchlaufender Posten gem. § 10 Abs. 1 Satz 6 UStG. Die Bearbeitungsgebühr unterliegt der Umsatzsteuer (${Math.round(VAT_RATE * 100)}%).`,
+          `Bitte überweisen Sie den Gesamtbetrag innerhalb von 14 Tagen unter Angabe der Rechnungs-Nr. ${invoiceRef}. Details zur Bankverbindung finden Sie in der beigefügten Rechnung.`,
+          org.kleinunternehmer
+            ? "Hinweis: Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung). Das Bußgeld ist ein durchlaufender Posten gem. § 10 Abs. 1 Satz 6 UStG."
+            : `Hinweis: Das Bußgeld ist ein durchlaufender Posten gem. § 10 Abs. 1 Satz 6 UStG. Die Bearbeitungsgebühr unterliegt der Umsatzsteuer (${Math.round(VAT_RATE * 100)}%).`,
         ]
       : [
           `Dieser Vorgang dient ausschließlich der Information — es entstehen für Sie keine Forderungen unsererseits.`,
@@ -407,7 +418,8 @@ export const generateInvoicePdf = (
   );
 
   // Betreff
-  drawSubject(doc, `Rechnung Nr. ${ticket.ticket_nr}`);
+  const invoiceNr = ticket.invoice_nr ?? ticket.ticket_nr;
+  drawSubject(doc, `Rechnung Nr. ${invoiceNr}`);
 
   const charge = chargeFromTicket(ticket);
 
@@ -417,7 +429,7 @@ export const generateInvoicePdf = (
   doc.setFontSize(10);
   setColor(doc, GRAY_60);
   const metaCols = [
-    ["Rechnungsnummer", ticket.ticket_nr],
+    ["Rechnungsnummer", invoiceNr],
     ["Rechnungsdatum", new Date().toLocaleDateString("de-DE")],
     ["Leistungsdatum", fmtDate(ticket.offense_date)],
   ];
@@ -452,7 +464,9 @@ export const generateInvoicePdf = (
         contract?.contract_nr ? "  ·  " + contract.contract_nr : ""
       }`,
       amount: charge.fee_net,
-      hint: `netto · zzgl. ${Math.round(VAT_RATE * 100)}% MwSt`,
+      hint: org.kleinunternehmer
+        ? "§ 19 UStG · keine USt"
+        : `netto · zzgl. ${Math.round(VAT_RATE * 100)}% MwSt`,
     });
   }
 
@@ -469,7 +483,7 @@ export const generateInvoicePdf = (
 
   // Summen-Block mit MwSt-Aufschlüsselung
   y += 14;
-  drawTotalsBlock(doc, y, charge);
+  drawTotalsBlock(doc, y, charge, org.kleinunternehmer);
 
   // Zahlungshinweise
   y += charge.charge_fee ? 42 : 22;
@@ -483,7 +497,7 @@ export const generateInvoicePdf = (
   y += 5;
   const payText =
     charge.total_charge > 0
-      ? `Bitte überweisen Sie den Gesamtbetrag innerhalb von 14 Tagen ohne Abzug. Verwendungszweck: ${ticket.ticket_nr}.`
+      ? `Bitte überweisen Sie den Gesamtbetrag innerhalb von 14 Tagen ohne Abzug. Verwendungszweck: ${invoiceNr}.`
       : `Es wird kein Betrag fällig. Diese Aufstellung dient nur Ihrer Information.`;
   const payNote = doc.splitTextToSize(payText, PAGE.w - M.left - M.right);
   doc.text(payNote, M.left, y, { lineHeightFactor: 1.5 });
@@ -491,9 +505,11 @@ export const generateInvoicePdf = (
   // Steuerlicher Hinweis
   y += payNote.length * 4.5 + 5;
   const taxNote = doc.splitTextToSize(
-    `Hinweis: Das Bußgeld ist ein durchlaufender Posten gem. § 10 Abs. 1 Satz 6 UStG. Die Bearbeitungsgebühr unterliegt der Umsatzsteuer (${Math.round(
-      VAT_RATE * 100
-    )}%).`,
+    org.kleinunternehmer
+      ? "Hinweis: Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung). Das Bußgeld ist ein durchlaufender Posten gem. § 10 Abs. 1 Satz 6 UStG."
+      : `Hinweis: Das Bußgeld ist ein durchlaufender Posten gem. § 10 Abs. 1 Satz 6 UStG. Die Bearbeitungsgebühr unterliegt der Umsatzsteuer (${Math.round(
+          VAT_RATE * 100
+        )}%).`,
     PAGE.w - M.left - M.right
   );
   setColor(doc, GRAY_60);
@@ -555,7 +571,8 @@ const drawInvoiceTable = (
 const drawTotalsBlock = (
   doc: jsPDF,
   startY: number,
-  charge: ReturnType<typeof chargeFromTicket>
+  charge: ReturnType<typeof chargeFromTicket>,
+  kleinunternehmer = false
 ) => {
   const labelX = PAGE.w - M.right - 60;
   const valueX = PAGE.w - M.right;
@@ -565,16 +582,18 @@ const drawTotalsBlock = (
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     setColor(doc, GRAY_60);
-    doc.text("Bearbeitung netto", labelX, y);
+    doc.text(kleinunternehmer ? "Bearbeitungsgebühr" : "Bearbeitung netto", labelX, y);
     setColor(doc, INK);
     doc.text(fmtEur(charge.fee_net), valueX, y, { align: "right" });
     y += 5;
 
-    setColor(doc, GRAY_60);
-    doc.text(`+ ${Math.round(VAT_RATE * 100)}% MwSt`, labelX, y);
-    setColor(doc, INK);
-    doc.text(fmtEur(charge.fee_vat), valueX, y, { align: "right" });
-    y += 5;
+    if (!kleinunternehmer) {
+      setColor(doc, GRAY_60);
+      doc.text(`+ ${Math.round(VAT_RATE * 100)}% MwSt`, labelX, y);
+      setColor(doc, INK);
+      doc.text(fmtEur(charge.fee_vat), valueX, y, { align: "right" });
+      y += 5;
+    }
   }
 
   if (charge.charge_fine) {

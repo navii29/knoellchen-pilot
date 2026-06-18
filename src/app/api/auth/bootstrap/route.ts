@@ -61,6 +61,7 @@ export const POST = async (req: Request) => {
     id: user.id,
     org_id: org.id,
     full_name: fullName,
+    email: user.email,
     role: "owner",
   });
   if (userErr) return NextResponse.json({ error: userErr.message }, { status: 500 });

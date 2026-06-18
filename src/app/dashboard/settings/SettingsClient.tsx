@@ -6,9 +6,7 @@ import {
   AlertTriangle,
   Calculator,
   Check,
-  ChevronDown,
   ChevronRight,
-  Copy,
   FileSignature,
   Image as ImageIcon,
   Loader2,
@@ -16,7 +14,6 @@ import {
   MapPin,
   RotateCcw,
   Save,
-  Send,
   Trash2,
   TrendingUp,
   Upload,
@@ -45,9 +42,10 @@ export const SettingsClient = ({
     email: org?.email || "",
     tax_number: org?.tax_number || "",
     processing_fee: String(org?.processing_fee ?? 25),
-    sender_name: org?.sender_name || "",
-    sender_email: org?.sender_email || "",
-    email_automation_enabled: org?.email_automation_enabled || false,
+    iban: org?.iban || "",
+    bic: org?.bic || "",
+    account_holder: org?.account_holder || "",
+    kleinunternehmer: org?.kleinunternehmer || false,
     lexoffice_enabled: org?.lexoffice_enabled || false,
     echoes_account_id: org?.echoes_account_id || "",
     echoes_enabled: org?.echoes_enabled || false,
@@ -85,7 +83,7 @@ export const SettingsClient = ({
         <div className="kicker text-ink-muted mb-2">Leitstelle · Konfiguration</div>
         <h1 className="font-display font-extrabold text-ink text-[28px] leading-[1.05] tracking-tightest">Einstellungen</h1>
         <p className="text-[14px] text-ink-muted mt-1.5">
-          Diese Daten erscheinen auf allen erstellten PDFs und gesendeten E-Mails.
+          Diese Daten erscheinen auf allen erstellten PDFs (Anschreiben, Rechnung).
         </p>
       </div>
 
@@ -140,49 +138,33 @@ export const SettingsClient = ({
           </div>
         </Section>
 
-        <Section title="E-Mail-Automation" subtitle="Strafzettel automatisch empfangen + Dokumente versenden">
-          <InboundCard inboundEmail={org.inbound_email} />
-
-          <div className="grid sm:grid-cols-2 gap-4 mt-5">
-            <Field label="Absender-Name">
-              <input
-                value={data.sender_name}
-                onChange={set("sender_name")}
-                placeholder={data.name || "Stadtflotte München"}
-                className="input"
-              />
+        <Section
+          title="Bankverbindung & Steuer"
+          subtitle="Pflicht auf Rechnungen — ohne IBAN kann keine Rechnung erstellt werden."
+        >
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Kontoinhaber">
+              <input value={data.account_holder} onChange={set("account_holder")} className="input" placeholder={data.name || "Firmenname"} />
             </Field>
-            <Field label="Absender-E-Mail">
-              <input
-                type="email"
-                value={data.sender_email}
-                onChange={set("sender_email")}
-                placeholder="info@ihre-firma.de"
-                className="input tabular-nums"
-              />
+            <Field label="IBAN *">
+              <input value={data.iban} onChange={set("iban")} className="input tabular-nums" placeholder="DE00 0000 0000 0000 0000 00" />
+            </Field>
+            <Field label="BIC">
+              <input value={data.bic} onChange={set("bic")} className="input tabular-nums" placeholder="XXXXDEXXXXX" />
             </Field>
           </div>
-
-          <p className="mt-3 text-[12px] text-ink-muted">
-            E-Mails an Mieter und Behörden werden von dieser Adresse gesendet.
-          </p>
-
           <label className="mt-5 flex items-start gap-3 p-3 rounded-panel border border-hairline cursor-pointer">
             <input
               type="checkbox"
-              checked={data.email_automation_enabled}
-              onChange={(e) =>
-                setData((d) => ({ ...d, email_automation_enabled: e.target.checked }))
-              }
+              checked={data.kleinunternehmer}
+              onChange={(e) => setData((d) => ({ ...d, kleinunternehmer: e.target.checked }))}
               className="mt-0.5 w-4 h-4 accent-signal"
             />
             <div className="flex-1">
-              <div className="font-medium text-[13.5px] flex items-center gap-1.5 text-ink">
-                <Send size={13} /> E-Mail-Automation aktivieren
-              </div>
+              <div className="font-medium text-[13.5px] text-ink">Kleinunternehmer (§ 19 UStG)</div>
               <div className="text-[12px] text-ink-muted mt-1">
-                Wenn aktiviert: Nach erfolgreicher Auslesung + Match werden Mails als Draft vorbereitet.
-                Versand erfolgt nach manuellem Klick auf &bdquo;An Mieter senden&ldquo; / &bdquo;An Behörde senden&ldquo; auf der Detailseite.
+                Aktivieren, wenn Sie keine Umsatzsteuer ausweisen. Rechnungen zeigen
+                dann den §-19-Hinweis und keine MwSt.
               </div>
             </div>
           </label>
@@ -860,76 +842,6 @@ const EchoesCard = ({
           </div>
         </div>
       </label>
-    </div>
-  );
-};
-
-const InboundCard = ({ inboundEmail }: { inboundEmail: string | null }) => {
-  const [copied, setCopied] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
-
-  const copy = async () => {
-    if (!inboundEmail) return;
-    await navigator.clipboard.writeText(inboundEmail);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  if (!inboundEmail) {
-    return (
-      <div className="rounded-panel border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
-        Diese Organisation hat noch keine Inbound-Adresse. Bitte Migration{" "}
-        <span className="font-mono">002_email_automation.sql</span> einspielen und Org neu speichern.
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-panel border border-hairline bg-canvas p-4">
-      <div className="data-label mb-2">Ihre Strafzettel-Adresse</div>
-      <div className="flex items-center gap-2">
-        <code className="flex-1 px-3 py-2 rounded-input bg-paper border border-hairline font-mono text-[13px] text-ink">
-          {inboundEmail}
-        </code>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={copy}
-        >
-          {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-          {copied ? "Kopiert" : "Kopieren"}
-        </Button>
-      </div>
-      <button
-        type="button"
-        onClick={() => setShowHelp((v) => !v)}
-        className="mt-3 inline-flex items-center gap-1 text-[12px] text-ink-soft hover:text-ink"
-      >
-        <ChevronDown
-          size={12}
-          className="transition-transform"
-          style={{ transform: showHelp ? "rotate(180deg)" : "" }}
-        />
-        So richten Sie die Weiterleitung ein
-      </button>
-      {showHelp && (
-        <div className="mt-3 text-[12px] text-ink-soft leading-relaxed space-y-2 bg-paper rounded-panel p-3 border border-hairline">
-          <div>
-            <strong>Gmail:</strong> Einstellungen → Weiterleitung und POP/IMAP → Weiterleitungsadresse
-            hinzufügen → <span className="font-mono">{inboundEmail}</span> → bestätigen → Filter erstellen
-            der alle Mails von Behörden weiterleitet.
-          </div>
-          <div>
-            <strong>Outlook:</strong> Einstellungen → Mail → Weiterleitung → Weiterleiten an{" "}
-            <span className="font-mono">{inboundEmail}</span>.
-          </div>
-          <div className="text-ink-muted">
-            Tipp: Nutzen Sie eine separate Weiterleitungsregel nur für Behörden-Absender, damit private
-            Mails nicht aus Versehen verarbeitet werden.
-          </div>
-        </div>
-      )}
     </div>
   );
 };

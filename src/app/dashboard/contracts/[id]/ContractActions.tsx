@@ -94,7 +94,6 @@ export const ContractActions = ({
 
   const [sentInfo, setSentInfo] = useState<string | null>(null);
   const sendCheckinLink = async () => {
-    if (!confirm("Check-in-Link per E-Mail an den Kunden senden?")) return;
     setBusy("checkin");
     setError(null);
     setSentInfo(null);
@@ -103,15 +102,21 @@ export const ContractActions = ({
     });
     const j = (await res.json().catch(() => ({}))) as {
       ok?: boolean;
-      sent_to?: string;
+      link?: string;
       error?: string;
     };
     setBusy(null);
-    if (!res.ok || !j.ok) {
-      setError(j.error || "Versand fehlgeschlagen");
+    if (!res.ok || !j.ok || !j.link) {
+      setError(j.error || "Link konnte nicht erstellt werden");
       return;
     }
-    setSentInfo(`Check-in-Link an ${j.sent_to} gesendet`);
+    try {
+      await navigator.clipboard.writeText(j.link);
+      setSentInfo("Zugangs-Link kopiert — jetzt an den Mieter weitergeben (24h gültig).");
+    } catch {
+      // Clipboard nicht verfügbar — Link direkt anzeigen
+      setSentInfo(j.link);
+    }
   };
 
   return (
@@ -186,7 +191,7 @@ export const ContractActions = ({
             ) : (
               <Send size={14} />
             )}
-            Check-in Link an Kunden
+            Zugangs-Link kopieren
           </button>
         )}
 
