@@ -1,9 +1,18 @@
-import { Car, Coins, FileSignature, Inbox } from "lucide-react";
+import {
+  AlertOctagon,
+  ClipboardCheck,
+  Coins,
+  FileSignature,
+  FileText,
+  RotateCcw,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { fmtEur } from "@/lib/utils";
 import type { Contract, Ticket, TicketLog, Vehicle } from "@/lib/types";
 import { Topbar } from "@/components/dashboard/Topbar";
-import { StatCard, HeroStat } from "@/components/dashboard/StatCard";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { ActionBar } from "@/components/dashboard/ActionBar";
+import { FleetToday } from "@/components/dashboard/FleetToday";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 import { ThroughputChart } from "@/components/dashboard/ThroughputChart";
 import { TicketTable } from "@/components/dashboard/TicketTable";
@@ -34,6 +43,22 @@ const buildThroughput = (tickets: Ticket[]): number[] => {
   return buckets;
 };
 
+const localToday = (): string => {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(
+    n.getDate()
+  ).padStart(2, "0")}`;
+};
+
+type ActiveContractRow = {
+  id: string;
+  vehicle_id: string | null;
+  pickup_date: string | null;
+  return_date: string | null;
+  actual_return_date: string | null;
+  checkin_step: number | null;
+};
+
 export default async function DashboardPage() {
   const supabase = createClient();
   const {
@@ -44,41 +69,35 @@ export default async function DashboardPage() {
     : { data: null };
   const orgId = (profile as { org_id?: string } | null)?.org_id ?? null;
 
+  const todayIso = localToday();
+
   const [
     { data: tickets },
     { data: org },
     { data: logs },
-    { data: contracts },
-    { count: vehicleCount },
-    { count: activeContractCount },
+    { data: recentContracts },
     { data: vehicles },
+    { data: activeContractsRaw },
+    { count: schaedenOffen },
   ] = await Promise.all([
     supabase.from("tickets").select("*").order("created_at", { ascending: false }).limit(50),
     supabase.from("organizations").select("name").single(),
-    supabase
-      .from("ticket_logs")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(8),
-    supabase
-      .from("contracts")
-      .select("*")
-      .order("updated_at", { ascending: false })
-      .limit(8),
-    supabase.from("vehicles").select("*", { count: "exact", head: true }),
-    supabase.from("contracts").select("*", { count: "exact", head: true }).eq("status", "aktiv"),
+    supabase.from("ticket_logs").select("*").order("created_at", { ascending: false }).limit(8),
+    supabase.from("contracts").select("*").order("updated_at", { ascending: false }).limit(8),
     supabase
       .from("vehicles")
-      .select("*")
-      .not("decommission_date", "is", null)
-      .order("decommission_date", { ascending: true }),
+      .select("id, status, plate, manufacturer, model, vehicle_type, decommission_date"),
+    supabase
+      .from("contracts")
+      .select("id, vehicle_id, pickup_date, return_date, actual_return_date, checkin_step")
+      .eq("status", "aktiv"),
+    supabase.from("damage_reports").select("*", { count: "exact", head: true }).eq("status", "offen"),
   ]);
 
-  const dueWindowStart = new Date();
-  dueWindowStart.setHours(0, 0, 0, 0);
-  const dueWindowEnd = new Date(dueWindowStart);
+  // ── Alerts (TÜV/Service fällig) ─────────────────────────────────
+  const dueWindowEnd = new Date();
+  dueWindowEnd.setHours(0, 0, 0, 0);
   dueWindowEnd.setDate(dueWindowEnd.getDate() + 30);
-  const todayIso = dueWindowStart.toISOString().slice(0, 10);
   const horizonIso = dueWindowEnd.toISOString().slice(0, 10);
 
   const { data: dueEventsRaw } = await supabase
@@ -126,52 +145,58 @@ export default async function DashboardPage() {
   }
   const dueAlerts = Array.from(dueByKey.values());
 
-  // Aktuelle Reifensätze inkl. Fahrzeug für Reifen-Alert
   const { data: tireRows } = await supabase
     .from("vehicle_tires")
-    .select(
-      "*, vehicles!inner(id, plate, manufacturer, model, vehicle_type)"
-    )
+    .select("*, vehicles!inner(id, plate, manufacturer, model, vehicle_type)")
     .eq("is_current", true);
   type TireWithVehicle = VehicleTire & {
     vehicles:
-      | {
-          id: string;
-          plate: string;
-          manufacturer: string | null;
-          model: string | null;
-          vehicle_type: string | null;
-        }
-      | Array<{
-          id: string;
-          plate: string;
-          manufacturer: string | null;
-          model: string | null;
-          vehicle_type: string | null;
-        }>
+      | { id: string; plate: string; manufacturer: string | null; model: string | null; vehicle_type: string | null }
+      | Array<{ id: string; plate: string; manufacturer: string | null; model: string | null; vehicle_type: string | null }>
       | null;
   };
-  const tiresForAlert = ((tireRows ?? []) as unknown as TireWithVehicle[]).map(
-    (t) => ({
-      ...t,
-      vehicles: Array.isArray(t.vehicles) ? t.vehicles[0] ?? null : t.vehicles,
-    })
-  );
+  const tiresForAlert = ((tireRows ?? []) as unknown as TireWithVehicle[]).map((t) => ({
+    ...t,
+    vehicles: Array.isArray(t.vehicles) ? t.vehicles[0] ?? null : t.vehicles,
+  }));
   const tireAlerts = buildTireAlerts(tiresForAlert);
 
+  // ── Daten aufbereiten ───────────────────────────────────────────
   const allTickets = (tickets ?? []) as Ticket[];
   const allLogs = (logs ?? []) as TicketLog[];
-  const recentContracts = (contracts ?? []) as Contract[];
-  const decommissionAlerts = ((vehicles ?? []) as Vehicle[]).filter((v) =>
-    isDecommissionAlertWindow(v, 21)
-  );
+  const recent = (recentContracts ?? []) as Contract[];
+  const allVehicles = (vehicles ?? []) as Vehicle[];
+  const active = (activeContractsRaw ?? []) as ActiveContractRow[];
 
-  const counts = {
-    neu: allTickets.filter((t) => t.status === "neu").length,
-    gebuehren: allTickets
-      .filter((t) => t.status === "weiterbelastet" || t.status === "bezahlt")
-      .reduce((s, t) => s + Number(t.processing_fee || 0), 0),
-  };
+  const decommissionAlerts = allVehicles.filter((v) => isDecommissionAlertWindow(v, 21));
+
+  // Handlungsbedarf-Zähler
+  const neu = allTickets.filter((t) => t.status === "neu").length;
+  const rueckgabenFaellig = active.filter(
+    (c) => c.actual_return_date == null && c.return_date != null && c.return_date <= todayIso
+  ).length;
+  const checkinsOffen = active.filter((c) => (c.checkin_step ?? 0) < 5).length;
+
+  // Flotte heute
+  const werkstatt = allVehicles.filter((v) => v.status === "werkstatt").length;
+  const aktivVehicles = allVehicles.filter((v) => v.status === "aktiv");
+  const rentedIds = new Set(
+    active
+      .filter(
+        (c) =>
+          c.vehicle_id &&
+          c.actual_return_date == null &&
+          (c.pickup_date ?? "0000-00-00") <= todayIso &&
+          (c.return_date ?? "9999-99-99") >= todayIso
+      )
+      .map((c) => c.vehicle_id as string)
+  );
+  const vermietet = aktivVehicles.filter((v) => rentedIds.has(v.id)).length;
+  const verfuegbar = Math.max(0, aktivVehicles.length - vermietet);
+
+  const gebuehren = allTickets
+    .filter((t) => t.status === "weiterbelastet" || t.status === "bezahlt")
+    .reduce((s, t) => s + Number(t.processing_fee || 0), 0);
 
   const throughput = buildThroughput(allTickets);
   const today = new Date().toLocaleDateString("de-DE", {
@@ -186,6 +211,7 @@ export default async function DashboardPage() {
       <Topbar />
       <div className="flex-1 overflow-auto scroll-thin bg-canvas">
         <div className="px-4 md:px-10 py-8 md:py-12 space-y-8 max-w-[1400px]">
+          {/* Header */}
           <div className="flex items-end justify-between flex-wrap gap-4">
             <div>
               <div className="kicker text-ink-muted mb-2">{today}</div>
@@ -193,9 +219,9 @@ export default async function DashboardPage() {
                 Guten Tag, {org?.name || "Team"}.
               </h1>
               <p className="text-[15px] text-ink-muted mt-3 max-w-2xl">
-                {counts.neu === 0
+                {neu === 0
                   ? "Keine offenen Eingänge — alles erledigt."
-                  : `${counts.neu} ${counts.neu === 1 ? "neuer Strafzettel wartet" : "neue Strafzettel warten"} auf Freigabe.`}
+                  : `${neu} ${neu === 1 ? "neuer Strafzettel wartet" : "neue Strafzettel warten"} auf Freigabe.`}
               </p>
             </div>
             <div className="hidden md:flex items-center gap-2 px-3 h-7 rounded-full border border-hairline bg-paper text-[12px] text-ink-soft">
@@ -204,58 +230,58 @@ export default async function DashboardPage() {
             </div>
           </div>
 
+          {/* Handlungsbedarf — die laute Zeile */}
+          <ActionBar
+            items={[
+              { label: "Strafzettel offen", count: neu, href: "/dashboard/tickets", Icon: FileText },
+              { label: "Rückgaben fällig", count: rueckgabenFaellig, href: "/dashboard/contracts", Icon: RotateCcw },
+              { label: "Check-ins offen", count: checkinsOffen, href: "/dashboard/contracts", Icon: ClipboardCheck },
+              { label: "Schäden offen", count: schaedenOffen ?? 0, href: "/dashboard/damage-reports", Icon: AlertOctagon },
+            ]}
+          />
+
+          {/* Kontext-Warnungen (nur wenn relevant) */}
           {decommissionAlerts.length > 0 && <DecommissionAlert vehicles={decommissionAlerts} />}
           {dueAlerts.length > 0 && <VehicleDueAlert items={dueAlerts} />}
           {tireAlerts.length > 0 && <TiresAlert items={tireAlerts} />}
-          {orgId && (
-            <div className="grid lg:grid-cols-2 gap-4">
-              <MarginWidget orgId={orgId} />
-              <PricingTodayWidget orgId={orgId} />
-            </div>
-          )}
 
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="col-span-2 lg:col-span-2">
-              <HeroStat
-                label="Strafzettel offen"
-                value={counts.neu}
-                Icon={Inbox}
-                pulse={counts.neu > 0}
-                sub={
-                  counts.neu === 0
-                    ? "Keine offenen Eingänge"
-                    : counts.neu === 1
-                    ? "Wartet auf Freigabe"
-                    : "Warten auf Freigabe"
-                }
+          {/* Flotte heute + Kennzahlen */}
+          <div className="grid lg:grid-cols-[1.4fr_1fr] gap-4">
+            <FleetToday available={verfuegbar} rented={vermietet} workshop={werkstatt} />
+            <div className="grid grid-cols-2 gap-4">
+              <StatCard
+                label="Aktive Verträge"
+                value={active.length}
+                Icon={FileSignature}
+                sub="Laufende Mietverträge"
+              />
+              <StatCard
+                label="Bearbeitungsgebühren"
+                value={fmtEur(gebuehren)}
+                Icon={Coins}
+                sub="Diesen Monat"
               />
             </div>
-            <StatCard
-              label="Aktive Verträge"
-              value={activeContractCount ?? 0}
-              Icon={FileSignature}
-              sub="Laufende Mietverträge"
-            />
-            <StatCard
-              label="Bearbeitungsgebühren"
-              value={fmtEur(counts.gebuehren)}
-              Icon={Coins}
-              sub="Diesen Monat"
-            />
-            <StatCard
-              label="Flotte"
-              value={vehicleCount ?? 0}
-              Icon={Car}
-              sub="Fahrzeuge"
-            />
           </div>
 
+          {/* Verlauf */}
           <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6">
-            <ActivityFeed ticketLogs={allLogs} contracts={recentContracts} />
+            <ActivityFeed ticketLogs={allLogs} contracts={recent} />
             <ThroughputChart data={throughput} total={throughput.reduce((s, v) => s + v, 0)} />
           </div>
 
           <TicketTable tickets={allTickets} />
+
+          {/* Optimierung — sekundär, ruhig */}
+          {orgId && (
+            <div>
+              <div className="kicker text-ink-muted mb-3">Optimierung</div>
+              <div className="grid lg:grid-cols-2 gap-4">
+                <MarginWidget orgId={orgId} />
+                <PricingTodayWidget orgId={orgId} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>
