@@ -1,4 +1,5 @@
-import { Ticket } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, Ticket } from "lucide-react";
 import { requirePortal } from "@/lib/portal-auth";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { Surface } from "@/components/portal/kit/Surface";
@@ -51,7 +52,11 @@ export default async function PortalStrafzettelPage() {
         <Surface padding="p-0" className="overflow-hidden">
           <div className="divide-y divide-hairline">
             {list.map((t) => (
-              <div key={t.id} className="px-4 py-3">
+              <Link
+                key={t.id}
+                href={`/portal/strafzettel/${t.id}`}
+                className="block px-4 py-3 hover:bg-paper/40 transition-colors"
+              >
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-mono text-[12px] text-ink-muted">{t.ticket_nr || "—"}</span>
                   <StatusBadge status={t.paid ? "bezahlt" : t.status} />
@@ -63,19 +68,16 @@ export default async function PortalStrafzettelPage() {
                   <span className="text-[12px] text-ink-muted font-mono tnum">
                     {t.offense_date ? fmtDate(t.offense_date) : ""}
                   </span>
-                  <span className="text-[13px] font-mono font-semibold tnum text-ink">
+                  <span className="inline-flex items-center gap-1 text-[13px] font-mono font-semibold tnum text-ink">
                     {fmtEur(Number(t.total_charge ?? t.fine_amount ?? 0))}
+                    <ChevronRight size={13} className="text-ink-muted" />
                   </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </Surface>
       )}
-
-      <p className="text-[11px] text-ink-muted px-1">
-        Online-Bezahlung &amp; Einspruch folgen in Kürze.
-      </p>
     </div>
   );
 }
