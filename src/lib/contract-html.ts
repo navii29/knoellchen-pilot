@@ -357,6 +357,37 @@ const CSS = `
   .ho-sigs .name { font-size: 9pt; margin-bottom: 1.5mm; min-height: 5mm; }
   .ho-sigs .line { border-top: 0.5pt solid #888; padding-top: 1mm; font-size: 7.5pt; color: #666; }
 
+  /* Unterschrift-Tinte, die direkt auf einer Unterschriftslinie sitzt
+     (Seite 3 Sondervereinbarungen, Seite 4 Datenschutz). */
+  .sig-ink { height: 11mm; display: flex; align-items: flex-end; justify-content: flex-start; }
+  .sig-ink img { max-height: 11mm; max-width: 55mm; }
+
+  /* Seite 6 (Übergabeprotokoll, Vollbild-Template): Name in Druckschrift +
+     Unterschrift des Kunden werden über den rechten Block
+     "Bevollmächtigter / Kunde" gelegt. Positionen in % der Template-Bildhöhe;
+     bei Anpassungen lokal rendern und prüfen. */
+  .ho-cust-name {
+    position: absolute;
+    left: 70%;
+    width: 25%;
+    top: 88.8%;
+    text-align: center;
+    font-size: 8pt;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .ho-cust-sig {
+    position: absolute;
+    left: 70%;
+    width: 25%;
+    top: 89.2%;
+    height: 11mm;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .ho-cust-sig img { max-height: 11mm; max-width: 95%; }
+
 `;
 
 
@@ -549,7 +580,8 @@ const renderPage3 = (
   org: Organization,
   contract: Contract,
   logoDataUri: string | null,
-  specialTerms: SpecialTermsTemplate[]
+  specialTerms: SpecialTermsTemplate[],
+  signaturePngBase64: string | null
 ): string => {
   const dateStr = fmtDate(today());
   const cityLabel = org.city?.trim() ?? "";
@@ -583,10 +615,12 @@ const renderPage3 = (
       <div class="agb-sigs">
         <div class="col">
           <div class="date">${esc(cityDate)}</div>
+          <div class="sig-ink">${signaturePngBase64 ? `<img src="${signaturePngBase64}" alt="Unterschrift" />` : ""}</div>
           <div class="line">${esc(fullName)}</div>
         </div>
         <div class="col">
           <div class="date">${esc(cityDate)}</div>
+          <div class="sig-ink"></div>
           <div class="line">&nbsp;</div>
         </div>
       </div>
@@ -597,7 +631,8 @@ const renderPage3 = (
 const renderPage4 = (
   org: Organization,
   contract: Contract,
-  customer: Customer | null
+  customer: Customer | null,
+  signaturePngBase64: string | null
 ): string => {
   const dateStr = fmtDate(today());
   const street = customerStreet(customer, contract.renter_address);
@@ -654,7 +689,9 @@ const renderPage4 = (
           <div><span style="font-size:9pt">Datum:</span> <span style="font-size:9pt">${esc(dateStr)}</span></div>
           <div style="flex:1;display:flex;gap:3mm;align-items:flex-end">
             <span style="font-size:9pt">Unterschrift:</span>
-            <span style="flex:1;border-bottom:0.5pt solid #888;min-height:5mm"></span>
+            <span style="flex:1;border-bottom:0.5pt solid #888;min-height:11mm;display:flex;align-items:flex-end;justify-content:center">
+              ${signaturePngBase64 ? `<img src="${signaturePngBase64}" alt="Unterschrift" style="max-height:10mm;max-width:55mm" />` : ""}
+            </span>
           </div>
         </div>
       </div>
@@ -719,9 +756,15 @@ const loadHandoverTemplate = (): string => {
   }
 };
 
-const renderPage6 = (org: Organization, contract: Contract): string => {
+const renderPage6 = (
+  org: Organization,
+  contract: Contract,
+  customer: Customer | null,
+  signaturePngBase64: string | null
+): string => {
   void org;
   const tplUri = loadHandoverTemplate();
+  const fullName = customerFullName(customer, contract.renter_name);
 
   // Overlay-Hinweis: nur wenn Schäden gemeldet ODER Fotos vorhanden sind.
   const damages = contract.damages_at_handover?.trim() ?? "";
@@ -742,11 +785,20 @@ const renderPage6 = (org: Organization, contract: Contract): string => {
     ? `<div class="ho-overlay">${overlayParts.join(" &nbsp;·&nbsp; ")}</div>`
     : "";
 
+  // Name (Druckschrift) + Unterschrift des Kunden im rechten Block
+  // "Bevollmächtigter / Kunde". Name immer, Unterschrift nur wenn signiert.
+  const custName = `<div class="ho-cust-name">${esc(fullName)}</div>`;
+  const custSig = signaturePngBase64
+    ? `<div class="ho-cust-sig"><img src="${signaturePngBase64}" alt="Unterschrift" /></div>`
+    : "";
+
   if (tplUri) {
     return `
       <div class="page page-image">
         <img src="${tplUri}" alt="Übergabeprotokoll" />
         ${overlay}
+        ${custName}
+        ${custSig}
       </div>
     `;
   }
@@ -790,10 +842,10 @@ export const buildContractHtml = (args: {
 <body>
 ${renderPage1(org, contract, customer, vehicle, logoDataUri, signaturePngBase64)}
 ${renderPage2(org)}
-${renderPage3(org, contract, logoDataUri, specialTerms)}
-${renderPage4(org, contract, customer)}
+${renderPage3(org, contract, logoDataUri, specialTerms, signaturePngBase64)}
+${renderPage4(org, contract, customer, signaturePngBase64)}
 ${renderPage5(org, contract, customer, logoDataUri)}
-${renderPage6(org, contract)}
+${renderPage6(org, contract, customer, signaturePngBase64)}
 </body>
 </html>`;
 };
