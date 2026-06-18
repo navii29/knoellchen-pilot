@@ -1,4 +1,4 @@
-import { beforeAll, expect, test } from "vitest";
+import { beforeEach, expect, test } from "vitest";
 import {
   hashRefresh,
   randomRefresh,
@@ -6,7 +6,9 @@ import {
   verifyAccessToken,
 } from "./portal-auth";
 
-beforeAll(() => {
+// Re-set before EACH test so a test that mutates the secret (the wrong-secret
+// case) can't leak into the next regardless of run order.
+beforeEach(() => {
   process.env.SUPABASE_JWT_SECRET = "test-secret-at-least-32-chars-long-xxxx";
 });
 
