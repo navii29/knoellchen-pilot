@@ -13,12 +13,14 @@ import {
   Loader2,
   Send,
   Trash2,
+  UserPlus,
   X,
 } from "lucide-react";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import type { Contract } from "@/lib/types";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
+import { PortalInviteModal } from "@/components/dashboard/PortalInviteModal";
 
 type ReturnSummary = {
   plannedDays: number;
@@ -50,6 +52,7 @@ export const ContractActions = ({
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [returnOpen, setReturnOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const patch = async (key: string, body: Record<string, unknown>) => {
     setBusy(key);
@@ -182,6 +185,16 @@ export const ContractActions = ({
 
         {contract.customer_id && (
           <button
+            onClick={() => setInviteOpen(true)}
+            disabled={busy != null}
+            className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn border border-hairline bg-paper text-ink-soft hover:bg-canvas hover:text-ink transition-colors disabled:opacity-50"
+          >
+            <UserPlus size={14} /> Portalzugang erstellen
+          </button>
+        )}
+
+        {contract.customer_id && (
+          <button
             onClick={sendCheckinLink}
             disabled={busy != null}
             className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn border border-hairline bg-paper text-ink-soft hover:bg-canvas hover:text-ink transition-colors disabled:opacity-50"
@@ -249,6 +262,15 @@ export const ContractActions = ({
             setReturnOpen(false);
             router.refresh();
           }}
+        />
+      )}
+
+      {inviteOpen && contract.customer_id && (
+        <PortalInviteModal
+          customerId={contract.customer_id}
+          defaultEmail={contract.renter_email ?? ""}
+          onClose={() => setInviteOpen(false)}
+          onDone={() => router.refresh()}
         />
       )}
     </Panel>

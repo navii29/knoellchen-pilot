@@ -52,6 +52,12 @@ export const AppleNav = () => {
 
           <div className="flex items-center gap-1.5">
             <Link
+              href="/portal/login"
+              className="hidden sm:inline-flex px-3 h-9 items-center rounded-full border border-black/10 text-[13px] text-graphite-soft hover:text-graphite hover:bg-black/[0.04] transition-colors"
+            >
+              Kunden-Login
+            </Link>
+            <Link
               href="/login"
               className="hidden sm:inline-flex px-3 h-9 items-center text-[13px] text-graphite-soft hover:text-graphite transition-colors"
             >
@@ -84,6 +90,9 @@ export const AppleNav = () => {
                 {l.label}
               </a>
             ))}
+            <Link href="/portal/login" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-2xl text-[15px] text-graphite font-medium hover:bg-black/[0.04]">
+              Kunden-Login
+            </Link>
             <Link href="/login" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-2xl text-[15px] text-graphite-soft">
               Anmelden
             </Link>
