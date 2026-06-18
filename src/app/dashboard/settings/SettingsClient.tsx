@@ -112,7 +112,10 @@ export const SettingsClient = ({
                 </span>
               </div>
               <div className="text-[11px] text-ink-muted mt-1">
-                Standardwert für neue Strafzettel. Im Strafzettel-Detail veränderbar — wird mit 19% MwSt versteuert.
+                Standardwert für neue Strafzettel. Im Strafzettel-Detail veränderbar.
+                {data.kleinunternehmer
+                  ? " Ohne USt (Kleinunternehmer)."
+                  : " Zzgl. 19 % USt."}
               </div>
             </Field>
             <Field label="Straße">
@@ -153,21 +156,54 @@ export const SettingsClient = ({
               <input value={data.bic} onChange={set("bic")} className="input tabular-nums" placeholder="XXXXDEXXXXX" />
             </Field>
           </div>
-          <label className="mt-5 flex items-start gap-3 p-3 rounded-panel border border-hairline cursor-pointer">
-            <input
-              type="checkbox"
-              checked={data.kleinunternehmer}
-              onChange={(e) => setData((d) => ({ ...d, kleinunternehmer: e.target.checked }))}
-              className="mt-0.5 w-4 h-4 accent-signal"
-            />
-            <div className="flex-1">
-              <div className="font-medium text-[13.5px] text-ink">Kleinunternehmer (§ 19 UStG)</div>
-              <div className="text-[12px] text-ink-muted mt-1">
-                Aktivieren, wenn Sie keine Umsatzsteuer ausweisen. Rechnungen zeigen
-                dann den §-19-Hinweis und keine MwSt.
-              </div>
+          <div className="mt-5">
+            <div className="data-label mb-2">Besteuerung</div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <label
+                className={`flex items-start gap-3 p-3 rounded-panel border cursor-pointer transition-colors ${
+                  !data.kleinunternehmer ? "border-signal bg-signal-soft" : "border-hairline hover:bg-canvas"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="besteuerung"
+                  checked={!data.kleinunternehmer}
+                  onChange={() => setData((d) => ({ ...d, kleinunternehmer: false }))}
+                  className="mt-0.5 w-4 h-4 accent-signal"
+                />
+                <div className="flex-1">
+                  <div className="font-medium text-[13.5px] text-ink">Regelbesteuerung</div>
+                  <div className="text-[12px] text-ink-muted mt-0.5">
+                    Weist 19 % Umsatzsteuer aus. Standard, z. B. für GmbH, UG, AG.
+                  </div>
+                </div>
+              </label>
+
+              <label
+                className={`flex items-start gap-3 p-3 rounded-panel border cursor-pointer transition-colors ${
+                  data.kleinunternehmer ? "border-signal bg-signal-soft" : "border-hairline hover:bg-canvas"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="besteuerung"
+                  checked={data.kleinunternehmer}
+                  onChange={() => setData((d) => ({ ...d, kleinunternehmer: true }))}
+                  className="mt-0.5 w-4 h-4 accent-signal"
+                />
+                <div className="flex-1">
+                  <div className="font-medium text-[13.5px] text-ink">Kleinunternehmer (§ 19 UStG)</div>
+                  <div className="text-[12px] text-ink-muted mt-0.5">
+                    Keine Umsatzsteuer. Rechnungen zeigen den §-19-Hinweis.
+                  </div>
+                </div>
+              </label>
             </div>
-          </label>
+            <p className="mt-2 text-[11px] text-ink-muted">
+              Die Rechtsform (GmbH, UG …) gehört in den Firmennamen und ist von der
+              Besteuerung unabhängig.
+            </p>
+          </div>
         </Section>
 
         <Section
