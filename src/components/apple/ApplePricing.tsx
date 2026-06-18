@@ -15,7 +15,7 @@ type Plan = {
 const PLANS: Plan[] = [
   {
     name: "Starter",
-    price: "49",
+    price: "349",
     period: "/ Monat",
     tagline: "Für kleine Flotten, die einfach starten wollen.",
     features: [
@@ -30,7 +30,7 @@ const PLANS: Plan[] = [
   },
   {
     name: "Pro",
-    price: "149",
+    price: "499",
     period: "/ Monat",
     tagline: "Alles automatisch. Für wachsende Vermieter.",
     features: [
@@ -48,7 +48,8 @@ const PLANS: Plan[] = [
   },
   {
     name: "Enterprise",
-    price: "Individuell",
+    price: "749",
+    period: "/ Monat",
     tagline: "Für Flotten mit besonderen Anforderungen.",
     features: [
       "Alles aus Pro",
