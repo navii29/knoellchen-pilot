@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Car, ChevronRight } from "lucide-react";
+import { Car, ChevronRight, Plus } from "lucide-react";
 import { requirePortal } from "@/lib/portal-auth";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { Plate } from "@/components/ui/Plate";
@@ -37,9 +37,17 @@ export default async function PortalMietenPage() {
 
   return (
     <div className="px-5 py-4 space-y-5">
-      <h1 className="font-display text-[22px] tracking-tightest font-bold text-ink px-1">
-        Meine Mieten
-      </h1>
+      <div className="flex items-center justify-between gap-2 px-1">
+        <h1 className="font-display text-[22px] tracking-tightest font-bold text-ink">
+          Meine Mieten
+        </h1>
+        <Link
+          href="/portal/reservieren"
+          className="inline-flex items-center gap-1.5 text-[12px] font-semibold bg-signal text-white rounded-full px-3 py-1.5 active:scale-[.98] shrink-0"
+        >
+          <Plus size={13} /> Anfragen
+        </Link>
+      </div>
 
       {list.length === 0 ? (
         <Surface>
