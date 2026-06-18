@@ -433,3 +433,11 @@ export const createPortalClient = (accessToken: string) =>
 - 0.2 — glass design-system shell, navigation, parity-screen rebuild.
 - 0.3 — remaining new tables (`notifications`, `contract_acceptances`, `ticket_disputes`, `incident_reports`, `support_messages`) + payment-seam columns + in-portal notification scaffold.
 - Migrating portal **write/upload** paths beyond auth (checkin/checkout mutations) to RLS — sequence after the read migration proves out.
+
+## Known follow-ups (from code review — tracked, not yet done)
+- **Refresh theft-detection (session-family revocation):** the rotation is now a CAS guard (a losing/replayed refresh gets 401), but presenting a *previously rotated* refresh token should additionally revoke the whole session family as a theft signal. Add before the refresh route is wired into a client interceptor.
+- **Immediate login-deactivation:** `refresh` now rejects inactive logins, but `getPortalSession` does not re-check `active`, so a deactivated login can still render for up to the access-token lifetime. Clean fix: revoke that customer's `portal_sessions` rows at the moment an operator deactivates a login (operator-side, 0.3).
+- **Per-request session read:** `getPortalSession`/`requirePortal` each do one `portal_sessions` admin read per call; memoize with React `cache()` when wiring routes in the read-migration to avoid 2+ reads per request.
+
+## Task 9 status (read-route migration) — PAUSED, decision needed
+Migration 031 adds portal RLS policies for `customers`/`contracts`/`tickets`/`portal_sessions`/`portal-uploads` only. Portal read routes that also touch `handover_photos` or the document buckets (`generated-docs`/`ticket-documents`) would return empty under the RLS client until those policies exist (0.3 territory). Options: (a) migrate only the fully-covered routes (`me`, `profile`, contracts list/detail, `loadPortalContract`) now and defer document/photo routes to 0.3; or (b) fold the whole read-migration into 0.3 with all missing policies. **Gate:** apply migration 031 and pass `supabase/tests/031_portal_rls.sql` (DB step) before pointing any route at the RLS client.
