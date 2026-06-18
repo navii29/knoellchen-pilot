@@ -68,7 +68,7 @@ export const POST = async (
   // Org-Default für Bearbeitungsgebühr (jetzt als NETTO interpretiert)
   const { data: org } = await admin
     .from("organizations")
-    .select("processing_fee")
+    .select("processing_fee, kleinunternehmer")
     .eq("id", ticket.org_id)
     .maybeSingle();
   const feeNet = Number(org?.processing_fee ?? 25) || 25;
@@ -77,6 +77,7 @@ export const POST = async (
     chargeFine: ticket.charge_fine ?? true,
     feeNet,
     chargeFee: ticket.charge_fee ?? true,
+    vatRate: org?.kleinunternehmer ? 0 : undefined,
   });
 
   await admin

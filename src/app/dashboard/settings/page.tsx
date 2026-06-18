@@ -2,12 +2,14 @@ import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { SettingsClient } from "./SettingsClient";
 import { ShopifyImportCard } from "@/components/dashboard/ShopifyImportCard";
+import { TeamCard } from "@/components/dashboard/TeamCard";
+import { DangerZone } from "@/components/dashboard/DangerZone";
 import type { Organization } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 const SAFE_COLUMNS =
-  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, echoes_account_id, echoes_enabled, rental_terms, logo_path, created_at";
+  "id, name, street, zip, city, phone, email, tax_number, processing_fee, iban, bic, account_holder, kleinunternehmer, slug, inbound_email, lexoffice_enabled, echoes_account_id, echoes_enabled, rental_terms, logo_path, created_at";
 
 export default async function SettingsPage() {
   const supabase = createClient();
@@ -67,6 +69,12 @@ export default async function SettingsPage() {
             hasToken={shopifyHasToken}
             webhookUrl={webhookUrl}
           />
+          <div className="mt-6">
+            <TeamCard />
+          </div>
+          <div className="mt-6">
+            <DangerZone orgName={(safe as { name?: string }).name ?? ""} />
+          </div>
         </div>
       </div>
     </>

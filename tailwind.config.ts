@@ -36,7 +36,7 @@ const config: Config = {
         ink: {
           DEFAULT: "#1d1d1f", // primary text (graphite)
           soft: "#424245", // body text
-          muted: "#86868b", // secondary / meta text
+          muted: "#66666e", // secondary / meta text (WCAG AA on glass)
         },
         hairline: {
           DEFAULT: "#d2d2d7", // light borders / dividers (Apple silver)

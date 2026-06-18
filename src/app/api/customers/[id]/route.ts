@@ -90,6 +90,26 @@ export const DELETE = async (_req: Request, { params }: RouteCtx) => {
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   const admin = createAdminClient();
+
+  // GDPR Art. 17: zuerst die sensiblen Ausweis-/Führerschein-Dateien aus dem
+  // Storage löschen (sonst bleiben sie als verwaiste Objekte für immer liegen).
+  const { data: cust } = await admin
+    .from("customers")
+    .select("license_photo_path, id_card_photo_path")
+    .eq("id", params.id)
+    .eq("org_id", auth.org_id)
+    .maybeSingle();
+  if (!cust) return NextResponse.json({ error: "Kunde nicht gefunden" }, { status: 404 });
+
+  const docPaths = [cust.license_photo_path, cust.id_card_photo_path].filter(
+    (p): p is string => typeof p === "string" && p.length > 0
+  );
+  if (docPaths.length > 0) {
+    await admin.storage.from("customer-documents").remove(docPaths);
+  }
+
+  // Portal-Logins werden per ON DELETE CASCADE entfernt; Verträge behalten ihren
+  // renter_name-Snapshot (FK ist ON DELETE SET NULL, Aufbewahrungspflicht).
   const { error } = await admin
     .from("customers")
     .delete()

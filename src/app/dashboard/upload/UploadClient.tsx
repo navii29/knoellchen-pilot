@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   FileStack,
   FileText,
-  Mail,
   ScanText,
   Upload,
   UploadCloud,
@@ -25,7 +24,7 @@ const PHASES: Array<{ key: Exclude<Phase, "idle" | "done" | "error">; label: str
   { key: "matching", label: "Fahrer wird zugeordnet", Icon: UserCheck },
 ];
 
-export const UploadClient = ({ inboundEmail }: { inboundEmail: string | null }) => {
+export const UploadClient = () => {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -109,13 +108,6 @@ export const UploadClient = ({ inboundEmail }: { inboundEmail: string | null }) 
                   onChange={(e) => onChoose(e.target.files?.[0])}
                 />
                 <DropZone onFile={onChoose} onClick={() => inputRef.current?.click()} />
-                {inboundEmail && (
-                  <div className="mt-5 flex items-center gap-2 text-[12px] text-ink-muted">
-                    <Mail size={13} />
-                    Oder direkt weiterleiten an{" "}
-                    <span className="font-mono text-ink">{inboundEmail}</span>
-                  </div>
-                )}
                 {error && (
                   <div className="mt-3 text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-panel px-3 py-2">
                     {error}

@@ -236,17 +236,7 @@ export default function DatenschutzPage() {
         .
       </P>
 
-      <H2>10. E-Mail-Versand und -Inbound (Mailgun)</H2>
-      <P>
-        Für den Versand und Empfang transaktionaler E-Mails nutzen wir den Dienst
-        Mailgun der Sinch Email (US Holding) Inc., 112 E Pecan St #1135, San
-        Antonio, TX 78205, USA. Übermittelte Daten beschränken sich auf Absender,
-        Empfänger, Betreff, Inhalt und Anhänge der E-Mail. Eine Datenübermittlung
-        in die USA erfolgt auf Grundlage von Standardvertragsklauseln. Mit
-        Mailgun besteht ein Vertrag zur Auftragsverarbeitung.
-      </P>
-
-      <H2>11. Empfänger und Auftragsverarbeiter</H2>
+      <H2>10. Empfänger und Auftragsverarbeiter</H2>
       <P>
         Eine Übersicht aller Auftragsverarbeiter und Empfänger personenbezogener
         Daten stellen wir unseren Geschäftskunden im Rahmen des
@@ -254,14 +244,28 @@ export default function DatenschutzPage() {
         derzeit:
       </P>
       <UL>
-        <li>Vercel Inc. — Hosting</li>
+        <li>Vercel Inc. — Hosting (Funktionen in der EU-Region Frankfurt)</li>
         <li>Supabase Inc. — Datenbank, Authentifizierung, Datei-Speicherung (EU)</li>
         <li>Anthropic, PBC — KI-gestützte Dokumentenanalyse</li>
-        <li>Sinch / Mailgun — Transaktionale E-Mails</li>
+        <li>
+          Shopify International Ltd. — nur falls der Geschäftskunde die
+          Shopify-Anbindung aktiviert (Übernahme von Bestelldaten: Name,
+          E-Mail, Anschrift)
+        </li>
+        <li>
+          grandtotal/lexoffice (Haufe-Lexware GmbH &amp; Co. KG) — nur falls der
+          Geschäftskunde die lexoffice-Anbindung aktiviert (Übernahme von
+          Rechnungs- und Kundenstammdaten)
+        </li>
         <li>Stripe Payments Europe Ltd. — Zahlungsabwicklung (geplant)</li>
       </UL>
+      <P>
+        Ein E-Mail-Versand durch Knöllchen-Pilot findet nicht statt; erstellte
+        Dokumente werden vom Geschäftskunden selbst über den eigenen Kanal
+        weitergegeben.
+      </P>
 
-      <H2>12. Ihre Rechte als betroffene Person</H2>
+      <H2>11. Ihre Rechte als betroffene Person</H2>
       <P>Sie haben uns gegenüber folgende Rechte hinsichtlich der Sie betreffenden personenbezogenen Daten:</P>
       <UL>
         <li>Recht auf Auskunft (Art. 15 DSGVO)</li>
@@ -292,7 +296,7 @@ export default function DatenschutzPage() {
         E-Mail: poststelle@lda.bayern.de
       </Address>
 
-      <H2>13. Datensicherheit</H2>
+      <H2>12. Datensicherheit</H2>
       <P>
         Wir treffen technische und organisatorische Sicherheitsmaßnahmen nach
         dem Stand der Technik, um Ihre Daten gegen zufällige oder vorsätzliche
@@ -303,7 +307,7 @@ export default function DatenschutzPage() {
         Zugriffskontrollen sowie regelmäßige Backups.
       </P>
 
-      <H2>14. Aktualität und Änderung dieser Datenschutzerklärung</H2>
+      <H2>13. Aktualität und Änderung dieser Datenschutzerklärung</H2>
       <P>
         Diese Datenschutzerklärung ist aktuell gültig und hat den Stand
         Mai 2026. Durch die Weiterentwicklung unserer Website und Angebote

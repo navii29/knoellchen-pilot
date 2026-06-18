@@ -39,7 +39,7 @@ const PLANS: Plan[] = [
       "Dynamic Pricing",
       "Automatische PDF-Erstellung",
       "Zeugenfragebogen & Anschreiben",
-      "Mahnstufen-Tracking",
+      "Zahlungs-Tracking",
       "CSV-Import für Buchungen",
       "Prioritäts-Support",
     ],

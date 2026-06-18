@@ -6,9 +6,14 @@ export const maxDuration = 30;
 
 type Action = "mieter" | "behoerde" | "beide";
 
-// E-Mail-Versand wurde entfernt. Diese Route markiert den Strafzettel als
-// weiterbelastet bzw. an die Behörde gemeldet; die Zustellung der PDFs
-// (Anschreiben/Rechnung/Zeugenfragebogen) erfolgt manuell durch den Betreiber.
+/**
+ * Markiert einen Strafzettel als versendet.
+ *
+ * E-Mail-Versand wurde aus dem Produkt entfernt — die generierten PDFs
+ * (Anschreiben, Rechnung, Zeugenfragebogen) lädt der Betrieb im Ticket-Detail
+ * herunter und versendet sie über den eigenen Kanal (Post/eigene E-Mail).
+ * Dieser Endpoint setzt nur noch den Versand-Status + Audit-Log.
+ */
 export const POST = async (
   req: Request,
   { params }: { params: { id: string } }
@@ -43,76 +48,50 @@ export const POST = async (
   }
   const ticket = ticketData as Ticket;
 
-  const now = new Date().toISOString();
+  const nowIso = new Date().toISOString();
   const nextStatus =
     ticket.status === "neu" || ticket.status === "zugeordnet"
       ? "weiterbelastet"
       : ticket.status;
+  const update: Record<string, unknown> = { status: nextStatus, updated_at: nowIso };
   const results: Record<string, unknown> = {};
 
   if (action === "mieter" || action === "beide") {
-    if (!ticket.renter_email && !ticket.renter_name) {
-      return NextResponse.json(
-        { error: "Kein Mieter zugeordnet — Vertrag prüfen" },
-        { status: 400 }
-      );
-    }
     if (!ticket.letter_path || !ticket.invoice_path) {
       return NextResponse.json(
         { error: 'PDFs fehlen — bitte zuerst "PDFs erstellen" klicken' },
         { status: 400 }
       );
     }
-    await admin
-      .from("tickets")
-      .update({
-        letter_sent: true,
-        letter_sent_at: now,
-        letter_sent_to: ticket.renter_email ?? ticket.renter_name ?? null,
-        status: nextStatus,
-        updated_at: now,
-      })
-      .eq("id", ticket.id);
-    await admin.from("ticket_logs").insert({
-      ticket_id: ticket.id,
-      action: "marked_forwarded_renter",
-      details: { to: ticket.renter_email ?? ticket.renter_name ?? null },
-    });
-    results.renter = { ok: true, marked: true };
+    update.letter_sent = true;
+    update.letter_sent_at = nowIso;
+    update.letter_sent_to = ticket.renter_email ?? ticket.renter_name ?? null;
+    results.renter = { ok: true };
   }
 
   if (action === "behoerde" || action === "beide") {
-    const recipient = body.behoerde_email || ticket.authority_email || null;
-    if (!recipient) {
-      return NextResponse.json(
-        { error: "Behörde fehlt — bitte angeben" },
-        { status: 400 }
-      );
-    }
     if (!ticket.questionnaire_path) {
       return NextResponse.json(
         { error: 'Zeugenfragebogen-PDF fehlt — bitte zuerst "PDFs erstellen" klicken' },
         { status: 400 }
       );
     }
-    await admin
-      .from("tickets")
-      .update({
-        authority_sent: true,
-        authority_sent_at: now,
-        authority_sent_to: recipient,
-        authority_email: recipient,
-        status: nextStatus,
-        updated_at: now,
-      })
-      .eq("id", ticket.id);
-    await admin.from("ticket_logs").insert({
-      ticket_id: ticket.id,
-      action: "marked_forwarded_authority",
-      details: { to: recipient },
-    });
-    results.authority = { ok: true, marked: true };
+    const recipient = body.behoerde_email || ticket.authority_email || null;
+    update.authority_sent = true;
+    update.authority_sent_at = nowIso;
+    update.authority_sent_to = recipient;
+    if (recipient) update.authority_email = recipient;
+    results.authority = { ok: true };
   }
 
-  return NextResponse.json({ ok: true, ...results });
+  const { error } = await admin.from("tickets").update(update).eq("id", ticket.id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await admin.from("ticket_logs").insert({
+    ticket_id: ticket.id,
+    action: action === "behoerde" ? "marked_sent_authority" : action === "beide" ? "marked_sent_both" : "marked_sent_renter",
+    details: { marked_manually: true, ...results },
+  });
+
+  return NextResponse.json({ ok: true, marked_sent: true, ...results });
 };

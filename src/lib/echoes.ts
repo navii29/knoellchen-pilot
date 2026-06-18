@@ -18,6 +18,23 @@
 export const ECHOES_BASE_URL =
   process.env.ECHOES_BASE_URL ?? "https://api.echoes.solutions/v1";
 
+/**
+ * GPS-Tracking ist bis zur echten Echoes-API ein Stub mit ERFUNDENEN
+ * Koordinaten. Die dürfen NIE in Produktion als echte Position erscheinen
+ * (ein Betrieb könnte sonst eine Rückführung an einen Fantasie-Ort schicken).
+ * Daher liefern die Stubs nur dann Daten, wenn ECHOES_ENABLED ausdrücklich
+ * auf "true" gesetzt ist (Demo/Dev) — sonst werfen sie 503.
+ */
+export const echoesEnabled = (): boolean => process.env.ECHOES_ENABLED === "true";
+const ensureEnabled = () => {
+  if (!echoesEnabled()) {
+    throw new EchoesError(
+      503,
+      "GPS-Tracking ist noch nicht verfügbar. Die Echoes-Anbindung ist nicht aktiviert."
+    );
+  }
+};
+
 export type EchoesDevice = {
   id: string;
   label: string;
@@ -93,6 +110,7 @@ export const getDevices = async (
   apiKey: string,
   accountId: string
 ): Promise<EchoesDevice[]> => {
+  ensureEnabled();
   // TODO: Replace with real Echoes API call
   // Erwartet: GET ${ECHOES_BASE_URL}/devices?account_id=${accountId}
   //          Authorization: Bearer ${apiKey}
@@ -129,6 +147,7 @@ export const getDevicePosition = async (
   apiKey: string,
   deviceId: string
 ): Promise<EchoesPosition> => {
+  ensureEnabled();
   // TODO: Replace with real Echoes API call
   // Erwartet: GET ${ECHOES_BASE_URL}/devices/${deviceId}/position
   //          Authorization: Bearer ${apiKey}
@@ -145,6 +164,7 @@ export const getDeviceHistory = async (
   from: string,
   to: string
 ): Promise<EchoesTripPoint[]> => {
+  ensureEnabled();
   // TODO: Replace with real Echoes API call
   // Erwartet: GET ${ECHOES_BASE_URL}/devices/${deviceId}/history?from=${from}&to=${to}
   //          Authorization: Bearer ${apiKey}

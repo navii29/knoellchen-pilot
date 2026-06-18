@@ -60,7 +60,7 @@ export const MarginWidget = async ({ orgId }: { orgId: string }) => {
     return (
       <Link
         href="/dashboard/vehicles"
-        className="group block panel hover:border-ink-muted transition-colors"
+        className="group block panel p-5 hover:border-ink-muted transition-colors"
       >
         <div className="kicker text-ink-muted mb-2 flex items-center gap-1.5">
           <Wallet size={12} strokeWidth={1.75} />
@@ -101,7 +101,7 @@ export const MarginWidget = async ({ orgId }: { orgId: string }) => {
   return (
     <Link
       href="/dashboard/reports/margin"
-      className="block panel hover:border-ink-muted transition-colors group"
+      className="block panel p-5 hover:border-ink-muted transition-colors group"
     >
       <div className="flex items-center justify-between mb-3">
         <div className="kicker text-ink-muted flex items-center gap-1.5">

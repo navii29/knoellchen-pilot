@@ -19,12 +19,19 @@ export type ChargeInput = {
   chargeFine: boolean;
   feeNet: number | null | undefined;
   chargeFee: boolean;
+  /**
+   * Umsatzsteuersatz auf die Bearbeitungsgebühr. Default 19%.
+   * Für Kleinunternehmer (§ 19 UStG) mit 0 übergeben — dann wird keine
+   * USt. ausgewiesen (fee_gross === fee_net).
+   */
+  vatRate?: number | null;
 };
 
 export const computeCharge = (input: ChargeInput): ChargeBreakdown => {
   const fineAmount = Number(input.fineAmount ?? 0) || 0;
   const feeNet = Number(input.feeNet ?? 0) || 0;
-  const feeVat = round2(feeNet * VAT_RATE);
+  const vatRate = input.vatRate == null ? VAT_RATE : Number(input.vatRate) || 0;
+  const feeVat = round2(feeNet * vatRate);
   const feeGross = round2(feeNet + feeVat);
 
   const fineApplied = input.chargeFine ? fineAmount : 0;
