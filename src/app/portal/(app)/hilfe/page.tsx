@@ -7,30 +7,30 @@ import { SupportForm } from "@/components/portal/SupportForm";
 
 export const dynamic = "force-dynamic";
 
-const FAQ = [
+const FAQ: { q: string; a: string }[] = [
   {
-    q: "Wie unterschreibe ich meinen Mietvertrag?",
-    a: "Öffne unter „Mieten" deinen Vertrag und tippe auf „Vertrag unterschreiben". Du kannst direkt mit dem Finger unterschreiben.",
+    q: `Wie unterschreibe ich meinen Mietvertrag?`,
+    a: `Öffne unter „Mieten" deinen Vertrag und tippe auf „Vertrag unterschreiben". Du kannst direkt mit dem Finger unterschreiben.`,
   },
   {
-    q: "Wie funktioniert der Self-Check-in?",
-    a: "Im Vertrag auf „Self-Check-in starten" — du fotografierst Führerschein, Ausweis und das Fahrzeug und unterschreibst. Dauert nur wenige Minuten.",
+    q: `Wie funktioniert der Self-Check-in?`,
+    a: `Im Vertrag auf „Self-Check-in starten" — du fotografierst Führerschein, Ausweis und das Fahrzeug und unterschreibst. Das dauert nur wenige Minuten.`,
   },
   {
-    q: "Wie gebe ich das Fahrzeug zurück?",
-    a: "Im aktiven Vertrag auf „Self-Check-out" — Fotos, Kilometerstand und Tankfüllung erfassen, fertig.",
+    q: `Wie gebe ich das Fahrzeug zurück?`,
+    a: `Im aktiven Vertrag auf „Self-Check-out" — Fotos, Kilometerstand und Tankfüllung erfassen, fertig.`,
   },
   {
-    q: "Was mache ich bei einem Strafzettel?",
-    a: "Unter „Strafzettel" siehst du Details und Betrag. Du kannst bestätigen, dass du gefahren bist, oder Einspruch einlegen („Ich war nicht der Fahrer").",
+    q: `Was mache ich bei einem Strafzettel?`,
+    a: `Unter „Strafzettel" siehst du Details und Betrag. Du kannst bestätigen, dass du gefahren bist, oder Einspruch einlegen (Ich war nicht der Fahrer).`,
   },
   {
-    q: "Wie melde ich einen Schaden?",
-    a: "Im aktiven Vertrag auf „Schaden melden" — beschreibe den Vorfall und füge Fotos hinzu.",
+    q: `Wie melde ich einen Schaden?`,
+    a: `Im aktiven Vertrag auf „Schaden melden" — beschreibe den Vorfall und füge Fotos hinzu.`,
   },
   {
-    q: "Kann ich die Miete verlängern?",
-    a: "Ja, im aktiven Vertrag auf „Miete verlängern" — wähle ein neues Rückgabedatum, die Mehrkosten werden dir angezeigt.",
+    q: `Kann ich die Miete verlängern?`,
+    a: `Ja, im aktiven Vertrag auf „Miete verlängern" — wähle ein neues Rückgabedatum, die Mehrkosten werden dir angezeigt.`,
   },
 ];
 
