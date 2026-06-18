@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, FileText, User, type LucideIcon } from "lucide-react";
+import { ChevronRight, FileText, HelpCircle, User, type LucideIcon } from "lucide-react";
 import { getPortalCustomer } from "@/lib/portal-auth";
 import { Surface } from "@/components/portal/kit/Surface";
 import { LogoutButton } from "@/components/portal/LogoutButton";
@@ -18,6 +18,7 @@ export default async function PortalMehrPage() {
         <div className="divide-y divide-hairline">
           <MenuLink href="/portal/documents" Icon={FileText} label="Dokumente" />
           <MenuLink href="/portal/profile" Icon={User} label="Profil" />
+          <MenuLink href="/portal/hilfe" Icon={HelpCircle} label="Hilfe" />
           <LogoutButton />
         </div>
       </Surface>

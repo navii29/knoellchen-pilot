@@ -14,7 +14,10 @@ const TABS = [
     label: "Mehr",
     Icon: Menu,
     match: (p: string) =>
-      p.startsWith("/portal/mehr") || p.startsWith("/portal/documents") || p.startsWith("/portal/profile"),
+      p.startsWith("/portal/mehr") ||
+      p.startsWith("/portal/documents") ||
+      p.startsWith("/portal/profile") ||
+      p.startsWith("/portal/hilfe"),
   },
 ];
 
