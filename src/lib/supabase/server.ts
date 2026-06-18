@@ -31,6 +31,20 @@ export const createAdminClient = () =>
     { auth: { persistSession: false, autoRefreshToken: false } }
   );
 
+// RLS-bearing portal client: ANON key + the customer's portal JWT as bearer,
+// so Postgres RLS (portal_customer_id()/portal_org_id() policies) applies to
+// every query. Use ONLY after getPortalSession/requirePortal has confirmed the
+// session is live. Never pass a service-role key here.
+export const createPortalClient = (accessToken: string) =>
+  createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { headers: { Authorization: `Bearer ${accessToken}` } },
+    }
+  );
+
 export const requireUser = async () => {
   const supabase = createClient();
   const {

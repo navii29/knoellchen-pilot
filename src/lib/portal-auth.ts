@@ -2,13 +2,20 @@ import { cookies, headers } from "next/headers";
 import { jwtVerify, SignJWT } from "jose";
 import bcrypt from "bcryptjs";
 import { createHash, randomBytes } from "crypto";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient, createPortalClient } from "@/lib/supabase/server";
 
-export const PORTAL_COOKIE = "kp_portal";              // short-lived access token
-export const REFRESH_COOKIE = "kp_portal_refresh";     // long-lived refresh token
+export const PORTAL_COOKIE = "kp_portal";              // access token
+export const REFRESH_COOKIE = "kp_portal_refresh";     // rotation token
 
-const ACCESS_TTL = "15m";
-const ACCESS_MAXAGE_S = 15 * 60;                       // access cookie lifetime
+// v1: the access token lifetime is a session-length window (7d). Immediate
+// revocation is enforced by the per-request portal_sessions check in
+// getPortalSession()/requirePortal() — NOT by a short TTL — so a longer access
+// token is safe (a revoked or logged-out session is rejected on the very next
+// request regardless of JWT exp). A short access TTL + silent refresh (the
+// /api/portal/session/refresh route wired into a client interceptor) is a
+// planned hardening; the rotation primitive already exists.
+const ACCESS_TTL = "7d";
+const ACCESS_MAXAGE_S = 7 * 24 * 60 * 60;
 const REFRESH_TTL_DAYS = 30;
 const REFRESH_MAXAGE_S = REFRESH_TTL_DAYS * 24 * 60 * 60;
 
@@ -223,6 +230,20 @@ export const getPortalCustomer = async () => {
     .maybeSingle();
   if (!customer) return null;
   return { session, customer };
+};
+
+// Gate for portal API routes: validates the session (JWT + live session row)
+// and returns an RLS-bearing supabase client carrying the access token, so
+// every query is enforced by Postgres RLS. Returns null ⇒ caller responds 401.
+export const requirePortal = async (): Promise<{
+  session: PortalClaims;
+  supa: ReturnType<typeof createPortalClient>;
+} | null> => {
+  const token = cookies().get(PORTAL_COOKIE)?.value;
+  if (!token) return null;
+  const session = await getPortalSession();
+  if (!session) return null;
+  return { session, supa: createPortalClient(token) };
 };
 
 // =====================================================
