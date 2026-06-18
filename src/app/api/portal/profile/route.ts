@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPortalSession } from "@/lib/portal-auth";
-import { createAdminClient } from "@/lib/supabase/server";
+import { requirePortal } from "@/lib/portal-auth";
 
 const trimOrNull = (v: unknown): string | null => {
   if (typeof v !== "string") return null;
@@ -21,8 +20,8 @@ const ALLOWED = [
 ] as const;
 
 export const PATCH = async (req: Request) => {
-  const session = await getPortalSession();
-  if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const ctx = await requirePortal();
+  if (!ctx) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const update: Record<string, unknown> = {};
@@ -35,12 +34,13 @@ export const PATCH = async (req: Request) => {
   if (Object.keys(update).length === 0)
     return NextResponse.json({ error: "Keine Änderungen" }, { status: 400 });
 
-  const admin = createAdminClient();
-  const { data, error } = await admin
+  // RLS (portal self customer upd) erzwingt, dass nur die eigene Zeile
+  // geändert werden kann; die .eq-Filter bleiben als Defense-in-Depth.
+  const { data, error } = await ctx.supa
     .from("customers")
     .update(update)
-    .eq("id", session.customer_id)
-    .eq("org_id", session.org_id)
+    .eq("id", ctx.session.customer_id)
+    .eq("org_id", ctx.session.org_id)
     .select("*")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

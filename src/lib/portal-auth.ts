@@ -215,14 +215,17 @@ export const getPortalSession = async (): Promise<PortalClaims | null> => {
   return claims;
 };
 
-// Lädt zusätzlich den vollständigen Customer-Datensatz aus DB.
-// (Liest noch über den Admin-Client; die Umstellung auf den RLS-Client
-// erfolgt in der Read-Migration, Phase 0.1 Task 9.)
+// Lädt zusätzlich den vollständigen Customer-Datensatz aus DB — jetzt über den
+// RLS-tragenden Portal-Client: Postgres RLS (portal self customer) garantiert,
+// dass nur die EIGENE Customer-Zeile sichtbar ist. Die .eq-Filter bleiben als
+// Defense-in-Depth. (Erfordert Migration 031 in der Umgebung.)
 export const getPortalCustomer = async () => {
+  const token = cookies().get(PORTAL_COOKIE)?.value;
+  if (!token) return null;
   const session = await getPortalSession();
   if (!session) return null;
-  const admin = createAdminClient();
-  const { data: customer } = await admin
+  const supa = createPortalClient(token);
+  const { data: customer } = await supa
     .from("customers")
     .select("*")
     .eq("id", session.customer_id)
