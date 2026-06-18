@@ -53,12 +53,12 @@ export const ProfileClient = ({ initial }: { initial: Customer }) => {
   };
 
   return (
-    <div className="px-5 py-3">
-      <h1 className="font-display text-[22px] tracking-tightest font-bold text-ink mb-3">
+    <div className="px-5 py-4 space-y-4">
+      <h1 className="font-display text-[22px] tracking-tightest font-bold text-ink px-1">
         Profil
       </h1>
 
-      <form onSubmit={submit} className="bg-paper border border-hairline rounded-card shadow-panel p-5 space-y-3">
+      <form onSubmit={submit} className="glass-card glass-sheen rounded-card p-5 space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <Field label="Vorname">
             <input className="field" value={data.first_name} onChange={set("first_name")} />
