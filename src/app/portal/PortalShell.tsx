@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Car, Home, LogOut, Menu, Ticket } from "lucide-react";
+import { Bell, Car, Home, LogOut, Menu, Ticket } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 
 const TABS = [
@@ -25,11 +25,13 @@ export const PortalShell = ({
   orgName,
   orgLogoUrl,
   customerName,
+  unreadCount = 0,
   children,
 }: {
   orgName: string;
   orgLogoUrl?: string | null;
   customerName: string;
+  unreadCount?: number;
   children: React.ReactNode;
 }) => {
   const pathname = usePathname() ?? "";
@@ -69,14 +71,26 @@ export const PortalShell = ({
               </div>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onLogout}
-            className="text-ink-muted hover:text-ink inline-flex items-center gap-1.5 text-[12px] font-medium transition-colors touch-target justify-end"
-          >
-            <LogOut size={13} />
-            <span className="hidden sm:inline">Abmelden</span>
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <Link
+              href="/portal/benachrichtigungen"
+              aria-label="Benachrichtigungen"
+              className="relative text-ink-muted hover:text-ink touch-target inline-flex items-center justify-center"
+            >
+              <Bell size={17} />
+              {unreadCount > 0 && (
+                <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-signal ring-2 ring-white" />
+              )}
+            </Link>
+            <button
+              type="button"
+              onClick={onLogout}
+              className="text-ink-muted hover:text-ink inline-flex items-center gap-1.5 text-[12px] font-medium transition-colors touch-target justify-end"
+            >
+              <LogOut size={13} />
+              <span className="hidden sm:inline">Abmelden</span>
+            </button>
+          </div>
         </div>
       </header>
 
