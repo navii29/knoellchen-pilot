@@ -93,8 +93,10 @@ git commit -m "test: add vitest runner"
 
 - [ ] **Step 1:** Under the Supabase block, add:
 ```
-# Supabase project JWT secret (Dashboard → Settings → API → JWT Secret).
-# Portal JWTs are signed with this so Postgres RLS can read their claims.
+# Supabase LEGACY JWT secret — Dashboard → Settings → JWT Keys → "Legacy JWT
+# Secret" (Reveal). The HS256 symmetric secret PostgREST still uses to verify
+# JWTs; portal JWTs are signed with it so Postgres RLS can read their claims.
+# NOT the new asymmetric "JWT Signing Keys".
 SUPABASE_JWT_SECRET=super-secret-jwt-token-with-at-least-32-characters
 ```
 
@@ -105,7 +107,11 @@ git add .env.local.example
 git commit -m "chore(env): document SUPABASE_JWT_SECRET for portal RLS"
 ```
 
-> **Operator action (outside the plan):** set `SUPABASE_JWT_SECRET` in `.env.local` and in Vercel env (Preview + Production) before deploy. It's the existing project secret — no new account needed.
+> **Operator action (outside the plan):** set `SUPABASE_JWT_SECRET` = the **Legacy JWT Secret** (Dashboard → Settings → JWT Keys → "Legacy JWT secret (still used)" → Reveal) in `.env.local` and Vercel env (Preview + Production). It's the existing project secret — no new account needed.
+>
+> **Risk — legacy secret lifetime:** this approach relies on the project's **legacy HS256 JWT secret remaining active for verification**. Do NOT "switch to publishable/secret API keys to disable" the legacy `anon`/`service_role` keys, and do not rotate/revoke the legacy secret, while the portal depends on it. If it is ever disabled, HS256 portal tokens stop verifying and `signAccessToken` must move to the new **asymmetric JWT Signing Key** (ES256/RS256 via `jose` with the private key). Mitigation: keep `signAccessToken` the single signing chokepoint so the swap is one function.
+>
+> **Do not change** the dashboard "Access token expiry time" (3600s) — that governs Supabase-Auth/operator tokens; the portal access-token TTL is set independently in `signAccessToken` (15m).
 
 ---
 
