@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPortalSession } from "@/lib/portal-auth";
-import { createAdminClient } from "@/lib/supabase/server";
+import { requirePortal } from "@/lib/portal-auth";
 
 const trimOrNull = (v: unknown): string | null => {
   if (typeof v !== "string") return null;
@@ -18,16 +17,27 @@ const ALLOWED = [
   "country",
   "email",
   "phone",
+  "birthday",
+  "license_nr",
+  "license_class",
+  "license_expiry",
 ] as const;
 
 export const PATCH = async (req: Request) => {
-  const session = await getPortalSession();
-  if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const ctx = await requirePortal();
+  if (!ctx) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const update: Record<string, unknown> = {};
   for (const k of ALLOWED) {
     if (k in body) update[k] = trimOrNull(body[k]);
+  }
+  // Einwilligung separat (Boolean + Zeitstempel/Quelle)
+  if ("marketing_opt_in" in body) {
+    const opt = !!body.marketing_opt_in;
+    update.marketing_opt_in = opt;
+    update.consent_at = opt ? new Date().toISOString() : null;
+    update.consent_source = "portal";
   }
   if (update.last_name === null) {
     return NextResponse.json({ error: "Nachname darf nicht leer sein" }, { status: 400 });
@@ -35,12 +45,13 @@ export const PATCH = async (req: Request) => {
   if (Object.keys(update).length === 0)
     return NextResponse.json({ error: "Keine Änderungen" }, { status: 400 });
 
-  const admin = createAdminClient();
-  const { data, error } = await admin
+  // RLS (portal self customer upd) erzwingt, dass nur die eigene Zeile
+  // geändert werden kann; die .eq-Filter bleiben als Defense-in-Depth.
+  const { data, error } = await ctx.supa
     .from("customers")
     .update(update)
-    .eq("id", session.customer_id)
-    .eq("org_id", session.org_id)
+    .eq("id", ctx.session.customer_id)
+    .eq("org_id", ctx.session.org_id)
     .select("*")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -114,5 +114,31 @@ export const POST = async (req: Request, { params }: Ctx) => {
     .eq("org_id", session.org_id);
   if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
 
+  // Pro-Block-Zustimmung revisionssicher erfassen (AGB + Sondervereinbarungen):
+  // Text-Snapshot + Zeitstempel + IP, parallel zur Signatur.
+  const rentalTerms = (orgRow as { rental_terms?: string | null }).rental_terms ?? null;
+  await admin.from("contract_acceptances").insert([
+    {
+      contract_id: c.id,
+      customer_id: session.customer_id,
+      org_id: session.org_id,
+      block_key: "agb",
+      block_title: "Allgemeine Mietbedingungen",
+      text_snapshot: rentalTerms,
+      accepted_at: signedAt,
+      ip: signedIp,
+    },
+    ...specialTerms.map((t) => ({
+      contract_id: c.id,
+      customer_id: session.customer_id,
+      org_id: session.org_id,
+      block_key: `special:${t.id}`,
+      block_title: t.title,
+      text_snapshot: t.text,
+      accepted_at: signedAt,
+      ip: signedIp,
+    })),
+  ]);
+
   return NextResponse.json({ ok: true, signed_at: signedAt });
 };

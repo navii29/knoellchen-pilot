@@ -79,8 +79,7 @@ export const LoginClient = ({ initialError }: { initialError: string | null }) =
       </form>
 
       <p className="mt-5 text-[12px] text-ink-muted text-center leading-snug">
-        Du hast noch keinen Zugang? Bitte deine Vermietung um Zugangsdaten
-        oder einen Zugangs-Link.
+        Du hast noch keinen Zugang? Bitte deine Vermietung um einen Zugang.
       </p>
     </div>
   );

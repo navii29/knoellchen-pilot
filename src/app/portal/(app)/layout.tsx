@@ -20,6 +20,12 @@ export default async function PortalAppLayout({
     .eq("id", ctx.session.org_id)
     .single();
 
+  const { count: unread } = await admin
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("customer_id", ctx.session.customer_id)
+    .is("read_at", null);
+
   const logoPath = (org as { logo_path?: string | null } | null)?.logo_path;
   const logoUrl =
     logoPath && process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -30,6 +36,7 @@ export default async function PortalAppLayout({
     <PortalShell
       orgName={org?.name ?? "Kundenportal"}
       orgLogoUrl={logoUrl}
+      unreadCount={unread ?? 0}
       customerName={
         [ctx.customer.first_name, ctx.customer.last_name].filter(Boolean).join(" ") ||
         "Mein Konto"

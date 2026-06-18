@@ -20,11 +20,15 @@ export const PortalSignClient = ({
   contractNr,
   plate,
   vehicleType,
+  rentalTerms,
+  specialTerms,
 }: {
   contractId: string;
   contractNr: string;
   plate: string;
   vehicleType: string | null;
+  rentalTerms: string;
+  specialTerms: { id: string; title: string; text: string }[];
 }) => {
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -172,6 +176,29 @@ export const PortalSignClient = ({
         </div>
       </div>
 
+      <div className="bg-paper border border-hairline rounded-card overflow-hidden">
+        <details className="group">
+          <summary className="px-4 py-3 cursor-pointer list-none flex items-center justify-between text-[14px] font-medium text-ink">
+            <span>Allgemeine Mietbedingungen (AGB)</span>
+            <span className="text-ink-muted group-open:rotate-90 transition-transform">›</span>
+          </summary>
+          <div className="px-4 pb-4 max-h-72 overflow-y-auto text-[12px] text-ink-soft whitespace-pre-line leading-relaxed border-t border-hairline pt-3">
+            {rentalTerms}
+          </div>
+        </details>
+        {specialTerms.map((t) => (
+          <details key={t.id} className="group border-t border-hairline">
+            <summary className="px-4 py-3 cursor-pointer list-none flex items-center justify-between text-[14px] font-medium text-ink">
+              <span>{t.title}</span>
+              <span className="text-ink-muted group-open:rotate-90 transition-transform">›</span>
+            </summary>
+            <div className="px-4 pb-4 text-[12px] text-ink-soft whitespace-pre-line leading-relaxed border-t border-hairline pt-3">
+              {t.text}
+            </div>
+          </details>
+        ))}
+      </div>
+
       <label className="bg-paper border border-hairline rounded-card p-4 flex items-start gap-3 cursor-pointer">
         <input
           type="checkbox"
@@ -180,10 +207,11 @@ export const PortalSignClient = ({
           className="mt-0.5 w-4 h-4 accent-signal shrink-0"
         />
         <span className="text-[13px] text-ink-soft leading-snug">
-          Ich bestätige die Richtigkeit meiner Angaben und akzeptiere die im
-          Vertrag abgedruckten Mietbedingungen. Mir ist bekannt, dass diese
-          digitale Unterschrift dieselbe Rechtswirkung hat wie eine
-          handschriftliche.
+          Ich bestätige die Richtigkeit meiner Angaben und akzeptiere die oben
+          stehenden Allgemeinen Mietbedingungen
+          {specialTerms.length > 0 ? " und Sondervereinbarungen" : ""}. Mir ist
+          bekannt, dass diese digitale Unterschrift dieselbe Rechtswirkung hat
+          wie eine handschriftliche.
         </span>
       </label>
 

@@ -5,9 +5,9 @@ import { createAdminClient } from "@/lib/supabase/server";
 type Ctx = { params: { id: string } };
 
 const KINDS = {
-  letter: { col: "letter_path", bucket: "ticket-documents" },
-  invoice: { col: "invoice_path", bucket: "ticket-documents" },
-  questionnaire: { col: "questionnaire_path", bucket: "ticket-documents" },
+  letter: { col: "letter_path", bucket: "generated-docs" },
+  invoice: { col: "invoice_path", bucket: "generated-docs" },
+  questionnaire: { col: "questionnaire_path", bucket: "generated-docs" },
 } as const;
 
 export const GET = async (req: Request, { params }: Ctx) => {

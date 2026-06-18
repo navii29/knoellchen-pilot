@@ -1,66 +1,100 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
-import { getPortalCustomer } from "@/lib/portal-auth";
-import { createAdminClient } from "@/lib/supabase/server";
+import { Car, ChevronRight, Plus } from "lucide-react";
+import { requirePortal } from "@/lib/portal-auth";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { Plate } from "@/components/ui/Plate";
+import { Surface } from "@/components/portal/kit/Surface";
+import { SectionLabel } from "@/components/portal/kit/SectionLabel";
+import { StatusBadge } from "@/components/portal/kit/StatusBadge";
+import { EmptyState } from "@/components/portal/kit/EmptyState";
 
 export const dynamic = "force-dynamic";
 
-export default async function PortalContractsPage() {
-  const ctx = await getPortalCustomer();
+type CRow = {
+  id: string;
+  plate: string;
+  vehicle_type: string | null;
+  pickup_date: string;
+  return_date: string;
+  status: string;
+  total_amount: number | null;
+};
+
+export default async function PortalMietenPage() {
+  const ctx = await requirePortal();
   if (!ctx) return null;
 
-  const admin = createAdminClient();
-  const { data: contracts } = await admin
+  const { data: contracts } = await ctx.supa
     .from("contracts")
-    .select(
-      "id, contract_nr, plate, vehicle_type, pickup_date, return_date, status, signed_at, total_amount"
-    )
+    .select("id, plate, vehicle_type, pickup_date, return_date, status, total_amount")
     .eq("org_id", ctx.session.org_id)
     .eq("customer_id", ctx.session.customer_id)
     .order("pickup_date", { ascending: false });
 
-  const list = contracts ?? [];
+  const list = (contracts ?? []) as CRow[];
+  const active = list.filter((c) => c.status === "aktiv");
+  const past = list.filter((c) => c.status !== "aktiv");
 
   return (
-    <div className="px-5 py-3">
-      <h1 className="font-display text-[22px] tracking-tightest font-bold text-ink mb-3">
-        Verträge
-      </h1>
+    <div className="px-5 py-4 space-y-5">
+      <div className="flex items-center justify-between gap-2 px-1">
+        <h1 className="font-display text-[22px] tracking-tightest font-bold text-ink">
+          Meine Mieten
+        </h1>
+        <Link
+          href="/portal/reservieren"
+          className="inline-flex items-center gap-1.5 text-[12px] font-semibold bg-signal text-white rounded-full px-3 py-1.5 active:scale-[.98] shrink-0"
+        >
+          <Plus size={13} /> Anfragen
+        </Link>
+      </div>
 
       {list.length === 0 ? (
-        <div className="bg-paper border border-hairline rounded-card shadow-panel px-5 py-8 text-center text-[13px] text-ink-muted">
-          Noch keine Verträge vorhanden.
-        </div>
+        <Surface>
+          <EmptyState
+            Icon={Car}
+            title="Noch keine Mieten"
+            text="Sobald du ein Fahrzeug mietest, erscheint es hier."
+          />
+        </Surface>
       ) : (
-        <div className="bg-paper border border-hairline rounded-card shadow-panel divide-y divide-hairline overflow-hidden">
-          {list.map((c) => (
-            <Link
-              key={c.id}
-              href={`/portal/contracts/${c.id}`}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-canvas transition-colors"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Plate value={c.plate} size="sm" />
-                  <span className="text-[12px] text-ink-muted font-mono">{c.contract_nr}</span>
-                </div>
-                <div className="text-[14px] text-ink font-medium truncate mt-0.5">
-                  {c.vehicle_type || "Fahrzeug"}
-                </div>
-                <div className="text-[12px] text-ink-muted mt-0.5 font-mono tnum">
-                  {fmtDate(c.pickup_date)} → {fmtDate(c.return_date)}
-                  {c.total_amount != null && (
-                    <span className="ml-2">· {fmtEur(c.total_amount)}</span>
-                  )}
-                </div>
-              </div>
-              <ChevronRight size={14} className="text-ink-muted shrink-0" />
-            </Link>
-          ))}
-        </div>
+        <>
+          {active.length > 0 && <Group label="Aktiv" rows={active} />}
+          {past.length > 0 && <Group label="Früher" rows={past} />}
+        </>
       )}
     </div>
   );
 }
+
+const Group = ({ label, rows }: { label: string; rows: CRow[] }) => (
+  <div>
+    <SectionLabel>{label}</SectionLabel>
+    <Surface padding="p-0" className="overflow-hidden">
+      <div className="divide-y divide-hairline">
+        {rows.map((c) => (
+          <Link
+            key={c.id}
+            href={`/portal/contracts/${c.id}`}
+            className="flex items-center gap-3 px-4 py-3 hover:bg-paper/40 transition-colors"
+          >
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Plate value={c.plate} size="sm" />
+                <StatusBadge status={c.status} />
+              </div>
+              <div className="text-[14px] text-ink font-medium truncate mt-0.5">
+                {c.vehicle_type || "Fahrzeug"}
+              </div>
+              <div className="text-[12px] text-ink-muted mt-0.5 font-mono tnum">
+                {fmtDate(c.pickup_date)} → {fmtDate(c.return_date)}
+                {c.total_amount != null && <span className="ml-2">· {fmtEur(c.total_amount)}</span>}
+              </div>
+            </div>
+            <ChevronRight size={14} className="text-ink-muted shrink-0" />
+          </Link>
+        ))}
+      </div>
+    </Surface>
+  </div>
+);
