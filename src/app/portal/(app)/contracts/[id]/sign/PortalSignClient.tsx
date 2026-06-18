@@ -41,16 +41,7 @@ export const PortalSignClient = ({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const resize = () => {
-      const ratio = Math.max(window.devicePixelRatio || 1, 1);
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * ratio;
-      canvas.height = rect.height * ratio;
-      const ctx = canvas.getContext("2d");
-      if (ctx) ctx.scale(ratio, ratio);
-      padRef.current?.clear();
-      setHasInk(false);
-    };
+
     const pad = new SignaturePad(canvas, {
       backgroundColor: "rgba(255,255,255,0)",
       penColor: "#0f172a",
@@ -59,10 +50,36 @@ export const PortalSignClient = ({
     });
     pad.addEventListener("endStroke", () => setHasInk(!pad.isEmpty()));
     padRef.current = pad;
+
+    // Canvas an die CSS-Breite anpassen.
+    // WICHTIG (Handy-Bug): Mobile Browser blenden beim Berühren/Zeichnen die
+    // Adressleiste aus → window "resize" mit geänderter HÖHE. Würde man dann
+    // die Canvas-Größe neu setzen, löscht das die laufende Unterschrift und
+    // der Button bleibt deaktiviert. Daher nur bei tatsächlich geänderter
+    // BREITE neu skalieren — und die Unterschrift dabei sichern/wiederherstellen.
+    let lastWidth = -1;
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      const width = Math.round(rect.width);
+      if (width === 0 || width === lastWidth) return;
+      lastWidth = width;
+      const ratio = Math.max(window.devicePixelRatio || 1, 1);
+      const data = pad.toData();
+      canvas.width = rect.width * ratio;
+      canvas.height = rect.height * ratio;
+      const ctx = canvas.getContext("2d");
+      if (ctx) ctx.scale(ratio, ratio);
+      pad.clear();
+      if (data.length > 0) pad.fromData(data);
+      setHasInk(!pad.isEmpty());
+    };
+
     resize();
     window.addEventListener("resize", resize);
+    window.addEventListener("orientationchange", resize);
     return () => {
       window.removeEventListener("resize", resize);
+      window.removeEventListener("orientationchange", resize);
       pad.off();
       padRef.current = null;
     };
