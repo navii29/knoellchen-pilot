@@ -17,6 +17,10 @@ const ALLOWED = [
   "country",
   "email",
   "phone",
+  "birthday",
+  "license_nr",
+  "license_class",
+  "license_expiry",
 ] as const;
 
 export const PATCH = async (req: Request) => {
@@ -27,6 +31,13 @@ export const PATCH = async (req: Request) => {
   const update: Record<string, unknown> = {};
   for (const k of ALLOWED) {
     if (k in body) update[k] = trimOrNull(body[k]);
+  }
+  // Einwilligung separat (Boolean + Zeitstempel/Quelle)
+  if ("marketing_opt_in" in body) {
+    const opt = !!body.marketing_opt_in;
+    update.marketing_opt_in = opt;
+    update.consent_at = opt ? new Date().toISOString() : null;
+    update.consent_source = "portal";
   }
   if (update.last_name === null) {
     return NextResponse.json({ error: "Nachname darf nicht leer sein" }, { status: 400 });

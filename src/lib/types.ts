@@ -277,6 +277,9 @@ export interface Customer {
   id_card_nr: string | null;
   license_photo_path: string | null;
   id_card_photo_path: string | null;
+  marketing_opt_in: boolean | null;
+  consent_at: string | null;
+  consent_source: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
