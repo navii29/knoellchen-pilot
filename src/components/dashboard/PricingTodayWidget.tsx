@@ -56,7 +56,7 @@ export const PricingTodayWidget = async ({ orgId }: { orgId: string }) => {
   if (allVehicles.length === 0) return null;
 
   return (
-    <div className="panel">
+    <div className="panel p-5">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="kicker text-ink-muted flex items-center gap-1.5">
           <TrendingUp size={12} strokeWidth={1.75} />
