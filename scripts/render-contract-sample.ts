@@ -1,14 +1,67 @@
 // Lokales Render-Skript zum visuellen Prüfen der Vertrags-PDF (Signaturen auf
 // Seiten 1/3/4/6). Nicht Teil der App. Aufruf: npx tsx scripts/render-contract-sample.ts
 import { writeFileSync } from "node:fs";
+import { deflateSync } from "node:zlib";
 import { generateContractPdf } from "../src/lib/contract-pdf";
 
-// Test-"Unterschrift" als SVG-Data-URI (kursiver Schriftzug) — repräsentiert die Tinte.
-const sig =
-  "data:image/svg+xml;utf8," +
-  encodeURIComponent(
-    `<svg xmlns='http://www.w3.org/2000/svg' width='320' height='90'><text x='8' y='62' font-family='Segoe Script, cursive' font-size='46' font-style='italic' fill='%23111'>Lukas Becker</text></svg>`
-  );
+// Minimaler PNG-Encoder (nur node:zlib) — erzeugt eine echte PNG-Data-URL mit
+// einem wellenförmigen Strich als Unterschrift-Platzhalter. So bleibt das Skript
+// prod-treu: die App akzeptiert ausschließlich PNG-Data-URLs (kein SVG).
+const crcTable = (() => {
+  const t = new Array<number>(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+const crc32 = (buf: Buffer) => {
+  let c = 0xffffffff;
+  for (let i = 0; i < buf.length; i++) c = crcTable[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+};
+const pngChunk = (type: string, data: Buffer) => {
+  const len = Buffer.alloc(4);
+  len.writeUInt32BE(data.length, 0);
+  const body = Buffer.concat([Buffer.from(type, "ascii"), data]);
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(body), 0);
+  return Buffer.concat([len, body, crc]);
+};
+const strokePng = (w: number, h: number, freq: number) => {
+  const stride = w * 4 + 1; // 1 Filter-Byte je Zeile + RGBA
+  const raw = Buffer.alloc(stride * h, 0);
+  const ink = (x: number, y: number) => {
+    if (x < 0 || x >= w || y < 0 || y >= h) return;
+    const o = y * stride + 1 + x * 4;
+    raw[o] = 17;
+    raw[o + 1] = 24;
+    raw[o + 2] = 39;
+    raw[o + 3] = 255;
+  };
+  for (let x = 0; x < w; x++) {
+    const y = Math.round(h / 2 + Math.sin(x / freq) * (h / 4));
+    for (let dy = -1; dy <= 1; dy++) ink(x, y + dy);
+  }
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(w, 0);
+  ihdr.writeUInt32BE(h, 4);
+  ihdr[8] = 8; // Bit-Tiefe
+  ihdr[9] = 6; // Farbtyp RGBA
+  const png = Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    pngChunk("IHDR", ihdr),
+    pngChunk("IDAT", deflateSync(raw)),
+    pngChunk("IEND", Buffer.alloc(0)),
+  ]);
+  return "data:image/png;base64," + png.toString("base64");
+};
+
+// Test-"Unterschriften" als echte PNGs (Mieter + Vermieter, leicht versch. Wellen).
+const sig = strokePng(300, 80, 9);
+
+const landlordSig = strokePng(280, 80, 6);
 
 const org = {
   name: "Stadtflotte München GmbH",
@@ -17,6 +70,8 @@ const org = {
   city: "München",
   rental_terms: null,
   logo_path: null,
+  landlord_signature_data: landlordSig,
+  landlord_signature_name: "Markus Wagner",
 } as any;
 
 const contract = {

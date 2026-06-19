@@ -30,6 +30,10 @@ export interface Organization {
   // echoes_api_key absichtlich NICHT im Type — darf nie ans Frontend gelangen.
   rental_terms: string | null;
   logo_path: string | null;
+  // Wiederverwendbare Vermieter-Unterschrift (PNG-Data-URL) + Name in
+  // Druckschrift. Wird automatisch auf jeden Mietvertrag gesetzt.
+  landlord_signature_data: string | null;
+  landlord_signature_name: string | null;
   created_at: string;
 }
 

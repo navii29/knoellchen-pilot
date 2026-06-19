@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getMembership } from "@/lib/team";
+import { isPngDataUrl } from "@/lib/utils";
 
 /** Rekursiv alle Storage-Objekte unter `${orgId}/` eines Buckets löschen. */
 const removeOrgFolder = async (
@@ -38,7 +39,7 @@ const ALL_BUCKETS = [
 ];
 
 const SAFE_COLUMNS =
-  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, echoes_account_id, echoes_enabled, rental_terms, onboarding_completed, onboarding_step, shopify_shop_domain, shopify_webhook_token, created_at";
+  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, echoes_account_id, echoes_enabled, rental_terms, onboarding_completed, onboarding_step, shopify_shop_domain, shopify_webhook_token, landlord_signature_name, created_at";
 
 const stripSecrets = <T extends Record<string, unknown>>(row: T) => {
   const copy = { ...row } as T & {
@@ -102,6 +103,8 @@ export const PATCH = async (req: Request) => {
     "rental_terms",
     "shopify_shop_domain",
     "shopify_admin_token",
+    "landlord_signature_data",
+    "landlord_signature_name",
   ];
   const update: Record<string, unknown> = {};
   for (const k of allowed) if (k in body) update[k] = body[k];
@@ -145,6 +148,17 @@ export const PATCH = async (req: Request) => {
   if ("shopify_admin_token" in update) {
     const v = update.shopify_admin_token;
     update.shopify_admin_token =
+      typeof v === "string" && v.trim().length > 0 ? v.trim() : null;
+  }
+  if ("landlord_signature_data" in update) {
+    const v = update.landlord_signature_data;
+    // Nur strikte PNG-Data-URLs (reine Base64) akzeptieren — verhindert
+    // HTML-Breakout in der PDF-Vorlage. Alles andere (inkl. "" zum Löschen) → null.
+    update.landlord_signature_data = isPngDataUrl(v) ? v : null;
+  }
+  if ("landlord_signature_name" in update) {
+    const v = update.landlord_signature_name;
+    update.landlord_signature_name =
       typeof v === "string" && v.trim().length > 0 ? v.trim() : null;
   }
 
