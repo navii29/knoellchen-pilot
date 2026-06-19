@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { generateContractPdf } from "@/lib/contract-pdf";
 import type { Contract, Organization } from "@/lib/types";
+import { isPngDataUrl } from "@/lib/utils";
 import {
   loadCurrentTireForVehicle,
   loadCustomerForContract,
@@ -61,11 +62,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
   };
 
   const sig = body.signature_data;
-  if (
-    !sig ||
-    typeof sig !== "string" ||
-    !sig.startsWith("data:image/png;base64,")
-  ) {
+  if (!isPngDataUrl(sig)) {
     return NextResponse.json(
       { error: "Ungültige Unterschrift (erwartet: data:image/png;base64,…)" },
       { status: 400 }

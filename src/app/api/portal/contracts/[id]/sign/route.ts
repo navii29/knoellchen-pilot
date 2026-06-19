@@ -3,6 +3,7 @@ import { getPortalSession, ipFromHeaders } from "@/lib/portal-auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { generateContractPdf } from "@/lib/contract-pdf";
 import type { Contract, Organization } from "@/lib/types";
+import { isPngDataUrl } from "@/lib/utils";
 import {
   loadCurrentTireForVehicle,
   loadCustomerForContract,
@@ -37,7 +38,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
 
   const body = (await req.json().catch(() => ({}))) as { signature_data?: string };
   const sig = body.signature_data;
-  if (!sig || !sig.startsWith("data:image/png;base64,")) {
+  if (!isPngDataUrl(sig)) {
     return NextResponse.json(
       { error: "Ungültige Unterschrift" },
       { status: 400 }

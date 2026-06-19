@@ -1,3 +1,10 @@
+// Strikte Prüfung einer PNG-Data-URL: nach dem Präfix sind NUR Base64-Zeichen
+// erlaubt. Verhindert HTML-Attribut-Breakout, wenn der Wert später in eine
+// PDF-/HTML-Vorlage (img src) interpoliert wird. Wird für alle Unterschriften
+// (Mieter + Vermieter) als Input-Validierung genutzt.
+export const isPngDataUrl = (v: unknown): v is string =>
+  typeof v === "string" && /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(v);
+
 export const fmtEur = (n: number | null | undefined): string => {
   if (n == null) return "—";
   return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getMembership } from "@/lib/team";
+import { isPngDataUrl } from "@/lib/utils";
 
 /** Rekursiv alle Storage-Objekte unter `${orgId}/` eines Buckets löschen. */
 const removeOrgFolder = async (
@@ -151,9 +152,9 @@ export const PATCH = async (req: Request) => {
   }
   if ("landlord_signature_data" in update) {
     const v = update.landlord_signature_data;
-    // Nur PNG-Data-URLs akzeptieren; alles andere (inkl. "" zum Löschen) → null.
-    update.landlord_signature_data =
-      typeof v === "string" && v.startsWith("data:image/png;base64,") ? v : null;
+    // Nur strikte PNG-Data-URLs (reine Base64) akzeptieren — verhindert
+    // HTML-Breakout in der PDF-Vorlage. Alles andere (inkl. "" zum Löschen) → null.
+    update.landlord_signature_data = isPngDataUrl(v) ? v : null;
   }
   if ("landlord_signature_name" in update) {
     const v = update.landlord_signature_name;
