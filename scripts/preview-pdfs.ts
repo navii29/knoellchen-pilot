@@ -33,6 +33,8 @@ const org: Organization = {
   echoes_enabled: false,
   rental_terms: null,
   logo_path: null,
+  landlord_signature_data: null,
+  landlord_signature_name: null,
   created_at: new Date().toISOString(),
 };
 

@@ -10,6 +10,12 @@ const sig =
     `<svg xmlns='http://www.w3.org/2000/svg' width='320' height='90'><text x='8' y='62' font-family='Segoe Script, cursive' font-size='46' font-style='italic' fill='%23111'>Lukas Becker</text></svg>`
   );
 
+const landlordSig =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='300' height='90'><text x='8' y='62' font-family='Segoe Script, cursive' font-size='44' font-style='italic' fill='%23111'>M. Wagner</text></svg>`
+  );
+
 const org = {
   name: "Stadtflotte München GmbH",
   street: "Bayerstraße 12",
@@ -17,6 +23,8 @@ const org = {
   city: "München",
   rental_terms: null,
   logo_path: null,
+  landlord_signature_data: landlordSig,
+  landlord_signature_name: "Markus Wagner",
 } as any;
 
 const contract = {

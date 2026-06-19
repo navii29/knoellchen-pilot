@@ -55,6 +55,11 @@ const vehicleModel = (v: Vehicle | null, fallback: string | null): string => {
   return fallback ?? "";
 };
 
+// Name in Druckschrift für die Vermieter-Seite (Seite 3/6). Eigener Name der
+// Org, sonst Firmenname.
+const landlordPrintName = (org: Organization): string =>
+  org.landlord_signature_name?.trim() || org.name;
+
 const computeDays = (pickup: string, returnDate: string): number => {
   const a = new Date(pickup);
   const b = new Date(returnDate);
@@ -388,6 +393,30 @@ const CSS = `
   }
   .ho-cust-sig img { max-height: 11mm; max-width: 95%; }
 
+  /* Seite 6: Name + Unterschrift des Vermieters/Abholers im mittleren Block
+     "Bevollmächtigter" (links neben dem Kunden-Block). */
+  .ho-land-name {
+    position: absolute;
+    left: 42%;
+    width: 25%;
+    top: 88.8%;
+    text-align: center;
+    font-size: 8pt;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .ho-land-sig {
+    position: absolute;
+    left: 42%;
+    width: 25%;
+    top: 89.2%;
+    height: 11mm;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .ho-land-sig img { max-height: 11mm; max-width: 95%; }
+
 `;
 
 
@@ -544,7 +573,7 @@ const renderPage1 = (
       <div class="sigs">
         <div class="row">
           ${sigBlock(cityDate, fullName, signaturePngBase64)}
-          ${sigBlock(cityDate, `Vermieter - ${org.name}`, null)}
+          ${sigBlock(cityDate, `Vermieter - ${org.name}`, org.landlord_signature_data ?? null)}
         </div>
       </div>
     </div>
@@ -620,8 +649,8 @@ const renderPage3 = (
         </div>
         <div class="col">
           <div class="date">${esc(cityDate)}</div>
-          <div class="sig-ink"></div>
-          <div class="line">&nbsp;</div>
+          <div class="sig-ink">${org.landlord_signature_data ? `<img src="${org.landlord_signature_data}" alt="Unterschrift Vermieter" />` : ""}</div>
+          <div class="line">${esc(landlordPrintName(org))}</div>
         </div>
       </div>
     </div>
@@ -762,7 +791,6 @@ const renderPage6 = (
   customer: Customer | null,
   signaturePngBase64: string | null
 ): string => {
-  void org;
   const tplUri = loadHandoverTemplate();
   const fullName = customerFullName(customer, contract.renter_name);
 
@@ -792,6 +820,16 @@ const renderPage6 = (
     ? `<div class="ho-cust-sig"><img src="${signaturePngBase64}" alt="Unterschrift" /></div>`
     : "";
 
+  // Vermieter/Abholer im mittleren Block — nur wenn eine Vermieter-Unterschrift
+  // hinterlegt ist (sonst bleibt der Block leer fürs handschriftliche Signieren).
+  const landSig = org.landlord_signature_data ?? null;
+  const landName = landSig
+    ? `<div class="ho-land-name">${esc(landlordPrintName(org))}</div>`
+    : "";
+  const landSigEl = landSig
+    ? `<div class="ho-land-sig"><img src="${landSig}" alt="Unterschrift Vermieter" /></div>`
+    : "";
+
   if (tplUri) {
     return `
       <div class="page page-image">
@@ -799,6 +837,8 @@ const renderPage6 = (
         ${overlay}
         ${custName}
         ${custSig}
+        ${landName}
+        ${landSigEl}
       </div>
     `;
   }

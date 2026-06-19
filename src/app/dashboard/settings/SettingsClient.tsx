@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -23,15 +23,21 @@ import { DEFAULT_RENTAL_TERMS } from "@/lib/rental-terms";
 import type { Organization } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
+import {
+  SignatureCanvas,
+  type SignatureCanvasHandle,
+} from "@/components/ui/SignatureCanvas";
 
 export const SettingsClient = ({
   org,
   lexofficeHasKey,
   echoesHasKey,
+  landlordHasSignature,
 }: {
   org: Organization;
   lexofficeHasKey: boolean;
   echoesHasKey: boolean;
+  landlordHasSignature: boolean;
 }) => {
   const [data, setData] = useState({
     name: org?.name || "",
@@ -319,6 +325,16 @@ export const SettingsClient = ({
           </div>
         </Section>
 
+        <Section
+          title="Unterschrift Vermieter"
+          subtitle="Einmal hinterlegen — erscheint automatisch auf jedem Mietvertrag (Seite 1 & 3, Vermieter-Spalte, sowie im Übergabeprotokoll)."
+        >
+          <LandlordSignatureCard
+            hasSignature={landlordHasSignature}
+            initialName={org.landlord_signature_name || org.name || ""}
+          />
+        </Section>
+
         {err && <div className="text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-panel px-3 py-2">{err}</div>}
         {msg && (
           <div className="text-[13px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-panel px-3 py-2">
@@ -347,6 +363,163 @@ export const SettingsClient = ({
         `}</style>
       </form>
     </>
+  );
+};
+
+// Wiederverwendbare Vermieter-Unterschrift (einmal hinterlegen, gilt für alle
+// Verträge). Speichert PNG + Name via PATCH /api/org.
+const LandlordSignatureCard = ({
+  hasSignature,
+  initialName,
+}: {
+  hasSignature: boolean;
+  initialName: string;
+}) => {
+  const sigRef = useRef<SignatureCanvasHandle>(null);
+  const [name, setName] = useState(initialName);
+  const [hasInk, setHasInk] = useState(false);
+  const [saved, setSaved] = useState(hasSignature);
+  const [editing, setEditing] = useState(!hasSignature);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const save = async () => {
+    const png = sigRef.current?.toPNG() ?? null;
+    if (!png) {
+      setErr("Bitte zuerst im Feld unterschreiben.");
+      return;
+    }
+    setBusy(true);
+    setErr(null);
+    const res = await fetch("/api/org", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        landlord_signature_data: png,
+        landlord_signature_name: name.trim() || null,
+      }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      setErr(j.error || "Speichern fehlgeschlagen");
+      return;
+    }
+    setSaved(true);
+    setEditing(false);
+  };
+
+  const remove = async () => {
+    if (!confirm("Vermieter-Unterschrift wirklich entfernen?")) return;
+    setBusy(true);
+    setErr(null);
+    const res = await fetch("/api/org", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ landlord_signature_data: null }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      setErr("Entfernen fehlgeschlagen");
+      return;
+    }
+    setSaved(false);
+    setEditing(true);
+    setHasInk(false);
+    sigRef.current?.clear();
+  };
+
+  if (saved && !editing) {
+    return (
+      <div className="flex items-center justify-between gap-3 rounded-panel border border-hairline bg-canvas px-4 py-3">
+        <div className="flex items-center gap-2 text-[13.5px] text-ink">
+          <Check size={15} className="text-emerald-600" />
+          <span>Unterschrift hinterlegt{name ? ` — ${name}` : ""}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="text-[12.5px] text-signal hover:underline"
+          >
+            Ändern
+          </button>
+          <button
+            type="button"
+            onClick={remove}
+            disabled={busy}
+            className="inline-flex items-center gap-1 text-[12.5px] text-red-700 hover:underline disabled:opacity-40"
+          >
+            {busy ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />} Entfernen
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <Field label="Name in Druckschrift (erscheint unter der Unterschrift)">
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="field"
+          placeholder="z. B. Markus Wagner"
+        />
+      </Field>
+
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center gap-1.5 data-label">
+            <FileSignature size={12} className="text-ink-muted" />
+            Unterschrift
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              sigRef.current?.clear();
+              setHasInk(false);
+            }}
+            disabled={!hasInk}
+            className="inline-flex items-center gap-1 text-[12px] text-ink-muted hover:text-ink disabled:opacity-40"
+          >
+            <RotateCcw size={11} /> Neu zeichnen
+          </button>
+        </div>
+        <div className="relative">
+          <SignatureCanvas ref={sigRef} height={180} onInkChange={setHasInk} />
+          {!hasInk && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-[13px] text-ink-muted">
+              Mit Maus, Finger oder Stift unterschreiben
+            </div>
+          )}
+        </div>
+      </div>
+
+      {err && (
+        <div className="flex items-center gap-2 text-[12.5px] text-red-700 bg-red-50 border border-red-200 rounded-panel px-3 py-2">
+          <AlertTriangle size={13} /> {err}
+        </div>
+      )}
+
+      <div className="flex items-center justify-end gap-3">
+        {saved && (
+          <button
+            type="button"
+            onClick={() => {
+              setEditing(false);
+              setErr(null);
+            }}
+            className="text-[13px] text-ink-muted hover:text-ink px-2"
+          >
+            Abbrechen
+          </button>
+        )}
+        <Button type="button" variant="signal" onClick={save} disabled={busy || !hasInk}>
+          {busy ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Unterschrift speichern
+        </Button>
+      </div>
+    </div>
   );
 };
 
