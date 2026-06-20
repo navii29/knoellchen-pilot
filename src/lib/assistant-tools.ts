@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { randomBytes } from "node:crypto";
+import { hashPassword } from "./portal-auth";
 import { nextContractNr } from "./contract-utils";
 import { computeDecommission } from "./decommission";
 import { computeReturnSummary } from "./km";
@@ -1743,8 +1745,185 @@ const getFleetUtilization: Tool = {
   },
 };
 
+// =========================================================
+// 24) create_portal_access — Self-Check-in-Zugang für einen Mieter
+// =========================================================
+const PW_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+const genPassword = (len = 10): string => {
+  const bytes = randomBytes(len);
+  let s = "";
+  for (let i = 0; i < len; i++) s += PW_ALPHABET[bytes[i] % PW_ALPHABET.length];
+  return s;
+};
+
+const splitName = (full: string): { first: string; last: string } => {
+  const parts = full.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) return { first: "", last: parts[0] ?? "" };
+  return { first: parts.slice(0, -1).join(" "), last: parts[parts.length - 1] };
+};
+
+const findOrCreateCustomer = async (
+  ctx: ToolContext,
+  name: string,
+  email: string
+): Promise<{ id: string; created: boolean } | null> => {
+  // 1) per E-Mail (eindeutig)
+  const { data: byEmail } = await ctx.admin
+    .from("customers")
+    .select("id")
+    .eq("org_id", ctx.org_id)
+    .ilike("email", email)
+    .maybeSingle();
+  if (byEmail) return { id: byEmail.id as string, created: false };
+
+  // 2) per exaktem Vor-/Nachnamen
+  const { first, last } = splitName(name);
+  if (last) {
+    const { data: byName } = await ctx.admin
+      .from("customers")
+      .select("id, first_name, last_name")
+      .eq("org_id", ctx.org_id)
+      .ilike("last_name", last)
+      .limit(10);
+    const match = (byName ?? []).find(
+      (c) => (c.first_name ?? "").trim().toLowerCase() === first.trim().toLowerCase()
+    );
+    if (match) return { id: match.id as string, created: false };
+  }
+
+  // 3) neu anlegen
+  const { data: created, error } = await ctx.admin
+    .from("customers")
+    .insert({
+      org_id: ctx.org_id,
+      first_name: first || null,
+      last_name: last || name.trim(),
+      email,
+    })
+    .select("id")
+    .single();
+  if (error || !created) return null;
+  return { id: created.id as string, created: true };
+};
+
+const createPortalAccess: Tool = {
+  name: "create_portal_access",
+  description:
+    "Erstellt Self-Check-in / Portal-Zugangsdaten (E-Mail + Passwort) für einen Mieter, damit er sich unter knoellchen-pilot.de/portal einloggen und seinen Vertrag selbst ansehen/unterschreiben kann. Legt bei Bedarf einen Kundendatensatz an und verknüpft dessen Mietverträge, sodass sie im Portal erscheinen. Das Portal-Login ist E-Mail-basiert: name UND email sind Pflicht — wenn keine E-Mail bekannt ist, frage den Nutzer danach. Das Passwort wird automatisch generiert, falls nicht angegeben, und im Ergebnis im Klartext zurückgegeben, damit der Vermieter es dem Mieter weitergeben kann.",
+  input_schema: {
+    type: "object",
+    properties: {
+      name: { type: "string", description: "Name des Mieters, z. B. 'Max Mustermann'." },
+      email: { type: "string", description: "E-Mail-Adresse für den Portal-Login (Pflicht)." },
+      password: {
+        type: "string",
+        description: "Optionales Wunschpasswort (min. 8 Zeichen). Sonst wird eines generiert.",
+      },
+    },
+    required: ["name", "email"],
+  },
+  handler: async (input, ctx) => {
+    const name = String(input.name ?? "").trim();
+    const email = String(input.email ?? "").trim().toLowerCase();
+    if (!name) return { ok: false, error: "Name fehlt." };
+    if (!email || !email.includes("@"))
+      return {
+        ok: false,
+        error:
+          "Für den Portal-Zugang ist eine gültige E-Mail nötig — bitte nach der E-Mail des Mieters fragen.",
+      };
+
+    const password =
+      typeof input.password === "string" && input.password.length >= 8
+        ? input.password
+        : genPassword();
+
+    const customer = await findOrCreateCustomer(ctx, name, email);
+    if (!customer) return { ok: false, error: "Kunde konnte nicht angelegt/gefunden werden." };
+
+    // E-Mail am Kunden setzen, falls noch leer
+    await ctx.admin
+      .from("customers")
+      .update({ email })
+      .eq("id", customer.id)
+      .eq("org_id", ctx.org_id)
+      .is("email", null);
+
+    // Noch nicht zugeordnete Verträge dieses Mieters mit dem Kunden verknüpfen
+    // (sonst erscheinen sie nicht im Portal/Self-Check-in).
+    const { data: linked } = await ctx.admin
+      .from("contracts")
+      .update({ customer_id: customer.id })
+      .eq("org_id", ctx.org_id)
+      .is("customer_id", null)
+      .ilike("renter_name", name)
+      .select("id");
+
+    // Konflikt: E-Mail gehört bereits einem ANDEREN Kunden
+    const { data: conflict } = await ctx.admin
+      .from("customer_logins")
+      .select("id, customer_id")
+      .eq("org_id", ctx.org_id)
+      .eq("email", email)
+      .maybeSingle();
+    if (conflict && conflict.customer_id !== customer.id)
+      return {
+        ok: false,
+        error: "Diese E-Mail ist bereits einem anderen Kunden in der Organisation zugeordnet.",
+      };
+
+    const password_hash = await hashPassword(password);
+
+    const { data: existing } = await ctx.admin
+      .from("customer_logins")
+      .select("id")
+      .eq("org_id", ctx.org_id)
+      .eq("customer_id", customer.id)
+      .maybeSingle();
+
+    let mode: "created" | "updated";
+    if (existing) {
+      const { error } = await ctx.admin
+        .from("customer_logins")
+        .update({
+          email,
+          password_hash,
+          magic_token: null,
+          magic_token_expires: null,
+          active: true,
+        })
+        .eq("id", existing.id);
+      if (error) return { ok: false, error: error.message };
+      mode = "updated";
+    } else {
+      const { error } = await ctx.admin.from("customer_logins").insert({
+        customer_id: customer.id,
+        org_id: ctx.org_id,
+        email,
+        password_hash,
+        active: true,
+      });
+      if (error) return { ok: false, error: error.message };
+      mode = "created";
+    }
+
+    return {
+      ok: true,
+      data: {
+        mode,
+        customer_created: customer.created,
+        customer: { id: customer.id, name },
+        login: { email, password },
+        linked_contracts: (linked ?? []).length,
+        portal_url: "https://www.knoellchen-pilot.de/portal",
+      },
+    };
+  },
+};
+
 export const TOOLS: Tool[] = [
   createContract,
+  createPortalAccess,
   createVehicle,
   searchContracts,
   searchTickets,
