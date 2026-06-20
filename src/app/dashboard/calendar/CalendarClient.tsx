@@ -8,6 +8,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   CalendarDays,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -191,15 +192,21 @@ export const CalendarClient = ({
             className="h-9 w-64 pl-9 pr-3 rounded-btn border border-hairline bg-paper text-[13px] outline-none focus:border-ink/30"
           />
         </div>
-        <select
-          value={vehFilter}
-          onChange={(e) => setVehFilter(e.target.value)}
-          className="h-9 px-3 rounded-btn border border-hairline bg-paper text-[13px] text-ink-soft outline-none"
-        >
-          {VEHICLE_FILTERS.map((f) => (
-            <option key={f.value} value={f.value}>{f.label}</option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            value={vehFilter}
+            onChange={(e) => setVehFilter(e.target.value)}
+            className="h-9 pl-3 pr-9 rounded-btn border border-hairline bg-paper text-[13px] text-ink-soft outline-none appearance-none cursor-pointer hover:border-ink/20 focus:border-ink/30 transition-colors"
+          >
+            {VEHICLE_FILTERS.map((f) => (
+              <option key={f.value} value={f.value}>{f.label}</option>
+            ))}
+          </select>
+          <ChevronDown
+            size={14}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none"
+          />
+        </div>
         <label className="inline-flex items-center gap-2 h-9 px-3 rounded-btn border border-hairline bg-paper text-[13px] text-ink-soft cursor-pointer select-none">
           <input type="checkbox" checked={onlyBooked} onChange={(e) => setOnlyBooked(e.target.checked)} className="w-4 h-4 accent-signal" />
           Nur belegte
