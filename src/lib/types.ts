@@ -70,6 +70,18 @@ export interface Vehicle {
   fin_number: string | null;
   category: string | null;
 
+  // Fahrzeugschein / Zulassungsbescheinigung Teil I (Migration 043)
+  hsn: string | null; // 2.1 — Herstellerschlüsselnummer
+  tsn: string | null; // 2.2 — Typschlüsselnummer
+  displacement_ccm: number | null; // P.1 — Hubraum cm³
+  co2_combined: number | null; // V.7 — CO₂ g/km
+  emission_class: string | null; // 14 — z. B. EURO6
+  weight_empty: number | null; // G — Leermasse kg
+  weight_max: number | null; // F.1 — zul. Gesamtmasse kg
+  zb2_number: string | null; // 16 — Nummer ZB Teil II
+  next_hu: string | null; // X — nächste HU/TÜV (YYYY-MM-DD)
+  registration_data: Record<string, unknown> | null; // vollständiger KI-Auslese-Datensatz
+
   available_from: string | null;
   km_at_intake: number | null;
   max_km_total: number | null;
@@ -314,6 +326,34 @@ export interface ParsedCustomerData {
   license_expiry?: string | null;
   id_card_nr?: string | null;
   document_type?: CustomerDocumentType | null;
+  confidence?: number;
+}
+
+/** KI-Auslese eines Fahrzeugscheins (Zulassungsbescheinigung Teil I). */
+export interface ParsedVehicleRegistration {
+  plate?: string | null; // A — amtliches Kennzeichen
+  first_registration?: string | null; // B — Erstzulassung YYYY-MM-DD
+  manufacturer?: string | null; // D.1 — Marke
+  model?: string | null; // D.3 — Handelsbezeichnung
+  vin?: string | null; // E — Fahrzeug-Identifizierungsnummer (FIN)
+  color?: string | null; // R — Farbe
+  fuel_type?: string | null; // P.3 — Kraftstoff
+  power_kw?: number | null; // P.2 — Nennleistung kW
+  displacement_ccm?: number | null; // P.1 — Hubraum cm³
+  seats?: number | null; // S.1 — Sitzplätze inkl. Fahrer
+  body_type?: string | null; // gemappt auf BODY_TYPES
+  body_type_raw?: string | null; // Feld 5 — Original-Aufbau
+  hsn?: string | null; // 2.1
+  tsn?: string | null; // 2.2
+  emission_class?: string | null; // 14
+  co2_combined?: number | null; // V.7 g/km
+  weight_empty?: number | null; // G kg
+  weight_max?: number | null; // F.1 kg
+  zb2_number?: string | null; // 16
+  next_hu?: string | null; // X — YYYY-MM-DD
+  num_axles?: number | null; // L
+  max_speed?: number | null; // T km/h
+  owner_name?: string | null; // C.1.1 (nur Info)
   confidence?: number;
 }
 

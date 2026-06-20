@@ -1,13 +1,23 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Loader2, Save } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ExternalLink,
+  FileText,
+  Loader2,
+  Save,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { fmtDate } from "@/lib/utils";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { Button } from "@/components/ui/Button";
 import { Plate } from "@/components/ui/Plate";
+import { FileDrop } from "@/components/ui/FileDrop";
 import {
   BODY_TYPES,
   CATEGORIES,
@@ -38,6 +48,17 @@ export type VehicleFormState = {
   body_type: string;
   color: string;
   category: string;
+
+  // Fahrzeugschein (technisch)
+  hsn: string;
+  tsn: string;
+  displacement_ccm: string;
+  co2_combined: string;
+  emission_class: string;
+  weight_empty: string;
+  weight_max: string;
+  zb2_number: string;
+  next_hu: string;
 
   // Verfügbarkeit
   available_from: string;
@@ -86,6 +107,15 @@ const empty: VehicleFormState = {
   body_type: "",
   color: "",
   category: "",
+  hsn: "",
+  tsn: "",
+  displacement_ccm: "",
+  co2_combined: "",
+  emission_class: "",
+  weight_empty: "",
+  weight_max: "",
+  zb2_number: "",
+  next_hu: "",
   available_from: new Date().toISOString().slice(0, 10),
   km_at_intake: "",
   first_registration: "",
@@ -133,6 +163,15 @@ const fromVehicle = (v: Vehicle): VehicleFormState => ({
   body_type: v.body_type || "",
   color: v.color || "",
   category: v.category || "",
+  hsn: v.hsn || "",
+  tsn: v.tsn || "",
+  displacement_ccm: v.displacement_ccm != null ? String(v.displacement_ccm) : "",
+  co2_combined: v.co2_combined != null ? String(v.co2_combined) : "",
+  emission_class: v.emission_class || "",
+  weight_empty: v.weight_empty != null ? String(v.weight_empty) : "",
+  weight_max: v.weight_max != null ? String(v.weight_max) : "",
+  zb2_number: v.zb2_number || "",
+  next_hu: v.next_hu || "",
   available_from: v.available_from || "",
   km_at_intake: v.km_at_intake != null ? String(v.km_at_intake) : "",
   first_registration: v.first_registration || "",
@@ -163,6 +202,14 @@ const addDays = (iso: string, days: number): string => {
   return d.toISOString().slice(0, 10);
 };
 
+/**
+ * Optionsliste, die einen (z. B. per KI gefüllten oder Alt-)Wert sichtbar hält,
+ * auch wenn er nicht in der vordefinierten Liste steht — sonst zeigt ein
+ * controlled <select> fälschlich „leer", behält den Wert aber im State.
+ */
+const withValue = (list: ReadonlyArray<string>, value: string): string[] =>
+  value && !list.includes(value) ? [value, ...list] : [...list];
+
 export const VehicleForm = ({
   mode,
   initial,
@@ -181,6 +228,72 @@ export const VehicleForm = ({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // ── Fahrzeugschein-Auslesen (Zulassungsbescheinigung Teil I) ──
+  const [regFile, setRegFile] = useState<File | null>(null);
+  const [parsing, setParsing] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [parseConfidence, setParseConfidence] = useState<number | null>(null);
+  const regDataRef = useRef<Record<string, unknown> | null>(null);
+
+  const clearReg = () => {
+    setRegFile(null);
+    setParseConfidence(null);
+    setParseError(null);
+    regDataRef.current = null;
+  };
+
+  const runRegistrationParse = async (file: File) => {
+    setRegFile(file);
+    setParsing(true);
+    setParseError(null);
+    setParseConfidence(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/vehicles/parse-registration", {
+        method: "POST",
+        body: fd,
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setParseError(j.error || "Auslesen fehlgeschlagen");
+        return;
+      }
+      const fields = (j.fields ?? {}) as Record<string, string>;
+      regDataRef.current = (j.registration_data ?? null) as Record<string, unknown> | null;
+      setParseConfidence(typeof j.confidence === "number" ? j.confidence : null);
+      setData((d) => {
+        const next: VehicleFormState = { ...d };
+        for (const [k, v] of Object.entries(fields)) {
+          // nur nicht-leere Werte einsetzen, und nur bekannte Formularfelder
+          if (v && k in next) (next as unknown as Record<string, string>)[k] = v;
+        }
+        return next;
+      });
+    } catch (e) {
+      setParseError(e instanceof Error ? e.message : "Auslesen fehlgeschlagen");
+    } finally {
+      setParsing(false);
+    }
+  };
+
+  // Schein-Datei am Fahrzeug hinterlegen (best-effort — der Datensatz ist
+  // bereits via registration_data gespeichert; die Datei kann notfalls später
+  // auf der Detailseite erneut hochgeladen werden).
+  const uploadRegDoc = async (vehicleId: string) => {
+    if (!regFile) return;
+    try {
+      const fd = new FormData();
+      fd.append("file", regFile);
+      await fetch(`/api/vehicles/${vehicleId}/registration-doc`, {
+        method: "POST",
+        body: fd,
+      });
+    } catch {
+      /* still */
+    }
+  };
 
   const set = (k: keyof VehicleFormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -213,6 +326,8 @@ export const VehicleForm = ({
       internal_return_at: data.internal_return_at
         ? new Date(data.internal_return_at).toISOString()
         : "",
+      // Vollständigen Fahrzeugschein-Datensatz mitspeichern, wenn ausgelesen.
+      ...(regDataRef.current ? { registration_data: regDataRef.current } : {}),
     };
     const url = mode === "create" ? "/api/vehicles" : `/api/vehicles/${initial!.id}`;
     const method = mode === "create" ? "POST" : "PATCH";
@@ -221,18 +336,23 @@ export const VehicleForm = ({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    setSaving(false);
     if (!res.ok) {
+      setSaving(false);
       const j = await res.json().catch(() => ({}));
       setError(j.error || "Speichern fehlgeschlagen");
       return;
     }
-    setSaved(true);
     if (mode === "create") {
       const j = (await res.json()) as { vehicle: { id: string } };
+      await uploadRegDoc(j.vehicle.id); // Fahrzeugschein hinterlegen
+      setSaving(false);
+      setSaved(true);
       router.push(`/dashboard/vehicles/${j.vehicle.id}`);
       router.refresh();
     } else {
+      await uploadRegDoc(initial!.id); // ggf. neu hochgeladenen Schein hinterlegen
+      setSaving(false);
+      setSaved(true);
       // Inline-Edit: das Panel übernimmt refresh + Zurückschalten in einer
       // Transition, damit die Ansicht erst mit frischen Daten erscheint.
       onDone?.();
@@ -260,11 +380,84 @@ export const VehicleForm = ({
       )}
 
       <form onSubmit={submit} className="mt-6 space-y-6">
+        <Panel flush>
+          <PanelHeader title="Fahrzeugschein auslesen (KI)" />
+          <div className="p-5 space-y-3">
+            <p className="text-[13px] text-ink-soft">
+              Lade die <strong>Zulassungsbescheinigung Teil I</strong> (Fahrzeugschein) als PDF
+              oder Foto hoch. Die KI liest Marke, Modell, FIN, Erstzulassung, Leistung,
+              HSN/TSN u. v. m. automatisch aus und füllt die Felder unten. Die{" "}
+              <strong>Erstzulassung</strong> steuert zugleich die 180-Tage-Aussteuerung.
+            </p>
+            <FileDrop
+              onFiles={(files) => files[0] && runRegistrationParse(files[0])}
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+              disabled={parsing}
+              label="Fahrzeugschein hierher ziehen oder klicken"
+              hint="PDF, JPG, PNG oder WebP · max 12 MB"
+            >
+              {parsing ? (
+                <div className="flex flex-col items-center gap-1.5">
+                  <Loader2 size={20} className="animate-spin text-signal" />
+                  <div className="text-[13.5px] font-medium text-ink">
+                    Fahrzeugschein wird ausgelesen…
+                  </div>
+                  <div className="text-[12px] text-ink-muted">
+                    Das dauert ein paar Sekunden.
+                  </div>
+                </div>
+              ) : undefined}
+            </FileDrop>
+
+            {regFile && !parsing && (
+              <div className="flex items-center gap-2 text-[13px] bg-canvas border border-hairline rounded-frame px-3 py-2">
+                <FileText size={15} className="text-ink-muted shrink-0" />
+                <span className="truncate flex-1">{regFile.name}</span>
+                <button
+                  type="button"
+                  onClick={clearReg}
+                  className="text-ink-muted hover:text-ink shrink-0"
+                  aria-label="Datei entfernen"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            )}
+
+            {parseConfidence !== null && !parsing && (
+              <div className="flex items-center gap-2 text-[13px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-frame px-3 py-2">
+                <Sparkles size={15} className="shrink-0" />
+                <span>Ausgelesen — Felder unten vorausgefüllt. Bitte kurz prüfen.</span>
+                <span className="ml-auto font-mono text-[11px] text-emerald-700/80 shrink-0">
+                  {Math.round((parseConfidence ?? 0) * 100)}% sicher
+                </span>
+              </div>
+            )}
+
+            {parseError && (
+              <div className="text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-frame px-3 py-2">
+                {parseError}
+              </div>
+            )}
+
+            {mode === "edit" && initial?.registration_doc_path && !regFile && (
+              <a
+                href={`/api/vehicles/${initial.id}/registration-doc`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-[13px] text-signal hover:underline"
+              >
+                <ExternalLink size={14} /> Hinterlegten Fahrzeugschein ansehen
+              </a>
+            )}
+          </div>
+        </Panel>
+
         <FormSection title="Fahrzeugdaten">
           <Field label="Hersteller">
             <select value={data.manufacturer} onChange={set("manufacturer")} className="field">
               <option value="">—</option>
-              {MANUFACTURERS.map((m) => (
+              {withValue(MANUFACTURERS, data.manufacturer).map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>
@@ -305,7 +498,7 @@ export const VehicleForm = ({
           <Field label="Kraftstoff">
             <select value={data.fuel_type} onChange={set("fuel_type")} className="field">
               <option value="">—</option>
-              {FUEL_TYPES.map((f) => (
+              {withValue(FUEL_TYPES, data.fuel_type).map((f) => (
                 <option key={f} value={f}>{f}</option>
               ))}
             </select>
@@ -345,7 +538,7 @@ export const VehicleForm = ({
           <Field label="Karosserieform">
             <select value={data.body_type} onChange={set("body_type")} className="field">
               <option value="">—</option>
-              {BODY_TYPES.map((b) => (
+              {withValue(BODY_TYPES, data.body_type).map((b) => (
                 <option key={b} value={b}>{b}</option>
               ))}
             </select>
@@ -370,6 +563,90 @@ export const VehicleForm = ({
             <div className="field bg-canvas text-ink-muted font-mono tabular-nums">
               {previewType || "wird aus Hersteller + Modell erstellt"}
             </div>
+          </Field>
+        </FormSection>
+
+        <FormSection title="Fahrzeugschein-Daten">
+          <Field label="HSN (2.1)">
+            <input
+              value={data.hsn}
+              onChange={set("hsn")}
+              placeholder="0588"
+              className="field font-mono tabular-nums"
+            />
+          </Field>
+          <Field label="TSN (2.2)">
+            <input
+              value={data.tsn}
+              onChange={set("tsn")}
+              placeholder="BQU063114"
+              className="field font-mono tabular-nums"
+            />
+          </Field>
+          <Field label="Hubraum (cm³)">
+            <input
+              value={data.displacement_ccm}
+              onChange={set("displacement_ccm")}
+              placeholder="1968"
+              className="field font-mono tabular-nums"
+              inputMode="numeric"
+            />
+          </Field>
+          <Field label="CO₂ (g/km)">
+            <input
+              value={data.co2_combined}
+              onChange={set("co2_combined")}
+              placeholder="152"
+              className="field font-mono tabular-nums"
+              inputMode="numeric"
+            />
+          </Field>
+          <Field label="Emissionsklasse">
+            <input
+              value={data.emission_class}
+              onChange={set("emission_class")}
+              placeholder="EURO6"
+              className="field"
+            />
+          </Field>
+          <Field label="Leergewicht (kg)">
+            <input
+              value={data.weight_empty}
+              onChange={set("weight_empty")}
+              placeholder="1655"
+              className="field font-mono tabular-nums"
+              inputMode="numeric"
+            />
+          </Field>
+          <Field label="Zul. Gesamtgewicht (kg)">
+            <input
+              value={data.weight_max}
+              onChange={set("weight_max")}
+              placeholder="2155"
+              className="field font-mono tabular-nums"
+              inputMode="numeric"
+            />
+          </Field>
+          <Field label="ZB Teil II-Nr">
+            <input
+              value={data.zb2_number}
+              onChange={set("zb2_number")}
+              placeholder="HX349005"
+              className="field font-mono tabular-nums"
+            />
+          </Field>
+          <Field label="Nächste HU / TÜV">
+            <input
+              type="month"
+              value={data.next_hu ? data.next_hu.slice(0, 7) : ""}
+              onChange={(e) =>
+                setData((d) => ({
+                  ...d,
+                  next_hu: e.target.value ? `${e.target.value}-01` : "",
+                }))
+              }
+              className="field font-mono tabular-nums"
+            />
           </Field>
         </FormSection>
 
@@ -685,7 +962,7 @@ export const VehicleForm = ({
               Abbrechen
             </button>
           )}
-          <Button type="submit" variant="signal" disabled={saving}>
+          <Button type="submit" variant="signal" disabled={saving || parsing}>
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             {mode === "create" ? "Fahrzeug anlegen" : "Speichern"}
           </Button>
