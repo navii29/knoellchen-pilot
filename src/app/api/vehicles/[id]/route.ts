@@ -63,6 +63,9 @@ const TEXT_FIELDS = [
   "tsn",
   "emission_class",
   "zb2_number",
+  // Versicherung (Migration 044)
+  "insurer",
+  "policy_number",
   "accessories",
   "echoes_device_id",
   // Logistik & Intern (Migration 026)
@@ -103,6 +106,8 @@ const DATE_FIELDS = [
   "decommission_date",
   "next_hu",
   "available_from",
+  // Versicherung (Migration 044)
+  "insurance_valid_until",
 ] as const;
 
 type RouteCtx = { params: { id: string } };

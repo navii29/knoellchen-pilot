@@ -25,6 +25,7 @@ import { TuevCountdown } from "@/components/vehicle/TuevCountdown";
 import { GpsLocation } from "@/components/vehicle/GpsLocation";
 import { TiresSection, type TireWithPhotos } from "@/components/vehicle/TiresSection";
 import { RegistrationDocCard } from "@/components/vehicle/RegistrationDocCard";
+import { InsuranceCard } from "@/components/vehicle/InsuranceCard";
 import { VehiclePhotosCard } from "@/components/vehicle/VehiclePhotosCard";
 import type { TirePhoto, VehicleTire } from "@/lib/tires";
 import { PartnerPricingSection } from "@/components/vehicle/PartnerPricingSection";
@@ -299,6 +300,17 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
             <RegistrationDocCard
               vehicleId={v.id}
               registrationDocPath={v.registration_doc_path}
+            />
+          </div>
+
+          <div className="mt-6">
+            <InsuranceCard
+              vehicleId={v.id}
+              insurer={v.insurer}
+              policyNumber={v.policy_number}
+              validUntil={v.insurance_valid_until}
+              policyPath={v.insurance_policy_path}
+              cardPath={v.insurance_card_path}
             />
           </div>
 
