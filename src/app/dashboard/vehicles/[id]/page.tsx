@@ -17,6 +17,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { ContractStatusBadge } from "@/components/contract/StatusBadge";
+import { isContractOverdue, localTodayIso } from "@/lib/contract-utils";
 import { VehicleEditPanel } from "./VehicleEditPanel";
 import { VehicleDeleteButton } from "./VehicleDeleteButton";
 import { VehicleEventsTimeline } from "@/components/vehicle/VehicleEventsTimeline";
@@ -357,7 +358,10 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
                     <span className="font-mono tnum text-[12px] text-ink-muted">
                       {fmtDate(ct.pickup_date)} → {fmtDate(ct.return_date)}
                     </span>
-                    <ContractStatusBadge status={ct.status} />
+                    <ContractStatusBadge
+                      status={ct.status}
+                      overdue={isContractOverdue(ct, localTodayIso())}
+                    />
                     <ChevronRight size={14} className="text-ink-muted" />
                   </Link>
                 ))

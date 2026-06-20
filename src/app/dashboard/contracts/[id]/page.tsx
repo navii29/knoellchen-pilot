@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ContractActions } from "./ContractActions";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeReturnSummary } from "@/lib/km";
+import { isContractOverdue, localTodayIso } from "@/lib/contract-utils";
 import { POSITIONS } from "@/lib/handover";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { Plate } from "@/components/ui/Plate";
@@ -25,8 +26,10 @@ const CONTRACT_STATUS_META: Record<
   storniert:    { label: "Storniert",     dot: "#DC2626", soft: "#FEF2F2", ink: "#B91C1C" },
 };
 
-const ContractPill = ({ status }: { status: ContractStatus }) => {
-  const m = CONTRACT_STATUS_META[status] ?? CONTRACT_STATUS_META.aktiv;
+const OVERDUE_PILL = { label: "Überfällig", dot: "#DC2626", soft: "#FEE2E2", ink: "#B91C1C" };
+
+const ContractPill = ({ status, overdue }: { status: ContractStatus; overdue?: boolean }) => {
+  const m = overdue ? OVERDUE_PILL : CONTRACT_STATUS_META[status] ?? CONTRACT_STATUS_META.aktiv;
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full pl-2 pr-2.5 py-0.5 text-[11px] font-mono font-medium tracking-tight"
@@ -174,7 +177,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
           {/* Page title row */}
           <div className="flex items-center gap-3 mb-1.5 flex-wrap">
             <span className="font-mono tnum text-[12px] text-ink-muted">{c.contract_nr}</span>
-            <ContractPill status={c.status} />
+            <ContractPill status={c.status} overdue={isContractOverdue(c, localTodayIso())} />
             <Plate value={c.plate} size="sm" />
           </div>
           <h1 className="font-display font-extrabold text-ink text-[26px] sm:text-[30px] leading-[1.05] tracking-tightest">
