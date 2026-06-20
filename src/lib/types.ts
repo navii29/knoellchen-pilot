@@ -82,6 +82,13 @@ export interface Vehicle {
   next_hu: string | null; // X — nächste HU/TÜV (YYYY-MM-DD)
   registration_data: Record<string, unknown> | null; // vollständiger KI-Auslese-Datensatz
 
+  // Versicherung (Migration 044)
+  insurer: string | null; // Versicherer
+  policy_number: string | null; // Policennummer
+  insurance_valid_until: string | null; // gültig bis (YYYY-MM-DD)
+  insurance_policy_path: string | null; // Versicherungspolice (Dokument)
+  insurance_card_path: string | null; // Versicherungskarte / eVB (Dokument)
+
   available_from: string | null;
   km_at_intake: number | null;
   max_km_total: number | null;
