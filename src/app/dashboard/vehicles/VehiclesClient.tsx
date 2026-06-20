@@ -3,8 +3,13 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Car, ChevronRight, FileSpreadsheet, Plus, Trash2 } from "lucide-react";
+import { Car, ChevronRight, FileSpreadsheet, Loader2, Plus, Trash2 } from "lucide-react";
 import { CsvImportModal } from "@/components/dashboard/CsvImportModal";
+import {
+  BulkBar,
+  SelectCheckbox,
+  useRowSelection,
+} from "@/components/dashboard/bulk-select";
 import { fmtDate } from "@/lib/utils";
 import { computeDecommission } from "@/lib/decommission";
 import { VEHICLE_STATUS_META, buildVehicleType, isDecommissioned } from "@/lib/vehicle";
@@ -41,6 +46,8 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
   const [filter, setFilter] = useState<VehicleStatus | "alle">("alle");
   const [q, setQ] = useState("");
   const [importOpen, setImportOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -73,6 +80,29 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
     if (!confirm("Fahrzeug wirklich löschen?")) return;
     const res = await fetch(`/api/vehicles?id=${id}`, { method: "DELETE" });
     if (res.ok) router.refresh();
+  };
+
+  const sel = useRowSelection(filtered);
+
+  const bulkDelete = async () => {
+    if (sel.count === 0) return;
+    if (!confirm(`${sel.count} ${sel.count === 1 ? "Fahrzeug" : "Fahrzeuge"} wirklich löschen?`))
+      return;
+    setBusy(true);
+    setError(null);
+    const res = await fetch("/api/vehicles/bulk-delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: sel.selectedIds }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      setError(j.error || "Löschen fehlgeschlagen");
+      return;
+    }
+    sel.clear();
+    router.refresh();
   };
 
   const counts = (v: VehicleStatus | "alle") => {
@@ -125,10 +155,29 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
         />
       </div>
 
+      <BulkBar count={sel.count} onClear={sel.clear}>
+        <Button variant="ghost" size="sm" onClick={bulkDelete} disabled={busy} className="text-red-700 hover:bg-red-50">
+          {busy ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+          Löschen
+        </Button>
+      </BulkBar>
+
+      {error && (
+        <div className="mt-3 text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-panel px-3 py-2">
+          {error}
+        </div>
+      )}
+
       <div className="mt-4 panel overflow-hidden">
         {/* Desktop */}
         <div className="hidden md:block">
-          <div className="grid grid-cols-[132px_minmax(0,2fr)_minmax(0,1fr)_104px_124px_116px_44px] gap-3 px-5 py-2.5 border-b border-hairline bg-canvas/60 th">
+          <div className="grid grid-cols-[34px_132px_minmax(0,2fr)_minmax(0,1fr)_104px_124px_116px_44px] gap-3 px-5 py-2.5 border-b border-hairline bg-canvas/60 th items-center">
+            <SelectCheckbox
+              checked={sel.allSelected}
+              indeterminate={sel.someSelected}
+              onChange={sel.toggleAll}
+              ariaLabel="Alle auswählen"
+            />
             <span>Kennzeichen</span>
             <span>Hersteller / Modell</span>
             <span>Karosserie</span>
@@ -144,10 +193,15 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
             return (
               <div
                 key={v.id}
-                className={`grid grid-cols-[132px_minmax(0,2fr)_minmax(0,1fr)_104px_124px_116px_44px] gap-3 items-center px-5 py-3 border-b border-hairline last:border-0 hover:bg-canvas transition-colors text-[13.5px] ${
+                className={`grid grid-cols-[34px_132px_minmax(0,2fr)_minmax(0,1fr)_104px_124px_116px_44px] gap-3 items-center px-5 py-3 border-b border-hairline last:border-0 hover:bg-canvas transition-colors text-[13.5px] ${
                   archived ? "opacity-75" : ""
                 }`}
               >
+                <SelectCheckbox
+                  checked={sel.isSelected(v.id)}
+                  onChange={() => sel.toggle(v.id)}
+                  ariaLabel={`${v.plate} auswählen`}
+                />
                 <Link href={`/dashboard/vehicles/${v.id}`}>
                   <Plate value={v.plate} size="sm" />
                 </Link>
@@ -218,6 +272,13 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
                 key={v.id}
                 className={`flex items-start gap-3 px-4 py-3 ${archived ? "opacity-75" : ""}`}
               >
+                <div className="pt-1">
+                  <SelectCheckbox
+                    checked={sel.isSelected(v.id)}
+                    onChange={() => sel.toggle(v.id)}
+                    ariaLabel={`${v.plate} auswählen`}
+                  />
+                </div>
                 <Link
                   href={`/dashboard/vehicles/${v.id}`}
                   className="flex-1 min-w-0 flex items-start gap-3 active:bg-canvas -mx-4 -my-3 px-4 py-3"

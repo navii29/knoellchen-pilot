@@ -23,7 +23,7 @@ export default async function TicketsListPage() {
             title="Leitstelle"
             description="Alle eingehenden Bescheide — ausgelesen, zugeordnet, weiterbelastet."
           />
-          <TicketTable tickets={tickets} />
+          <TicketTable tickets={tickets} selectable />
         </div>
       </div>
     </>
