@@ -217,6 +217,116 @@ const importProductPhotos = async (
   return { imported, skipped };
 };
 
+// Nächstes freies Platzhalter-Kennzeichen ABO-#### (für Abo-Modelle ohne SKU).
+const nextPlaceholderPlate = async (admin: Admin, orgId: string): Promise<string> => {
+  const { data } = await admin
+    .from("vehicles")
+    .select("plate")
+    .eq("org_id", orgId)
+    .ilike("plate", "ABO-%");
+  let max = 0;
+  for (const r of (data ?? []) as { plate: string }[]) {
+    const m = /^ABO-0*(\d+)$/i.exec(r.plate);
+    if (m) max = Math.max(max, Number(m[1]));
+  }
+  return `ABO-${String(max + 1).padStart(4, "0")}`;
+};
+
+// Kunde aus einer Bestellung matchen (Shopify-ID > E-Mail) oder neu anlegen.
+const resolveOrInsertCustomer = async (
+  admin: Admin,
+  orgId: string,
+  order: ShopifyOrder
+): Promise<{ customerId: string | null; created: boolean }> => {
+  const sc = order.customer;
+  const email = (sc?.email ?? order.email ?? "").trim().toLowerCase() || null;
+  const firstName = sc?.first_name?.trim() || null;
+  const lastName = sc?.last_name?.trim() || firstName || "Shopify-Kunde";
+  const phone = sc?.phone?.trim() || sc?.default_address?.phone?.trim() || null;
+  const addr = sc?.default_address ?? null;
+
+  let customerId: string | null = null;
+  if (sc?.id) {
+    const { data: byShopId } = await admin
+      .from("customers")
+      .select("id")
+      .eq("org_id", orgId)
+      .eq("shopify_customer_id", String(sc.id))
+      .maybeSingle();
+    customerId = byShopId?.id ?? null;
+  }
+  if (!customerId && email) {
+    const escapedEmail = email.replace(/[\\%_]/g, "\\$&");
+    const { data: byMail } = await admin
+      .from("customers")
+      .select("id")
+      .eq("org_id", orgId)
+      .ilike("email", escapedEmail)
+      .maybeSingle();
+    customerId = byMail?.id ?? null;
+    if (customerId && sc?.id) {
+      await admin
+        .from("customers")
+        .update({ shopify_customer_id: String(sc.id) })
+        .eq("id", customerId);
+    }
+  }
+  if (customerId) return { customerId, created: false };
+
+  const { data: created, error } = await admin
+    .from("customers")
+    .insert({
+      org_id: orgId,
+      first_name: firstName,
+      last_name: sc?.last_name?.trim() || lastName,
+      email,
+      phone,
+      street: addr?.address1 ?? null,
+      zip: addr?.zip ?? null,
+      city: addr?.city ?? null,
+      country: addr?.country ?? null,
+      shopify_customer_id: sc?.id ? String(sc.id) : null,
+    })
+    .select("id")
+    .single();
+  if (error || !created) return { customerId: null, created: false };
+  return { customerId: created.id, created: true };
+};
+
+// ── Bestellung → nur Kunde (ohne Mietzeitraum/Kennzeichen) ──────
+export type CustomerResult =
+  | { kind: "skipped"; reason: string; order: string | number }
+  | { kind: "dryrun"; mapped: Record<string, unknown> }
+  | { kind: "duplicate" }
+  | { kind: "created"; customer_id: string }
+  | { kind: "error"; message: string };
+
+export const importCustomerFromOrder = async (
+  admin: Admin,
+  orgId: string,
+  order: ShopifyOrder,
+  dryrun: boolean
+): Promise<CustomerResult> => {
+  const sc = order.customer;
+  const email = (sc?.email ?? order.email ?? "").trim().toLowerCase() || null;
+  const name = [sc?.first_name?.trim(), sc?.last_name?.trim()]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  if (!name && !email) {
+    return {
+      kind: "skipped",
+      reason: "Bestellung ohne Kundenname und E-Mail",
+      order: order.name ?? order.id,
+    };
+  }
+  if (dryrun) return { kind: "dryrun", mapped: { name: name || "(ohne Name)", email } };
+
+  const { customerId, created } = await resolveOrInsertCustomer(admin, orgId, order);
+  if (!customerId) return { kind: "error", message: "Kunde konnte nicht angelegt werden" };
+  return created ? { kind: "created", customer_id: customerId } : { kind: "duplicate" };
+};
+
 // ── Produkt → Fahrzeug ──────────────────────────────────────────
 
 export type ProductResult =
@@ -237,7 +347,8 @@ export const processProduct = async (
   admin: Admin,
   orgId: string,
   product: ShopifyProduct,
-  dryrun: boolean
+  dryrun: boolean,
+  opts: { allowPlaceholder?: boolean } = {}
 ): Promise<ProductResult> => {
   // Kennzeichen aus der ersten Variante, deren SKU wie ein Kennzeichen aussieht
   const variant = (product.variants ?? []).find((v) => {
@@ -245,7 +356,8 @@ export const processProduct = async (
     const p = normalizePlate(v.sku);
     return p !== "" && looksLikePlate(p);
   });
-  if (!variant) {
+  const isPlaceholder = !variant;
+  if (isPlaceholder && !opts.allowPlaceholder) {
     return {
       kind: "skipped",
       reason:
@@ -254,7 +366,6 @@ export const processProduct = async (
     };
   }
 
-  const plate = normalizePlate(variant.sku!);
   const vehicleType = product.title?.trim() || null;
   const manufacturer = product.vendor?.trim() || null;
   // Modell aus dem Titel ableiten: Vendor-Präfix(e) abschneiden
@@ -281,8 +392,13 @@ export const processProduct = async (
     return rest.trim() || vehicleType;
   };
   const model = deriveModel();
+  // Bei echtem SKU-Kennzeichen den Variantenpreis als Tagespreis übernehmen.
+  // Bei Abo-Modellen ist der Preis ein Laufzeit-/Abopreis (kein Tagespreis) →
+  // daily_rate leer lassen, damit nichts Falsches in der Marge landet.
   const dailyRate =
-    variant.price != null && variant.price !== "" ? Number(variant.price) : null;
+    variant && variant.price != null && variant.price !== ""
+      ? Number(variant.price)
+      : null;
   const status = product.status === "active" ? "aktiv" : "inaktiv";
 
   const images = (product.images ?? []).filter((im) => im.src);
@@ -295,12 +411,13 @@ export const processProduct = async (
   }).length;
 
   const mapped = {
-    plate,
+    plate: variant ? normalizePlate(variant.sku!) : "ABO-#### (neu)",
     vehicle_type: vehicleType,
     manufacturer,
     model,
     daily_rate: dailyRate,
     status,
+    placeholder: isPlaceholder,
     images_total: images.length,
     images_importable: importable,
   };
@@ -315,37 +432,51 @@ export const processProduct = async (
     .maybeSingle();
   if (byProduct) return { kind: "duplicate", plate: byProduct.plate };
 
-  // Kennzeichen existiert bereits? Dann nur verknüpfen, nichts überschreiben.
-  const { data: byPlate } = await admin
-    .from("vehicles")
-    .select("id, shopify_product_id")
-    .eq("org_id", orgId)
-    .eq("plate", plate)
-    .maybeSingle();
-  if (byPlate) {
-    if (!byPlate.shopify_product_id) {
-      await admin
-        .from("vehicles")
-        .update({ shopify_product_id: String(product.id) })
-        .eq("id", byPlate.id);
+  let plate: string;
+  if (variant) {
+    plate = normalizePlate(variant.sku!);
+    // Kennzeichen existiert bereits? Dann nur verknüpfen, nichts überschreiben.
+    const { data: byPlate } = await admin
+      .from("vehicles")
+      .select("id, shopify_product_id")
+      .eq("org_id", orgId)
+      .eq("plate", plate)
+      .maybeSingle();
+    if (byPlate) {
+      if (!byPlate.shopify_product_id) {
+        await admin
+          .from("vehicles")
+          .update({ shopify_product_id: String(product.id) })
+          .eq("id", byPlate.id);
+      }
+      return { kind: "linked", plate, mapped };
     }
-    return { kind: "linked", plate, mapped };
+  } else {
+    // Abo-Modell ohne Kennzeichen → Platzhalter ABO-#### (später umbenennbar).
+    plate = await nextPlaceholderPlate(admin, orgId);
   }
 
-  const { data: vehicle, error: insErr } = await admin
-    .from("vehicles")
-    .insert({
-      org_id: orgId,
-      plate,
-      vehicle_type: vehicleType,
-      manufacturer,
-      model,
-      daily_rate: dailyRate,
-      status,
-      shopify_product_id: String(product.id),
-    })
-    .select("id")
-    .single();
+  const insertVehicle = (p: string) =>
+    admin
+      .from("vehicles")
+      .insert({
+        org_id: orgId,
+        plate: p,
+        vehicle_type: vehicleType,
+        manufacturer,
+        model,
+        daily_rate: dailyRate,
+        status,
+        shopify_product_id: String(product.id),
+      })
+      .select("id")
+      .single();
+
+  let { data: vehicle, error: insErr } = await insertVehicle(plate);
+  if (insErr && isPlaceholder && /duplicate|unique|plate/i.test(insErr.message)) {
+    plate = `ABO-${String(product.id).slice(-6)}`;
+    ({ data: vehicle, error: insErr } = await insertVehicle(plate));
+  }
   if (insErr) {
     if (insErr.message.includes("idx_vehicles_shopify_product")) {
       return { kind: "duplicate" };
@@ -355,10 +486,10 @@ export const processProduct = async (
 
   // Produktfotos in die Galerie (best effort — Fehler brechen nichts)
   const photos = images.length
-    ? await importProductPhotos(admin, orgId, vehicle.id, images)
+    ? await importProductPhotos(admin, orgId, vehicle!.id, images)
     : { imported: 0, skipped: 0 };
 
-  return { kind: "created", vehicle_id: vehicle.id, plate, mapped, photos };
+  return { kind: "created", vehicle_id: vehicle!.id, plate, mapped, photos };
 };
 
 // ── Bestellung → Kunde + Vertrag ────────────────────────────────
@@ -489,53 +620,7 @@ export const processOrder = async (
   if (dryrun) return { kind: "dryrun", mapped };
 
   // Kunde matchen (Shopify-ID > E-Mail) oder anlegen
-  let customerId: string | null = null;
-  if (sc?.id) {
-    const { data: byShopId } = await admin
-      .from("customers")
-      .select("id")
-      .eq("org_id", orgId)
-      .eq("shopify_customer_id", String(sc.id))
-      .maybeSingle();
-    customerId = byShopId?.id ?? null;
-  }
-  if (!customerId && email) {
-    // ilike nur für Case-Insensitivität — LIKE-Metazeichen escapen
-    const escapedEmail = email.replace(/[\\%_]/g, "\\$&");
-    const { data: byMail } = await admin
-      .from("customers")
-      .select("id")
-      .eq("org_id", orgId)
-      .ilike("email", escapedEmail)
-      .maybeSingle();
-    customerId = byMail?.id ?? null;
-    if (customerId && sc?.id) {
-      await admin
-        .from("customers")
-        .update({ shopify_customer_id: String(sc.id) })
-        .eq("id", customerId);
-    }
-  }
-  if (!customerId) {
-    const { data: created, error: custErr } = await admin
-      .from("customers")
-      .insert({
-        org_id: orgId,
-        first_name: firstName,
-        last_name: sc?.last_name?.trim() || lastName,
-        email,
-        phone,
-        street: addr?.address1 ?? null,
-        zip: addr?.zip ?? null,
-        city: addr?.city ?? null,
-        country: addr?.country ?? null,
-        shopify_customer_id: sc?.id ? String(sc.id) : null,
-      })
-      .select("id")
-      .single();
-    if (custErr) return { kind: "error", message: `Kunde: ${custErr.message}` };
-    customerId = created.id;
-  }
+  const { customerId } = await resolveOrInsertCustomer(admin, orgId, order);
   if (!customerId) return { kind: "error", message: "Kunde konnte nicht ermittelt werden" };
 
   // Fahrzeug-Stub anlegen falls unbekannt (gleiches Verhalten wie manuelle Vertragsanlage)

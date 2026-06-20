@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import {
+  importCustomerFromOrder,
   processOrder,
   processProduct,
   type ShopifyOrder,
@@ -118,7 +119,12 @@ export const POST = async (req: Request) => {
     );
   }
 
-  let body: { dryrun?: boolean; include_orders?: boolean } = {};
+  let body: {
+    dryrun?: boolean;
+    include_orders?: boolean;
+    products_as_vehicles?: boolean;
+    customers_from_orders?: boolean;
+  } = {};
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -126,6 +132,10 @@ export const POST = async (req: Request) => {
   }
   const dryrun = body.dryrun === true;
   const includeOrders = body.include_orders === true;
+  // Abo-Shops: Produkte ohne Kennzeichen-SKU als Fahrzeuge (Platzhalter-Kennzeichen)
+  // bzw. Bestellungen ohne Mietzeitraum nur als Kunden übernehmen.
+  const productsAsVehicles = body.products_as_vehicles === true;
+  const customersFromOrders = body.customers_from_orders === true;
 
   const admin = createAdminClient();
 
@@ -155,7 +165,9 @@ export const POST = async (req: Request) => {
 
     for (const product of items) {
       products.total++;
-      const r = await processProduct(admin, auth.org_id, product, dryrun);
+      const r = await processProduct(admin, auth.org_id, product, dryrun, {
+        allowPlaceholder: productsAsVehicles,
+      });
       const detail = {
         title: product.title ?? String(product.id),
         plate: "plate" in r ? r.plate : undefined,
@@ -176,17 +188,22 @@ export const POST = async (req: Request) => {
     pageInfo = pageRes.nextPageInfo;
   }
 
-  // ── Optional: offene Bestellungen → Kunden + Verträge ──
-  let orders: {
+  // ── Offene Bestellungen → Kunden (immer) und/oder Verträge (optional) ──
+  type Counter = {
     total: number;
     created: number;
     duplicates: number;
     skipped: number;
     errors: number;
-  } | null = null;
+  };
+  let orders: Counter | null = null;
+  let customers: Counter | null = null;
 
-  if (includeOrders) {
-    orders = { total: 0, created: 0, duplicates: 0, skipped: 0, errors: 0 };
+  if (includeOrders || customersFromOrders) {
+    if (includeOrders) orders = { total: 0, created: 0, duplicates: 0, skipped: 0, errors: 0 };
+    if (customersFromOrders)
+      customers = { total: 0, created: 0, duplicates: 0, skipped: 0, errors: 0 };
+
     let oPageInfo: string | null = null;
     for (let page = 0; page < MAX_PAGES; page++) {
       const oRes: ApiPage<ShopifyOrder> = await fetchPage<ShopifyOrder>(
@@ -197,15 +214,24 @@ export const POST = async (req: Request) => {
         oPageInfo
       );
       if (oRes.error) return NextResponse.json({ error: oRes.error }, { status: 502 });
-      const items = oRes.items;
 
-      for (const order of items) {
-        orders.total++;
-        const r = await processOrder(admin, auth.org_id, order, dryrun);
-        if (r.kind === "created" || r.kind === "dryrun") orders.created++;
-        else if (r.kind === "duplicate") orders.duplicates++;
-        else if (r.kind === "skipped") orders.skipped++;
-        else if (r.kind === "error") orders.errors++;
+      for (const order of oRes.items) {
+        if (customers) {
+          customers.total++;
+          const c = await importCustomerFromOrder(admin, auth.org_id, order, dryrun);
+          if (c.kind === "created" || c.kind === "dryrun") customers.created++;
+          else if (c.kind === "duplicate") customers.duplicates++;
+          else if (c.kind === "skipped") customers.skipped++;
+          else if (c.kind === "error") customers.errors++;
+        }
+        if (orders) {
+          orders.total++;
+          const r = await processOrder(admin, auth.org_id, order, dryrun);
+          if (r.kind === "created" || r.kind === "dryrun") orders.created++;
+          else if (r.kind === "duplicate") orders.duplicates++;
+          else if (r.kind === "skipped") orders.skipped++;
+          else if (r.kind === "error") orders.errors++;
+        }
       }
 
       if (!oRes.nextPageInfo) break;
@@ -213,5 +239,5 @@ export const POST = async (req: Request) => {
     }
   }
 
-  return NextResponse.json({ ok: true, dryrun, shop: domain, products, orders });
+  return NextResponse.json({ ok: true, dryrun, shop: domain, products, orders, customers });
 };
