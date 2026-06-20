@@ -14,6 +14,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { ContractStatusBadge } from "@/components/contract/StatusBadge";
 import { CustomerActions } from "./CustomerActions";
+import { CustomerEditPanel } from "./CustomerEditPanel";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -86,7 +87,9 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
             actions={<CustomerActions customerId={c.id} customerEmail={c.email} />}
           />
 
-          <div className="mt-6 grid sm:grid-cols-2 gap-3">
+          <div className="mt-6">
+            <CustomerEditPanel customer={c}>
+              <div className="grid sm:grid-cols-2 gap-3">
             <InfoCard Icon={MapPin} title="Anschrift">
               <Row label="Straße" value={[c.street, c.house_nr].filter(Boolean).join(" ") || "—"} />
               <Row label="PLZ / Ort" value={[c.zip, c.city].filter(Boolean).join(" ") || "—"} />
@@ -127,14 +130,15 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                 </a>
               )}
             </InfoCard>
+              </div>
+              {c.notes && (
+                <Panel className="mt-3">
+                  <div className="data-label mb-2">Notizen</div>
+                  <div className="text-[13.5px] text-ink whitespace-pre-wrap">{c.notes}</div>
+                </Panel>
+              )}
+            </CustomerEditPanel>
           </div>
-
-          {c.notes && (
-            <Panel className="mt-3">
-              <div className="data-label mb-2">Notizen</div>
-              <div className="text-[13.5px] text-ink whitespace-pre-wrap">{c.notes}</div>
-            </Panel>
-          )}
 
           <div className="mt-6">
             <Panel flush>
