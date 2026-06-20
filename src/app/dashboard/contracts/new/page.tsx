@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function NewContractPage({
   searchParams,
 }: {
-  searchParams: { customer_id?: string };
+  searchParams: { customer_id?: string; plate?: string; pickup?: string; return?: string };
 }) {
   const supabase = createClient();
   const [{ data: customers }, { data: partners }, { data: specialTerms }] =
@@ -37,6 +37,15 @@ export default async function NewContractPage({
             partners={(partners || []) as SalesPartner[]}
             specialTerms={(specialTerms || []) as SpecialTermsTemplate[]}
             initialCustomerId={searchParams.customer_id || null}
+            prefill={
+              searchParams.plate || searchParams.pickup
+                ? {
+                    plate: searchParams.plate || "",
+                    pickup_date: searchParams.pickup || "",
+                    return_date: searchParams.return || "",
+                  }
+                : null
+            }
           />
         </div>
       </div>

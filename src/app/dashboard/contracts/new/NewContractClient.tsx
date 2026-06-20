@@ -145,11 +145,13 @@ export const NewContractClient = ({
   partners,
   specialTerms,
   initialCustomerId,
+  prefill = null,
 }: {
   customers: Customer[];
   partners: SalesPartner[];
   specialTerms: SpecialTermsTemplate[];
   initialCustomerId: string | null;
+  prefill?: { plate: string; pickup_date: string; return_date: string } | null;
 }) => {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -157,10 +159,20 @@ export const NewContractClient = ({
     () => (initialCustomerId ? customers.find((c) => c.id === initialCustomerId) ?? null : null),
     [customers, initialCustomerId]
   );
-  const [mode, setMode] = useState<Mode>(initialCustomer ? "manual" : "choose");
-  const [data, setData] = useState<FormState>(() =>
-    initialCustomer ? fillFromCustomer(empty, initialCustomer) : empty
+  // Vorbelegung aus dem Kalender (Klick auf freie Fläche): Fahrzeug + Datum.
+  const [mode, setMode] = useState<Mode>(
+    initialCustomer || prefill?.plate ? "manual" : "choose"
   );
+  const [data, setData] = useState<FormState>(() => {
+    const base = initialCustomer ? fillFromCustomer(empty, initialCustomer) : empty;
+    if (!prefill) return base;
+    return {
+      ...base,
+      plate: prefill.plate || base.plate,
+      pickup_date: prefill.pickup_date || base.pickup_date,
+      return_date: prefill.return_date || base.return_date,
+    };
+  });
   const [parsing, setParsing] = useState(false);
   const [parsedFromAI, setParsedFromAI] = useState(false);
   const [aiConfidence, setAiConfidence] = useState<number | null>(null);
