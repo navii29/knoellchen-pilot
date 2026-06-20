@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X, Upload } from "lucide-react";
 import { EVENT_TYPE_META, type VehicleEventType } from "@/lib/vehicle-events";
 import { Button } from "@/components/ui/Button";
+import { FileDrop } from "@/components/ui/FileDrop";
 
 const TYPE_ORDER: VehicleEventType[] = [
   "service",
@@ -25,7 +26,6 @@ export const AddEventModal = ({
   onClose: () => void;
 }) => {
   const router = useRouter();
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const [type, setType] = useState<VehicleEventType>("service");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -60,7 +60,6 @@ export const AddEventModal = ({
     setFile(null);
     setError(null);
     setLoading(false);
-    if (fileRef.current) fileRef.current.value = "";
   };
 
   const submit = async () => {
@@ -227,19 +226,20 @@ export const AddEventModal = ({
 
           <div className="mt-5">
             <div className="data-label mb-2">Beleg / Rechnung</div>
-            <label className="flex items-center gap-3 px-3 py-2.5 rounded-btn border border-hairline hover:bg-canvas cursor-pointer text-sm text-ink-soft">
-              <Upload size={14} className="text-ink-muted" />
-              <span className="truncate">
-                {file ? file.name : "PDF oder Foto auswählen (max 12 MB)"}
-              </span>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*,application/pdf"
-                className="hidden"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              />
-            </label>
+            <FileDrop
+              accept="image/*,application/pdf"
+              onFiles={(files) => setFile(files[0] ?? null)}
+              className="px-3 py-2.5 text-left"
+            >
+              <div className="flex items-center gap-3 text-sm text-ink-soft">
+                <Upload size={14} className="text-ink-muted" />
+                <span className="truncate">
+                  {file
+                    ? file.name
+                    : "PDF oder Foto auswählen — oder hierher ziehen (max 12 MB)"}
+                </span>
+              </div>
+            </FileDrop>
           </div>
 
           {error && (

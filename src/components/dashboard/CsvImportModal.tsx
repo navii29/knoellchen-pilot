@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { FileDrop } from "@/components/ui/FileDrop";
 import { decodeCsvFile } from "@/lib/encoding";
 
 export type FieldDef = {
@@ -52,7 +53,6 @@ export const CsvImportModal = ({
   onClose: () => void;
 }) => {
   const router = useRouter();
-  const fileRef = useRef<HTMLInputElement>(null);
   const [csvText, setCsvText] = useState<string | null>(null);
   const [csvFileName, setCsvFileName] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -120,54 +120,49 @@ export const CsvImportModal = ({
     setCsvFileName(null);
     setCommitResult(null);
     setError(null);
-    if (fileRef.current) fileRef.current.value = "";
   };
 
   // ───── Subviews ─────
   const renderUpload = () => (
     <div className="px-6 py-8">
-      <div className="rounded-panel border border-hairline bg-canvas px-5 py-8 text-center">
-        <div className="inline-flex w-12 h-12 rounded-panel border border-hairline bg-paper items-center justify-center text-ink-muted mb-3">
-          <UploadCloud size={20} />
+      <FileDrop
+        onFiles={(files) => {
+          const f = files[0];
+          if (f) void onFile(f);
+        }}
+        accept=".csv,text/csv,text/plain"
+        multiple={false}
+        disabled={analyzing}
+        label="CSV-Datei auswählen"
+        className="!bg-canvas px-5 py-8"
+      >
+        <div className="text-center">
+          <div className="inline-flex w-12 h-12 rounded-panel border border-hairline bg-paper items-center justify-center text-ink-muted mb-3">
+            <UploadCloud size={20} />
+          </div>
+          <div className="text-[15px] font-medium text-ink">
+            CSV-Datei auswählen oder hierher ziehen
+          </div>
+          <p className="text-[12.5px] text-ink-muted mt-1.5 max-w-sm mx-auto leading-snug">
+            Beliebige Spaltenbenennung — die KI ordnet die Spalten automatisch
+            den richtigen Feldern zu. Trennzeichen (Komma, Semikolon, Tab) werden
+            erkannt.
+          </p>
+          <span className="mt-5 inline-flex items-center gap-1.5 rounded-btn border border-hairline bg-paper px-3.5 py-2 text-[13px] font-medium text-ink">
+            {analyzing ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                Analysiere…
+              </>
+            ) : (
+              <>
+                <FileSpreadsheet size={14} />
+                CSV auswählen
+              </>
+            )}
+          </span>
         </div>
-        <div className="text-[15px] font-medium text-ink">
-          CSV-Datei auswählen
-        </div>
-        <p className="text-[12.5px] text-ink-muted mt-1.5 max-w-sm mx-auto leading-snug">
-          Beliebige Spaltenbenennung — die KI ordnet die Spalten automatisch
-          den richtigen Feldern zu. Trennzeichen (Komma, Semikolon, Tab) werden
-          erkannt.
-        </p>
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".csv,text/csv,text/plain"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) void onFile(f);
-          }}
-        />
-        <Button
-          variant="ink"
-          size="md"
-          onClick={() => fileRef.current?.click()}
-          disabled={analyzing}
-          className="mt-5"
-        >
-          {analyzing ? (
-            <>
-              <Loader2 size={14} className="animate-spin" />
-              Analysiere…
-            </>
-          ) : (
-            <>
-              <FileSpreadsheet size={14} />
-              CSV auswählen
-            </>
-          )}
-        </Button>
-      </div>
+      </FileDrop>
 
       {error && (
         <div className="mt-4 flex items-center gap-2 text-[13px] rounded-panel px-3 py-2 bg-red-50 border border-red-200 text-red-700">

@@ -48,6 +48,7 @@ export const TirePhotosModal = ({
   const refs = useRef<Record<TirePhotoPosition, HTMLInputElement | null>>(
     {} as Record<TirePhotoPosition, HTMLInputElement | null>
   );
+  const [dragOver, setDragOver] = useState<TirePhotoPosition | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -168,8 +169,22 @@ export const TirePhotosModal = ({
               return (
                 <div
                   key={p.key}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (!isBusy) setDragOver(p.key);
+                  }}
+                  onDragLeave={() => setDragOver((d) => (d === p.key ? null : d))}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOver((d) => (d === p.key ? null : d));
+                    if (isBusy) return;
+                    const f = e.dataTransfer.files?.[0];
+                    if (f) void upload(p.key, f);
+                  }}
                   className={`relative rounded-card border overflow-hidden ${
-                    isUploaded
+                    dragOver === p.key
+                      ? "ring-2 ring-signal/50 border-signal bg-signal/5"
+                      : isUploaded
                       ? "border-emerald-200"
                       : isError
                       ? "border-red-200"
@@ -261,6 +276,9 @@ export const TirePhotosModal = ({
                         </>
                       )}
                     </button>
+                    <div className="mt-1.5 text-center text-[10.5px] text-ink-muted leading-tight">
+                      oder Datei hierher ziehen
+                    </div>
                   </div>
                 </div>
               );

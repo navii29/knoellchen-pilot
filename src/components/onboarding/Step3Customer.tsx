@@ -29,6 +29,7 @@ export const Step3Customer = ({
   onBack: () => void;
 }) => {
   const [mode, setMode] = useState<Mode>("scan");
+  const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [firstName, setFirstName] = useState("");
@@ -158,9 +159,24 @@ export const Step3Customer = ({
               setMode("scan");
               fileInputRef.current?.click();
             }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (!scanning) setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              if (scanning) return;
+              setMode("scan");
+              const f = e.dataTransfer.files?.[0];
+              if (f) void onFileChosen(f);
+            }}
             disabled={scanning}
             className={`relative overflow-hidden rounded-card border px-5 py-4 text-left transition-all ${
-              mode === "scan"
+              dragOver
+                ? "border-signal bg-signal/5 ring-2 ring-signal/50"
+                : mode === "scan"
                 ? "bg-ink text-white border-ink shadow-panel"
                 : "bg-paper text-ink border-hairline hover:border-ink/30"
             } disabled:opacity-60 disabled:cursor-not-allowed`}
@@ -183,7 +199,7 @@ export const Step3Customer = ({
                     mode === "scan" ? "text-white/55" : "text-ink-muted"
                   }`}
                 >
-                  {scanning ? "Wird ausgelesen…" : "Foto hochladen — KI füllt vor"}
+                  {scanning ? "Wird ausgelesen…" : "Foto hochladen oder hierher ziehen — KI füllt vor"}
                 </div>
               </div>
             </div>

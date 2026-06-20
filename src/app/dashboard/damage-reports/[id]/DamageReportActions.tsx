@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Loader2, Trash2 } from "lucide-react";
 import type { DamageReportStatus } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
+import { FileDrop } from "@/components/ui/FileDrop";
 
 const NEXT_STATUS: Record<DamageReportStatus, { label: string; next: DamageReportStatus } | null> = {
   offen: { label: "Als gemeldet markieren", next: "gemeldet" },
@@ -20,18 +21,17 @@ export const DamageReportActions = ({
   initialStatus: DamageReportStatus;
 }) => {
   const router = useRouter();
-  const fileRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<DamageReportStatus>(initialStatus);
   const [uploading, setUploading] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const upload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+  const upload = async (files: File[]) => {
+    if (files.length === 0) return;
     setUploading(true);
     setError(null);
-    for (const file of Array.from(files)) {
+    for (const file of files) {
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch(`/api/damage-reports/${reportId}/photos`, {
@@ -45,7 +45,6 @@ export const DamageReportActions = ({
       }
     }
     setUploading(false);
-    if (fileRef.current) fileRef.current.value = "";
     router.refresh();
   };
 
@@ -87,23 +86,19 @@ export const DamageReportActions = ({
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => fileRef.current?.click()}
-        disabled={uploading}
-      >
-        {uploading ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
-        Fotos hinzufügen
-      </Button>
-      <input
-        ref={fileRef}
-        type="file"
+      <FileDrop
+        onFiles={upload}
         accept="image/*"
         multiple
-        className="hidden"
-        onChange={(e) => upload(e.target.files)}
-      />
+        disabled={uploading}
+        label="Fotos hinzufügen"
+        className="!border !border-hairline !rounded-btn !px-3 !py-0 !bg-paper hover:!border-signal/40 inline-flex items-center h-9 text-left"
+      >
+        <span className="inline-flex items-center gap-2 text-[13px] font-medium text-ink">
+          {uploading ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
+          Fotos hinzufügen oder hierher ziehen
+        </span>
+      </FileDrop>
 
       {advanceMeta && (
         <Button

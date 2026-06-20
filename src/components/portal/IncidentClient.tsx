@@ -31,6 +31,7 @@ export const IncidentClient = ({
   const [showOther, setShowOther] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const set =
@@ -151,7 +152,21 @@ export const IncidentClient = ({
         {/* Fotos */}
         <div>
           <div className="data-label mb-1">Fotos</div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              onFiles(e.dataTransfer.files);
+            }}
+            className={`flex items-center gap-2 flex-wrap rounded-card border border-dashed transition-colors p-2 ${
+              dragOver ? "border-signal bg-signal/5" : "border-hairline"
+            }`}
+          >
             {photos.map((p, i) => (
               <span
                 key={p}
@@ -184,6 +199,7 @@ export const IncidentClient = ({
               className="hidden"
               onChange={(e) => onFiles(e.target.files)}
             />
+            <span className="text-[11px] text-ink-muted">oder Datei hierher ziehen</span>
           </div>
         </div>
 

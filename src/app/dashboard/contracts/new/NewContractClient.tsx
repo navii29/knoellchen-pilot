@@ -174,6 +174,7 @@ export const NewContractClient = ({
     };
   });
   const [parsing, setParsing] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [parsedFromAI, setParsedFromAI] = useState(false);
   const [aiConfidence, setAiConfidence] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -339,6 +340,14 @@ export const NewContractClient = ({
     setCreatedId(j.contract.id);
   };
 
+  // Gemeinsamer Pfad fuer Datei-Auswahl (Klick) und Drag&Drop.
+  const acceptPdfFile = (f: File | undefined | null) => {
+    if (f) {
+      setMode("ai");
+      handlePdfUpload(f);
+    }
+  };
+
   const goToSign = () => {
     if (createdId) router.push(`/dashboard/contracts/${createdId}/sign`);
   };
@@ -366,7 +375,19 @@ export const NewContractClient = ({
         <div className="mt-8 grid sm:grid-cols-2 gap-4">
           <button
             onClick={() => fileRef.current?.click()}
-            className="panel p-6 text-left hover:border-ink/20 hover:shadow-md transition"
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              acceptPdfFile(e.dataTransfer.files?.[0]);
+            }}
+            className={`panel p-6 text-left hover:border-ink/20 hover:shadow-md transition ${
+              dragOver ? "border-signal bg-signal/5" : ""
+            }`}
           >
             <div className="w-12 h-12 rounded-panel border border-hairline bg-[#FFEDE4] text-signal flex items-center justify-center">
               <Sparkles size={22} />
@@ -375,6 +396,7 @@ export const NewContractClient = ({
             <div className="text-[13px] text-ink-muted mt-1">
               Unterschriebenen Mietvertrag als PDF — Claude liest die Daten aus.
             </div>
+            <div className="text-[12px] text-ink-muted mt-2">oder Datei hierher ziehen</div>
           </button>
           <button
             onClick={() => setMode("manual")}
@@ -393,11 +415,7 @@ export const NewContractClient = ({
             accept="application/pdf,image/png,image/jpeg,image/webp"
             className="hidden"
             onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) {
-                setMode("ai");
-                handlePdfUpload(f);
-              }
+              acceptPdfFile(e.target.files?.[0]);
               if (fileRef.current) fileRef.current.value = "";
             }}
           />

@@ -355,6 +355,7 @@ const PhotoUploadStep = ({
     {} as Record<TirePhotoPosition, boolean>
   );
   const [busy, setBusy] = useState<TirePhotoPosition | null>(null);
+  const [dragOver, setDragOver] = useState<TirePhotoPosition | null>(null);
   const [errors, setErrors] = useState<Record<TirePhotoPosition, string>>(
     {} as Record<TirePhotoPosition, string>
   );
@@ -406,8 +407,22 @@ const PhotoUploadStep = ({
               type="button"
               onClick={() => refs.current[p.key]?.click()}
               disabled={isBusy}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (!isBusy) setDragOver(p.key);
+              }}
+              onDragLeave={() => setDragOver((d) => (d === p.key ? null : d))}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOver((d) => (d === p.key ? null : d));
+                if (isBusy) return;
+                const f = e.dataTransfer.files?.[0];
+                if (f) void upload(p.key, f);
+              }}
               className={`rounded-card border px-3 py-3 text-left ${
-                isUploaded
+                dragOver === p.key
+                  ? "ring-2 ring-signal/50 border-signal bg-signal/5"
+                  : isUploaded
                   ? "bg-emerald-50 border-emerald-200"
                   : err
                   ? "bg-red-50 border-red-200"
@@ -470,7 +485,7 @@ const PhotoUploadStep = ({
       </div>
       <div className="mt-3 text-[11.5px] text-ink-muted flex items-center gap-1.5">
         <Upload size={11} />
-        Fotos konnen auch spater ergänzt werden.
+        Foto aufnehmen, auswahlen oder hierher ziehen · auch spater ergänzbar.
       </div>
     </div>
   );

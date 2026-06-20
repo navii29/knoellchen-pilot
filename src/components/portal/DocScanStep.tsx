@@ -31,6 +31,7 @@ export const DocScanStep = ({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [parsed, setParsed] = useState<Record<string, unknown> | null>(null);
+  const [dragOver, setDragOver] = useState(false);
 
   const onFile = async (file: File) => {
     setError(null);
@@ -125,9 +126,29 @@ export const DocScanStep = ({
 
   return (
     <div className="space-y-4">
-      <div className="bg-canvas border border-hairline rounded-card px-4 py-6 text-center">
+      <div
+        onClick={() => !busy && fileRef.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (!busy) setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          if (busy) return;
+          const f = e.dataTransfer.files?.[0];
+          if (f) void onFile(f);
+        }}
+        className={`cursor-pointer rounded-card border px-4 py-6 text-center transition-colors ${
+          dragOver
+            ? "border-signal bg-signal/5 ring-2 ring-signal/50"
+            : "bg-canvas border-hairline"
+        } ${busy ? "pointer-events-none opacity-50" : ""}`}
+      >
         <Camera size={24} className="mx-auto text-ink-muted mb-2" />
         <div className="text-[13px] text-ink-soft leading-snug">{exampleHint}</div>
+        <div className="text-[12px] text-ink-muted mt-1.5">oder Datei hierher ziehen</div>
       </div>
 
       <input
