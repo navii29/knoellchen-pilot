@@ -17,7 +17,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { ContractStatusBadge } from "@/components/contract/StatusBadge";
-import { VehicleForm } from "@/components/vehicle/VehicleForm";
+import { VehicleEditPanel } from "./VehicleEditPanel";
 import { VehicleDeleteButton } from "./VehicleDeleteButton";
 import { VehicleEventsTimeline } from "@/components/vehicle/VehicleEventsTimeline";
 import { TuevCountdown } from "@/components/vehicle/TuevCountdown";
@@ -208,7 +208,9 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
             </div>
           )}
 
-          <div className="mt-6 grid sm:grid-cols-2 gap-3">
+          <div className="mt-6">
+            <VehicleEditPanel vehicle={v}>
+              <div className="grid sm:grid-cols-2 gap-3">
             <InfoCard Icon={Car} title="Stammdaten">
               <Row label="Hersteller" value={v.manufacturer || "—"} />
               <Row label="Modell" value={v.model || "—"} />
@@ -288,6 +290,8 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
                 <div className="text-[13.5px] whitespace-pre-wrap text-ink">{v.accessories}</div>
               </Panel>
             )}
+              </div>
+            </VehicleEditPanel>
           </div>
 
           <div className="mt-6">
@@ -329,16 +333,6 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
           <div className="mt-6">
             <VehicleEventsTimeline vehicleId={v.id} events={vehicleEvents} />
           </div>
-
-          <details className="mt-6 group">
-            <summary className="cursor-pointer text-[13px] font-medium text-ink-soft hover:text-ink inline-flex items-center gap-1.5">
-              <ChevronRight size={14} className="group-open:rotate-90 transition-transform" />
-              Daten bearbeiten
-            </summary>
-            <div className="mt-4">
-              <VehicleForm mode="edit" initial={v} />
-            </div>
-          </details>
 
           <div className="mt-6">
             <Panel flush>

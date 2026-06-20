@@ -166,9 +166,13 @@ const addDays = (iso: string, days: number): string => {
 export const VehicleForm = ({
   mode,
   initial,
+  onCancel,
+  onDone,
 }: {
   mode: Mode;
   initial?: Vehicle;
+  onCancel?: () => void;
+  onDone?: () => void;
 }) => {
   const router = useRouter();
   const [data, setData] = useState<VehicleFormState>(
@@ -227,8 +231,12 @@ export const VehicleForm = ({
     if (mode === "create") {
       const j = (await res.json()) as { vehicle: { id: string } };
       router.push(`/dashboard/vehicles/${j.vehicle.id}`);
+      router.refresh();
+    } else {
+      // Inline-Edit: das Panel übernimmt refresh + Zurückschalten in einer
+      // Transition, damit die Ansicht erst mit frischen Daten erscheint.
+      onDone?.();
     }
-    router.refresh();
   };
 
   return (
@@ -666,6 +674,16 @@ export const VehicleForm = ({
             <span className="inline-flex items-center gap-1 text-xs text-emerald-700">
               <CheckCircle2 size={13} /> Gespeichert
             </span>
+          )}
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={saving}
+              className="text-[13px] text-ink-muted hover:text-ink px-2 disabled:opacity-40"
+            >
+              Abbrechen
+            </button>
           )}
           <Button type="submit" variant="signal" disabled={saving}>
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}

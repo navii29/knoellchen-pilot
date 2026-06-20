@@ -39,10 +39,12 @@ const FIELDS = [
   "license_class",
   "license_expiry",
   "id_card_nr",
-  "license_photo_path",
-  "id_card_photo_path",
   "notes",
 ] as const;
+// license_photo_path / id_card_photo_path sind BEWUSST nicht in FIELDS: sie
+// halten Storage-Pfade und dürfen nicht über den generischen PATCH gesetzt
+// werden (sonst Cross-Tenant-Zugriff). Upload/Ersetzen läuft ausschließlich
+// über /api/customers/[id]/document (Pfad serverseitig & org-scoped vergeben).
 
 type RouteCtx = { params: { id: string } };
 
@@ -71,6 +73,12 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
       if (v !== undefined) patch[k] = v;
     }
   }
+  // Marketing-Einwilligung (Boolean) — mit Audit-Stempel, analog zum Portal.
+  if ("marketing_opt_in" in body) {
+    patch.marketing_opt_in = Boolean(body.marketing_opt_in);
+    patch.consent_at = new Date().toISOString();
+    patch.consent_source = "dashboard";
+  }
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: "Keine Änderungen" }, { status: 400 });
   }
@@ -81,8 +89,9 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
     .eq("id", params.id)
     .eq("org_id", auth.org_id)
     .select("*")
-    .single();
+    .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!data) return NextResponse.json({ error: "Kunde nicht gefunden" }, { status: 404 });
   return NextResponse.json({ ok: true, customer: data });
 };
 
