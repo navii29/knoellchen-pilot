@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
+  importCustomerFromOrder,
   processOrder,
   processProduct,
   type ShopifyOrder,
@@ -110,8 +111,12 @@ export const POST = async (req: Request) => {
   const dryrun = url.searchParams.get("dryrun") === "1";
 
   // ── products/create: neues Shop-Produkt → Fahrzeug ──
+  // allowPlaceholder: auch Abo-Modelle ohne Kennzeichen-SKU werden als Fahrzeug
+  // angelegt (Platzhalter ABO-####) — analog zum Erst-Import.
   if (isProduct) {
-    const r = await processProduct(admin, orgId, payload as ShopifyProduct, dryrun);
+    const r = await processProduct(admin, orgId, payload as ShopifyProduct, dryrun, {
+      allowPlaceholder: true,
+    });
     switch (r.kind) {
       case "skipped":
         return NextResponse.json({ ok: true, skipped: r.reason, product: r.product });
@@ -133,23 +138,19 @@ export const POST = async (req: Request) => {
     }
   }
 
-  // ── orders/create|paid: Bestellung → Kunde + Vertrag ──
-  const r = await processOrder(admin, orgId, payload as ShopifyOrder, dryrun);
-  switch (r.kind) {
-    case "skipped":
-      return NextResponse.json({ ok: true, skipped: r.reason, order: r.order });
-    case "dryrun":
-      return NextResponse.json({ ok: true, dryrun: true, mapped: r.mapped });
-    case "duplicate":
-      return NextResponse.json({ ok: true, duplicate: true, contract_nr: r.contract_nr });
-    case "created":
-      return NextResponse.json({
-        ok: true,
-        contract_nr: r.contract_nr,
-        customer_id: r.customer_id,
-        mapped: r.mapped,
-      });
-    case "error":
-      return NextResponse.json({ error: r.message }, { status: 500 });
-  }
+  // ── orders/create|paid: Bestellung → Kunde (immer) + Vertrag (bei Mietzeitraum) ──
+  const order = payload as ShopifyOrder;
+  const cust = await importCustomerFromOrder(admin, orgId, order, dryrun);
+  if (cust.kind === "error") return NextResponse.json({ error: cust.message }, { status: 500 });
+
+  const r = await processOrder(admin, orgId, order, dryrun);
+  if (r.kind === "error") return NextResponse.json({ error: r.message }, { status: 500 });
+
+  return NextResponse.json({
+    ok: true,
+    customer: cust.kind,
+    contract: r.kind,
+    ...(r.kind === "created" ? { contract_nr: r.contract_nr } : {}),
+    ...(r.kind === "skipped" ? { contract_skipped: r.reason } : {}),
+  });
 };
