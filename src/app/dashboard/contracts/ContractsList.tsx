@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, FileSignature, Plus } from "lucide-react";
+import { ChevronRight, FileSignature, Loader2, Plus, Trash2 } from "lucide-react";
 import { fmtDate } from "@/lib/utils";
 import type { Contract, ContractStatus } from "@/lib/types";
 import { Plate } from "@/components/ui/Plate";
@@ -10,7 +11,12 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Panel } from "@/components/ui/Panel";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FilterTabs, SearchInput } from "@/components/ui/Toolbar";
-import { ButtonLink } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
+import {
+  BulkBar,
+  SelectCheckbox,
+  useRowSelection,
+} from "@/components/dashboard/bulk-select";
 
 /* ── Contract-specific status pill (statuses differ from ticket pipeline) ── */
 const CONTRACT_STATUS_META: Record<
@@ -44,8 +50,11 @@ const FILTERS: { value: ContractStatus | "alle"; label: string }[] = [
 ];
 
 export const ContractsList = ({ initial }: { initial: Contract[] }) => {
+  const router = useRouter();
   const [filter, setFilter] = useState<ContractStatus | "alle">("alle");
   const [q, setQ] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -60,6 +69,29 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
       );
     });
   }, [initial, filter, q]);
+
+  const sel = useRowSelection(filtered);
+
+  const bulkDelete = async () => {
+    if (sel.count === 0) return;
+    if (!confirm(`${sel.count} ${sel.count === 1 ? "Vertrag" : "Verträge"} wirklich löschen?`))
+      return;
+    setBusy(true);
+    setError(null);
+    const res = await fetch("/api/contracts/bulk-delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: sel.selectedIds }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      setError(j.error || "Löschen fehlgeschlagen");
+      return;
+    }
+    sel.clear();
+    router.refresh();
+  };
 
   const counts = (v: ContractStatus | "alle") =>
     v === "alle" ? initial.length : initial.filter((c) => c.status === v).length;
@@ -91,10 +123,29 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
         />
       </div>
 
+      <BulkBar count={sel.count} onClear={sel.clear}>
+        <Button variant="ghost" size="sm" onClick={bulkDelete} disabled={busy} className="text-red-700 hover:bg-red-50">
+          {busy ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+          Löschen
+        </Button>
+      </BulkBar>
+
+      {error && (
+        <div className="mt-3 text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-panel px-3 py-2">
+          {error}
+        </div>
+      )}
+
       <Panel flush className="mt-4 overflow-hidden">
         {/* Desktop table */}
         <div className="hidden md:block">
-          <div className="grid grid-cols-[140px_128px_1fr_180px_130px_130px_24px] items-center gap-3 px-5 py-2.5 border-b border-hairline bg-canvas/60 th">
+          <div className="grid grid-cols-[34px_140px_128px_1fr_180px_130px_130px_24px] items-center gap-3 px-5 py-2.5 border-b border-hairline bg-canvas/60 th">
+            <SelectCheckbox
+              checked={sel.allSelected}
+              indeterminate={sel.someSelected}
+              onChange={sel.toggleAll}
+              ariaLabel="Alle auswählen"
+            />
             <span>Vertrags-Nr</span>
             <span>Kennzeichen</span>
             <span>Mieter</span>
@@ -104,47 +155,59 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
             <span />
           </div>
           {filtered.map((c) => (
-            <Link
+            <div
               key={c.id}
-              href={`/dashboard/contracts/${c.id}`}
-              className="grid grid-cols-[140px_128px_1fr_180px_130px_130px_24px] items-center gap-3 px-5 py-3 border-b border-hairline last:border-0 text-[13.5px] hover:bg-canvas transition-colors"
+              className="grid grid-cols-[34px_140px_128px_1fr_180px_130px_130px_24px] items-center gap-3 px-5 py-3 border-b border-hairline last:border-0 text-[13.5px] hover:bg-canvas transition-colors"
             >
-              <span className="font-mono tnum text-[12px] text-ink-soft">{c.contract_nr}</span>
-              <Plate value={c.plate} size="sm" />
-              <span className="truncate text-ink">{c.renter_name}</span>
-              <span className="text-[12.5px] text-ink-muted truncate">{c.renter_email || "—"}</span>
-              <span className="font-mono tnum text-[12px] text-ink-soft">
-                {fmtDate(c.pickup_date)}
-                <br />
-                <span className="text-ink-muted">→ {fmtDate(c.actual_return_date || c.return_date)}</span>
-              </span>
-              <ContractPill status={c.status} />
-              <ChevronRight size={14} className="text-ink-muted" />
-            </Link>
+              <SelectCheckbox
+                checked={sel.isSelected(c.id)}
+                onChange={() => sel.toggle(c.id)}
+                ariaLabel={`Vertrag ${c.contract_nr} auswählen`}
+              />
+              <Link href={`/dashboard/contracts/${c.id}`} style={{ display: "contents" }}>
+                <span className="font-mono tnum text-[12px] text-ink-soft">{c.contract_nr}</span>
+                <Plate value={c.plate} size="sm" />
+                <span className="truncate text-ink">{c.renter_name}</span>
+                <span className="text-[12.5px] text-ink-muted truncate">{c.renter_email || "—"}</span>
+                <span className="font-mono tnum text-[12px] text-ink-soft">
+                  {fmtDate(c.pickup_date)}
+                  <br />
+                  <span className="text-ink-muted">→ {fmtDate(c.actual_return_date || c.return_date)}</span>
+                </span>
+                <ContractPill status={c.status} />
+                <ChevronRight size={14} className="text-ink-muted" />
+              </Link>
+            </div>
           ))}
         </div>
 
         {/* Mobile list */}
         <div className="md:hidden divide-y divide-hairline">
           {filtered.map((c) => (
-            <Link
-              key={c.id}
-              href={`/dashboard/contracts/${c.id}`}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-canvas active:bg-canvas"
-            >
-              <div className="flex-1 min-w-0 space-y-1.5">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <ContractPill status={c.status} />
-                  <Plate value={c.plate} size="sm" />
-                  <span className="ml-auto font-mono text-[11px] text-ink-muted">{c.contract_nr}</span>
+            <div key={c.id} className="flex items-center gap-3 px-4 py-3 hover:bg-canvas">
+              <SelectCheckbox
+                checked={sel.isSelected(c.id)}
+                onChange={() => sel.toggle(c.id)}
+                ariaLabel={`Vertrag ${c.contract_nr} auswählen`}
+              />
+              <Link
+                href={`/dashboard/contracts/${c.id}`}
+                className="flex items-center gap-3 flex-1 min-w-0 active:bg-canvas"
+              >
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <ContractPill status={c.status} />
+                    <Plate value={c.plate} size="sm" />
+                    <span className="ml-auto font-mono text-[11px] text-ink-muted">{c.contract_nr}</span>
+                  </div>
+                  <div className="text-[13.5px] text-ink truncate">{c.renter_name}</div>
+                  <div className="font-mono tnum text-[11px] text-ink-muted">
+                    {fmtDate(c.pickup_date)} → {fmtDate(c.actual_return_date || c.return_date)}
+                  </div>
                 </div>
-                <div className="text-[13.5px] text-ink truncate">{c.renter_name}</div>
-                <div className="font-mono tnum text-[11px] text-ink-muted">
-                  {fmtDate(c.pickup_date)} → {fmtDate(c.actual_return_date || c.return_date)}
-                </div>
-              </div>
-              <ChevronRight size={16} className="text-ink-muted shrink-0" />
-            </Link>
+                <ChevronRight size={16} className="text-ink-muted shrink-0" />
+              </Link>
+            </div>
           ))}
         </div>
 
