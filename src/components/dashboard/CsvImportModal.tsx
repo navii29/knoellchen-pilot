@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { decodeCsvFile } from "@/lib/encoding";
 
 export type FieldDef = {
   key: string;
@@ -66,7 +67,7 @@ export const CsvImportModal = ({
     setAnalyzing(true);
     setCommitResult(null);
     try {
-      const text = await file.text();
+      const text = await decodeCsvFile(file);
       setCsvText(text);
       setCsvFileName(file.name);
       const fd = new FormData();

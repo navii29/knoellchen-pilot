@@ -7,6 +7,7 @@ import {
   type ColumnMapping,
 } from "@/lib/csv-import";
 import { mapCsvColumns } from "@/lib/anthropic";
+import { decodeCsvFile } from "@/lib/encoding";
 import { normalizePlate } from "@/lib/plate";
 
 export const maxDuration = 60;
@@ -42,7 +43,7 @@ export const POST = async (req: Request) => {
     if (file.size > 5 * 1024 * 1024)
       return NextResponse.json({ error: "Datei zu groß (max 5 MB)" }, { status: 400 });
 
-    const text = await file.text();
+    const text = await decodeCsvFile(file);
     const parsed = parseCsvText(text);
     if (parsed.headers.length === 0 || parsed.rowCount === 0)
       return NextResponse.json(
