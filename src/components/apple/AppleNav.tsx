@@ -24,7 +24,11 @@ export const AppleNav = () => {
 
   return (
     <div className="fixed top-0 inset-x-0 z-50 flex justify-center px-4 pt-3 pointer-events-none">
-      <header className="pointer-events-auto w-full max-w-3xl glass-light rounded-pill shadow-[0_8px_30px_-12px_rgba(0,0,0,0.18)]">
+      <header
+        className={`pointer-events-auto w-full max-w-3xl glass-light shadow-[0_8px_30px_-12px_rgba(0,0,0,0.18)] transition-[border-radius] ${
+          open ? "rounded-3xl" : "rounded-pill"
+        }`}
+      >
         <div className="h-12 pl-5 pr-2 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group" aria-label="Knöllchen-Pilot">
             <span
