@@ -27,6 +27,12 @@ export const POST = async (req: Request) => {
   for (const k of required) {
     if (!body[k]) return NextResponse.json({ error: `Pflichtfeld fehlt: ${k}` }, { status: 400 });
   }
+  // ISO-Datumsstrings (YYYY-MM-DD) vergleichen chronologisch per String-Vergleich.
+  if (String(body.return_date) < String(body.pickup_date))
+    return NextResponse.json(
+      { error: "Rückgabedatum darf nicht vor dem Abholdatum liegen." },
+      { status: 400 }
+    );
 
   const admin = createAdminClient();
   const plate = normalizePlate(body.plate as string);

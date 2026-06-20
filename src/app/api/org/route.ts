@@ -76,10 +76,16 @@ export const PATCH = async (req: Request) => {
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   const { data: profile } = await supabase
     .from("users")
-    .select("org_id")
+    .select("org_id, role")
     .eq("id", user.id)
     .single();
   if (!profile) return NextResponse.json({ error: "No profile" }, { status: 401 });
+  // Nur Inhaber dürfen Firmendaten/IBAN/Integrations-Keys ändern.
+  if (profile.role !== "owner")
+    return NextResponse.json(
+      { error: "Nur Inhaber dürfen die Einstellungen ändern." },
+      { status: 403 }
+    );
 
   const body = (await req.json()) as Record<string, unknown>;
   const allowed = [
