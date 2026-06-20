@@ -23,7 +23,20 @@ export const DELETE = async (_req: Request, { params }: Ctx) => {
 
   const admin = createAdminClient();
 
-  // Erst die Foto-Pfade laden um Storage zu bereinigen
+  // Eigentum prüfen, BEVOR Foto-Pfade geladen/aus dem Storage gelöscht werden.
+  // Sonst könnte ein erratener fremder tireId fremde Storage-Objekte löschen
+  // (vehicle_tires-Delete unten ist org-scoped, der Storage-Remove war es nicht).
+  const { data: tire } = await admin
+    .from("vehicle_tires")
+    .select("id")
+    .eq("id", params.tireId)
+    .eq("vehicle_id", params.id)
+    .eq("org_id", auth.org_id)
+    .maybeSingle();
+  if (!tire)
+    return NextResponse.json({ error: "Reifensatz nicht gefunden" }, { status: 404 });
+
+  // Foto-Pfade laden um Storage zu bereinigen (Reifensatz gehört bestätigt zur Org)
   const { data: photos } = await admin
     .from("tire_photos")
     .select("photo_path")

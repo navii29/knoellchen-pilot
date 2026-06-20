@@ -109,6 +109,17 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
           ? (update.actual_return_date as string | null)
           : (current.actual_return_date as string | null);
 
+      if (pickupDate && plannedReturn && String(plannedReturn) < String(pickupDate))
+        return NextResponse.json(
+          { error: "Rückgabedatum darf nicht vor dem Abholdatum liegen." },
+          { status: 400 }
+        );
+      if (actualReturn && pickupDate && String(actualReturn) < String(pickupDate))
+        return NextResponse.json(
+          { error: "Tatsächliche Rückgabe darf nicht vor der Abholung liegen." },
+          { status: 400 }
+        );
+
       let price: number | null = null;
       let inclusiveKmMonth: number | null = null;
       if (plate) {
