@@ -1,15 +1,21 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertOctagon, ChevronRight, Plus } from "lucide-react";
+import { AlertOctagon, ChevronRight, Loader2, Plus, Trash2 } from "lucide-react";
 import { fmtDate } from "@/lib/utils";
 import type { Contract, DamageReport, DamageReportStatus, Vehicle } from "@/lib/types";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FilterTabs, SearchInput } from "@/components/ui/Toolbar";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { ButtonLink } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { Plate } from "@/components/ui/Plate";
+import {
+  BulkBar,
+  SelectCheckbox,
+  useRowSelection,
+} from "@/components/dashboard/bulk-select";
 
 const STATUS_META: Record<
   DamageReportStatus,
@@ -67,8 +73,11 @@ export const DamageReportsList = ({
   vehicles: Vehicle[];
   contracts: Pick<Contract, "id" | "contract_nr" | "plate" | "renter_name">[];
 }) => {
+  const router = useRouter();
   const [filter, setFilter] = useState<DamageReportStatus | "alle">("alle");
   const [q, setQ] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const vehicleById = useMemo(() => new Map(vehicles.map((v) => [v.id, v])), [vehicles]);
   const contractById = useMemo(() => new Map(contracts.map((c) => [c.id, c])), [contracts]);
@@ -95,6 +104,33 @@ export const DamageReportsList = ({
         .some((s) => String(s).toLowerCase().includes(needle));
     });
   }, [initial, filter, q, vehicleById, contractById]);
+
+  const sel = useRowSelection(filtered);
+
+  const bulkDelete = async () => {
+    if (sel.count === 0) return;
+    if (
+      !confirm(
+        `${sel.count} ${sel.count === 1 ? "Bericht" : "Berichte"} wirklich löschen? Zugehörige Fotos werden mitgelöscht.`
+      )
+    )
+      return;
+    setBusy(true);
+    setError(null);
+    const res = await fetch("/api/damage-reports/bulk-delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: sel.selectedIds }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      setError(j.error || "Löschen fehlgeschlagen");
+      return;
+    }
+    sel.clear();
+    router.refresh();
+  };
 
   const counts = (v: DamageReportStatus | "alle") =>
     v === "alle" ? initial.length : initial.filter((r) => r.status === v).length;
@@ -126,10 +162,29 @@ export const DamageReportsList = ({
         />
       </div>
 
+      <BulkBar count={sel.count} onClear={sel.clear}>
+        <Button variant="ghost" size="sm" onClick={bulkDelete} disabled={busy} className="text-red-700 hover:bg-red-50">
+          {busy ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+          Löschen
+        </Button>
+      </BulkBar>
+
+      {error && (
+        <div className="mt-3 text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-panel px-3 py-2">
+          {error}
+        </div>
+      )}
+
       <div className="mt-4 panel overflow-hidden">
         {/* Desktop */}
         <div className="hidden md:block">
-          <div className="grid grid-cols-[110px_148px_1fr_180px_128px_24px] gap-3 px-5 py-2.5 border-b border-hairline bg-canvas/60 th">
+          <div className="grid grid-cols-[34px_110px_148px_1fr_180px_128px_24px] gap-3 px-5 py-2.5 border-b border-hairline bg-canvas/60 th items-center">
+            <SelectCheckbox
+              checked={sel.allSelected}
+              indeterminate={sel.someSelected}
+              onChange={sel.toggleAll}
+              ariaLabel="Alle auswählen"
+            />
             <span>Datum</span>
             <span>Kennzeichen</span>
             <span>Ort / Beschreibung</span>
@@ -140,11 +195,16 @@ export const DamageReportsList = ({
           {filtered.map((r) => {
             const v = r.vehicle_id ? vehicleById.get(r.vehicle_id) : null;
             return (
-              <Link
+              <div
                 key={r.id}
-                href={`/dashboard/damage-reports/${r.id}`}
-                className="grid grid-cols-[110px_148px_1fr_180px_128px_24px] gap-3 items-center px-5 py-3 border-b border-hairline last:border-0 text-[13.5px] hover:bg-canvas transition-colors"
+                className="grid grid-cols-[34px_110px_148px_1fr_180px_128px_24px] gap-3 items-center px-5 py-3 border-b border-hairline last:border-0 text-[13.5px] hover:bg-canvas transition-colors"
               >
+                <SelectCheckbox
+                  checked={sel.isSelected(r.id)}
+                  onChange={() => sel.toggle(r.id)}
+                  ariaLabel="Bericht auswählen"
+                />
+                <Link href={`/dashboard/damage-reports/${r.id}`} style={{ display: "contents" }}>
                 <span className="font-mono tnum text-[12px] text-ink-muted">
                   {fmtDate(r.date)}
                   {r.time && <span className="text-ink-muted ml-1">{r.time}</span>}
@@ -166,7 +226,8 @@ export const DamageReportsList = ({
                 </span>
                 <DamageStatusPill status={r.status} />
                 <ChevronRight size={14} className="text-ink-muted" />
-              </Link>
+                </Link>
+              </div>
             );
           })}
         </div>
@@ -176,11 +237,18 @@ export const DamageReportsList = ({
           {filtered.map((r) => {
             const v = r.vehicle_id ? vehicleById.get(r.vehicle_id) : null;
             return (
-              <Link
-                key={r.id}
-                href={`/dashboard/damage-reports/${r.id}`}
-                className="flex items-start gap-3 px-4 py-3 hover:bg-canvas active:bg-canvas"
-              >
+              <div key={r.id} className="flex items-start gap-3 px-4 py-3 hover:bg-canvas">
+                <div className="pt-1">
+                  <SelectCheckbox
+                    checked={sel.isSelected(r.id)}
+                    onChange={() => sel.toggle(r.id)}
+                    ariaLabel="Bericht auswählen"
+                  />
+                </div>
+                <Link
+                  href={`/dashboard/damage-reports/${r.id}`}
+                  className="flex items-start gap-3 flex-1 min-w-0 active:bg-canvas"
+                >
                 <div className="flex-1 min-w-0 space-y-1.5">
                   <div className="flex items-center gap-2 flex-wrap">
                     <DamageStatusPill status={r.status} />
@@ -199,7 +267,8 @@ export const DamageReportsList = ({
                   )}
                 </div>
                 <ChevronRight size={16} className="text-ink-muted shrink-0 mt-1" />
-              </Link>
+                </Link>
+              </div>
             );
           })}
         </div>
