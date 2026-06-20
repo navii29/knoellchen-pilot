@@ -114,6 +114,131 @@ export const layoutWeek = (
   return { laid, trackCount: Math.max(1, trackEnds.length) };
 };
 
+// =====================================================
+// Mehrere Ansichten: Woche / 2 Wochen / Monat
+// =====================================================
+export type CalView = "week" | "2week" | "month";
+
+export const daysInMonth = (d: Date): number =>
+  new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+
+// Zeitraum-Anker + Tagesanzahl für eine Ansicht.
+// Woche/2 Wochen starten am Montag; Monat am Monatsersten.
+export const viewRange = (
+  view: CalView,
+  anchor: Date
+): { rangeStart: Date; dayCount: number } => {
+  if (view === "month") {
+    const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+    return { rangeStart: startOfDay(first), dayCount: daysInMonth(anchor) };
+  }
+  return { rangeStart: mondayOfWeek(anchor), dayCount: view === "2week" ? 14 : 7 };
+};
+
+// Schritt für Vor/Zurück-Navigation (in Tagen bzw. Monaten).
+export const stepAnchor = (view: CalView, anchor: Date, dir: -1 | 1): Date => {
+  if (view === "month") {
+    return new Date(anchor.getFullYear(), anchor.getMonth() + dir, 1);
+  }
+  return addDays(anchor, dir * (view === "2week" ? 14 : 7));
+};
+
+export const rangeDays = (rangeStart: Date, dayCount: number): Date[] =>
+  Array.from({ length: dayCount }, (_, i) => addDays(rangeStart, i));
+
+// Generalisiertes Layout für einen beliebigen Zeitraum (statt fester Woche).
+// startCol/endCol sind 1-basiert relativ zu rangeStart (1..dayCount).
+export const layoutRange = (
+  contracts: Contract[],
+  rangeStart: Date,
+  dayCount: number,
+  todayIso: string
+): { laid: LaidContract[]; trackCount: number } => {
+  const rangeStartIso = toIso(rangeStart);
+  const rangeEnd = addDays(rangeStart, dayCount - 1);
+  const rangeEndIso = toIso(rangeEnd);
+
+  const visible = contracts.filter((c) => {
+    const end = c.actual_return_date ?? c.return_date;
+    return c.pickup_date <= rangeEndIso && end >= rangeStartIso;
+  });
+  visible.sort((a, b) => (a.pickup_date < b.pickup_date ? -1 : 1));
+
+  const trackEnds: string[] = [];
+  const laid: LaidContract[] = visible.map((c) => {
+    const startIso = c.pickup_date < rangeStartIso ? rangeStartIso : c.pickup_date;
+    const endRaw = c.actual_return_date ?? c.return_date;
+    const endIso = endRaw > rangeEndIso ? rangeEndIso : endRaw;
+    const startCol = daysBetween(rangeStart, parseIso(startIso)) + 1;
+    const endCol = daysBetween(rangeStart, parseIso(endIso)) + 1;
+
+    let track = trackEnds.findIndex((t) => t < c.pickup_date);
+    if (track === -1) {
+      track = trackEnds.length;
+      trackEnds.push("");
+    }
+    trackEnds[track] = endRaw;
+
+    const isOverdue =
+      c.status === "aktiv" && !c.actual_return_date && c.return_date < todayIso;
+
+    return {
+      contract: c,
+      startCol,
+      endCol,
+      span: endCol - startCol + 1,
+      clippedLeft: c.pickup_date < rangeStartIso,
+      clippedRight: endRaw > rangeEndIso,
+      isOverdue,
+      track,
+    };
+  });
+
+  return { laid, trackCount: Math.max(1, trackEnds.length) };
+};
+
+// =====================================================
+// Status eines Vertrags für die Kalender-Färbung
+// =====================================================
+export type CalStatus = "geplant" | "aktiv" | "abgeschlossen" | "ueberfaellig";
+
+export const calStatus = (c: Contract, todayIso: string): CalStatus => {
+  const end = c.actual_return_date ?? c.return_date;
+  if (c.status === "abgeschlossen" || c.actual_return_date) return "abgeschlossen";
+  if (c.pickup_date > todayIso) return "geplant";
+  // läuft (pickup <= heute): überfällig, wenn das Ende in der Vergangenheit liegt
+  if (end < todayIso) return "ueberfaellig";
+  return "aktiv";
+};
+
+export const CAL_STATUS_META: Record<
+  CalStatus,
+  { label: string; bg: string; bgHover: string }
+> = {
+  geplant: { label: "Geplant", bg: "#2563eb", bgHover: "#1d4ed8" },
+  aktiv: { label: "Aktiv", bg: "#0d9488", bgHover: "#0f766e" },
+  abgeschlossen: { label: "Abgeschlossen", bg: "#94a3b8", bgHover: "#64748b" },
+  ueberfaellig: { label: "Überfällig", bg: "#dc2626", bgHover: "#b91c1c" },
+};
+
+// Vertrags-ids, die sich auf demselben Fahrzeug datumsmäßig überschneiden
+// (= echte Doppelbelegung). Erwartet die Verträge EINES Fahrzeugs.
+export const overbookedContractIds = (contracts: Contract[]): Set<string> => {
+  const out = new Set<string>();
+  const sorted = [...contracts].sort((a, b) => (a.pickup_date < b.pickup_date ? -1 : 1));
+  for (let i = 0; i < sorted.length; i++) {
+    const a = sorted[i];
+    const aEnd = a.actual_return_date ?? a.return_date;
+    for (let j = i + 1; j < sorted.length; j++) {
+      const b = sorted[j];
+      if (b.pickup_date > aEnd) break; // sortiert → keine weitere Überschneidung
+      out.add(a.id);
+      out.add(b.id);
+    }
+  }
+  return out;
+};
+
 // Stabile satte Farbe pro Vertrag (deterministisch via Hash) — weißer Text
 export const colorForContract = (id: string): { bg: string; bgHover: string; ring: string } => {
   let h = 0;

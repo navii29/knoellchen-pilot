@@ -1,24 +1,27 @@
 import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { CalendarClient } from "./CalendarClient";
-import { addDays, mondayOfWeek, parseIso, toIso } from "@/lib/calendar";
+import { addDays, parseIso, toIso, viewRange, type CalView } from "@/lib/calendar";
 import type { Contract, Vehicle } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
+const VIEWS: CalView[] = ["week", "2week", "month"];
+
 export default async function CalendarPage({
   searchParams,
 }: {
-  searchParams: { week?: string };
+  searchParams: { view?: string; date?: string };
 }) {
   const supabase = createClient();
 
-  // Wochenanker: ?week=YYYY-MM-DD (beliebiger Tag) — sonst aktuelle Woche
-  const anchor = searchParams.week ? parseIso(searchParams.week) : new Date();
-  const weekStart = mondayOfWeek(anchor);
-  const weekEnd = addDays(weekStart, 6);
-  const weekStartIso = toIso(weekStart);
-  const weekEndIso = toIso(weekEnd);
+  const view: CalView = VIEWS.includes(searchParams.view as CalView)
+    ? (searchParams.view as CalView)
+    : "month";
+  const anchor = searchParams.date ? parseIso(searchParams.date) : new Date();
+  const { rangeStart, dayCount } = viewRange(view, anchor);
+  const rangeStartIso = toIso(rangeStart);
+  const rangeEndIso = toIso(addDays(rangeStart, dayCount - 1));
   const todayIso = toIso(new Date());
 
   const [{ data: vehicles }, { data: contracts }] = await Promise.all([
@@ -26,10 +29,10 @@ export default async function CalendarPage({
     supabase
       .from("contracts")
       .select("*")
-      // Verträge die mit der Woche überlappen: pickup<=weekEnd UND (actual_return_date OR return_date)>=weekStart
-      .lte("pickup_date", weekEndIso)
+      // Verträge die mit dem Zeitraum überlappen
+      .lte("pickup_date", rangeEndIso)
       .or(
-        `and(actual_return_date.is.null,return_date.gte.${weekStartIso}),actual_return_date.gte.${weekStartIso}`
+        `and(actual_return_date.is.null,return_date.gte.${rangeStartIso}),actual_return_date.gte.${rangeStartIso}`
       )
       .neq("status", "storniert"),
   ]);
@@ -42,7 +45,10 @@ export default async function CalendarPage({
           <CalendarClient
             vehicles={(vehicles || []) as Vehicle[]}
             contracts={(contracts || []) as Contract[]}
-            weekStartIso={weekStartIso}
+            view={view}
+            rangeStartIso={rangeStartIso}
+            dayCount={dayCount}
+            anchorIso={toIso(anchor)}
             todayIso={todayIso}
           />
         </div>
