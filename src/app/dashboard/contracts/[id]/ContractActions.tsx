@@ -53,6 +53,31 @@ export const ContractActions = ({
   const [error, setError] = useState<string | null>(null);
   const [returnOpen, setReturnOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [customerId, setCustomerId] = useState<string | null>(contract.customer_id);
+
+  // Portal-Zugang braucht einen verknüpften Kunden. Hat der Vertrag noch keinen,
+  // wird hier aus den Mieterdaten einer angelegt + verknüpft.
+  const ensureCustomer = async (): Promise<string | null> => {
+    if (customerId) return customerId;
+    setBusy("ensure");
+    setError(null);
+    const res = await fetch(`/api/contracts/${contract.id}/ensure-customer`, {
+      method: "POST",
+    });
+    const j = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      customer_id?: string;
+      error?: string;
+    };
+    setBusy(null);
+    if (!res.ok || !j.customer_id) {
+      setError(j.error || "Kunde konnte nicht angelegt werden.");
+      return null;
+    }
+    setCustomerId(j.customer_id);
+    router.refresh();
+    return j.customer_id;
+  };
 
   const patch = async (key: string, body: Record<string, unknown>) => {
     setBusy(key);
@@ -183,30 +208,37 @@ export const ContractActions = ({
           </button>
         )}
 
-        {contract.customer_id && (
-          <button
-            onClick={() => setInviteOpen(true)}
-            disabled={busy != null}
-            className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn border border-hairline bg-paper text-ink-soft hover:bg-canvas hover:text-ink transition-colors disabled:opacity-50"
-          >
-            <UserPlus size={14} /> Portalzugang erstellen
-          </button>
-        )}
+        <button
+          onClick={async () => {
+            const id = await ensureCustomer();
+            if (id) setInviteOpen(true);
+          }}
+          disabled={busy != null}
+          className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn border border-hairline bg-paper text-ink-soft hover:bg-canvas hover:text-ink transition-colors disabled:opacity-50"
+        >
+          {busy === "ensure" ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <UserPlus size={14} />
+          )}
+          Portalzugang erstellen
+        </button>
 
-        {contract.customer_id && (
-          <button
-            onClick={sendCheckinLink}
-            disabled={busy != null}
-            className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn border border-hairline bg-paper text-ink-soft hover:bg-canvas hover:text-ink transition-colors disabled:opacity-50"
-          >
-            {busy === "checkin" ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <Send size={14} />
-            )}
-            Zugangs-Link kopieren
-          </button>
-        )}
+        <button
+          onClick={async () => {
+            const id = await ensureCustomer();
+            if (id) await sendCheckinLink();
+          }}
+          disabled={busy != null}
+          className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn border border-hairline bg-paper text-ink-soft hover:bg-canvas hover:text-ink transition-colors disabled:opacity-50"
+        >
+          {busy === "checkin" ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <Send size={14} />
+          )}
+          Zugangs-Link kopieren
+        </button>
 
         {lexofficeEnabled &&
           contract.status === "abgeschlossen" &&
@@ -265,9 +297,9 @@ export const ContractActions = ({
         />
       )}
 
-      {inviteOpen && contract.customer_id && (
+      {inviteOpen && customerId && (
         <PortalInviteModal
-          customerId={contract.customer_id}
+          customerId={customerId}
           defaultEmail={contract.renter_email ?? ""}
           onClose={() => setInviteOpen(false)}
           onDone={() => router.refresh()}
