@@ -26,6 +26,13 @@ type ImportResult = {
     skipped: number;
     errors: number;
   } | null;
+  customers?: {
+    total: number;
+    created: number;
+    duplicates: number;
+    skipped: number;
+    errors: number;
+  } | null;
 };
 
 /**
@@ -78,6 +85,8 @@ export const ShopifyImportCard = ({
   };
 
   // ── Import ──
+  const [productsAsVehicles, setProductsAsVehicles] = useState(true);
+  const [customersFromOrders, setCustomersFromOrders] = useState(true);
   const [includeOrders, setIncludeOrders] = useState(false);
   const [running, setRunning] = useState<null | "dryrun" | "import">(null);
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -89,7 +98,12 @@ export const ShopifyImportCard = ({
       const res = await fetch("/api/shopify/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dryrun, include_orders: includeOrders }),
+        body: JSON.stringify({
+          dryrun,
+          include_orders: includeOrders,
+          products_as_vehicles: productsAsVehicles,
+          customers_from_orders: customersFromOrders,
+        }),
       });
       setResult((await res.json()) as ImportResult);
     } catch {
@@ -134,10 +148,11 @@ export const ShopifyImportCard = ({
       />
       <div className="p-5 space-y-5">
         <p className="text-[13.5px] text-ink-soft max-w-prose">
-          Verbinden Sie Ihren Shopify-Shop: Bestehende Produkte werden als Fahrzeuge
-          übernommen (Varianten-SKU = Kennzeichen, inkl. Produktfotos), optional auch
-          offene Bestellungen mit Mietzeitraum als Verträge. Neues läuft danach über
-          Ihre persönliche Webhook-URL automatisch ein.
+          Verbinden Sie Ihren Shopify-Shop und übernehmen Sie den Bestand: Produkte
+          werden als Fahrzeuge angelegt (Varianten-SKU = Kennzeichen, sonst
+          Platzhalter-Kennzeichen für Abo-Modelle, inkl. Produktfotos), Bestellungen
+          als Kunden — und mit erkennbarem Mietzeitraum zusätzlich als Verträge. Neues
+          läuft danach über Ihre persönliche Webhook-URL automatisch ein.
         </p>
 
         {/* ── Verbindung ── */}
@@ -209,14 +224,45 @@ export const ShopifyImportCard = ({
             {/* ── Erst-Import ── */}
             <div className="border-t border-hairline pt-4 space-y-3">
               <div className="data-label">Bestand übernehmen</div>
-              <label className="flex items-center gap-2.5 text-[13.5px] text-ink cursor-pointer select-none">
+              <label className="flex items-start gap-2.5 text-[13.5px] text-ink cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={productsAsVehicles}
+                  onChange={(e) => setProductsAsVehicles(e.target.checked)}
+                  className="accent-[#0071e3] w-4 h-4 mt-0.5"
+                />
+                <span>
+                  Produkte als Fahrzeuge übernehmen
+                  <span className="text-ink-muted">
+                    {" "}
+                    — Modelle ohne Kennzeichen-SKU bekommen ein Platzhalter-Kennzeichen
+                    (ABO-####), das du später umbenennst.
+                  </span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2.5 text-[13.5px] text-ink cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={customersFromOrders}
+                  onChange={(e) => setCustomersFromOrders(e.target.checked)}
+                  className="accent-[#0071e3] w-4 h-4 mt-0.5"
+                />
+                <span>
+                  Kunden aus Bestellungen übernehmen
+                  <span className="text-ink-muted"> — Name + E-Mail, Dubletten zusammengeführt.</span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2.5 text-[13.5px] text-ink cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={includeOrders}
                   onChange={(e) => setIncludeOrders(e.target.checked)}
-                  className="accent-[#0071e3] w-4 h-4"
+                  className="accent-[#0071e3] w-4 h-4 mt-0.5"
                 />
-                Auch offene Bestellungen als Verträge übernehmen
+                <span>
+                  Bestellungen als Verträge übernehmen
+                  <span className="text-ink-muted"> — nur bei erkennbarem Mietzeitraum.</span>
+                </span>
               </label>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -267,7 +313,7 @@ export const ShopifyImportCard = ({
                           {result.products.duplicates > 0 &&
                             ` · ${result.products.duplicates} bereits vorhanden`}
                           {result.products.skipped > 0 &&
-                            ` · ${result.products.skipped} übersprungen (keine Kennzeichen-SKU)`}
+                            ` · ${result.products.skipped} übersprungen`}
                           {result.products.errors > 0 && ` · ${result.products.errors} Fehler`}
                           {!result.dryrun &&
                             result.products.photos_imported > 0 &&
@@ -275,6 +321,22 @@ export const ShopifyImportCard = ({
                           <span className="text-ink-muted">
                             {" "}
                             — {result.products.total} Produkte geprüft
+                          </span>
+                        </div>
+                      )}
+                      {result.customers && (
+                        <div className="tabular-nums">
+                          <span className="font-medium">Kunden:</span>{" "}
+                          {result.customers.created}{" "}
+                          {result.dryrun ? "würden angelegt/aktualisiert" : "angelegt"}
+                          {result.customers.duplicates > 0 &&
+                            ` · ${result.customers.duplicates} bereits vorhanden`}
+                          {result.customers.skipped > 0 &&
+                            ` · ${result.customers.skipped} übersprungen (ohne Name/E-Mail)`}
+                          {result.customers.errors > 0 && ` · ${result.customers.errors} Fehler`}
+                          <span className="text-ink-muted">
+                            {" "}
+                            — {result.customers.total} Bestellungen geprüft
                           </span>
                         </div>
                       )}
