@@ -13,6 +13,7 @@ import {
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { ContractStatusBadge } from "@/components/contract/StatusBadge";
+import { isContractOverdue, localTodayIso } from "@/lib/contract-utils";
 import { CustomerActions } from "./CustomerActions";
 import { CustomerEditPanel } from "./CustomerEditPanel";
 import { CustomerDocumentsCard } from "./CustomerDocumentsCard";
@@ -200,7 +201,10 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                     <span className="text-[12px] text-ink-muted font-mono tnum">
                       {fmtDate(ct.pickup_date)} → {fmtDate(ct.return_date)}
                     </span>
-                    <ContractStatusBadge status={ct.status} />
+                    <ContractStatusBadge
+                      status={ct.status}
+                      overdue={isContractOverdue(ct, localTodayIso())}
+                    />
                     <ChevronRight size={14} className="text-ink-muted" />
                   </Link>
                 ))

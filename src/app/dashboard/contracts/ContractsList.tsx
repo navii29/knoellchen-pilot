@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, FileSignature, Loader2, Plus, Trash2 } from "lucide-react";
 import { fmtDate } from "@/lib/utils";
+import { isContractOverdue, localTodayIso } from "@/lib/contract-utils";
 import type { Contract, ContractStatus } from "@/lib/types";
 import { Plate } from "@/components/ui/Plate";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -28,8 +29,10 @@ const CONTRACT_STATUS_META: Record<
   storniert:    { label: "Storniert",     dot: "#DC2626", soft: "#FEF2F2", ink: "#B91C1C" },
 };
 
-const ContractPill = ({ status }: { status: ContractStatus }) => {
-  const m = CONTRACT_STATUS_META[status] ?? CONTRACT_STATUS_META.aktiv;
+const OVERDUE_PILL = { label: "Überfällig", dot: "#DC2626", soft: "#FEE2E2", ink: "#B91C1C" };
+
+const ContractPill = ({ status, overdue }: { status: ContractStatus; overdue?: boolean }) => {
+  const m = overdue ? OVERDUE_PILL : CONTRACT_STATUS_META[status] ?? CONTRACT_STATUS_META.aktiv;
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full pl-2 pr-2.5 py-0.5 text-[11px] font-mono font-medium tracking-tight"
@@ -41,25 +44,31 @@ const ContractPill = ({ status }: { status: ContractStatus }) => {
   );
 };
 
+type ContractFilter = ContractStatus | "alle" | "ueberfaellig";
+
 /* ── Filter config ── */
-const FILTERS: { value: ContractStatus | "alle"; label: string }[] = [
+const FILTERS: { value: ContractFilter; label: string }[] = [
   { value: "alle",          label: "Alle"          },
   { value: "aktiv",         label: "Aktiv"         },
+  { value: "ueberfaellig",  label: "Überfällig"    },
   { value: "abgeschlossen", label: "Abgeschlossen" },
   { value: "storniert",     label: "Storniert"     },
 ];
 
 export const ContractsList = ({ initial }: { initial: Contract[] }) => {
   const router = useRouter();
-  const [filter, setFilter] = useState<ContractStatus | "alle">("alle");
+  const [filter, setFilter] = useState<ContractFilter>("alle");
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const today = useMemo(() => localTodayIso(), []);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return initial.filter((c) => {
-      if (filter !== "alle" && c.status !== filter) return false;
+      if (filter === "ueberfaellig") {
+        if (!isContractOverdue(c, today)) return false;
+      } else if (filter !== "alle" && c.status !== filter) return false;
       if (!needle) return true;
       return (
         c.contract_nr.toLowerCase().includes(needle) ||
@@ -68,7 +77,7 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
         (c.renter_email || "").toLowerCase().includes(needle)
       );
     });
-  }, [initial, filter, q]);
+  }, [initial, filter, q, today]);
 
   const sel = useRowSelection(filtered);
 
@@ -93,8 +102,12 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
     router.refresh();
   };
 
-  const counts = (v: ContractStatus | "alle") =>
-    v === "alle" ? initial.length : initial.filter((c) => c.status === v).length;
+  const counts = (v: ContractFilter) =>
+    v === "alle"
+      ? initial.length
+      : v === "ueberfaellig"
+      ? initial.filter((c) => isContractOverdue(c, today)).length
+      : initial.filter((c) => c.status === v).length;
 
   return (
     <>
@@ -154,10 +167,14 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
             <span>Status</span>
             <span />
           </div>
-          {filtered.map((c) => (
+          {filtered.map((c) => {
+            const overdue = isContractOverdue(c, today);
+            return (
             <div
               key={c.id}
-              className="grid grid-cols-[34px_140px_128px_1fr_180px_130px_130px_24px] items-center gap-3 px-5 py-3 border-b border-hairline last:border-0 text-[13.5px] hover:bg-canvas transition-colors"
+              className={`grid grid-cols-[34px_140px_128px_1fr_180px_130px_130px_24px] items-center gap-3 px-5 py-3 border-b border-hairline last:border-0 text-[13.5px] transition-colors ${
+                overdue ? "bg-red-50/70 hover:bg-red-50" : "hover:bg-canvas"
+              }`}
             >
               <SelectCheckbox
                 checked={sel.isSelected(c.id)}
@@ -172,19 +189,27 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
                 <span className="font-mono tnum text-[12px] text-ink-soft">
                   {fmtDate(c.pickup_date)}
                   <br />
-                  <span className="text-ink-muted">→ {fmtDate(c.actual_return_date || c.return_date)}</span>
+                  <span className={overdue ? "text-red-600 font-medium" : "text-ink-muted"}>
+                    → {fmtDate(c.actual_return_date || c.return_date)}
+                  </span>
                 </span>
-                <ContractPill status={c.status} />
+                <ContractPill status={c.status} overdue={overdue} />
                 <ChevronRight size={14} className="text-ink-muted" />
               </Link>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Mobile list */}
         <div className="md:hidden divide-y divide-hairline">
-          {filtered.map((c) => (
-            <div key={c.id} className="flex items-center gap-3 px-4 py-3 hover:bg-canvas">
+          {filtered.map((c) => {
+            const overdue = isContractOverdue(c, today);
+            return (
+            <div
+              key={c.id}
+              className={`flex items-center gap-3 px-4 py-3 ${overdue ? "bg-red-50/70" : "hover:bg-canvas"}`}
+            >
               <SelectCheckbox
                 checked={sel.isSelected(c.id)}
                 onChange={() => sel.toggle(c.id)}
@@ -196,19 +221,20 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
               >
                 <div className="flex-1 min-w-0 space-y-1.5">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <ContractPill status={c.status} />
+                    <ContractPill status={c.status} overdue={overdue} />
                     <Plate value={c.plate} size="sm" />
                     <span className="ml-auto font-mono text-[11px] text-ink-muted">{c.contract_nr}</span>
                   </div>
                   <div className="text-[13.5px] text-ink truncate">{c.renter_name}</div>
-                  <div className="font-mono tnum text-[11px] text-ink-muted">
+                  <div className={`font-mono tnum text-[11px] ${overdue ? "text-red-600" : "text-ink-muted"}`}>
                     {fmtDate(c.pickup_date)} → {fmtDate(c.actual_return_date || c.return_date)}
                   </div>
                 </div>
                 <ChevronRight size={16} className="text-ink-muted shrink-0" />
               </Link>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {filtered.length === 0 && (
