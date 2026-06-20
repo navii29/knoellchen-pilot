@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { VehicleForm } from "@/components/vehicle/VehicleForm";
@@ -16,7 +17,9 @@ export const VehicleEditPanel = ({
   vehicle: Vehicle;
   children: React.ReactNode;
 }) => {
+  const router = useRouter();
   const [editing, setEditing] = useState(false);
+  const [, startTransition] = useTransition();
 
   if (editing) {
     return (
@@ -24,7 +27,13 @@ export const VehicleEditPanel = ({
         mode="edit"
         initial={vehicle}
         onCancel={() => setEditing(false)}
-        onDone={() => setEditing(false)}
+        onDone={() =>
+          // Erst zurückschalten, wenn die frischen Serverdaten da sind.
+          startTransition(() => {
+            router.refresh();
+            setEditing(false);
+          })
+        }
       />
     );
   }

@@ -231,10 +231,12 @@ export const VehicleForm = ({
     if (mode === "create") {
       const j = (await res.json()) as { vehicle: { id: string } };
       router.push(`/dashboard/vehicles/${j.vehicle.id}`);
+      router.refresh();
+    } else {
+      // Inline-Edit: das Panel übernimmt refresh + Zurückschalten in einer
+      // Transition, damit die Ansicht erst mit frischen Daten erscheint.
+      onDone?.();
     }
-    router.refresh();
-    // Im Inline-Edit zurück zur Ansicht schalten (Daten sind frisch geladen).
-    onDone?.();
   };
 
   return (

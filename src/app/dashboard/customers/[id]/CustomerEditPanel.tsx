@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Pencil, Save } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
@@ -28,6 +28,7 @@ type FormState = {
   license_expiry: string;
   id_card_nr: string;
   notes: string;
+  marketing_opt_in: boolean;
 };
 
 const fromCustomer = (c: Customer): FormState => ({
@@ -48,6 +49,7 @@ const fromCustomer = (c: Customer): FormState => ({
   license_expiry: (c.license_expiry ?? "").slice(0, 10),
   id_card_nr: c.id_card_nr ?? "",
   notes: c.notes ?? "",
+  marketing_opt_in: c.marketing_opt_in ?? false,
 });
 
 export const CustomerEditPanel = ({
@@ -86,6 +88,7 @@ const CustomerEditForm = ({
   const router = useRouter();
   const [data, setData] = useState<FormState>(fromCustomer(customer));
   const [saving, setSaving] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   const set =
@@ -116,8 +119,11 @@ const CustomerEditForm = ({
       setError(j.error || "Speichern fehlgeschlagen");
       return;
     }
-    onClose();
-    router.refresh();
+    // Erst zurückschalten, wenn die frischen Serverdaten da sind (kein Stale-Flash).
+    startTransition(() => {
+      router.refresh();
+      onClose();
+    });
   };
 
   return (
@@ -200,6 +206,26 @@ const CustomerEditForm = ({
       </Panel>
 
       <Panel>
+        <Section title="Einwilligung">
+          <label className="sm:col-span-2 flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={data.marketing_opt_in}
+              onChange={(e) =>
+                setData((d) => ({ ...d, marketing_opt_in: e.target.checked }))
+              }
+              className="mt-0.5 w-4 h-4 accent-signal shrink-0"
+            />
+            <span className="text-[13px] text-ink-soft leading-snug">
+              Werbe-Einwilligung (Marketing): Der Kunde ist mit der Kontaktaufnahme
+              zu Werbezwecken einverstanden. Beim Speichern wird der Zeitpunkt
+              protokolliert.
+            </span>
+          </label>
+        </Section>
+      </Panel>
+
+      <Panel>
         <Section title="Notizen">
           <div className="sm:col-span-2">
             <textarea value={data.notes} onChange={set("notes")} rows={3} className="field resize-none" />
@@ -217,13 +243,13 @@ const CustomerEditForm = ({
         <button
           type="button"
           onClick={onClose}
-          disabled={saving}
+          disabled={saving || isPending}
           className="text-[13px] text-ink-muted hover:text-ink px-2 disabled:opacity-40"
         >
           Abbrechen
         </button>
-        <Button type="submit" variant="signal" size="md" disabled={saving}>
-          {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+        <Button type="submit" variant="signal" size="md" disabled={saving || isPending}>
+          {saving || isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
           Speichern
         </Button>
       </div>

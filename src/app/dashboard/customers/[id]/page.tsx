@@ -15,6 +15,7 @@ import { Topbar } from "@/components/dashboard/Topbar";
 import { ContractStatusBadge } from "@/components/contract/StatusBadge";
 import { CustomerActions } from "./CustomerActions";
 import { CustomerEditPanel } from "./CustomerEditPanel";
+import { CustomerDocumentsCard } from "./CustomerDocumentsCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -50,20 +51,34 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
     .order("pickup_date", { ascending: false });
   const linkedContracts = (contracts || []) as Contract[];
 
+  // Org des eingeloggten Users — für die Pfad-Absicherung der Storage-Dokumente.
+  const { data: profile } = await supabase
+    .from("users")
+    .select("org_id")
+    .eq("id", user.id)
+    .single();
+  const orgId = (profile?.org_id as string | undefined) ?? null;
+  // Nur Dokumente signieren, deren Pfad zur eigenen Org gehört — ein manipulierter
+  // Pfad (z. B. via fremder org_id) darf keine fremden Ausweis-Scans offenlegen.
+  const orgOwnsPath = (p: string | null): p is string =>
+    !!p && !!orgId && p.startsWith(`${orgId}/`);
+  const licPath = c.license_photo_path;
+  const idPath = c.id_card_photo_path;
+
   let licenseUrl: string | null = null;
   let idCardUrl: string | null = null;
-  if (c.license_photo_path || c.id_card_photo_path) {
+  if (orgOwnsPath(licPath) || orgOwnsPath(idPath)) {
     const admin = createAdminClient();
-    if (c.license_photo_path) {
+    if (orgOwnsPath(licPath)) {
       const { data: signed } = await admin.storage
         .from("customer-documents")
-        .createSignedUrl(c.license_photo_path, 3600);
+        .createSignedUrl(licPath, 3600);
       licenseUrl = signed?.signedUrl || null;
     }
-    if (c.id_card_photo_path) {
+    if (orgOwnsPath(idPath)) {
       const { data: signed } = await admin.storage
         .from("customer-documents")
-        .createSignedUrl(c.id_card_photo_path, 3600);
+        .createSignedUrl(idPath, 3600);
       idCardUrl = signed?.signedUrl || null;
     }
   }
@@ -138,6 +153,14 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                 </Panel>
               )}
             </CustomerEditPanel>
+          </div>
+
+          <div className="mt-6">
+            <CustomerDocumentsCard
+              customerId={c.id}
+              licenseUrl={licenseUrl}
+              idCardUrl={idCardUrl}
+            />
           </div>
 
           <div className="mt-6">
