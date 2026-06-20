@@ -22,6 +22,15 @@ const intOrNull = (v: unknown): number | null => {
   return n == null ? null : Math.round(n);
 };
 
+// Striktes YYYY-MM-DD; sonst null. Backstop gegen ungültige KI-Datumswerte,
+// die sonst einen rohen Postgres-Fehler auf der DATE-Spalte auslösen würden.
+const dateOrNull = (v: unknown): string | null => {
+  const s = trimOrNull(v);
+  if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  const d = new Date(`${s}T00:00:00Z`);
+  return Number.isNaN(d.getTime()) ? null : s;
+};
+
 export const POST = async (req: Request) => {
   const supabase = createClient();
   const {
@@ -54,7 +63,7 @@ export const POST = async (req: Request) => {
     org_id: profile.org_id,
     plate,
     color: trimOrNull(body.color),
-    first_registration: trimOrNull(body.first_registration),
+    first_registration: dateOrNull(body.first_registration),
     extra_km_price: numOrNull(body.extra_km_price),
 
     manufacturer,
@@ -69,7 +78,22 @@ export const POST = async (req: Request) => {
     fin_number: trimOrNull(body.fin_number),
     category: trimOrNull(body.category),
 
-    available_from: trimOrNull(body.available_from),
+    // Fahrzeugschein (Migration 043)
+    hsn: trimOrNull(body.hsn),
+    tsn: trimOrNull(body.tsn),
+    displacement_ccm: intOrNull(body.displacement_ccm),
+    co2_combined: intOrNull(body.co2_combined),
+    emission_class: trimOrNull(body.emission_class),
+    weight_empty: intOrNull(body.weight_empty),
+    weight_max: intOrNull(body.weight_max),
+    zb2_number: trimOrNull(body.zb2_number),
+    next_hu: dateOrNull(body.next_hu),
+    registration_data:
+      body.registration_data && typeof body.registration_data === "object"
+        ? body.registration_data
+        : null,
+
+    available_from: dateOrNull(body.available_from),
     km_at_intake: intOrNull(body.km_at_intake),
     max_km_total: intOrNull(body.max_km_total),
     inclusive_km_month: intOrNull(body.inclusive_km_month),
@@ -85,7 +109,7 @@ export const POST = async (req: Request) => {
 
     accessories: trimOrNull(body.accessories),
     status,
-    decommission_date: trimOrNull(body.decommission_date),
+    decommission_date: dateOrNull(body.decommission_date),
 
     // Logistik & Intern (Migration 026)
     pickup_location: trimOrNull(body.pickup_location),

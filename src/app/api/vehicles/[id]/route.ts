@@ -38,11 +38,18 @@ const intOrNull = (v: unknown) => {
   return n == null ? null : Math.round(n);
 };
 
+// Striktes YYYY-MM-DD; undefined-Passthrough (Feld nicht im Body) bleibt erhalten.
+const dateOrNull = (v: unknown) => {
+  if (v === undefined) return undefined;
+  const s = trimOrNull(v);
+  if (s == null || typeof s !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  const d = new Date(`${s}T00:00:00Z`);
+  return Number.isNaN(d.getTime()) ? null : s;
+};
+
 const TEXT_FIELDS = [
   "vehicle_type",
   "color",
-  "first_registration",
-  "decommission_date",
   "manufacturer",
   "model",
   "fuel_type",
@@ -51,7 +58,11 @@ const TEXT_FIELDS = [
   "body_type",
   "fin_number",
   "category",
-  "available_from",
+  // Fahrzeugschein (Migration 043)
+  "hsn",
+  "tsn",
+  "emission_class",
+  "zb2_number",
   "accessories",
   "echoes_device_id",
   // Logistik & Intern (Migration 026)
@@ -80,6 +91,18 @@ const INT_FIELDS = [
   "km_at_intake",
   "max_km_total",
   "inclusive_km_month",
+  // Fahrzeugschein (Migration 043)
+  "displacement_ccm",
+  "co2_combined",
+  "weight_empty",
+  "weight_max",
+] as const;
+
+const DATE_FIELDS = [
+  "first_registration",
+  "decommission_date",
+  "next_hu",
+  "available_from",
 ] as const;
 
 type RouteCtx = { params: { id: string } };
@@ -109,8 +132,20 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
       if (v !== undefined) patch[k] = v;
     }
   }
+  for (const k of DATE_FIELDS) {
+    if (k in body) {
+      const v = dateOrNull(body[k]);
+      if (v !== undefined) patch[k] = v;
+    }
+  }
   if ("decommission_reminded" in body) {
     patch.decommission_reminded = Boolean(body.decommission_reminded);
+  }
+  if ("registration_data" in body) {
+    patch.registration_data =
+      body.registration_data && typeof body.registration_data === "object"
+        ? body.registration_data
+        : null;
   }
   if ("status" in body && VEHICLE_STATUSES.includes(body.status as VehicleStatus)) {
     patch.status = body.status;

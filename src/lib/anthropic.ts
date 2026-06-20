@@ -4,7 +4,9 @@ import type {
   ParsedContractData,
   ParsedCustomerData,
   ParsedTicketData,
+  ParsedVehicleRegistration,
 } from "./types";
+import { MANUFACTURERS, FUEL_TYPES, BODY_TYPES } from "./vehicle";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
@@ -179,6 +181,100 @@ export const parseCustomerDocument = async (
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
   const data = JSON.parse(jsonMatch[0]) as ParsedCustomerData;
+  return { data, raw: response };
+};
+
+const REGISTRATION_PROMPT = `Du bist Experte für deutsche Zulassungsbescheinigungen Teil I (Fahrzeugschein).
+Lies das übermittelte Dokument (Foto oder PDF) und extrahiere ALLE Fahrzeugdaten präzise.
+WICHTIG: Das ist ein FAHRZEUG-Dokument (kein Personalausweis/Führerschein) — es beschreibt das Fahrzeug selbst.
+
+Die Felder sind mit Buchstaben/Ziffern codiert. Nutze diese Zuordnung:
+- A   -> Kennzeichen (Format mit Bindestrich + Leerzeichen, z. B. EU-ML 9051)
+- B   -> Datum der Erstzulassung (YYYY-MM-DD)
+- D.1 -> Marke / Hersteller
+- D.3 -> Handelsbezeichnung (Modell)
+- E   -> Fahrzeug-Identifizierungsnummer (FIN/VIN, 17 Zeichen)
+- P.3 -> Kraftstoff / Energiequelle
+- P.2 -> Nennleistung in kW (nur die kW-Zahl, nicht die Drehzahl)
+- P.1 -> Hubraum in cm³
+- S.1 -> Sitzplätze einschließlich Fahrersitz
+- R   -> Farbe des Fahrzeugs
+- 5   -> Bezeichnung des Aufbaus (z. B. Schräghecklimousine, Kombi, Geländewagen ...)
+- 2.1 -> Herstellerschlüsselnummer (HSN, 4-stellig)
+- 2.2 -> Typschlüsselnummer (TSN, der Code nach 2.2)
+- 14  -> nationale Emissionsklasse (z. B. EURO6)
+- V.7 -> CO₂ kombiniert in g/km
+- G   -> Masse des Fahrzeugs in Betrieb (Leermasse) in kg
+- F.1 -> technisch zulässige Gesamtmasse in kg
+- 16  -> Nummer der Zulassungsbescheinigung Teil II
+- L   -> Anzahl der Achsen
+- T   -> Höchstgeschwindigkeit in km/h
+- X   -> nächste Hauptuntersuchung (Monat/Jahr) — gib sie als YYYY-MM-01 zurück
+- C.1.1 -> Name / Firmenname des Halters
+
+Antworte AUSSCHLIESSLICH mit gültigem JSON (keine Erklärungen, kein Markdown):
+{
+  "plate": "Kennzeichen oder null",
+  "first_registration": "YYYY-MM-DD oder null",
+  "manufacturer": "Marke — wähle wenn möglich exakt einen aus: [${MANUFACTURERS.join(", ")}], sonst Originalwert",
+  "model": "Handelsbezeichnung oder null",
+  "vin": "FIN oder null",
+  "fuel_type": "Kraftstoff — wähle exakt einen aus: [${FUEL_TYPES.join(", ")}], sonst null",
+  "power_kw": Zahl oder null,
+  "displacement_ccm": Zahl oder null,
+  "seats": Zahl oder null,
+  "color": "deutscher Farbname normal geschrieben (z. B. Schwarz) oder null",
+  "body_type": "ordne dem Aufbau den passendsten Wert zu aus: [${BODY_TYPES.join(", ")}], sonst null",
+  "body_type_raw": "Original-Aufbau aus Feld 5 oder null",
+  "hsn": "HSN oder null",
+  "tsn": "TSN oder null",
+  "emission_class": "z. B. EURO6 oder null",
+  "co2_combined": Zahl oder null,
+  "weight_empty": Zahl oder null,
+  "weight_max": Zahl oder null,
+  "zb2_number": "Nummer ZB Teil II oder null",
+  "next_hu": "YYYY-MM-DD oder null",
+  "num_axles": Zahl oder null,
+  "max_speed": Zahl oder null,
+  "owner_name": "Halter-Name oder null",
+  "confidence": Zahl 0.0 bis 1.0
+}
+
+Wenn ein Feld nicht erkennbar ist, setze null. Datumsformat strikt YYYY-MM-DD. Zahlen ohne Einheit.`;
+
+export const parseVehicleRegistration = async (
+  fileBase64: string,
+  mediaType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf"
+): Promise<{ data: ParsedVehicleRegistration; raw: unknown }> => {
+  const isPdf = mediaType === "application/pdf";
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 1500,
+    system: REGISTRATION_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: isPdf ? "document" : "image",
+            source: { type: "base64", media_type: mediaType, data: fileBase64 },
+          } as Anthropic.Messages.ContentBlockParam,
+          {
+            type: "text",
+            text: "Extrahiere alle Fahrzeugdaten aus diesem Fahrzeugschein.",
+          },
+        ],
+      },
+    ],
+  });
+
+  const text = response.content
+    .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
+    .map((b) => b.text)
+    .join("");
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
+  const data = JSON.parse(jsonMatch[0]) as ParsedVehicleRegistration;
   return { data, raw: response };
 };
 
