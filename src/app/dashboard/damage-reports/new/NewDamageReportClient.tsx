@@ -67,6 +67,7 @@ export const NewDamageReportClient = ({
   const [stagedPreviews, setStagedPreviews] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
 
   const set = (k: keyof FormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
@@ -306,10 +307,25 @@ export const NewDamageReportClient = ({
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
-                  className="aspect-square rounded-panel border-2 border-dashed border-hairline flex flex-col items-center justify-center gap-1.5 text-ink-muted hover:text-ink hover:border-ink/30 hover:bg-canvas transition"
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOver(true);
+                  }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOver(false);
+                    addPhotos(e.dataTransfer.files);
+                  }}
+                  className={`aspect-square rounded-panel border-2 border-dashed flex flex-col items-center justify-center gap-1.5 transition ${
+                    dragOver
+                      ? "border-signal bg-signal/5 text-signal ring-2 ring-signal/50"
+                      : "border-hairline text-ink-muted hover:text-ink hover:border-ink/30 hover:bg-canvas"
+                  }`}
                 >
                   <Camera size={20} />
                   <span className="text-[11px] font-medium">Foto hinzufügen</span>
+                  <span className="text-[10px] text-ink-muted">oder hierher ziehen</span>
                 </button>
                 <input
                   ref={fileRef}

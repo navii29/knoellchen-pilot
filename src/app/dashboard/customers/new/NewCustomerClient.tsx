@@ -75,16 +75,28 @@ export const NewCustomerClient = () => {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [docHint, setDocHint] = useState<CustomerDocumentType | "">("");
+  const [dragOver, setDragOver] = useState<"license" | "id_card" | "more" | null>(null);
+
+  // Mirrors the hidden <input> onChange in "choose" mode: set the doc hint, switch
+  // to the AI view and run the same parse pipeline used by click-to-upload.
+  const handleScanDrop = (hint: CustomerDocumentType, list: FileList | null) => {
+    const f = list?.[0];
+    if (!f) return;
+    setDocHint(hint);
+    setMode("ai");
+    handlePhotoUpload(f, hint);
+  };
 
   const set = (k: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setData((d) => ({ ...d, [k]: e.target.value }));
 
-  const handlePhotoUpload = async (file: File) => {
+  const handlePhotoUpload = async (file: File, hintOverride?: CustomerDocumentType) => {
     setError(null);
     setParsing(true);
     const fd = new FormData();
     fd.append("file", file);
-    if (docHint) fd.append("doc_type", docHint);
+    const hint = hintOverride ?? docHint;
+    if (hint) fd.append("doc_type", hint);
     const res = await fetch("/api/customers/parse-document", { method: "POST", body: fd });
     setParsing(false);
     if (!res.ok) {
@@ -170,7 +182,19 @@ export const NewCustomerClient = () => {
               setDocHint("license");
               fileRef.current?.click();
             }}
-            className="panel p-6 text-left hover:border-ink/20 transition"
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver("license");
+            }}
+            onDragLeave={() => setDragOver(null)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(null);
+              handleScanDrop("license", e.dataTransfer.files);
+            }}
+            className={`panel p-6 text-left hover:border-ink/20 transition ${
+              dragOver === "license" ? "ring-2 ring-signal/50 border-signal bg-signal/5" : ""
+            }`}
           >
             <div className="w-12 h-12 rounded-panel border border-hairline bg-canvas flex items-center justify-center text-ink-soft mb-4">
               <CreditCard size={22} />
@@ -179,6 +203,7 @@ export const NewCustomerClient = () => {
             <div className="text-[13px] text-ink-muted mt-1">
               Foto oder Scan — Claude liest Name, Geburtsdatum, FS-Nummer und Klassen aus.
             </div>
+            <div className="text-[12px] text-ink-muted mt-2">oder Datei hierher ziehen</div>
           </button>
 
           <button
@@ -186,7 +211,19 @@ export const NewCustomerClient = () => {
               setDocHint("id_card");
               fileRef.current?.click();
             }}
-            className="panel p-6 text-left hover:border-ink/20 transition"
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver("id_card");
+            }}
+            onDragLeave={() => setDragOver(null)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(null);
+              handleScanDrop("id_card", e.dataTransfer.files);
+            }}
+            className={`panel p-6 text-left hover:border-ink/20 transition ${
+              dragOver === "id_card" ? "ring-2 ring-signal/50 border-signal bg-signal/5" : ""
+            }`}
           >
             <div className="w-12 h-12 rounded-panel border border-hairline bg-canvas flex items-center justify-center text-ink-soft mb-4">
               <IdCard size={22} />
@@ -195,6 +232,7 @@ export const NewCustomerClient = () => {
             <div className="text-[13px] text-ink-muted mt-1">
               Bekommt zusätzlich die Anschrift und die Ausweisnummer.
             </div>
+            <div className="text-[12px] text-ink-muted mt-2">oder Datei hierher ziehen</div>
           </button>
 
           <button
@@ -250,7 +288,22 @@ export const NewCustomerClient = () => {
       {mode === "manual" && (
         <form onSubmit={submit} className="mt-6 space-y-5">
           {parsedFromAI && (
-            <div className="flex items-center gap-3 p-3 rounded-panel border border-hairline bg-canvas">
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOver("more");
+              }}
+              onDragLeave={() => setDragOver(null)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOver(null);
+                const f = e.dataTransfer.files?.[0];
+                if (f) handlePhotoUpload(f);
+              }}
+              className={`flex items-center gap-3 p-3 rounded-panel border transition-colors ${
+                dragOver === "more" ? "ring-2 ring-signal/50 border-signal bg-signal/5" : "border-hairline bg-canvas"
+              }`}
+            >
               <Sparkles size={16} className="text-signal shrink-0" />
               <div className="flex-1 text-[13px] text-ink">
                 <span className="font-medium">
@@ -261,6 +314,7 @@ export const NewCustomerClient = () => {
                     Confidence {Math.round(aiConfidence * 100)} % — bitte prüfen
                   </span>
                 )}
+                <span className="text-[12px] ml-2 text-ink-muted">— oder Datei hierher ziehen</span>
               </div>
               <button
                 type="button"

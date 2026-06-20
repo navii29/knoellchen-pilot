@@ -49,6 +49,7 @@ export const HandoverClient = ({
   const [error, setError] = useState<string | null>(null);
   const [comparing, setComparing] = useState(false);
   const [results, setResults] = useState<CompareResultMap>({});
+  const [dragOverKey, setDragOverKey] = useState<string | null>(null);
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const photoFor = (type: HandoverPhotoType, position: HandoverPosition) =>
@@ -239,7 +240,23 @@ export const HandoverClient = ({
                 ) : (
                   <button
                     onClick={() => fileRefs.current[key]?.click()}
-                    className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-ink-muted hover:text-ink hover:bg-canvas/60 transition"
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      if (!isUploading) setDragOverKey(key);
+                    }}
+                    onDragLeave={() => setDragOverKey((k) => (k === key ? null : k))}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setDragOverKey((k) => (k === key ? null : k));
+                      if (isUploading) return;
+                      const f = e.dataTransfer.files?.[0];
+                      if (f) upload(tab, p.key, f);
+                    }}
+                    className={`absolute inset-0 flex flex-col items-center justify-center gap-2 transition ${
+                      dragOverKey === key
+                        ? "text-signal bg-signal/5 ring-2 ring-inset ring-signal/50"
+                        : "text-ink-muted hover:text-ink hover:bg-canvas/60"
+                    }`}
                     disabled={isUploading}
                   >
                     {isUploading ? (
@@ -250,6 +267,9 @@ export const HandoverClient = ({
                     <span className="text-[11px] font-medium">
                       {isUploading ? "Lade hoch…" : "Foto aufnehmen"}
                     </span>
+                    {!isUploading && (
+                      <span className="text-[10px] text-ink-muted">oder Datei hierher ziehen</span>
+                    )}
                   </button>
                 )}
                 <input

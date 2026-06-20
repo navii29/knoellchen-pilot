@@ -37,6 +37,7 @@ export const PhotoGrid = ({
   const fileRefs = useRef<Record<HandoverPosition, HTMLInputElement | null>>(
     {} as Record<HandoverPosition, HTMLInputElement | null>
   );
+  const [dragOver, setDragOver] = useState<HandoverPosition | null>(null);
 
   useEffect(() => {
     const count = Object.values(entries).filter((e) => e.status === "uploaded").length;
@@ -94,9 +95,23 @@ export const PhotoGrid = ({
             key={p.key}
             type="button"
             onClick={() => fileRefs.current[p.key]?.click()}
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (!isUploading) setDragOver(p.key);
+            }}
+            onDragLeave={() => setDragOver((d) => (d === p.key ? null : d))}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver((d) => (d === p.key ? null : d));
+              if (isUploading) return;
+              const f = e.dataTransfer.files?.[0];
+              if (f) void upload(p.key, f);
+            }}
             disabled={isUploading}
             className={`relative rounded-card border px-3 py-4 text-left transition-all ${
-              isUploaded
+              dragOver === p.key
+                ? "border-signal bg-signal/5 ring-2 ring-signal/50"
+                : isUploaded
                 ? "bg-canvas border-hairline"
                 : isError
                 ? "bg-rose-50 border-rose-200"
@@ -151,6 +166,8 @@ export const PhotoGrid = ({
                     ? "Wird hochgeladen…"
                     : isError
                     ? entry.errorMessage ?? "Fehler"
+                    : dragOver === p.key
+                    ? "Datei hier ablegen"
                     : p.hint}
                 </div>
               </div>
