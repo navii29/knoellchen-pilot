@@ -110,6 +110,7 @@ export const POST = async (req: Request) => {
     accessories: trimOrNull(body.accessories),
     status,
     decommission_date: dateOrNull(body.decommission_date),
+    disable_auto_decommission: Boolean(body.disable_auto_decommission),
 
     // Logistik & Intern (Migration 026)
     pickup_location: trimOrNull(body.pickup_location),

@@ -146,6 +146,9 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
   if ("decommission_reminded" in body) {
     patch.decommission_reminded = Boolean(body.decommission_reminded);
   }
+  if ("disable_auto_decommission" in body) {
+    patch.disable_auto_decommission = Boolean(body.disable_auto_decommission);
+  }
   if ("registration_data" in body) {
     patch.registration_data =
       body.registration_data && typeof body.registration_data === "object"

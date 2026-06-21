@@ -56,6 +56,7 @@ export interface Vehicle {
   first_registration: string | null;
   decommission_date: string | null;
   decommission_reminded: boolean;
+  disable_auto_decommission: boolean; // Migration 045 — keine Auto-Aussteuerung (+180)
   extra_km_price: number | null;
 
   manufacturer: string | null;
