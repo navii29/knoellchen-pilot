@@ -87,6 +87,11 @@ export const POST = async (_req: Request, { params }: Ctx) => {
         : Promise.resolve({ data: null }),
     ]);
 
+    // Hinweis Nebenläufigkeit: Guards laufen über Laufzeit-Variablen, nicht über
+    // einen DB-Lock. Zwei exakt gleichzeitige Aktivierungen desselben Vertrags
+    // könnten theoretisch doppelte Belege erzeugen. Praktisch verhindert das der
+    // im UI während des Requests gesperrte Button; ein echter Lock würde die
+    // Retry-Sicherheit (inkrementelles Speichern) untergraben. Bewusst so belassen.
     try {
       // 1) Miet-Rechnung
       if (!rentalInvoiceId) {

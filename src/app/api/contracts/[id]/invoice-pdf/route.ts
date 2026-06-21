@@ -78,12 +78,17 @@ export const GET = async (req: Request, { params }: Ctx) => {
     });
   } catch (e) {
     if (e instanceof LexOfficeError) {
-      // 406 = Beleg wird noch gerendert
-      const msg =
-        e.status === 406
-          ? "PDF wird gerade erzeugt — bitte in ein paar Sekunden erneut versuchen."
-          : `LexOffice-Fehler ${e.status}: ${e.message}`;
-      return NextResponse.json({ error: msg }, { status: 400 });
+      // 406 = Beleg wird noch gerendert → 503 (transient, Client darf erneut versuchen)
+      if (e.status === 406) {
+        return NextResponse.json(
+          { error: "PDF wird gerade erzeugt — bitte in ein paar Sekunden erneut versuchen." },
+          { status: 503, headers: { "Retry-After": "3" } }
+        );
+      }
+      return NextResponse.json(
+        { error: `LexOffice-Fehler ${e.status}: ${e.message}` },
+        { status: 400 }
+      );
     }
     return NextResponse.json(
       { error: "PDF konnte nicht geladen werden." },

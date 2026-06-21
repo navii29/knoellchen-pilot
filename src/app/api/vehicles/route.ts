@@ -88,6 +88,12 @@ export const POST = async (req: Request) => {
     weight_max: intOrNull(body.weight_max),
     zb2_number: trimOrNull(body.zb2_number),
     next_hu: dateOrNull(body.next_hu),
+
+    // Versicherung (Migration 044) — auch bei der Anlage übernehmen
+    insurer: trimOrNull(body.insurer),
+    policy_number: trimOrNull(body.policy_number),
+    insurance_valid_until: dateOrNull(body.insurance_valid_until),
+
     registration_data:
       body.registration_data && typeof body.registration_data === "object"
         ? body.registration_data
