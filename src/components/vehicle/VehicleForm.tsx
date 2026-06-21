@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowLeft,
   CheckCircle2,
   ExternalLink,
@@ -235,11 +236,19 @@ export const VehicleForm = ({
   const [parseError, setParseError] = useState<string | null>(null);
   const [parseConfidence, setParseConfidence] = useState<number | null>(null);
   const regDataRef = useRef<Record<string, unknown> | null>(null);
+  // Gegenprüfung: Kennzeichen aus dem Schein existiert bereits als Fahrzeug.
+  const [existing, setExisting] = useState<{
+    id: string;
+    label: string;
+    plate: string;
+    current: Record<string, string | number | null>;
+  } | null>(null);
 
   const clearReg = () => {
     setRegFile(null);
     setParseConfidence(null);
     setParseError(null);
+    setExisting(null);
     regDataRef.current = null;
   };
 
@@ -248,6 +257,7 @@ export const VehicleForm = ({
     setParsing(true);
     setParseError(null);
     setParseConfidence(null);
+    setExisting(null);
     try {
       const fd = new FormData();
       fd.append("file", file);
@@ -263,6 +273,11 @@ export const VehicleForm = ({
       const fields = (j.fields ?? {}) as Record<string, string>;
       regDataRef.current = (j.registration_data ?? null) as Record<string, unknown> | null;
       setParseConfidence(typeof j.confidence === "number" ? j.confidence : null);
+      // Gegenprüfung-Treffer nur im Anlegen-Modus relevant (im Edit ist man schon
+      // beim Fahrzeug; ein Selbsttreffer würde nur verwirren).
+      if (mode === "create" && j.existing?.id) {
+        setExisting(j.existing as NonNullable<typeof existing>);
+      }
       setData((d) => {
         const next: VehicleFormState = { ...d };
         for (const [k, v] of Object.entries(fields)) {
@@ -293,6 +308,37 @@ export const VehicleForm = ({
     } catch {
       /* still */
     }
+  };
+
+  // Gegenprüfung-Aktion: nur die im vorhandenen Fahrzeug LEEREN Felder aus den
+  // ausgelesenen Schein-Daten ergänzen (nichts überschreiben) + Schein hinterlegen.
+  const mergeIntoExisting = async () => {
+    if (!existing) return;
+    setSaving(true);
+    setError(null);
+    const patch: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(data)) {
+      if (!(k in existing.current)) continue; // nur die Schein-Spalten
+      const cur = existing.current[k];
+      const curEmpty = cur === null || cur === undefined || cur === "";
+      if (curEmpty && typeof v === "string" && v.trim() !== "") patch[k] = v;
+    }
+    if (regDataRef.current) patch.registration_data = regDataRef.current;
+    const res = await fetch(`/api/vehicles/${existing.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) {
+      setSaving(false);
+      const j = await res.json().catch(() => ({}));
+      setError(j.error || "Ergänzen fehlgeschlagen");
+      return;
+    }
+    await uploadRegDoc(existing.id); // Schein am vorhandenen Fahrzeug hinterlegen
+    setSaving(false);
+    router.push(`/dashboard/vehicles/${existing.id}`);
+    router.refresh();
   };
 
   const set = (k: keyof VehicleFormState) =>
@@ -424,13 +470,45 @@ export const VehicleForm = ({
               </div>
             )}
 
-            {parseConfidence !== null && !parsing && (
+            {parseConfidence !== null && !parsing && !existing && (
               <div className="flex items-center gap-2 text-[13px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-frame px-3 py-2">
                 <Sparkles size={15} className="shrink-0" />
                 <span>Ausgelesen — Felder unten vorausgefüllt. Bitte kurz prüfen.</span>
                 <span className="ml-auto font-mono text-[11px] text-emerald-700/80 shrink-0">
                   {Math.round((parseConfidence ?? 0) * 100)}% sicher
                 </span>
+              </div>
+            )}
+
+            {existing && !parsing && (
+              <div className="rounded-frame border border-amber-300 bg-amber-50 px-3 py-2.5 text-[13px] text-amber-900 space-y-2.5">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle size={15} className="mt-0.5 shrink-0 text-amber-600" />
+                  <div>
+                    Kennzeichen <strong>{existing.plate}</strong> ist bereits angelegt
+                    {existing.label ? (
+                      <>
+                        {" "}
+                        (<strong>{existing.label}</strong>)
+                      </>
+                    ) : null}
+                    . Statt ein Duplikat anzulegen, ergänze ich nur die im
+                    vorhandenen Fahrzeug noch <strong>fehlenden</strong> Felder und
+                    hinterlege dort den Schein.
+                  </div>
+                </div>
+                <div className="pl-6">
+                  <Button
+                    type="button"
+                    variant="signal"
+                    size="sm"
+                    disabled={saving}
+                    onClick={mergeIntoExisting}
+                  >
+                    {saving ? <Loader2 size={14} className="animate-spin" /> : null}
+                    Fehlende Daten im vorhandenen Fahrzeug ergänzen
+                  </Button>
+                </div>
               </div>
             )}
 
