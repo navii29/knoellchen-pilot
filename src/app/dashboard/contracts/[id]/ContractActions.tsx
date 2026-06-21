@@ -5,16 +5,17 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   AlertTriangle,
-  Calculator,
   Camera,
   Check,
   Download,
+  Euro,
   FileSignature,
   Loader2,
   Send,
   Trash2,
   UserPlus,
   X,
+  Zap,
 } from "lucide-react";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import type { Contract } from "@/lib/types";
@@ -105,16 +106,16 @@ export const ContractActions = ({
     if (res.ok) router.push("/dashboard/contracts");
   };
 
-  const syncLexoffice = async () => {
-    setBusy("lexoffice");
+  const activate = async () => {
+    setBusy("activate");
     setError(null);
-    const res = await fetch(`/api/contracts/${contract.id}/sync-lexoffice`, {
+    const res = await fetch(`/api/contracts/${contract.id}/activate`, {
       method: "POST",
     });
     const j = await res.json().catch(() => ({}));
     setBusy(null);
     if (!res.ok) {
-      setError(j.error || "Übertragung fehlgeschlagen");
+      setError(j.error || "Aktivierung fehlgeschlagen");
       return;
     }
     router.refresh();
@@ -240,26 +241,79 @@ export const ContractActions = ({
           Zugangs-Link kopieren
         </button>
 
-        {lexofficeEnabled &&
-          contract.status === "abgeschlossen" &&
-          (contract.lexoffice_invoice_id ? (
+        {/* Aktivierung & Abrechnung */}
+        {contract.status !== "storniert" && !contract.is_activated && (
+          <button
+            onClick={activate}
+            disabled={busy != null}
+            title={
+              lexofficeEnabled
+                ? "Erstellt Miet-Rechnung + separate Kautions-Rechnung in LexOffice"
+                : "Markiert den Vertrag als aktiviert (LexOffice nicht aktiviert — keine Rechnung)"
+            }
+            className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn bg-signal text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {busy === "activate" ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Zap size={14} />
+            )}
+            {lexofficeEnabled ? "Aktivieren & Rechnung erstellen" : "Aktivieren"}
+          </button>
+        )}
+
+        {contract.is_activated && (
+          <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 h-8 rounded-btn border border-[#166534]/30 bg-[#E6F4EA] text-[#166534] font-mono">
+            <Check size={12} /> Aktiviert
+          </span>
+        )}
+
+        {contract.lexoffice_invoice_id && (
+          <a
+            href={`/api/contracts/${contract.id}/invoice-pdf?type=rental`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn border border-hairline bg-paper text-ink-soft hover:bg-canvas hover:text-ink transition-colors"
+          >
+            <Download size={14} /> Rechnung (PDF)
+          </a>
+        )}
+
+        {contract.deposit_invoice_id && (
+          <a
+            href={`/api/contracts/${contract.id}/invoice-pdf?type=deposit`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn border border-hairline bg-paper text-ink-soft hover:bg-canvas hover:text-ink transition-colors"
+            title="Kaution — steuerneutrale Rechnung (0 % USt)"
+          >
+            <Download size={14} /> Kaution (PDF)
+          </a>
+        )}
+
+        {contract.is_activated &&
+          (contract.payment_status === "bezahlt" ? (
             <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 h-8 rounded-btn border border-[#166534]/30 bg-[#E6F4EA] text-[#166534] font-mono">
-              <Check size={12} />
-              In LexOffice
-              <span className="opacity-70">· {contract.lexoffice_invoice_id.slice(0, 8)}</span>
+              <Check size={12} /> Bezahlt
+              {contract.paid_at ? ` · ${fmtDate(contract.paid_at)}` : ""}
             </span>
           ) : (
             <button
-              onClick={syncLexoffice}
+              onClick={() =>
+                patch("paid", {
+                  payment_status: "bezahlt",
+                  paid_at: new Date().toISOString(),
+                })
+              }
               disabled={busy != null}
               className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn border border-hairline bg-paper text-ink-soft hover:bg-canvas hover:text-ink transition-colors disabled:opacity-50"
             >
-              {busy === "lexoffice" ? (
+              {busy === "paid" ? (
                 <Loader2 size={14} className="animate-spin" />
               ) : (
-                <Calculator size={14} />
+                <Euro size={14} />
               )}
-              An LexOffice übertragen
+              Als bezahlt markieren
             </button>
           ))}
 

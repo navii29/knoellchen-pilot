@@ -138,6 +138,26 @@ export const lxCreateInvoice = (apiKey: string, invoice: LxInvoice) =>
 export const lxGetInvoice = (apiKey: string, id: string) =>
   request<LxInvoiceResponse>(apiKey, `/invoices/${id}`, { method: "GET" });
 
+// Rechnung als PDF: erst rendern lassen (liefert documentFileId), dann Datei laden.
+export const lxRenderInvoiceDocument = (apiKey: string, id: string) =>
+  request<{ documentFileId: string }>(apiKey, `/invoices/${id}/document`, {
+    method: "GET",
+  });
+
+export const lxDownloadFile = async (
+  apiKey: string,
+  fileId: string
+): Promise<ArrayBuffer> => {
+  const res = await fetch(`${BASE_URL}/files/${fileId}`, {
+    headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/pdf" },
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new LexOfficeError(res.status, `LexOffice ${res.status}`, text);
+  }
+  return res.arrayBuffer();
+};
+
 // =========================================================
 // Articles (Fahrzeuge als Artikel/Produkt)
 // =========================================================
@@ -391,17 +411,8 @@ export const buildContractInvoice = (
     });
   }
 
-  const deposit = Number(contract.deposit ?? 0);
-  if (deposit > 0) {
-    lineItems.push({
-      type: "custom",
-      name: "Kaution Rückerstattung",
-      description: "Erstattung der bei Vertragsabschluss hinterlegten Kaution.",
-      quantity: 1,
-      unitName: "Pauschal",
-      unitPrice: { currency: "EUR", netAmount: -round2(deposit), taxRatePercentage: 19 },
-    });
-  }
+  // Kaution wird NICHT in die Miet-Rechnung gemischt — sie ist steuerneutral
+  // und wird als eigene Rechnung erfasst (buildDepositInvoice).
 
   return {
     voucherDate: isoWithTimezone(new Date()),
@@ -416,6 +427,40 @@ export const buildContractInvoice = (
     },
     introduction: `Vielen Dank für Ihren Mietvertrag ${contract.contract_nr}.`,
     remark: "Zahlbar innerhalb von 14 Tagen ohne Abzug.",
+  };
+};
+
+// =========================================================
+// Builder: Kautions-Rechnung (steuerneutral, separat)
+// =========================================================
+// Kaution ist kein Umsatz → 0 % USt / vatfree. Wird IMMER separat von der
+// Miet-Rechnung gestellt (§ 3a UStG, durchlaufender Posten).
+export const buildDepositInvoice = (
+  contract: ContractLike,
+  customer: CustomerLike | null
+): LxInvoice => {
+  const deposit = round2(Number(contract.deposit ?? 0));
+  return {
+    voucherDate: isoWithTimezone(new Date()),
+    address: buildAddressFromCustomer(customer, contract.renter_name, contract.renter_address),
+    lineItems: [
+      {
+        type: "custom",
+        name: "Mietkaution (Sicherheitsleistung)",
+        description: `Sicherheitsleistung zum Mietvertrag ${contract.contract_nr}. Steuerneutral – keine Umsatzsteuer.`,
+        quantity: 1,
+        unitName: "Pauschal",
+        unitPrice: { currency: "EUR", netAmount: deposit, taxRatePercentage: 0 },
+      },
+    ],
+    totalPrice: { currency: "EUR" },
+    taxConditions: { taxType: "vatfree" },
+    shippingConditions: {
+      shippingType: "service",
+      shippingDate: isoWithTimezone(new Date(contract.pickup_date)),
+    },
+    introduction: `Kaution zum Mietvertrag ${contract.contract_nr}.`,
+    remark: "Kaution / Sicherheitsleistung – steuerneutral, keine Umsatzsteuer.",
   };
 };
 

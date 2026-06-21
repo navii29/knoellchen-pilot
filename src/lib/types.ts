@@ -207,6 +207,12 @@ export interface Contract {
   km_excess: number | null;
   status: ContractStatus;
   lexoffice_invoice_id: string | null;
+  // Aktivierung & Zahlung (Migration 046 / 039)
+  is_activated: boolean;
+  activated_at: string | null;
+  deposit_invoice_id: string | null; // separate, steuerneutrale Kautions-Rechnung
+  payment_status: "offen" | "bezahlt" | null;
+  paid_at: string | null;
   partner_id: string | null;
   partner_purchase_price: number | null;
   partner_selling_price: number | null;

@@ -46,6 +46,8 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
     "km_return",
     "km_limit",
     "status",
+    "payment_status",
+    "paid_at",
     "notes",
     "contract_pdf_path",
     "payment_method",
