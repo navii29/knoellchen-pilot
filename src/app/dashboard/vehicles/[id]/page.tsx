@@ -217,7 +217,7 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
               <Row label="Hersteller" value={v.manufacturer || "—"} />
               <Row label="Modell" value={v.model || "—"} />
               <Row label="Karosserie" value={v.body_type || "—"} />
-              <Row label="Kategorie" value={v.category || "—"} />
+              <Row label="Geschäftslinie" value={v.category || "—"} />
               <Row label="Farbe" value={v.color || "—"} />
               <Row label="FIN" value={v.fin_number ? <span className="font-mono">{v.fin_number}</span> : "—"} />
             </InfoCard>

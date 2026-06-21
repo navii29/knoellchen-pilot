@@ -632,10 +632,10 @@ export const VehicleForm = ({
               className="field"
             />
           </Field>
-          <Field label="Kategorie">
+          <Field label="Geschäftslinie">
             <select value={data.category} onChange={set("category")} className="field">
               <option value="">—</option>
-              {CATEGORIES.map((c) => (
+              {withValue(CATEGORIES, data.category).map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>

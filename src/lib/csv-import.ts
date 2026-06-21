@@ -66,7 +66,7 @@ export const VEHICLE_FIELDS: FieldDef[] = [
   { key: "luggage", label: "Gepäckstücke" },
   { key: "body_type", label: "Karosserie" },
   { key: "fin_number", label: "FIN" },
-  { key: "category", label: "Kategorie" },
+  { key: "category", label: "Geschäftslinie" },
   { key: "power_ps", label: "Leistung (PS)" },
   { key: "daily_rate", label: "Tagespreis (€)" },
   { key: "base_daily_rate", label: "Basispreis (€)" },

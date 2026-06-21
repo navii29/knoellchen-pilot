@@ -52,16 +52,14 @@ export const BODY_TYPES: ReadonlyArray<string> = [
   "Pickup",
 ];
 
+// Geschäftslinie (früher Fahrzeuggröße): worüber das Fahrzeug vermietet wird.
+// Wird auch beim Shopify-Sync automatisch gesetzt (deriveBusinessLine).
 export const CATEGORIES: ReadonlyArray<string> = [
-  "Mini",
-  "Economy",
-  "Compact",
-  "Mid-Size",
-  "Full-Size",
-  "Premium",
-  "Luxury",
-  "SUV",
-  "Van",
+  "Tagesmiete",
+  "Sportwagen",
+  "Auto-Abo",
+  "Langzeitmiete",
+  "Fuhrpark",
 ];
 
 export const VEHICLE_STATUSES: ReadonlyArray<VehicleStatus> = [
