@@ -55,8 +55,32 @@ export type ShopifyProduct = {
   title?: string | null;
   vendor?: string | null;
   status?: string | null; // active | draft | archived
+  product_type?: string | null;
+  tags?: string | string[] | null;
   variants?: { sku?: string | null; price?: string | null }[] | null;
   images?: { src?: string | null }[] | null;
+};
+
+/**
+ * Geschäftslinie (vehicles.category) aus Shopify-Produkt ableiten:
+ * product_type + tags + Titel auf Stichwörter prüfen. Abo-Modelle ohne
+ * Kennzeichen sind im Abo-Shop standardmäßig "Auto-Abo".
+ */
+export const deriveBusinessLine = (
+  product: ShopifyProduct,
+  isPlaceholder: boolean
+): string | null => {
+  const tags = Array.isArray(product.tags)
+    ? product.tags.join(" ")
+    : product.tags ?? "";
+  const hay = `${product.product_type ?? ""} ${tags} ${product.title ?? ""}`.toLowerCase();
+  if (/sportwagen|sportscar|supercar|sportler/.test(hay)) return "Sportwagen";
+  if (/tagesmiete|tagesvermiet|daily|kurzzeit/.test(hay)) return "Tagesmiete";
+  if (/langzeit|long.?term/.test(hay)) return "Langzeitmiete";
+  if (/auto.?abo|\babo\b|subscription/.test(hay)) return "Auto-Abo";
+  if (/fuhrpark|flotte|corporate|firmen/.test(hay)) return "Fuhrpark";
+  // Abo-Modell ohne Kennzeichen im Abo-Shop → Auto-Abo als Default.
+  return isPlaceholder ? "Auto-Abo" : null;
 };
 
 // ── Kennzeichen-Heuristiken ─────────────────────────────────────
@@ -400,6 +424,7 @@ export const processProduct = async (
       ? Number(variant.price)
       : null;
   const status = product.status === "active" ? "aktiv" : "inaktiv";
+  const businessLine = deriveBusinessLine(product, isPlaceholder);
 
   const images = (product.images ?? []).filter((im) => im.src);
   const importable = images.filter((im) => {
@@ -417,6 +442,7 @@ export const processProduct = async (
     model,
     daily_rate: dailyRate,
     status,
+    category: businessLine,
     placeholder: isPlaceholder,
     images_total: images.length,
     images_importable: importable,
@@ -467,6 +493,7 @@ export const processProduct = async (
         model,
         daily_rate: dailyRate,
         status,
+        category: businessLine,
         shopify_product_id: String(product.id),
       })
       .select("id")
