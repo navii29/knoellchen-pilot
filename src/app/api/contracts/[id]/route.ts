@@ -63,6 +63,22 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
   ];
   const update: Record<string, unknown> = {};
   for (const k of allowed) if (k in body) update[k] = body[k];
+
+  // Zahlungsstatus streng validieren; paid_at IMMER server-seitig ableiten
+  // (kein Vertrauen auf Client-Zeitstempel in einem Abrechnungs-Datensatz).
+  if ("payment_status" in body) {
+    const ps = body.payment_status;
+    if (ps === "bezahlt") {
+      update.payment_status = "bezahlt";
+      update.paid_at = new Date().toISOString();
+    } else if (ps === "offen" || ps === null) {
+      update.payment_status = ps;
+      update.paid_at = null;
+    } else {
+      return NextResponse.json({ error: "Ungültiger Zahlungsstatus" }, { status: 400 });
+    }
+  }
+
   if (Object.keys(update).length === 0)
     return NextResponse.json({ error: "Nichts zu aktualisieren" }, { status: 400 });
 
