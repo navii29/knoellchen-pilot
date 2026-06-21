@@ -116,6 +116,9 @@ export const ContractActions = ({
     setBusy(null);
     if (!res.ok) {
       setError(j.error || "Aktivierung fehlgeschlagen");
+      // Auch bei Teilfehler aktualisieren: eine bereits erstellte Miet-Rechnung
+      // soll sichtbar werden, damit niemand versehentlich neu auslöst.
+      router.refresh();
       return;
     }
     router.refresh();
@@ -267,6 +270,25 @@ export const ContractActions = ({
             <Check size={12} /> Aktiviert
           </span>
         )}
+
+        {/* Kaution wurde nach Aktivierung gesetzt → fehlende Kautions-Rechnung nachholen */}
+        {contract.is_activated &&
+          lexofficeEnabled &&
+          Number(contract.deposit ?? 0) > 0 &&
+          !contract.deposit_invoice_id && (
+            <button
+              onClick={activate}
+              disabled={busy != null}
+              className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn border border-hairline bg-paper text-ink-soft hover:bg-canvas hover:text-ink transition-colors disabled:opacity-50"
+            >
+              {busy === "activate" ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Euro size={14} />
+              )}
+              Kaution-Rechnung erstellen
+            </button>
+          )}
 
         {contract.lexoffice_invoice_id && (
           <a

@@ -45,8 +45,9 @@ export const POST = async (_req: Request, { params }: Ctx) => {
     .eq("org_id", auth.org_id)
     .maybeSingle();
   if (!contract) return NextResponse.json({ error: "Vertrag nicht gefunden" }, { status: 404 });
-  if (contract.is_activated)
-    return NextResponse.json({ error: "Vertrag ist bereits aktiviert." }, { status: 409 });
+  // Idempotent & lückenfüllend: ein erneuter Aufruf erstellt nur noch fehlende
+  // Belege (z. B. eine nachträglich gesetzte Kaution) — die per-Beleg-Guards
+  // unten verhindern Doppel-Rechnungen.
   if (contract.status === "storniert")
     return NextResponse.json(
       { error: "Stornierte Verträge können nicht aktiviert werden." },
