@@ -1,8 +1,32 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { parseVehicleRegistration } from "@/lib/anthropic";
+import { normalizePlate } from "@/lib/plate";
+import { buildVehicleType } from "@/lib/vehicle";
 
 export const maxDuration = 60;
+
+// Spalten, die der Schein befüllt — für die Gegenprüfung "schon vorhanden?".
+const PARSE_COLUMNS = [
+  "manufacturer",
+  "model",
+  "fin_number",
+  "first_registration",
+  "color",
+  "fuel_type",
+  "power_ps",
+  "seats",
+  "body_type",
+  "hsn",
+  "tsn",
+  "displacement_ccm",
+  "co2_combined",
+  "emission_class",
+  "weight_empty",
+  "weight_max",
+  "zb2_number",
+  "next_hu",
+] as const;
 
 // Claude-Vision unterstützt diese Medientypen direkt.
 const MEDIA: Record<string, "application/pdf" | "image/jpeg" | "image/png" | "image/webp"> = {
@@ -101,10 +125,46 @@ export const POST = async (req: Request) => {
     next_hu: str(d.next_hu),
   };
 
+  // ── Gegenprüfung: existiert das Kennzeichen schon? ──
+  // Use-Case: Fahrzeug wurde z. B. per CSV angelegt, jetzt kommt der Schein dazu.
+  // Dann nicht doppelt anlegen/überschreiben, sondern nur fehlende Felder ergänzen.
+  let existing: {
+    id: string;
+    label: string;
+    plate: string;
+    current: Record<string, string | number | null>;
+  } | null = null;
+
+  const plate = normalizePlate(fields.plate);
+  if (plate) {
+    const admin = createAdminClient();
+    const { data: hit } = await admin
+      .from("vehicles")
+      .select("*")
+      .eq("org_id", profile.org_id)
+      .eq("plate", plate)
+      .maybeSingle();
+    if (hit) {
+      const row = hit as unknown as Record<string, string | number | null>;
+      const current: Record<string, string | number | null> = {};
+      for (const c of PARSE_COLUMNS) current[c] = row[c] ?? null;
+      existing = {
+        id: String(row.id),
+        plate: String(row.plate),
+        label:
+          (row.vehicle_type as string) ||
+          buildVehicleType(row.manufacturer as string, row.model as string) ||
+          String(row.plate),
+        current,
+      };
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     fields,
     registration_data: d, // vollständiger Auslese-Datensatz für die Speicherung
     confidence: typeof d.confidence === "number" ? d.confidence : null,
+    existing, // null = neues Fahrzeug; sonst Treffer zum Ergänzen
   });
 };
