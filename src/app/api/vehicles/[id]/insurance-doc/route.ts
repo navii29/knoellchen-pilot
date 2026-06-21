@@ -76,7 +76,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
   const ext = ALLOWED[file.type];
   if (!ext) {
     return NextResponse.json(
-      { error: "Ungültiger Dateityp (erlaubt: PDF, JPG, PNG, WebP, HEIC)" },
+      { error: "Ungültiger Dateityp (erlaubt: PDF, JPG, PNG, WebP, HEIC, HEIF)" },
       { status: 400 }
     );
   }

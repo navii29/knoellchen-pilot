@@ -63,6 +63,22 @@ describe("buildContractInvoice — Miet-Rechnung", () => {
     expect(km!.quantity).toBe(120);
   });
 
+  it("rechnet den BRUTTO-Tagespreis in NETTO um (÷ 1,19) — Steuerbug-Regression", () => {
+    // 119 € brutto = 100 € netto + 19 € USt
+    const inv = buildContractInvoice(mkContract({ daily_rate: 119 }), null, baseVehicle);
+    expect(inv.lineItems[0].unitPrice.netAmount).toBe(100);
+  });
+
+  it("rechnet den BRUTTO-Mehrkilometerpreis in NETTO um (÷ 1,19)", () => {
+    const inv = buildContractInvoice(
+      mkContract({ km_excess: 50 }),
+      null,
+      { ...baseVehicle, extra_km_price: 1.19 } // 1,19 brutto = 1,00 netto
+    );
+    const km = inv.lineItems.find((li) => /mehrkilometer/i.test(li.name ?? ""));
+    expect(km!.unitPrice.netAmount).toBe(1);
+  });
+
   it("nutzt actual_return_date statt return_date, wenn vorhanden", () => {
     const inv = buildContractInvoice(
       mkContract({ actual_return_date: "2026-06-11" }),

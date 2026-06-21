@@ -371,7 +371,9 @@ export const buildContractInvoice = (
   const rentalDescription = `Mietzeitraum ${formatDe(contract.pickup_date)} – ${formatDe(endDate)}`;
   const rentalUnitPrice: LxMoney = {
     currency: "EUR",
-    netAmount: round2(dailyRate),
+    // daily_rate ist BRUTTO (inkl. 19%); LexOffice erwartet bei taxType "net"
+    // den Nettopreis → durch 1,19 teilen (wie buildVehicleArticle).
+    netAmount: round2(dailyRate / 1.19),
     taxRatePercentage: 19,
   };
 
@@ -407,7 +409,8 @@ export const buildContractInvoice = (
         .replace(".", ",")} €/km`,
       quantity: kmExcess,
       unitName: "km",
-      unitPrice: { currency: "EUR", netAmount: round2(extraKmPrice), taxRatePercentage: 19 },
+      // extra_km_price ist ebenfalls BRUTTO → Nettopreis für LexOffice.
+      unitPrice: { currency: "EUR", netAmount: round2(extraKmPrice / 1.19), taxRatePercentage: 19 },
     });
   }
 
