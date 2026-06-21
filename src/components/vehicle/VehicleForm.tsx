@@ -89,6 +89,7 @@ export type VehicleFormState = {
   accessories: string;
   status: VehicleStatus;
   decommission_date: string;
+  disable_auto_decommission: boolean;
 
   // GPS-Tracking
   echoes_device_id: string;
@@ -136,6 +137,7 @@ const empty: VehicleFormState = {
   accessories: "",
   status: "aktiv",
   decommission_date: "",
+  disable_auto_decommission: false,
   echoes_device_id: "",
 };
 
@@ -193,6 +195,7 @@ const fromVehicle = (v: Vehicle): VehicleFormState => ({
   accessories: v.accessories || "",
   status: v.status || "aktiv",
   decommission_date: v.decommission_date || "",
+  disable_auto_decommission: v.disable_auto_decommission ?? false,
   echoes_device_id: v.echoes_device_id || "",
 });
 
@@ -753,11 +756,42 @@ export const VehicleForm = ({
               className="field font-mono tabular-nums"
             />
           </Field>
-          <Field label="Aussteuerung (auto)">
-            <div className="field bg-canvas text-ink-muted font-mono tabular-nums">
-              {decommissionPreview ? fmtDate(decommissionPreview) + " (+ 180 Tage)" : "—"}
+          <Field label="Aussteuerungsdatum">
+            <input
+              type="date"
+              value={data.decommission_date}
+              onChange={set("decommission_date")}
+              className="field font-mono tabular-nums"
+            />
+            <div className="text-[11px] text-ink-muted mt-1">
+              {data.disable_auto_decommission
+                ? "Auto-Aussteuerung aus — frei wählbar."
+                : data.decommission_date
+                ? "Manuell gesetzt (hat Vorrang vor +180 Tagen)."
+                : decommissionPreview
+                ? `Leer = automatisch ${fmtDate(decommissionPreview)} (Erstzulassung + 180 Tage).`
+                : "Wird aus Erstzulassung + 180 Tagen berechnet."}
             </div>
           </Field>
+          <div className="sm:col-span-2">
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={data.disable_auto_decommission}
+                onChange={(e) =>
+                  setData((d) => ({ ...d, disable_auto_decommission: e.target.checked }))
+                }
+                className="mt-0.5 h-4 w-4 rounded border-hairline text-signal focus:ring-signal"
+              />
+              <span className="text-[13px] text-ink">
+                Keine automatische 180-Tage-Aussteuerung
+                <span className="block text-[11px] text-ink-muted">
+                  Für gekaufte Fahrzeuge / Langläufer / Auto-Abos — dann gilt nur ein
+                  manuell gesetztes Aussteuerungsdatum.
+                </span>
+              </span>
+            </label>
+          </div>
           <Field label="Maximalkilometer gesamt">
             <input
               value={data.max_km_total}
@@ -995,18 +1029,11 @@ export const VehicleForm = ({
             </select>
           </Field>
           {data.status === "ausgesteuert" && (
-            <Field label="Ausgeflottet zum">
-              <input
-                type="date"
-                value={data.decommission_date}
-                onChange={set("decommission_date")}
-                className="field font-mono tabular-nums"
-              />
-              <div className="text-[11px] text-ink-muted mt-1">
-                Ab diesem Datum erscheint das Fahrzeug nicht mehr in aktiven Listen,
-                bleibt aber im Archiv einsehbar.
-              </div>
-            </Field>
+            <div className="sm:col-span-2 text-[11px] text-ink-muted -mt-2">
+              Aussteuerungsdatum oben im Abschnitt Verfügbarkeit & Kilometer setzen.
+              Ab diesem Datum erscheint das Fahrzeug nicht mehr in aktiven Listen,
+              bleibt aber im Archiv einsehbar.
+            </div>
           )}
           <Field label="GPS-Tracker ID (Echoes)">
             <input
