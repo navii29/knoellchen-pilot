@@ -95,24 +95,75 @@ export const VEHICLE_FIELDS: FieldDef[] = [
 // =========================================================
 // Wert-Normalisierung pro Feldtyp
 // =========================================================
+// Echtes Kalenderdatum? (verhindert, dass z. B. 31.02. als '2020-02-31' an die
+// DB geht und den ganzen Import-Batch mit einem Datums-Fehler kippt).
+const isRealIsoDate = (iso: string): boolean => {
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return false;
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return (
+    dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d
+  );
+};
+
 const normalizeDate = (v: string): string | null => {
   const t = v.trim();
   if (!t) return null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
-  // dd.mm.yyyy oder dd/mm/yyyy
-  const m = t.match(/^(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})/);
-  if (m) {
-    const [, d, mm, y] = m;
-    const yyyy = y.length === 2 ? `20${y}` : y;
-    return `${yyyy}-${mm.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  let iso: string | null = null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) {
+    iso = t;
+  } else {
+    // dd.mm.yyyy oder dd/mm/yyyy
+    const m = t.match(/^(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})/);
+    if (m) {
+      const [, d, mm, y] = m;
+      const yyyy = y.length === 2 ? `20${y}` : y;
+      iso = `${yyyy}-${mm.padStart(2, "0")}-${d.padStart(2, "0")}`;
+    }
   }
-  return null;
+  // Ungültiges Datum lieber verwerfen (null) als den Batch-Insert crashen lassen.
+  return iso && isRealIsoDate(iso) ? iso : null;
 };
 
+// Zahl robust parsen — erkennt Punkt- UND Komma-Dezimaltrenner. Das blinde
+// Entfernen ALLER Punkte (Annahme: Tausender) verfälschte Punkt-Dezimalwerte
+// ("0.35" -> 35) und zerstörte u. a. Mehr-km-Preis/EK-Kosten beim Export->Import.
 const normalizeNumber = (v: string): number | null => {
-  const t = v.trim().replace(/\./g, "").replace(",", ".").replace(/[^0-9.\-]/g, "");
-  const n = Number(t);
-  return Number.isFinite(n) ? n : null;
+  let t = v.trim().replace(/[^0-9.,-]/g, "");
+  if (!t) return null;
+  const neg = t.startsWith("-");
+  t = t.replace(/-/g, "");
+  const hasComma = t.includes(",");
+  const hasDot = t.includes(".");
+  let s: string;
+  if (hasComma && hasDot) {
+    // Der zuletzt stehende Trenner ist der Dezimaltrenner, der andere Tausender.
+    s =
+      t.lastIndexOf(",") > t.lastIndexOf(".")
+        ? t.replace(/\./g, "").replace(",", ".") // de: 1.234,56
+        : t.replace(/,/g, ""); // en: 1,234.56
+  } else if (hasComma) {
+    // Nur Komma -> Dezimaltrenner (deutsche Konvention); bei mehreren nur das letzte.
+    const parts = t.split(",");
+    s =
+      parts.length > 2
+        ? parts.slice(0, -1).join("") + "." + parts[parts.length - 1]
+        : t.replace(",", ".");
+  } else if (hasDot) {
+    const dots = t.split(".").length - 1;
+    if (dots > 1) {
+      s = t.replace(/\./g, ""); // 1.234.567 -> Tausender
+    } else {
+      const after = t.slice(t.indexOf(".") + 1);
+      // Genau 3 Nachkommastellen => Tausender (de "1.234"); sonst Dezimalpunkt.
+      s = after.length === 3 ? t.replace(".", "") : t;
+    }
+  } else {
+    s = t;
+  }
+  const n = Number(s);
+  if (!Number.isFinite(n)) return null;
+  return neg ? -n : n;
 };
 
 const normalizeInt = (v: string): number | null => {

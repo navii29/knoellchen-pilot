@@ -1,0 +1,61 @@
+import { describe, it, expect } from "vitest";
+import { normalizeValue } from "./csv-import";
+
+describe("normalizeValue — Zahlen (Dezimal/Tausender-Heuristik)", () => {
+  const n = (raw: string) => normalizeValue("daily_rate", raw);
+
+  it("Punkt-Dezimal bleibt erhalten (vorher 0.35 -> 35)", () => {
+    expect(n("0.35")).toBe(0.35);
+    expect(n("0.5")).toBe(0.5);
+    expect(n("49.9")).toBe(49.9);
+    expect(n("1234.5")).toBe(1234.5);
+  });
+
+  it("Komma-Dezimal (deutsch)", () => {
+    expect(n("0,5")).toBe(0.5);
+    expect(n("25,00")).toBe(25);
+    expect(n("1234,56")).toBe(1234.56);
+  });
+
+  it("gemischte Tausender + Dezimal", () => {
+    expect(n("1.234,56")).toBe(1234.56); // de
+    expect(n("1,234.56")).toBe(1234.56); // en
+    expect(n("1.234.567")).toBe(1234567);
+  });
+
+  it("Punkt als Tausender (3 Nachkommastellen, deutsch)", () => {
+    expect(n("1.234")).toBe(1234);
+    expect(n("2.000")).toBe(2000);
+  });
+
+  it("Währungssymbole/Leerzeichen werden ignoriert", () => {
+    expect(n("25,00 €")).toBe(25);
+    expect(n("€ 1.299,00")).toBe(1299);
+  });
+
+  it("negative Werte", () => {
+    expect(n("-25")).toBe(-25);
+    expect(n("-0,5")).toBe(-0.5);
+  });
+
+  it("leer -> null", () => {
+    expect(n("")).toBeNull();
+    expect(n("  ")).toBeNull();
+  });
+});
+
+describe("normalizeValue — Datum (Kalender-Validierung)", () => {
+  const d = (raw: string) => normalizeValue("first_registration", raw);
+
+  it("gültige Daten werden ins ISO-Format gebracht", () => {
+    expect(d("15.03.2023")).toBe("2023-03-15");
+    expect(d("2023-03-15")).toBe("2023-03-15");
+    expect(d("01/04/2024")).toBe("2024-04-01");
+  });
+
+  it("unmögliche Daten -> null statt Batch-Crash", () => {
+    expect(d("31.02.2020")).toBeNull();
+    expect(d("2020-02-31")).toBeNull();
+    expect(d("32.13.2020")).toBeNull();
+  });
+});
