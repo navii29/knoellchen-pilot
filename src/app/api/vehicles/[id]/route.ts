@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { VEHICLE_STATUSES } from "@/lib/vehicle";
 import { myRole } from "@/lib/team";
+import { redactVehicleCost } from "@/lib/redact";
 import { syncVehicleToLexoffice } from "@/lib/lexoffice-vehicle-sync";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
 
@@ -163,8 +164,9 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
     patch.status = body.status;
   }
 
-  // Mitarbeiter dürfen Kosten-/Margen-Felder nicht ändern.
-  if ((await myRole()) !== "owner") {
+  // Mitarbeiter dürfen Kosten-/Margen-Felder weder ändern noch zurückgelesen bekommen.
+  const isOwner = (await myRole()) === "owner";
+  if (!isOwner) {
     for (const k of OWNER_ONLY_VEHICLE_FIELDS) delete patch[k];
   }
 
@@ -203,5 +205,5 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
     }
   }
 
-  return NextResponse.json({ ok: true, vehicle });
+  return NextResponse.json({ ok: true, vehicle: redactVehicleCost(vehicle, isOwner) });
 };

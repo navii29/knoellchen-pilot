@@ -362,7 +362,16 @@ const findDriverForDate: Tool = {
     });
 
     if (!match) return { ok: true, data: { found: false, query: { plate, date } } };
-    return { ok: true, data: { found: true, contract: match } };
+    // Mitarbeiter sehen keine Partner-Verrechnung.
+    const contract = ctx.isOwner
+      ? match
+      : {
+          ...match,
+          partner_purchase_price: null,
+          partner_selling_price: null,
+          partner_commission: null,
+        };
+    return { ok: true, data: { found: true, contract } };
   },
 };
 

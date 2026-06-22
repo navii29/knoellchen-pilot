@@ -128,8 +128,9 @@ export const POST = async (req: Request) => {
     custom_special_terms: (body.custom_special_terms as string) || null,
   };
 
-  // Mitarbeiter dürfen keine Partner-Einkaufs-/Verkaufspreise/Provision setzen.
+  // Mitarbeiter dürfen keine Partner-Verrechnung setzen (Partner = owner-only).
   if ((await myRole()) !== "owner") {
+    insertRow.partner_id = null;
     insertRow.partner_purchase_price = null;
     insertRow.partner_selling_price = null;
     insertRow.partner_commission = null;

@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { computeReturnSummary } from "@/lib/km";
 import { normalizePlate } from "@/lib/plate";
+import { myRole } from "@/lib/team";
+import { redactContractPartner } from "@/lib/redact";
+import type { Contract } from "@/lib/types";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -189,7 +192,12 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
     .select("*")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, contract: data });
+  // Mitarbeiter bekommen keine Partner-Verrechnung in der Antwort.
+  const isOwner = (await myRole()) === "owner";
+  return NextResponse.json({
+    ok: true,
+    contract: redactContractPartner(data as Contract, isOwner),
+  });
 };
 
 export const DELETE = async (_req: Request, { params }: { params: { id: string } }) => {
