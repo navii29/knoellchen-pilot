@@ -121,6 +121,7 @@ export const POST = async (req: Request) => {
 
     accessories: trimOrNull(body.accessories),
     status,
+    incomplete: Boolean(body.incomplete),
     decommission_date: dateOrNull(body.decommission_date),
     disable_auto_decommission: Boolean(body.disable_auto_decommission),
 
