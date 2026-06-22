@@ -3,6 +3,7 @@ import { Topbar } from "@/components/dashboard/Topbar";
 import { SettingsClient } from "./SettingsClient";
 import { ShopifyImportCard } from "@/components/dashboard/ShopifyImportCard";
 import { TeamCard } from "@/components/dashboard/TeamCard";
+import { PasswordCard } from "@/components/dashboard/PasswordCard";
 import { DangerZone } from "@/components/dashboard/DangerZone";
 import type { Organization } from "@/lib/types";
 
@@ -79,6 +80,9 @@ export default async function SettingsPage() {
           />
           <div className="mt-6">
             <TeamCard />
+          </div>
+          <div className="mt-6">
+            <PasswordCard />
           </div>
           <div className="mt-6">
             <DangerZone orgName={(safe as { name?: string }).name ?? ""} />
