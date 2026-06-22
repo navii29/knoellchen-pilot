@@ -136,10 +136,18 @@ export const POST = async (req: Request) => {
       });
     }
 
+    // Dubletten innerhalb der CSV nach plate zusammenführen (letzte Zeile gewinnt).
+    // Sonst trifft ON CONFLICT DO UPDATE dieselbe Zielzeile zweimal im selben
+    // Statement -> Postgres "cannot affect row a second time" -> ganzer Batch
+    // schlägt fehl, obwohl die Per-Zeilen-Ergebnisse ok meldeten.
+    const dedupByPlate = new Map<string, Record<string, unknown>>();
+    for (const row of insertRows) dedupByPlate.set(String(row.plate), row);
+    const uniqueRows = [...dedupByPlate.values()];
+
     // Upsert per (org_id, plate) — Duplikate werden überschrieben
     const { error, data } = await admin
       .from("vehicles")
-      .upsert(insertRows, { onConflict: "org_id,plate" })
+      .upsert(uniqueRows, { onConflict: "org_id,plate" })
       .select("id");
 
     if (error) {

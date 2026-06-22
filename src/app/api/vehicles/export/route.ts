@@ -3,8 +3,15 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import type { Vehicle } from "@/lib/types";
 
 // CSV-Wert escapen (deutsches Excel: Semikolon-Trenner, UTF-8 mit BOM).
+// Zusätzlich CSV-Formel-Injektion entwerten: nutzerbefüllbare Felder (color,
+// notes, accessories …) könnten mit =,+,-,@ beginnen und beim Öffnen in Excel
+// eine Formel/DDE ausführen. Solche Zellen mit führendem Apostroph neutralisieren
+// (echte Zahlen, auch negative, bleiben unangetastet).
 const esc = (v: unknown): string => {
-  const s = v == null ? "" : String(v);
+  let s = v == null ? "" : String(v);
+  const formulaRisk =
+    /^[=@\t\r]/.test(s) || (/^[+-]/.test(s) && !/^[+-]?[\d.,]+$/.test(s));
+  if (formulaRisk) s = `'${s}`;
   return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
