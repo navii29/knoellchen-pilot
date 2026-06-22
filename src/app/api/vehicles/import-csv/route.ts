@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import {
   VEHICLE_FIELDS,
+  VEHICLE_COST_KEYS,
   applyMapping,
   parseCsvText,
   type ColumnMapping,
@@ -9,6 +10,7 @@ import {
 import { mapCsvColumns } from "@/lib/anthropic";
 import { decodeCsvFile } from "@/lib/encoding";
 import { normalizePlate } from "@/lib/plate";
+import { myRole } from "@/lib/team";
 
 export const maxDuration = 60;
 
@@ -26,11 +28,17 @@ const requireAuth = async () => {
   return profile ? { user, org_id: profile.org_id } : null;
 };
 
-const ALLOWED_KEYS = new Set(VEHICLE_FIELDS.map((f) => f.key));
-
 export const POST = async (req: Request) => {
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
+  // Mitarbeiter dürfen keine EK-/Kostenfelder importieren — Zielfelder & erlaubte
+  // Schlüssel je nach Rolle einschränken (sonst Lücke in der Margen-Sperre).
+  const isOwner = (await myRole()) === "owner";
+  const targetFields = isOwner
+    ? VEHICLE_FIELDS
+    : VEHICLE_FIELDS.filter((f) => !VEHICLE_COST_KEYS.has(f.key));
+  const ALLOWED_KEYS = new Set(targetFields.map((f) => f.key));
 
   const url = new URL(req.url);
   const action = url.searchParams.get("action") ?? "analyze";
@@ -56,7 +64,7 @@ export const POST = async (req: Request) => {
       aiMapping = await mapCsvColumns({
         headers: parsed.headers,
         sampleRows: parsed.rows.slice(0, 5),
-        targetFields: VEHICLE_FIELDS,
+        targetFields,
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -73,7 +81,7 @@ export const POST = async (req: Request) => {
       total_rows: parsed.rowCount,
       mapping: aiMapping.mapping,
       reasoning: aiMapping.reasoning,
-      target_fields: VEHICLE_FIELDS,
+      target_fields: targetFields,
     });
   }
 
