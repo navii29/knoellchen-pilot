@@ -306,7 +306,9 @@ export const parseVehicleRegistrationsBatch = async (
   const isPdf = mediaType === "application/pdf";
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 4000,
+    // Höher, damit ein Sammel-PDF mit vielen Scheinen nicht abgeschnitten wird
+    // (abgeschnittenes JSON würde sonst den ganzen Stapel unlesbar machen).
+    max_tokens: 8000,
     system: REGISTRATION_BATCH_PROMPT,
     messages: [
       {
@@ -332,7 +334,14 @@ export const parseVehicleRegistrationsBatch = async (
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
   const parsed = JSON.parse(jsonMatch[0]) as { vehicles?: ParsedVehicleRegistration[] };
-  const data = Array.isArray(parsed.vehicles) ? parsed.vehicles : [];
+  // Elemente filtern: liefert die KI ein null/Nicht-Objekt im Array (z. B.
+  // unleserlicher zweiter Schein), würde der nachgelagerte Feld-Zugriff (d.power_kw)
+  // sonst den gesamten Request mit einem TypeError abbrechen.
+  const data = Array.isArray(parsed.vehicles)
+    ? parsed.vehicles.filter(
+        (v): v is ParsedVehicleRegistration => !!v && typeof v === "object"
+      )
+    : [];
   return { data, raw: response };
 };
 
