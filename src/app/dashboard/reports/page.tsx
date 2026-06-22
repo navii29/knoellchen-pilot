@@ -3,8 +3,12 @@ import { BarChart3, ChevronRight, Wallet } from "lucide-react";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Panel } from "@/components/ui/Panel";
+import { requireOwnerPage } from "@/lib/team";
 
-export default function ReportsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function ReportsPage() {
+  await requireOwnerPage(); // Auswertung/Margen nur für Inhaber
   return (
     <>
       <Topbar section="Auswertung" />

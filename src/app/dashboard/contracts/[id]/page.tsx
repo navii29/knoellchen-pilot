@@ -57,6 +57,14 @@ export default async function ContractDetailPage({ params }: { params: { id: str
   } = await supabase.auth.getUser();
   if (!user) notFound();
 
+  // Mitarbeiter sehen keine Margen.
+  const { data: meRow } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  const isOwner = (meRow?.role ?? "member") === "owner";
+
   const [{ data: contract }, { data: orgRow }] = await Promise.all([
     supabase.from("contracts").select("*").eq("id", params.id).maybeSingle(),
     supabase.from("organizations").select("lexoffice_enabled").single(),
@@ -268,7 +276,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
               <Row label="Tagespreis" value={fmtEur(c.daily_rate)} mono />
               <Row label="Gesamtbetrag" value={fmtEur(c.total_amount)} mono />
               <Row label="Kaution" value={fmtEur(c.deposit)} mono />
-              {marginInfo && (
+              {isOwner && marginInfo && (
                 <>
                   <div className="mt-2 pt-2 border-t border-hairline" />
                   <Row label="Realisierter VK" value={fmtEur(marginInfo.istVk)} mono />

@@ -22,17 +22,23 @@ import { Logo } from "@/components/ui/Logo";
 
 type BadgeKey = "tickets" | "contracts" | "customers" | "damage";
 
-const ITEMS: Array<{ href: string; label: string; Icon: typeof Car; badgeKey?: BadgeKey }> = [
+const ITEMS: Array<{
+  href: string;
+  label: string;
+  Icon: typeof Car;
+  badgeKey?: BadgeKey;
+  ownerOnly?: boolean;
+}> = [
   { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
   { href: "/dashboard/assistant", label: "Assistent", Icon: WandSparkles },
   { href: "/dashboard/contracts", label: "Verträge", Icon: FileSignature, badgeKey: "contracts" },
   { href: "/dashboard/customers", label: "Kunden", Icon: Users, badgeKey: "customers" },
-  { href: "/dashboard/partners", label: "Partner", Icon: Handshake },
+  { href: "/dashboard/partners", label: "Partner", Icon: Handshake, ownerOnly: true },
   { href: "/dashboard/tickets", label: "Strafzettel", Icon: FileText, badgeKey: "tickets" },
   { href: "/dashboard/damage-reports", label: "Schäden", Icon: AlertOctagon, badgeKey: "damage" },
   { href: "/dashboard/vehicles", label: "Fahrzeuge", Icon: Car },
   { href: "/dashboard/calendar", label: "Kalender", Icon: Calendar },
-  { href: "/dashboard/reports", label: "Auswertung", Icon: BarChart3 },
+  { href: "/dashboard/reports", label: "Auswertung", Icon: BarChart3, ownerOnly: true },
   { href: "/dashboard/settings", label: "Einstellungen", Icon: Settings },
 ];
 
@@ -40,17 +46,20 @@ export const SIDEBAR_OPEN_EVENT = "dashboard:open-sidebar";
 
 export const Sidebar = ({
   orgName,
+  userRole = "member",
   ticketCount,
   contractCount,
   customerCount,
   damageCount,
 }: {
   orgName: string;
+  userRole?: string;
   ticketCount: number;
   contractCount: number;
   customerCount: number;
   damageCount: number;
 }) => {
+  const isOwner = userRole === "owner";
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -93,6 +102,7 @@ export const Sidebar = ({
         Arbeitsbereich
       </div>
       {ITEMS.map((it) => {
+        if (it.ownerOnly && !isOwner) return null;
         const isActive =
           it.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(it.href);
         const badge =

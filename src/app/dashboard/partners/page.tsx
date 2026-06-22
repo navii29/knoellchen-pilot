@@ -1,11 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { PartnersList } from "./PartnersList";
+import { requireOwnerPage } from "@/lib/team";
 import type { SalesPartner } from "@/lib/partners";
 
 export const dynamic = "force-dynamic";
 
 export default async function PartnersPage() {
+  await requireOwnerPage(); // Partner-Bereich (EK/VK/Provision) nur für Inhaber
   const supabase = createClient();
   const { data } = await supabase
     .from("sales_partners")

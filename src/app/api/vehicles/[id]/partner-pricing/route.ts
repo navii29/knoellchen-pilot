@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { myRole, ownerOnly } from "@/lib/team";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -26,6 +27,8 @@ const numOrNull = (v: unknown): number | null => {
 export const GET = async (_req: Request, { params }: Ctx) => {
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  // Mitarbeiter sehen keine Partner-Einkaufs-/Verkaufspreise.
+  if ((await myRole()) !== "owner") return NextResponse.json({ ok: true, pricing: [] });
 
   const admin = createAdminClient();
   const { data, error } = await admin
@@ -38,6 +41,8 @@ export const GET = async (_req: Request, { params }: Ctx) => {
 };
 
 export const POST = async (req: Request, { params }: Ctx) => {
+  const gate = await ownerOnly(); // Partner-Preise setzen nur Inhaber
+  if (!gate.ok) return gate.res;
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 

@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { VEHICLE_STATUSES } from "@/lib/vehicle";
+import { myRole } from "@/lib/team";
 import { syncVehicleToLexoffice } from "@/lib/lexoffice-vehicle-sync";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
+
+// Kosten-/Margen-Felder — nur Inhaber dürfen sie setzen/ändern.
+const OWNER_ONLY_VEHICLE_FIELDS = ["cost_daily", "cost_monthly", "target_daily_rate"];
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -157,6 +161,11 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
   }
   if ("status" in body && VEHICLE_STATUSES.includes(body.status as VehicleStatus)) {
     patch.status = body.status;
+  }
+
+  // Mitarbeiter dürfen Kosten-/Margen-Felder nicht ändern.
+  if ((await myRole()) !== "owner") {
+    for (const k of OWNER_ONLY_VEHICLE_FIELDS) delete patch[k];
   }
 
   if (Object.keys(patch).length === 0) {

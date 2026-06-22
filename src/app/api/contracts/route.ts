@@ -3,6 +3,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { nextContractNr } from "@/lib/contract-utils";
 import { computeExtraKm } from "@/lib/km";
 import { normalizePlate } from "@/lib/plate";
+import { myRole } from "@/lib/team";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -126,6 +127,13 @@ export const POST = async (req: Request) => {
       : [],
     custom_special_terms: (body.custom_special_terms as string) || null,
   };
+
+  // Mitarbeiter dürfen keine Partner-Einkaufs-/Verkaufspreise/Provision setzen.
+  if ((await myRole()) !== "owner") {
+    insertRow.partner_purchase_price = null;
+    insertRow.partner_selling_price = null;
+    insertRow.partner_commission = null;
+  }
 
   const { data, error } = await admin
     .from("contracts")

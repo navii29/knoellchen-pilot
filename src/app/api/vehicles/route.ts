@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { normalizePlate } from "@/lib/plate";
 import { VEHICLE_STATUSES, buildVehicleType } from "@/lib/vehicle";
+import { myRole } from "@/lib/team";
 import { syncVehicleToLexoffice } from "@/lib/lexoffice-vehicle-sync";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
 
@@ -128,6 +129,13 @@ export const POST = async (req: Request) => {
 
     vehicle_type: computedType ?? explicitType,
   };
+
+  // Mitarbeiter dürfen keine Kosten-/Margen-Felder setzen.
+  if ((await myRole()) !== "owner") {
+    row.cost_daily = null;
+    row.cost_monthly = null;
+    row.target_daily_rate = null;
+  }
 
   const admin = createAdminClient();
   const { data, error } = await admin

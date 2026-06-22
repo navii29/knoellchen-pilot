@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { ownerOnly } from "@/lib/team";
 import { computeFleetMargin, lastNDaysIso } from "@/lib/margin";
 import { generateMarginPdf } from "@/lib/margin-pdf";
 import type { Contract, Organization, Vehicle } from "@/lib/types";
@@ -21,6 +22,8 @@ const requireAuth = async () => {
 };
 
 export const GET = async (req: Request) => {
+  const gate = await ownerOnly(); // Margen-PDF nur für Inhaber
+  if (!gate.ok) return gate.res;
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 

@@ -27,6 +27,7 @@ import {
 } from "@/lib/partners";
 import type { Contract } from "@/lib/types";
 import { PartnerActions } from "./PartnerActions";
+import { requireOwnerPage } from "@/lib/team";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,7 @@ export default async function PartnerDetailPage({
 }: {
   params: { id: string };
 }) {
+  await requireOwnerPage(); // Partner-EK/VK/Provision nur für Inhaber
   const supabase = createClient();
   const { data: partner } = await supabase
     .from("sales_partners")

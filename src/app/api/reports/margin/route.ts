@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { ownerOnly } from "@/lib/team";
 import {
   computeFleetMargin,
   lastNDaysIso,
@@ -22,6 +23,8 @@ const requireAuth = async () => {
 };
 
 export const GET = async (req: Request) => {
+  const gate = await ownerOnly(); // Margen sind nur für Inhaber
+  if (!gate.ok) return gate.res;
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 

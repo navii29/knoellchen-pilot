@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { normalizePlate } from "@/lib/plate";
+import { myRole } from "@/lib/team";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -21,6 +22,10 @@ const requireAuth = async () => {
 export const GET = async (req: Request) => {
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
+  // Mitarbeiter sehen keine Partner-Einkaufs-/Verkaufspreise.
+  if ((await myRole()) !== "owner")
+    return NextResponse.json({ ok: true, vehicle_known: false, pricing: null });
 
   const url = new URL(req.url);
   const plateRaw = url.searchParams.get("plate");
