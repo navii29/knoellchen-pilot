@@ -184,8 +184,7 @@ export const parseCustomerDocument = async (
   return { data, raw: response };
 };
 
-const REGISTRATION_PROMPT = `Du bist Experte für deutsche Zulassungsbescheinigungen Teil I (Fahrzeugschein).
-Lies das übermittelte Dokument (Foto oder PDF) und extrahiere ALLE Fahrzeugdaten präzise.
+const REG_FIELD_GUIDE = `Du bist Experte für deutsche Zulassungsbescheinigungen Teil I (Fahrzeugschein).
 WICHTIG: Das ist ein FAHRZEUG-Dokument (kein Personalausweis/Führerschein) — es beschreibt das Fahrzeug selbst.
 
 Die Felder sind mit Buchstaben/Ziffern codiert. Nutze diese Zuordnung:
@@ -210,10 +209,9 @@ Die Felder sind mit Buchstaben/Ziffern codiert. Nutze diese Zuordnung:
 - L   -> Anzahl der Achsen
 - T   -> Höchstgeschwindigkeit in km/h
 - X   -> nächste Hauptuntersuchung (Monat/Jahr) — gib sie als YYYY-MM-01 zurück
-- C.1.1 -> Name / Firmenname des Halters
+- C.1.1 -> Name / Firmenname des Halters`;
 
-Antworte AUSSCHLIESSLICH mit gültigem JSON (keine Erklärungen, kein Markdown):
-{
+const REG_VEHICLE_JSON = `{
   "plate": "Kennzeichen oder null",
   "first_registration": "YYYY-MM-DD oder null",
   "manufacturer": "Marke — wähle wenn möglich exakt einen aus: [${MANUFACTURERS.join(", ")}], sonst Originalwert",
@@ -238,9 +236,25 @@ Antworte AUSSCHLIESSLICH mit gültigem JSON (keine Erklärungen, kein Markdown):
   "max_speed": Zahl oder null,
   "owner_name": "Halter-Name oder null",
   "confidence": Zahl 0.0 bis 1.0
-}
+}`;
 
-Wenn ein Feld nicht erkennbar ist, setze null. Datumsformat strikt YYYY-MM-DD. Zahlen ohne Einheit.`;
+const REG_CLOSING = `Wenn ein Feld nicht erkennbar ist, setze null. Datumsformat strikt YYYY-MM-DD. Zahlen ohne Einheit.`;
+
+const REGISTRATION_PROMPT = `${REG_FIELD_GUIDE}
+
+Antworte AUSSCHLIESSLICH mit gültigem JSON (keine Erklärungen, kein Markdown):
+${REG_VEHICLE_JSON}
+
+${REG_CLOSING}`;
+
+const REGISTRATION_BATCH_PROMPT = `${REG_FIELD_GUIDE}
+
+WICHTIG: Das Dokument kann MEHRERE Fahrzeugscheine enthalten — typischerweise eine Seite je Fahrzeug. Behandle jeden einzelnen Schein als EIGENES Fahrzeug und vermische NIEMALS Felder verschiedener Fahrzeuge.
+
+Antworte AUSSCHLIESSLICH mit gültigem JSON (keine Erklärungen, kein Markdown) — ein Eintrag pro Fahrzeugschein:
+{ "vehicles": [ ${REG_VEHICLE_JSON} ] }
+
+Liegt nur ein Schein vor, gib ein Array mit genau einem Eintrag zurück. ${REG_CLOSING}`;
 
 export const parseVehicleRegistration = async (
   fileBase64: string,
@@ -275,6 +289,48 @@ export const parseVehicleRegistration = async (
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
   const data = JSON.parse(jsonMatch[0]) as ParsedVehicleRegistration;
+  return { data, raw: response };
+};
+
+/**
+ * Stapel-Variante: liest ALLE Fahrzeugscheine in einem Dokument aus (z. B. ein
+ * mehrseitiges PDF mit mehreren Autos) und gibt ein Array zurück — ein Eintrag
+ * pro Schein. So vermischt die KI die Felder verschiedener Fahrzeuge nicht.
+ */
+export const parseVehicleRegistrationsBatch = async (
+  fileBase64: string,
+  mediaType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf"
+): Promise<{ data: ParsedVehicleRegistration[]; raw: unknown }> => {
+  const isPdf = mediaType === "application/pdf";
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 4000,
+    system: REGISTRATION_BATCH_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: isPdf ? "document" : "image",
+            source: { type: "base64", media_type: mediaType, data: fileBase64 },
+          } as Anthropic.Messages.ContentBlockParam,
+          {
+            type: "text",
+            text: "Extrahiere ALLE Fahrzeugscheine aus diesem Dokument — einen Eintrag pro Fahrzeug.",
+          },
+        ],
+      },
+    ],
+  });
+
+  const text = response.content
+    .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
+    .map((b) => b.text)
+    .join("");
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
+  const parsed = JSON.parse(jsonMatch[0]) as { vehicles?: ParsedVehicleRegistration[] };
+  const data = Array.isArray(parsed.vehicles) ? parsed.vehicles : [];
   return { data, raw: response };
 };
 
