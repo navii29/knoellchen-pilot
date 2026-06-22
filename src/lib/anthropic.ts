@@ -186,6 +186,7 @@ export const parseCustomerDocument = async (
 
 const REG_FIELD_GUIDE = `Du bist Experte für deutsche Zulassungsbescheinigungen Teil I (Fahrzeugschein).
 WICHTIG: Das ist ein FAHRZEUG-Dokument (kein Personalausweis/Führerschein) — es beschreibt das Fahrzeug selbst.
+ORIENTIERUNG: Das Dokument kann GEDREHT sein (um 90°/180°), quer auf einer Hochformat-Seite liegen, schief oder blass fotografiert/gescannt sein. Lies es TROTZDEM vollständig aus — drehe es gedanklich in die normale Leserichtung und gib nicht auf, nur weil es gedreht oder unscharf ist.
 
 Die Felder sind mit Buchstaben/Ziffern codiert. Nutze diese Zuordnung:
 - A   -> Kennzeichen (Format mit Bindestrich + Leerzeichen, z. B. EU-ML 9051)
