@@ -37,7 +37,7 @@ export const GET = async (req: Request) => {
     admin
       .from("vehicles")
       .select(
-        "id, plate, manufacturer, model, vehicle_type, cost_daily, cost_monthly, target_daily_rate, daily_rate, status"
+        "id, plate, manufacturer, model, vehicle_type, cost_daily, cost_monthly, target_daily_rate, daily_rate, status, onetime_cost_supplier, onetime_cost_pickup, onetime_cost_return, first_registration, decommission_date"
       )
       .eq("org_id", auth.org_id)
       .neq("status", "ausgesteuert"),

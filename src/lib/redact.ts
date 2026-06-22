@@ -5,7 +5,18 @@ import type { Contract, Vehicle } from "./types";
 // auch wenn die UI sie ausblendet). Für Inhaber unverändert.
 
 export const redactVehicleCost = (v: Vehicle, isOwner: boolean): Vehicle =>
-  isOwner ? v : { ...v, cost_daily: null, cost_monthly: null, target_daily_rate: null };
+  isOwner
+    ? v
+    : {
+        ...v,
+        cost_daily: null,
+        cost_monthly: null,
+        target_daily_rate: null,
+        onetime_cost_supplier: null,
+        onetime_cost_pickup: null,
+        onetime_cost_return: null,
+        leasing_doc_path: null,
+      };
 
 export const redactContractPartner = (c: Contract, isOwner: boolean): Contract =>
   isOwner

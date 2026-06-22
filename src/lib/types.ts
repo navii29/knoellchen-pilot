@@ -103,6 +103,11 @@ export interface Vehicle {
   cost_daily: number | null;
   cost_monthly: number | null;
   target_daily_rate: number | null;
+  // Einmalkosten (EK) — werden über die Haltedauer in die Marge umgelegt (Migration 049)
+  onetime_cost_supplier: number | null; // Einmalkosten Lieferant
+  onetime_cost_pickup: number | null; // Kosten Abholung
+  onetime_cost_return: number | null; // Kosten Rückverbringung
+  leasing_doc_path: string | null; // eigener Leasingvertrag (Dokument)
 
   accessories: string | null;
   status: VehicleStatus;

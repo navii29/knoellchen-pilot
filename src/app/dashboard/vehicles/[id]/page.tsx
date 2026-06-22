@@ -31,6 +31,7 @@ import type { TirePhoto, VehicleTire } from "@/lib/tires";
 import { PartnerPricingSection } from "@/components/vehicle/PartnerPricingSection";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeDecommission } from "@/lib/decommission";
+import { redactVehicleCost } from "@/lib/redact";
 import { VEHICLE_STATUS_META, buildVehicleType } from "@/lib/vehicle";
 import type { Contract, Vehicle } from "@/lib/types";
 import type { VehicleEvent } from "@/lib/vehicle-events";
@@ -63,9 +64,7 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
     .eq("id", user.id)
     .maybeSingle();
   const isOwner = (me?.role ?? "member") === "owner";
-  const vForEdit: Vehicle = isOwner
-    ? v
-    : { ...v, cost_daily: null, cost_monthly: null, target_daily_rate: null };
+  const vForEdit: Vehicle = redactVehicleCost(v, isOwner);
 
   const [
     { data: contracts },

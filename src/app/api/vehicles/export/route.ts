@@ -63,6 +63,9 @@ export const GET = async () => {
           { key: "cost_monthly", label: "Kosten/Monat (EK)" },
           { key: "cost_daily", label: "Kosten/Tag (EK)" },
           { key: "target_daily_rate", label: "Soll-Tagespreis" },
+          { key: "onetime_cost_supplier", label: "Einmalkosten Lieferant" },
+          { key: "onetime_cost_pickup", label: "Kosten Abholung" },
+          { key: "onetime_cost_return", label: "Kosten Rückverbringung" },
         ] as { key: keyof Vehicle; label: string }[])
       : []),
   ];

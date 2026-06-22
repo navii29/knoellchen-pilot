@@ -78,6 +78,9 @@ export type VehicleFormState = {
   // Margenrechnung
   cost_monthly: string;
   target_daily_rate: string;
+  onetime_cost_supplier: string;
+  onetime_cost_pickup: string;
+  onetime_cost_return: string;
 
   // Logistik & Intern
   pickup_location: string;
@@ -130,6 +133,9 @@ const empty: VehicleFormState = {
   deposit: "",
   cost_monthly: "",
   target_daily_rate: "",
+  onetime_cost_supplier: "",
+  onetime_cost_pickup: "",
+  onetime_cost_return: "",
   pickup_location: "",
   return_location: "",
   internal_return_at: "",
@@ -188,6 +194,10 @@ const fromVehicle = (v: Vehicle): VehicleFormState => ({
   cost_monthly: v.cost_monthly != null ? String(v.cost_monthly) : "",
   target_daily_rate:
     v.target_daily_rate != null ? String(v.target_daily_rate) : "",
+  onetime_cost_supplier:
+    v.onetime_cost_supplier != null ? String(v.onetime_cost_supplier) : "",
+  onetime_cost_pickup: v.onetime_cost_pickup != null ? String(v.onetime_cost_pickup) : "",
+  onetime_cost_return: v.onetime_cost_return != null ? String(v.onetime_cost_return) : "",
   pickup_location: v.pickup_location || "",
   return_location: v.return_location || "",
   internal_return_at: toDatetimeLocal(v.internal_return_at),
@@ -889,6 +899,46 @@ export const VehicleForm = ({
             </div>
             <div className="text-[11px] text-ink-muted mt-1">
               Leasing + Versicherung + Wartung etc. — was das Auto pro Monat kostet, egal ob vermietet oder nicht.
+            </div>
+          </Field>
+          <Field label="Einmalkosten Lieferant">
+            <div className="relative">
+              <input
+                value={data.onetime_cost_supplier}
+                onChange={set("onetime_cost_supplier")}
+                placeholder="z. B. 890,00"
+                className="field pr-8 font-mono tabular-nums"
+                inputMode="decimal"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-muted">EUR</span>
+            </div>
+          </Field>
+          <Field label="Kosten Abholung">
+            <div className="relative">
+              <input
+                value={data.onetime_cost_pickup}
+                onChange={set("onetime_cost_pickup")}
+                placeholder="z. B. 250,00"
+                className="field pr-8 font-mono tabular-nums"
+                inputMode="decimal"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-muted">EUR</span>
+            </div>
+          </Field>
+          <Field label="Kosten Rückverbringung">
+            <div className="relative">
+              <input
+                value={data.onetime_cost_return}
+                onChange={set("onetime_cost_return")}
+                placeholder="z. B. 250,00"
+                className="field pr-8 font-mono tabular-nums"
+                inputMode="decimal"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-muted">EUR</span>
+            </div>
+            <div className="text-[11px] text-ink-muted mt-1">
+              Einmalkosten werden über die Haltedauer (Erstzulassung → Aussteuerung) anteilig in
+              die tägliche Marge eingerechnet.
             </div>
           </Field>
           <Field label="Tagliche Kosten (auto-berechnet)">

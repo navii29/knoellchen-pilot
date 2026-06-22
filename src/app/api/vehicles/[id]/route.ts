@@ -7,7 +7,14 @@ import { syncVehicleToLexoffice } from "@/lib/lexoffice-vehicle-sync";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
 
 // Kosten-/Margen-Felder — nur Inhaber dürfen sie setzen/ändern.
-const OWNER_ONLY_VEHICLE_FIELDS = ["cost_daily", "cost_monthly", "target_daily_rate"];
+const OWNER_ONLY_VEHICLE_FIELDS = [
+  "cost_daily",
+  "cost_monthly",
+  "target_daily_rate",
+  "onetime_cost_supplier",
+  "onetime_cost_pickup",
+  "onetime_cost_return",
+];
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -90,6 +97,9 @@ const NUMBER_FIELDS = [
   "cost_daily",
   "cost_monthly",
   "target_daily_rate",
+  "onetime_cost_supplier",
+  "onetime_cost_pickup",
+  "onetime_cost_return",
 ] as const;
 
 const INT_FIELDS = [
