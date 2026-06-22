@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { resolveCustomerNaming } from "@/lib/customer";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -67,7 +68,25 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   const body = (await req.json()) as Record<string, unknown>;
   const patch: Record<string, unknown> = {};
+
+  // Firmenkunde-Namensfelder: kommen immer als Set aus dem Formular (customer_type
+  // gesetzt). last_name wird dann aus Firmenname/Rechtsform abgeleitet.
+  let namingApplied = false;
+  if ("customer_type" in body) {
+    const naming = resolveCustomerNaming(body);
+    if ("error" in naming) {
+      return NextResponse.json({ error: naming.error }, { status: 400 });
+    }
+    patch.customer_type = naming.customer_type;
+    patch.company_name = naming.company_name;
+    patch.legal_form = naming.legal_form;
+    patch.last_name = naming.last_name;
+    if (naming.customer_type === "firma") patch.first_name = null;
+    namingApplied = true;
+  }
+
   for (const k of FIELDS) {
+    if (namingApplied && (k === "last_name" || k === "first_name")) continue;
     if (k in body) {
       const v = trimOrNull(body[k]);
       if (v !== undefined) patch[k] = v;

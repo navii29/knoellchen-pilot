@@ -23,12 +23,12 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ButtonLink } from "@/components/ui/Button";
 import { Plate } from "@/components/ui/Plate";
 import { fmtDate } from "@/lib/utils";
+import { customerDisplayName, isCompany } from "@/lib/customer";
 import type { Contract, Customer } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-const fullName = (c: Customer) =>
-  [c.title, c.first_name, c.last_name].filter(Boolean).join(" ") || c.last_name;
+const fullName = (c: Customer) => customerDisplayName(c) || c.last_name;
 
 export default async function CustomerDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -97,9 +97,15 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
           </Link>
 
           <PageHeader
-            kicker={c.salutation || "Kunde"}
+            kicker={isCompany(c) ? "Firmenkunde" : c.salutation || "Kunde"}
             title={fullName(c)}
-            description={c.birthday ? `geb. ${fmtDate(c.birthday)}` : undefined}
+            description={
+              isCompany(c)
+                ? c.legal_form || "Firma"
+                : c.birthday
+                  ? `geb. ${fmtDate(c.birthday)}`
+                  : undefined
+            }
             actions={<CustomerActions customerId={c.id} customerEmail={c.email} />}
           />
 

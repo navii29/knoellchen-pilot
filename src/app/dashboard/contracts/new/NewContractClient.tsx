@@ -18,6 +18,7 @@ import {
   type SalesPartner,
 } from "@/lib/partners";
 import { fmtEur } from "@/lib/utils";
+import { customerDisplayName } from "@/lib/customer";
 import { Button } from "@/components/ui/Button";
 import { VehiclePicker } from "@/components/contract/VehiclePicker";
 
@@ -101,14 +102,13 @@ const empty: FormState = {
 };
 
 const customerLabel = (c: Customer) => {
-  const name = [c.title, c.first_name, c.last_name].filter(Boolean).join(" ") || c.last_name;
+  const name = customerDisplayName(c) || c.last_name;
   const ort = c.city ? ` · ${c.city}` : "";
   return `${name}${ort}`;
 };
 
 const fillFromCustomer = (prev: FormState, c: Customer): FormState => {
-  const fullName =
-    [c.title, c.first_name, c.last_name].filter(Boolean).join(" ") || c.last_name;
+  const fullName = customerDisplayName(c) || c.last_name;
   const address = [
     [c.street, c.house_nr].filter(Boolean).join(" "),
     [c.zip, c.city].filter(Boolean).join(" "),
