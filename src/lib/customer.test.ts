@@ -31,6 +31,16 @@ describe("resolveCustomerNaming", () => {
     });
   });
 
+  it("Privatkunde bleibt privat, wenn company UND Nachname da sind (CSV-Fehlmapping)", () => {
+    const r = resolveCustomerNaming({ company_name: "Arbeitgeber GmbH", last_name: "Müller" });
+    expect("error" in r).toBe(false);
+    if (!("error" in r)) {
+      expect(r.customer_type).toBe("privat");
+      expect(r.last_name).toBe("Müller");
+      expect(r.company_name).toBeNull();
+    }
+  });
+
   it("firma wird aus Firmenname erkannt (ohne Typ-Spalte, z. B. CSV-Import)", () => {
     const r = resolveCustomerNaming({ company_name: "Hall Bau", legal_form: "UG (haftungsbeschränkt)" });
     expect("error" in r).toBe(false);

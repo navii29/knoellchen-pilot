@@ -93,10 +93,15 @@ export const resolveCustomerNaming = (
 ): ResolvedNaming | { error: string } => {
   const t = String(input.customer_type ?? "").trim().toLowerCase();
   const company = tn(input.company_name);
-  const explicitFirma = ["firma", "company", "unternehmen", "gewerbe", "business"].includes(t);
-  const type: "privat" | "firma" = explicitFirma || !!company ? "firma" : "privat";
   const legal = tn(input.legal_form);
   const rawLast = tn(input.last_name);
+  const explicitFirma = ["firma", "company", "unternehmen", "gewerbe", "business"].includes(t);
+  // Firma nur, wenn customer_type explizit gesetzt ist ODER ein Firmenname OHNE
+  // Nachname vorliegt. Sonst würde beim CSV-Import eine versehentlich auf
+  // company_name gemappte Spalte jede Zeile mit Wert zu Firma machen und den
+  // echten Vor-/Nachnamen überschreiben.
+  const type: "privat" | "firma" =
+    explicitFirma || (!!company && !rawLast) ? "firma" : "privat";
 
   if (type === "firma") {
     const co = company ?? rawLast; // nur Firmenname in der Nachname-Spalte? trotzdem akzeptieren

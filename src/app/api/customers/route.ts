@@ -52,8 +52,9 @@ export const POST = async (req: Request) => {
     legal_form: naming.legal_form,
     salutation: trimOrNull(body.salutation),
     title: trimOrNull(body.title),
-    // Bei Firmen kein Vorname (sonst verfälscht er die Namenszusammensetzung).
-    first_name: naming.customer_type === "firma" ? null : trimOrNull(body.first_name),
+    // first_name bleibt erhalten (z. B. Ansprechpartner); customerDisplayName nutzt
+    // bei Firmen ohnehin den Firmennamen, nicht den Vornamen.
+    first_name: trimOrNull(body.first_name),
     last_name: naming.last_name,
     birthday: trimOrNull(body.birthday),
     street: trimOrNull(body.street),
