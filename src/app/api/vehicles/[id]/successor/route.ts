@@ -45,14 +45,29 @@ export const POST = async (req: Request, { params }: Ctx) => {
 
   const { data: oldV } = await admin
     .from("vehicles")
-    .select("id, plate, decommission_date")
+    .select(
+      "id, plate, decommission_date, successor_status, successor_vehicle_id, successor_contract_id"
+    )
     .eq("id", params.id)
     .eq("org_id", auth.org_id)
     .maybeSingle();
   if (!oldV) return NextResponse.json({ error: "Fahrzeug nicht gefunden" }, { status: 404 });
 
+  // Den zuvor automatisch angelegten Anschluss-Vertrag stornieren, damit er nicht
+  // als aktiver Geister-/Doppelvertrag in Verfügbarkeit & Abrechnung weiterläuft.
+  const cancelLinkedContract = async () => {
+    if (!oldV.successor_contract_id) return;
+    await admin
+      .from("contracts")
+      .update({ status: "storniert", updated_at: now })
+      .eq("id", oldV.successor_contract_id)
+      .eq("org_id", auth.org_id)
+      .eq("status", "aktiv");
+  };
+
   if (body.action === "ersatzlos" || body.action === "reset") {
     const status = body.action === "ersatzlos" ? "ersatzlos" : "offen";
+    await cancelLinkedContract();
     const { error } = await admin
       .from("vehicles")
       .update({
@@ -80,6 +95,13 @@ export const POST = async (req: Request, { params }: Ctx) => {
       { status: 400 }
     );
 
+  // Server-Logik mit der UI decken: Nachfolge nur für auslaufende Fahrzeuge.
+  if (!oldV.decommission_date)
+    return NextResponse.json(
+      { error: "Fahrzeug hat kein Aussteuerungsdatum — Nachfolge nicht möglich." },
+      { status: 400 }
+    );
+
   const { data: sucV } = await admin
     .from("vehicles")
     .select("id, plate, vehicle_type, daily_rate, deposit")
@@ -88,16 +110,46 @@ export const POST = async (req: Request, { params }: Ctx) => {
     .maybeSingle();
   if (!sucV) return NextResponse.json({ error: "Folgefahrzeug nicht gefunden" }, { status: 404 });
 
-  // Bleibender Mieter = aktiver Mietvertrag auf dem auslaufenden Fahrzeug.
-  const { data: oldContracts } = await admin
+  // Doppelbelegung verhindern: das Folgefahrzeug darf nicht bereits aktiv
+  // vermietet sein (per vehicle_id ODER Kennzeichen).
+  const { data: sucActive } = await admin
+    .from("contracts")
+    .select("id")
+    .eq("org_id", auth.org_id)
+    .or(`vehicle_id.eq.${sucV.id},plate.eq.${sucV.plate}`)
+    .eq("status", "aktiv")
+    .limit(1);
+  if ((sucActive ?? []).length > 0)
+    return NextResponse.json(
+      { error: "Folgefahrzeug hat bereits einen aktiven Mietvertrag (Doppelbelegung)." },
+      { status: 409 }
+    );
+
+  // Bleibender Mieter = aktiver Mietvertrag GENAU dieses Fahrzeugs (vehicle_id).
+  // Nur als Fallback der Vertrag über das Kennzeichen, und dann ausschließlich
+  // solche ohne vehicle_id (Altdaten) — sonst zieht ein wiederverwendetes
+  // Kennzeichen den Vertrag eines fremden Fahrzeugs.
+  const { data: byVehicle } = await admin
     .from("contracts")
     .select("*")
     .eq("org_id", auth.org_id)
-    .or(`vehicle_id.eq.${params.id},plate.eq.${oldV.plate}`)
+    .eq("vehicle_id", params.id)
     .eq("status", "aktiv")
     .order("pickup_date", { ascending: false })
     .limit(1);
-  const oldC = (oldContracts ?? [])[0] as Record<string, unknown> | undefined;
+  let oldC = (byVehicle ?? [])[0] as Record<string, unknown> | undefined;
+  if (!oldC) {
+    const { data: byPlate } = await admin
+      .from("contracts")
+      .select("*")
+      .eq("org_id", auth.org_id)
+      .eq("plate", oldV.plate)
+      .is("vehicle_id", null)
+      .eq("status", "aktiv")
+      .order("pickup_date", { ascending: false })
+      .limit(1);
+    oldC = (byPlate ?? [])[0] as Record<string, unknown> | undefined;
+  }
   if (!oldC)
     return NextResponse.json(
       { error: "Kein aktiver Mietvertrag auf diesem Fahrzeug — keine Nachfolge nötig." },
@@ -128,12 +180,32 @@ export const POST = async (req: Request, { params }: Ctx) => {
     notes: `Anschluss-Vertrag für auslaufendes Fahrzeug ${oldV.plate}. Laufzeit & Preis bitte prüfen.`,
   };
 
-  const { data: newC, error: cErr } = await admin
-    .from("contracts")
-    .insert(insertRow)
-    .select("id, contract_nr")
-    .single();
-  if (cErr) return NextResponse.json({ error: cErr.message }, { status: 500 });
+  // Idempotenz: war schon ein Nachfolger zugeteilt, dessen Anschluss-Vertrag
+  // zuerst stornieren — sonst entsteht bei Neuzuteilung/Doppelklick ein zweiter
+  // aktiver (Waisen-)Vertrag.
+  await cancelLinkedContract();
+
+  // Insert mit Retry: UNIQUE(org_id, contract_nr) kann bei schneller Anlage
+  // kollidieren; bei Kollision (23505) neue Nummer ziehen und erneut versuchen.
+  let newC: { id: string; contract_nr: string } | null = null;
+  let cErr: { code?: string; message: string } | null = null;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const row =
+      attempt === 0 ? insertRow : { ...insertRow, contract_nr: nextContractNr() };
+    const res = await admin
+      .from("contracts")
+      .insert(row)
+      .select("id, contract_nr")
+      .single();
+    if (!res.error) {
+      newC = res.data as { id: string; contract_nr: string };
+      cErr = null;
+      break;
+    }
+    cErr = res.error;
+    if (res.error.code !== "23505") break;
+  }
+  if (cErr || !newC) return NextResponse.json({ error: cErr?.message ?? "Insert fehlgeschlagen" }, { status: 500 });
 
   const { error: vErr } = await admin
     .from("vehicles")

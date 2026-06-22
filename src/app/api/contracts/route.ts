@@ -102,9 +102,10 @@ export const POST = async (req: Request) => {
   });
   const extraKmCost = extra ? extra.cost : null;
 
+  const providedNr = (body.contract_nr as string)?.trim();
   const insertRow = {
     org_id: auth.org_id,
-    contract_nr: (body.contract_nr as string)?.trim() || nextContractNr(),
+    contract_nr: providedNr || nextContractNr(),
     vehicle_id: vehicle?.id ?? null,
     customer_id: customerId,
     plate,
@@ -175,12 +176,23 @@ export const POST = async (req: Request) => {
     }
   }
 
-  const { data, error } = await admin
-    .from("contracts")
-    .insert(insertRow)
-    .select("*")
-    .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // Insert mit Retry gegen UNIQUE(org_id, contract_nr)-Kollision: nur bei
+  // automatisch generierter Nummer eine neue ziehen (vom Nutzer vergebene
+  // Nummern nicht stillschweigend ueberschreiben).
+  let data: Record<string, unknown> | null = null;
+  let error: { code?: string; message: string } | null = null;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const res = await admin.from("contracts").insert(insertRow).select("*").single();
+    if (!res.error) {
+      data = res.data;
+      error = null;
+      break;
+    }
+    error = res.error;
+    if (res.error.code !== "23505" || providedNr) break;
+    insertRow.contract_nr = nextContractNr();
+  }
+  if (error || !data) return NextResponse.json({ error: error?.message ?? "Insert fehlgeschlagen" }, { status: 500 });
   await logActivity(
     admin,
     auth.user.id,
@@ -191,7 +203,7 @@ export const POST = async (req: Request) => {
   // Defense-in-depth: Partner-Verrechnung nie ungereinigt an Mitarbeiter zurueck.
   return NextResponse.json({
     ok: true,
-    contract: redactContractPartner(data as Contract, isOwner),
+    contract: redactContractPartner(data as unknown as Contract, isOwner),
   });
 };
 
