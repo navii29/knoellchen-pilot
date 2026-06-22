@@ -252,6 +252,15 @@ export const VehicleForm = ({
   const [parseError, setParseError] = useState<string | null>(null);
   const [parseConfidence, setParseConfidence] = useState<number | null>(null);
   const regDataRef = useRef<Record<string, unknown> | null>(null);
+  // Leasingvertrag-Auslesen (EK-Konditionen, nur Inhaber)
+  const [leasingFile, setLeasingFile] = useState<File | null>(null);
+  const [leasingParsing, setLeasingParsing] = useState(false);
+  const [leasingError, setLeasingError] = useState<string | null>(null);
+  const [leasingInfo, setLeasingInfo] = useState<{
+    term_months: number | null;
+    lessor: string | null;
+    confidence: number | null;
+  } | null>(null);
   // Gegenprüfung: Kennzeichen aus dem Schein existiert bereits als Fahrzeug.
   const [existing, setExisting] = useState<{
     id: string;
@@ -321,6 +330,50 @@ export const VehicleForm = ({
         method: "POST",
         body: fd,
       });
+    } catch {
+      /* still */
+    }
+  };
+
+  // Leasingvertrag auslesen → füllt Monatskosten + Einmalkosten Lieferant.
+  const runLeasingParse = async (file: File) => {
+    setLeasingFile(file);
+    setLeasingParsing(true);
+    setLeasingError(null);
+    setLeasingInfo(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/vehicles/leasing-parse", { method: "POST", body: fd });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setLeasingError(j.error || "Auslesen fehlgeschlagen");
+        return;
+      }
+      const f = (j.fields ?? {}) as Record<string, string>;
+      setData((d) => ({
+        ...d,
+        cost_monthly: f.cost_monthly || d.cost_monthly,
+        onetime_cost_supplier: f.onetime_cost_supplier || d.onetime_cost_supplier,
+      }));
+      setLeasingInfo({
+        term_months: j.term_months ?? null,
+        lessor: j.lessor ?? null,
+        confidence: typeof j.confidence === "number" ? j.confidence : null,
+      });
+    } catch (e) {
+      setLeasingError(e instanceof Error ? e.message : "Auslesen fehlgeschlagen");
+    } finally {
+      setLeasingParsing(false);
+    }
+  };
+
+  const uploadLeasingDoc = async (vehicleId: string) => {
+    if (!leasingFile) return;
+    try {
+      const fd = new FormData();
+      fd.append("file", leasingFile);
+      await fetch(`/api/vehicles/${vehicleId}/leasing-doc`, { method: "POST", body: fd });
     } catch {
       /* still */
     }
@@ -407,12 +460,14 @@ export const VehicleForm = ({
     if (mode === "create") {
       const j = (await res.json()) as { vehicle: { id: string } };
       await uploadRegDoc(j.vehicle.id); // Fahrzeugschein hinterlegen
+      await uploadLeasingDoc(j.vehicle.id); // Leasingvertrag hinterlegen
       setSaving(false);
       setSaved(true);
       router.push(`/dashboard/vehicles/${j.vehicle.id}`);
       router.refresh();
     } else {
       await uploadRegDoc(initial!.id); // ggf. neu hochgeladenen Schein hinterlegen
+      await uploadLeasingDoc(initial!.id); // ggf. Leasingvertrag hinterlegen
       setSaving(false);
       setSaved(true);
       // Inline-Edit: das Panel übernimmt refresh + Zurückschalten in einer
@@ -886,6 +941,71 @@ export const VehicleForm = ({
         {/* Kostenrechnung/Marge — nur für Inhaber */}
         {isOwner && (
         <FormSection title="Kostenrechnung">
+          <div className="sm:col-span-2 space-y-2.5">
+            <FileDrop
+              onFiles={(files) => files[0] && runLeasingParse(files[0])}
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+              disabled={leasingParsing}
+              label="Leasingvertrag hierher ziehen — KI füllt Monatsrate + Einmalkosten"
+              hint="PDF, JPG, PNG, WebP · max 12 MB"
+            >
+              {leasingParsing ? (
+                <div className="flex flex-col items-center gap-1.5">
+                  <Loader2 size={20} className="animate-spin text-signal" />
+                  <div className="text-[13.5px] font-medium text-ink">
+                    Leasingvertrag wird ausgelesen…
+                  </div>
+                </div>
+              ) : undefined}
+            </FileDrop>
+            {leasingFile && !leasingParsing && (
+              <div className="flex items-center gap-2 text-[13px] bg-canvas border border-hairline rounded-frame px-3 py-2">
+                <FileText size={15} className="text-ink-muted shrink-0" />
+                <span className="truncate flex-1">{leasingFile.name}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLeasingFile(null);
+                    setLeasingInfo(null);
+                  }}
+                  className="text-ink-muted hover:text-ink shrink-0"
+                  aria-label="Entfernen"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            )}
+            {leasingInfo && !leasingParsing && (
+              <div className="flex items-center gap-2 text-[13px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-frame px-3 py-2">
+                <Sparkles size={15} className="shrink-0" />
+                <span>
+                  Ausgelesen{leasingInfo.lessor ? ` · ${leasingInfo.lessor}` : ""}
+                  {leasingInfo.term_months ? ` · ${leasingInfo.term_months} Monate` : ""} — bitte
+                  prüfen.
+                </span>
+                {leasingInfo.confidence != null && (
+                  <span className="ml-auto font-mono text-[11px] text-emerald-700/80 shrink-0">
+                    {Math.round(leasingInfo.confidence * 100)}%
+                  </span>
+                )}
+              </div>
+            )}
+            {leasingError && (
+              <div className="text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-frame px-3 py-2">
+                {leasingError}
+              </div>
+            )}
+            {mode === "edit" && initial?.leasing_doc_path && !leasingFile && (
+              <a
+                href={`/api/vehicles/${initial.id}/leasing-doc`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-[13px] text-signal hover:underline"
+              >
+                <ExternalLink size={14} /> Hinterlegten Leasingvertrag ansehen
+              </a>
+            )}
+          </div>
           <Field label="Monatliche Kosten (EK)">
             <div className="relative">
               <input

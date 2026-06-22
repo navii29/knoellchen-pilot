@@ -376,6 +376,15 @@ export interface ParsedVehicleRegistration {
   confidence?: number;
 }
 
+/** KI-Auslese eines Leasing-/Finanzierungsvertrags (EK-Konditionen). */
+export interface ParsedLeasingContract {
+  monthly_rate?: number | null; // monatliche Leasing-/Finanzierungsrate (brutto)
+  onetime_supplier?: number | null; // einmalige Kosten (Sonderzahlung/Bereitstellung/Überführung), summiert
+  term_months?: number | null; // Laufzeit in Monaten
+  lessor?: string | null; // Leasinggeber / Anbieter
+  confidence?: number;
+}
+
 export type DamageReportStatus = "offen" | "gemeldet" | "reguliert";
 
 export interface DamageReport {

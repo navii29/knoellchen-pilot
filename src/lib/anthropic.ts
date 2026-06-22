@@ -5,6 +5,7 @@ import type {
   ParsedCustomerData,
   ParsedTicketData,
   ParsedVehicleRegistration,
+  ParsedLeasingContract,
 } from "./types";
 import { MANUFACTURERS, FUEL_TYPES, BODY_TYPES } from "./vehicle";
 
@@ -332,6 +333,53 @@ export const parseVehicleRegistrationsBatch = async (
   if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
   const parsed = JSON.parse(jsonMatch[0]) as { vehicles?: ParsedVehicleRegistration[] };
   const data = Array.isArray(parsed.vehicles) ? parsed.vehicles : [];
+  return { data, raw: response };
+};
+
+const LEASING_PROMPT = `Du bist Experte für deutsche Leasing- und Auto-Finanzierungsverträge.
+Lies das übermittelte Dokument (Foto oder PDF) und extrahiere die EINKAUFS-/Kosten-Konditionen des Vermieters (nicht die des Endkunden).
+
+Antworte AUSSCHLIESSLICH mit gültigem JSON (keine Erklärungen, kein Markdown):
+{
+  "monthly_rate": monatliche Leasing-/Finanzierungsrate in EUR als Zahl (der Betrag, den der Halter pro Monat zahlt; bei Brutto/Netto-Angabe den Bruttobetrag) oder null,
+  "onetime_supplier": Summe der EINMALIGEN Kosten in EUR (Leasing-Sonderzahlung/Anzahlung + Bereitstellungskosten + Überführungs-/Frachtkosten zusammengezählt) oder null,
+  "term_months": Vertragslaufzeit in Monaten als Zahl oder null,
+  "lessor": Name des Leasinggebers/Anbieters oder null,
+  "confidence": Zahl 0.0 bis 1.0
+}
+
+Wenn ein Feld nicht erkennbar ist, setze null. Zahlen ohne Währung/Einheit, Punkt als Dezimaltrenner.`;
+
+export const parseLeasingContract = async (
+  fileBase64: string,
+  mediaType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf"
+): Promise<{ data: ParsedLeasingContract; raw: unknown }> => {
+  const isPdf = mediaType === "application/pdf";
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 1000,
+    system: LEASING_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: isPdf ? "document" : "image",
+            source: { type: "base64", media_type: mediaType, data: fileBase64 },
+          } as Anthropic.Messages.ContentBlockParam,
+          { type: "text", text: "Extrahiere die Leasing-/Finanzierungs-Konditionen." },
+        ],
+      },
+    ],
+  });
+
+  const text = response.content
+    .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
+    .map((b) => b.text)
+    .join("");
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
+  const data = JSON.parse(jsonMatch[0]) as ParsedLeasingContract;
   return { data, raw: response };
 };
 
