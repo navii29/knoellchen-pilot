@@ -149,14 +149,29 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
   let successorCandidates: { id: string; label: string }[] = [];
   let assignedVehicleLabel: string | null = null;
   if (showSuccessor) {
-    const { data: candRows } = await supabase
-      .from("vehicles")
-      .select("id, plate, manufacturer, model, status, decommission_date")
-      .neq("id", v.id)
-      .order("plate", { ascending: true });
+    const [{ data: candRows }, { data: activeContracts }] = await Promise.all([
+      supabase
+        .from("vehicles")
+        .select("id, plate, manufacturer, model, status, decommission_date")
+        .neq("id", v.id)
+        .order("plate", { ascending: true }),
+      supabase.from("contracts").select("vehicle_id, plate").eq("status", "aktiv"),
+    ]);
     const cand = (candRows ?? []) as CandRow[];
+    // Nur wirklich freie Fahrzeuge anbieten: keine, die bereits einen aktiven
+    // Mietvertrag haben (per vehicle_id oder Kennzeichen) — sonst Doppelbelegung.
+    const occupiedIds = new Set<string>();
+    const occupiedPlates = new Set<string>();
+    for (const c of (activeContracts ?? []) as {
+      vehicle_id: string | null;
+      plate: string | null;
+    }[]) {
+      if (c.vehicle_id) occupiedIds.add(c.vehicle_id);
+      if (c.plate) occupiedPlates.add(c.plate);
+    }
     successorCandidates = cand
       .filter((c) => !isDecommissioned(c))
+      .filter((c) => !occupiedIds.has(c.id) && !occupiedPlates.has(c.plate))
       .map((c) => ({ id: c.id, label: labelFor(c) }));
     if (v.successor_vehicle_id) {
       const found = cand.find((c) => c.id === v.successor_vehicle_id);
