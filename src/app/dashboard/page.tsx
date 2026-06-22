@@ -65,9 +65,10 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
   const { data: profile } = user
-    ? await supabase.from("users").select("org_id").eq("id", user.id).single()
+    ? await supabase.from("users").select("org_id, role").eq("id", user.id).single()
     : { data: null };
   const orgId = (profile as { org_id?: string } | null)?.org_id ?? null;
+  const isOwner = (profile as { role?: string } | null)?.role === "owner";
 
   const todayIso = localToday();
 
@@ -277,7 +278,7 @@ export default async function DashboardPage() {
             <div>
               <div className="kicker text-ink-muted mb-3">Optimierung</div>
               <div className="grid lg:grid-cols-2 gap-4">
-                <MarginWidget orgId={orgId} />
+                {isOwner && <MarginWidget orgId={orgId} />}
                 <PricingTodayWidget orgId={orgId} />
               </div>
             </div>

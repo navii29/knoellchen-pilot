@@ -36,6 +36,7 @@ import type { Contract } from "./types";
 export type ToolContext = {
   org_id: string;
   admin: SupabaseClient;
+  isOwner: boolean; // Mitarbeiter (false) bekommen keine Margen-/Partner-Tools/-Daten
 };
 
 export type ToolResult = {
@@ -216,7 +217,16 @@ const searchContracts: Tool = {
     q = q.order("pickup_date", { ascending: false }).limit(Number(input.limit) || 10);
     const { data, error } = await q;
     if (error) return { ok: false, error: error.message };
-    return { ok: true, data: { count: data?.length ?? 0, contracts: data ?? [] } };
+    // Mitarbeiter sehen keine Partner-Verrechnung.
+    const contracts = ctx.isOwner
+      ? data ?? []
+      : (data ?? []).map((c) => ({
+          ...c,
+          partner_purchase_price: null,
+          partner_selling_price: null,
+          partner_commission: null,
+        }));
+    return { ok: true, data: { count: contracts.length, contracts } };
   },
 };
 
@@ -352,7 +362,16 @@ const findDriverForDate: Tool = {
     });
 
     if (!match) return { ok: true, data: { found: false, query: { plate, date } } };
-    return { ok: true, data: { found: true, contract: match } };
+    // Mitarbeiter sehen keine Partner-Verrechnung.
+    const contract = ctx.isOwner
+      ? match
+      : {
+          ...match,
+          partner_purchase_price: null,
+          partner_selling_price: null,
+          partner_commission: null,
+        };
+    return { ok: true, data: { found: true, contract } };
   },
 };
 
@@ -1954,11 +1973,28 @@ export const TOOLS_FOR_API = TOOLS.map((t) => ({
   input_schema: t.input_schema,
 }));
 
+// Tools, die Margen/Kosten/Partner-Verrechnung offenlegen — nur für Inhaber.
+export const OWNER_ONLY_TOOLS = new Set<string>([
+  "get_partner_commission",
+  "get_partner_contracts",
+  "get_top_partners",
+  "get_fleet_margin",
+  "get_best_margin_vehicle",
+  "get_worst_margin_vehicle",
+]);
+
+/** Tool-Liste fürs Modell, je nach Rolle (Mitarbeiter ohne Margen-/Partner-Tools). */
+export const toolsForApi = (isOwner: boolean) =>
+  TOOLS_FOR_API.filter((t) => isOwner || !OWNER_ONLY_TOOLS.has(t.name));
+
 export const handleTool = async (
   name: string,
   input: Record<string, unknown>,
   ctx: ToolContext
 ): Promise<ToolResult> => {
+  // Defense-in-depth: Margen-/Partner-Tools auch im Handler für Mitarbeiter sperren.
+  if (!ctx.isOwner && OWNER_ONLY_TOOLS.has(name))
+    return { ok: false, error: "Diese Auswertung ist nur für Inhaber verfügbar." };
   const t = TOOLS.find((x) => x.name === name);
   if (!t) return { ok: false, error: `Unbekanntes Tool: ${name}` };
   try {

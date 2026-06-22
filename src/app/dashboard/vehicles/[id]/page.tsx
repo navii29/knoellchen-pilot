@@ -55,6 +55,18 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
   if (!vehicle) notFound();
   const v = vehicle as Vehicle;
 
+  // Mitarbeiter sehen keine Kosten/Margen: Werte aus den an den Client gehenden
+  // Props strippen (nicht nur UI ausblenden) + Partner-Preise verbergen.
+  const { data: me } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  const isOwner = (me?.role ?? "member") === "owner";
+  const vForEdit: Vehicle = isOwner
+    ? v
+    : { ...v, cost_daily: null, cost_monthly: null, target_daily_rate: null };
+
   const [
     { data: contracts },
     { data: events },
@@ -211,7 +223,7 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
           )}
 
           <div className="mt-6">
-            <VehicleEditPanel vehicle={v}>
+            <VehicleEditPanel vehicle={vForEdit} userRole={isOwner ? "owner" : "member"}>
               <div className="grid sm:grid-cols-2 gap-3">
             <InfoCard Icon={Car} title="Stammdaten">
               <Row label="Hersteller" value={v.manufacturer || "—"} />
@@ -334,14 +346,16 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
             <TiresSection vehicleId={v.id} tires={tiresWithPhotos} />
           </div>
 
-          <div className="mt-6">
-            <PartnerPricingSection
-              vehicleId={v.id}
-              initialPricing={(partnerPricing ?? []) as React.ComponentProps<
-                typeof PartnerPricingSection
-              >["initialPricing"]}
-            />
-          </div>
+          {isOwner && (
+            <div className="mt-6">
+              <PartnerPricingSection
+                vehicleId={v.id}
+                initialPricing={(partnerPricing ?? []) as React.ComponentProps<
+                  typeof PartnerPricingSection
+                >["initialPricing"]}
+              />
+            </div>
+          )}
 
           <div className="mt-6">
             <VehicleEventsTimeline vehicleId={v.id} events={vehicleEvents} />

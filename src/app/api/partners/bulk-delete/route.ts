@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { MAX_BULK, orgFromSession, parseIdList } from "@/lib/bulk";
+import { ownerOnly } from "@/lib/team";
 
-// Mehrere Partner auf einmal löschen (nur eigene Org).
+// Mehrere Partner auf einmal löschen (nur Inhaber, nur eigene Org).
 export const POST = async (req: Request) => {
+  const gate = await ownerOnly();
+  if (!gate.ok) return gate.res;
   const orgId = await orgFromSession();
   if (!orgId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 

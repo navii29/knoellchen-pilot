@@ -1,9 +1,11 @@
 import { Topbar } from "@/components/dashboard/Topbar";
 import { MarginClient } from "./MarginClient";
+import { requireOwnerPage } from "@/lib/team";
 
 export const dynamic = "force-dynamic";
 
-export default function MarginReportPage() {
+export default async function MarginReportPage() {
+  await requireOwnerPage(); // Margen-Report nur für Inhaber
   return (
     <>
       <Topbar section="Auswertung · Margen" />

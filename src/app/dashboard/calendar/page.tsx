@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { CalendarClient } from "./CalendarClient";
 import { addDays, parseIso, toIso, viewRange, type CalView } from "@/lib/calendar";
+import { myRole } from "@/lib/team";
+import { redactContractPartner, redactVehicleCost } from "@/lib/redact";
 import type { Contract, Vehicle } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +26,8 @@ export default async function CalendarPage({
   const rangeEndIso = toIso(addDays(rangeStart, dayCount - 1));
   const todayIso = toIso(new Date());
 
-  const [{ data: vehicles }, { data: contracts }] = await Promise.all([
+  const [isOwner, { data: vehicles }, { data: contracts }] = await Promise.all([
+    (async () => (await myRole()) === "owner")(),
     supabase.from("vehicles").select("*").order("plate", { ascending: true }),
     supabase
       .from("contracts")
@@ -37,14 +40,22 @@ export default async function CalendarPage({
       .neq("status", "storniert"),
   ]);
 
+  // Kosten/Partner-Felder für Mitarbeiter aus dem Client-Payload entfernen.
+  const safeVehicles = ((vehicles || []) as Vehicle[]).map((v) =>
+    redactVehicleCost(v, isOwner)
+  );
+  const safeContracts = ((contracts || []) as Contract[]).map((c) =>
+    redactContractPartner(c, isOwner)
+  );
+
   return (
     <>
       <Topbar section="Kalender" />
       <div className="flex-1 overflow-auto scroll-thin bg-canvas">
         <div className="px-4 md:px-8 py-4 md:py-8">
           <CalendarClient
-            vehicles={(vehicles || []) as Vehicle[]}
-            contracts={(contracts || []) as Contract[]}
+            vehicles={safeVehicles}
+            contracts={safeContracts}
             view={view}
             rangeStartIso={rangeStartIso}
             dayCount={dayCount}

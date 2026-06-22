@@ -219,12 +219,15 @@ export const VehicleForm = ({
   initial,
   onCancel,
   onDone,
+  userRole = "member",
 }: {
   mode: Mode;
   initial?: Vehicle;
   onCancel?: () => void;
   onDone?: () => void;
+  userRole?: string;
 }) => {
+  const isOwner = userRole === "owner";
   const router = useRouter();
   const [data, setData] = useState<VehicleFormState>(
     initial ? fromVehicle(initial) : empty
@@ -870,6 +873,8 @@ export const VehicleForm = ({
           </Field>
         </FormSection>
 
+        {/* Kostenrechnung/Marge — nur für Inhaber */}
+        {isOwner && (
         <FormSection title="Kostenrechnung">
           <Field label="Monatliche Kosten (EK)">
             <div className="relative">
@@ -951,6 +956,7 @@ export const VehicleForm = ({
             </div>
           </Field>
         </FormSection>
+        )}
 
         <FormSection title="Logistik & Intern">
           <Field label="Abhollager">

@@ -13,9 +13,11 @@ import type { Vehicle } from "@/lib/types";
 export const VehicleEditPanel = ({
   vehicle,
   children,
+  userRole = "member",
 }: {
   vehicle: Vehicle;
   children: React.ReactNode;
+  userRole?: string;
 }) => {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -26,6 +28,7 @@ export const VehicleEditPanel = ({
       <VehicleForm
         mode="edit"
         initial={vehicle}
+        userRole={userRole}
         onCancel={() => setEditing(false)}
         onDone={() =>
           // Erst zurückschalten, wenn die frischen Serverdaten da sind.

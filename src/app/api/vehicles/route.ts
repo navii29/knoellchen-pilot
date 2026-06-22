@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { normalizePlate } from "@/lib/plate";
 import { VEHICLE_STATUSES, buildVehicleType } from "@/lib/vehicle";
+import { myRole } from "@/lib/team";
+import { redactVehicleCost } from "@/lib/redact";
 import { syncVehicleToLexoffice } from "@/lib/lexoffice-vehicle-sync";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
 
@@ -129,6 +131,17 @@ export const POST = async (req: Request) => {
     vehicle_type: computedType ?? explicitType,
   };
 
+  // Mitarbeiter dürfen Kosten-/Margen-Felder weder setzen noch zurückgelesen
+  // bekommen. Keys ENTFERNEN (nicht null setzen), damit ein Upsert auf ein
+  // vorhandenes Fahrzeug die vom Inhaber gepflegten Kosten nicht überschreibt.
+  const isOwner = (await myRole()) === "owner";
+  if (!isOwner) {
+    const r = row as Record<string, unknown>;
+    delete r.cost_daily;
+    delete r.cost_monthly;
+    delete r.target_daily_rate;
+  }
+
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("vehicles")
@@ -145,7 +158,7 @@ export const POST = async (req: Request) => {
     vehicle.lexoffice_product_id = lexId;
   }
 
-  return NextResponse.json({ ok: true, vehicle });
+  return NextResponse.json({ ok: true, vehicle: redactVehicleCost(vehicle, isOwner) });
 };
 
 export const DELETE = async (req: Request) => {

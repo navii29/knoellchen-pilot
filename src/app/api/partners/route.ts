@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { ownerOnly } from "@/lib/team";
 import type { CommissionType, PartnerType } from "@/lib/partners";
 
 const requireAuth = async () => {
@@ -38,6 +39,8 @@ const numOrNull = (v: unknown): number | null => {
 };
 
 export const GET = async () => {
+  const gate = await ownerOnly(); // Partner (Provisionskonfig) nur für Inhaber
+  if (!gate.ok) return gate.res;
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   const admin = createAdminClient();
@@ -52,6 +55,8 @@ export const GET = async () => {
 };
 
 export const POST = async (req: Request) => {
+  const gate = await ownerOnly(); // Partner anlegen nur Inhaber
+  if (!gate.ok) return gate.res;
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 

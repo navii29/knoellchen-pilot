@@ -17,7 +17,7 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from("users")
-    .select("org_id")
+    .select("org_id, role")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -49,6 +49,7 @@ export default async function DashboardLayout({
       <div className="workspace-aurora" aria-hidden />
       <Sidebar
         orgName={org?.name || "Mein Konto"}
+        userRole={profile.role ?? "member"}
         ticketCount={openTickets || 0}
         contractCount={activeContracts || 0}
         customerCount={customers || 0}

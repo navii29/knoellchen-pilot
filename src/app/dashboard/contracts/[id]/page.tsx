@@ -5,6 +5,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ContractActions } from "./ContractActions";
+import { redactContractPartner } from "@/lib/redact";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeReturnSummary } from "@/lib/km";
 import { isContractOverdue, localTodayIso } from "@/lib/contract-utils";
@@ -56,6 +57,14 @@ export default async function ContractDetailPage({ params }: { params: { id: str
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) notFound();
+
+  // Mitarbeiter sehen keine Margen.
+  const { data: meRow } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  const isOwner = (meRow?.role ?? "member") === "owner";
 
   const [{ data: contract }, { data: orgRow }] = await Promise.all([
     supabase.from("contracts").select("*").eq("id", params.id).maybeSingle(),
@@ -268,7 +277,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
               <Row label="Tagespreis" value={fmtEur(c.daily_rate)} mono />
               <Row label="Gesamtbetrag" value={fmtEur(c.total_amount)} mono />
               <Row label="Kaution" value={fmtEur(c.deposit)} mono />
-              {marginInfo && (
+              {isOwner && marginInfo && (
                 <>
                   <div className="mt-2 pt-2 border-t border-hairline" />
                   <Row label="Realisierter VK" value={fmtEur(marginInfo.istVk)} mono />
@@ -369,7 +378,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
           {/* Actions */}
           <div className="mt-6">
             <ContractActions
-              contract={c}
+              contract={redactContractPartner(c, isOwner)}
               pdfUrl={pdfUrl}
               lexofficeEnabled={lexofficeEnabled}
             />

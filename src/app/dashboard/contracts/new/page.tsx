@@ -1,6 +1,7 @@
 import { Topbar } from "@/components/dashboard/Topbar";
 import { createClient } from "@/lib/supabase/server";
 import { NewContractClient } from "./NewContractClient";
+import { myRole } from "@/lib/team";
 import type { Customer, SpecialTermsTemplate } from "@/lib/types";
 import type { SalesPartner } from "@/lib/partners";
 
@@ -27,6 +28,10 @@ export default async function NewContractPage({
         .order("sort_order", { ascending: true }),
     ]);
 
+  // Mitarbeiter sehen keine Partner-Verrechnung (EK/VK/Provision) → keine Partner.
+  const isOwner = (await myRole()) === "owner";
+  const visiblePartners = isOwner ? ((partners || []) as SalesPartner[]) : [];
+
   return (
     <>
       <Topbar section="Neuer Vertrag" />
@@ -34,7 +39,7 @@ export default async function NewContractPage({
         <div className="max-w-3xl mx-auto">
           <NewContractClient
             customers={(customers || []) as Customer[]}
-            partners={(partners || []) as SalesPartner[]}
+            partners={visiblePartners}
             specialTerms={(specialTerms || []) as SpecialTermsTemplate[]}
             initialCustomerId={searchParams.customer_id || null}
             prefill={

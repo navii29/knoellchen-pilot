@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { ownerOnly } from "@/lib/team";
 import {
   calculateCommission,
   contractDays,
@@ -27,6 +28,8 @@ const requireAuth = async () => {
 type Ctx = { params: { id: string } };
 
 export const GET = async (req: Request, { params }: Ctx) => {
+  const gate = await ownerOnly(); // Partner-EK/VK/Provision nur für Inhaber
+  if (!gate.ok) return gate.res;
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 

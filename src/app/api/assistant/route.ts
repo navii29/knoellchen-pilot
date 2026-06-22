@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { TOOLS_FOR_API, handleTool } from "@/lib/assistant-tools";
+import { toolsForApi, handleTool } from "@/lib/assistant-tools";
 
 export const maxDuration = 60;
 
@@ -47,10 +47,11 @@ export const POST = async (req: Request) => {
 
   const { data: profile } = await supabase
     .from("users")
-    .select("org_id")
+    .select("org_id, role")
     .eq("id", user.id)
     .single();
   if (!profile) return NextResponse.json({ error: "No profile" }, { status: 401 });
+  const isOwner = (profile.role ?? "member") === "owner";
 
   const body = (await req.json()) as { messages: ChatMessage[] };
   if (!Array.isArray(body.messages) || body.messages.length === 0) {
@@ -75,7 +76,7 @@ export const POST = async (req: Request) => {
     content: m.content,
   }));
 
-  const ctx = { org_id: profile.org_id, admin };
+  const ctx = { org_id: profile.org_id, admin, isOwner };
   const toolCalls: Array<{ name: string; input: Record<string, unknown>; result: unknown }> = [];
 
   // Agent-Loop: max 5 Iterationen
@@ -87,7 +88,7 @@ export const POST = async (req: Request) => {
         model: "claude-sonnet-4-6",
         max_tokens: 1500,
         system: systemPrompt(org?.name || "Ihre Autovermietung", today),
-        tools: TOOLS_FOR_API as Anthropic.Messages.Tool[],
+        tools: toolsForApi(isOwner) as Anthropic.Messages.Tool[],
         messages: apiMessages,
       });
     } catch (e) {
