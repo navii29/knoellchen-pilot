@@ -125,6 +125,7 @@ const vehicle: Vehicle = {
   leasing_doc_path: null,
   accessories: null,
   status: "aktiv",
+  incomplete: false,
   echoes_device_id: null,
   last_gps_lat: null,
   last_gps_lng: null,

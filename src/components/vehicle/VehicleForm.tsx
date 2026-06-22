@@ -261,6 +261,10 @@ export const VehicleForm = ({
     lessor: string | null;
     confidence: number | null;
   } | null>(null);
+  // Auto-Entwurf: nach dem Schein-Auslesen wird das Fahrzeug sofort gespeichert
+  // (unvollständig), damit nichts verloren geht. Beim bewussten Speichern wird
+  // dann genau dieser Entwurf aktualisiert statt ein zweites Fahrzeug anzulegen.
+  const [draftId, setDraftId] = useState<string | null>(null);
   // Gegenprüfung: Kennzeichen aus dem Schein existiert bereits als Fahrzeug.
   const [existing, setExisting] = useState<{
     id: string;
@@ -311,6 +315,34 @@ export const VehicleForm = ({
         }
         return next;
       });
+
+      // Auto-Entwurf: sofort als unvollständiges Fahrzeug speichern, damit nichts
+      // verloren geht (falls man die Seite verlässt). Nur im Anlegen-Modus, nur
+      // wenn das Kennzeichen neu ist (sonst greift die Gegenprüfung).
+      if (mode === "create" && !draftId && !j.existing && (fields.plate ?? "").trim()) {
+        try {
+          const dr = await fetch("/api/vehicles", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...fields,
+              registration_data: regDataRef.current,
+              incomplete: true,
+            }),
+          });
+          if (dr.ok) {
+            const dj = (await dr.json()) as { vehicle?: { id?: string } };
+            const id = dj.vehicle?.id;
+            if (id) {
+              setDraftId(id);
+              await uploadRegDoc(id);
+              router.refresh();
+            }
+          }
+        } catch {
+          /* Auto-Entwurf ist best-effort — beim bewussten Speichern wird normal angelegt */
+        }
+      }
     } catch (e) {
       setParseError(e instanceof Error ? e.message : "Auslesen fehlgeschlagen");
     } finally {
@@ -444,12 +476,15 @@ export const VehicleForm = ({
       // Vollständigen Fahrzeugschein-Datensatz mitspeichern, wenn ausgelesen.
       ...(regDataRef.current ? { registration_data: regDataRef.current } : {}),
     };
-    const url = mode === "create" ? "/api/vehicles" : `/api/vehicles/${initial!.id}`;
-    const method = mode === "create" ? "POST" : "PATCH";
+    // Ziel: vorhandenes Fahrzeug (Edit ODER bereits angelegter Auto-Entwurf) → PATCH;
+    // sonst neu → POST. Bewusstes Speichern markiert es als vollständig.
+    const targetId = mode === "edit" ? initial!.id : draftId;
+    const url = targetId ? `/api/vehicles/${targetId}` : "/api/vehicles";
+    const method = targetId ? "PATCH" : "POST";
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...payload, incomplete: false }),
     });
     if (!res.ok) {
       setSaving(false);
@@ -457,22 +492,21 @@ export const VehicleForm = ({
       setError(j.error || "Speichern fehlgeschlagen");
       return;
     }
-    if (mode === "create") {
+    let savedId = targetId;
+    if (!savedId) {
       const j = (await res.json()) as { vehicle: { id: string } };
-      await uploadRegDoc(j.vehicle.id); // Fahrzeugschein hinterlegen
-      await uploadLeasingDoc(j.vehicle.id); // Leasingvertrag hinterlegen
-      setSaving(false);
-      setSaved(true);
-      router.push(`/dashboard/vehicles/${j.vehicle.id}`);
-      router.refresh();
-    } else {
-      await uploadRegDoc(initial!.id); // ggf. neu hochgeladenen Schein hinterlegen
-      await uploadLeasingDoc(initial!.id); // ggf. Leasingvertrag hinterlegen
-      setSaving(false);
-      setSaved(true);
-      // Inline-Edit: das Panel übernimmt refresh + Zurückschalten in einer
-      // Transition, damit die Ansicht erst mit frischen Daten erscheint.
+      savedId = j.vehicle.id;
+    }
+    await uploadRegDoc(savedId); // Fahrzeugschein hinterlegen
+    await uploadLeasingDoc(savedId); // Leasingvertrag hinterlegen
+    setSaving(false);
+    setSaved(true);
+    if (mode === "edit") {
+      // Inline-Edit: das Panel übernimmt refresh + Zurückschalten in einer Transition.
       onDone?.();
+    } else {
+      router.push(`/dashboard/vehicles/${savedId}`);
+      router.refresh();
     }
   };
 
@@ -547,6 +581,17 @@ export const VehicleForm = ({
                 <span>Ausgelesen — Felder unten vorausgefüllt. Bitte kurz prüfen.</span>
                 <span className="ml-auto font-mono text-[11px] text-emerald-700/80 shrink-0">
                   {Math.round((parseConfidence ?? 0) * 100)}% sicher
+                </span>
+              </div>
+            )}
+
+            {draftId && !parsing && (
+              <div className="flex items-start gap-2 text-[13px] text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-frame px-3 py-2">
+                <CheckCircle2 size={15} className="mt-0.5 shrink-0" />
+                <span>
+                  <strong>Automatisch gespeichert</strong> — erscheint als unvollständig in der
+                  Liste. Du kannst die Seite jetzt gefahrlos verlassen; mit Speichern bestätigst du
+                  die Daten und entfernst den Hinweis.
                 </span>
               </div>
             )}

@@ -111,6 +111,7 @@ export interface Vehicle {
 
   accessories: string | null;
   status: VehicleStatus;
+  incomplete: boolean; // automatisch gespeicherter Schein-Entwurf (Migration 050)
 
   // Logistik & Dokumente (Migration 026)
   registration_doc_path: string | null; // Fahrzeugschein (ZB Teil I)

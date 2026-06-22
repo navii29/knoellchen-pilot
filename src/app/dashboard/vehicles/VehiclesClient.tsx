@@ -216,6 +216,11 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
                   {v.color && (
                     <span className="text-ink-muted text-[12px] ml-2">· {v.color}</span>
                   )}
+                  {v.incomplete && (
+                    <span className="ml-2 inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 align-middle">
+                      unvollständig
+                    </span>
+                  )}
                 </Link>
                 <Link href={`/dashboard/vehicles/${v.id}`} className="text-[12.5px] text-ink-muted truncate">
                   {v.body_type || "—"}
