@@ -27,7 +27,7 @@ export const POST = async (_req: Request, { params }: Ctx) => {
   const admin = createAdminClient();
   const { data: contract } = await admin
     .from("contracts")
-    .select("id, contract_nr, customer_id, renter_email, customers(email)")
+    .select("id, contract_nr, customer_id, renter_email")
     .eq("id", params.id)
     .eq("org_id", auth.org_id)
     .maybeSingle();
@@ -43,10 +43,17 @@ export const POST = async (_req: Request, { params }: Ctx) => {
       { status: 400 }
     );
 
-  type Cust = { email?: string | null };
-  const custRel = contract.customers as Cust | Cust[] | null;
-  const cust: Cust = Array.isArray(custRel) ? custRel[0] ?? {} : custRel ?? {};
-  const email = (cust.email ?? contract.renter_email ?? "").trim().toLowerCase();
+  // SECURITY (Multi-Tenant): Kunde org-scoped laden statt per Embedded-FK-Join.
+  // Ein eingebetteter customers(email)-Join filtert NICHT nach org_id auf der
+  // Relation und wuerde bei einer Cross-Org-customer_id die E-Mail eines fremden
+  // Mandanten zurueckgeben.
+  const { data: cust } = await admin
+    .from("customers")
+    .select("email")
+    .eq("id", contract.customer_id)
+    .eq("org_id", auth.org_id)
+    .maybeSingle();
+  const email = (cust?.email ?? contract.renter_email ?? "").trim().toLowerCase();
   const link = `${portalBaseUrl()}/portal/contracts/${contract.id}`;
 
   return NextResponse.json({ ok: true, link, customer_email: email || null });
