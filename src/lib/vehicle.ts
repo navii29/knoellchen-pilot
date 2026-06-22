@@ -103,6 +103,16 @@ export const VEHICLE_STATUS_META: Record<
   },
 };
 
+// Folgefahrzeug-/Nachfolge-Status (Migration 051)
+export const SUCCESSOR_STATUS_META: Record<
+  string,
+  { label: string; color: string; bg: string }
+> = {
+  offen: { label: "Nachfolge offen", color: "#a16207", bg: "#fefce8" },
+  zugeteilt: { label: "Folgefahrzeug zugeteilt", color: "#15803d", bg: "#f0fdf4" },
+  ersatzlos: { label: "läuft ersatzlos aus", color: "#57534e", bg: "#f5f5f4" },
+};
+
 export const buildVehicleType = (
   manufacturer: string | null | undefined,
   model: string | null | undefined

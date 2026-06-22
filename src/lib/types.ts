@@ -112,6 +112,10 @@ export interface Vehicle {
   accessories: string | null;
   status: VehicleStatus;
   incomplete: boolean; // automatisch gespeicherter Schein-Entwurf (Migration 050)
+  // Folgefahrzeug / Nachfolge (Migration 051)
+  successor_status: string | null; // null/offen | zugeteilt | ersatzlos
+  successor_vehicle_id: string | null; // zugeteiltes Nachfolge-Fahrzeug
+  successor_contract_id: string | null; // automatisch angelegter Anschluss-Vertrag
 
   // Logistik & Dokumente (Migration 026)
   registration_doc_path: string | null; // Fahrzeugschein (ZB Teil I)

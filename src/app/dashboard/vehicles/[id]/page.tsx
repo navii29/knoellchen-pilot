@@ -27,12 +27,13 @@ import { TiresSection, type TireWithPhotos } from "@/components/vehicle/TiresSec
 import { RegistrationDocCard } from "@/components/vehicle/RegistrationDocCard";
 import { InsuranceCard } from "@/components/vehicle/InsuranceCard";
 import { VehiclePhotosCard } from "@/components/vehicle/VehiclePhotosCard";
+import { SuccessorPanel } from "@/components/vehicle/SuccessorPanel";
 import type { TirePhoto, VehicleTire } from "@/lib/tires";
 import { PartnerPricingSection } from "@/components/vehicle/PartnerPricingSection";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeDecommission } from "@/lib/decommission";
 import { redactVehicleCost } from "@/lib/redact";
-import { VEHICLE_STATUS_META, buildVehicleType } from "@/lib/vehicle";
+import { VEHICLE_STATUS_META, buildVehicleType, isDecommissioned } from "@/lib/vehicle";
 import type { Contract, Vehicle } from "@/lib/types";
 import type { VehicleEvent } from "@/lib/vehicle-events";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
@@ -128,6 +129,41 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
   const status = VEHICLE_STATUS_META[v.status];
   const displayName = buildVehicleType(v.manufacturer, v.model) || v.vehicle_type || "Fahrzeug";
 
+  // Nachfolge/Folgefahrzeug: nur relevant, wenn das Fahrzeug ein Aussteuerungsdatum
+  // hat (läuft aus). Bleibender Mieter = aktiver Vertrag auf diesem Kennzeichen.
+  const showSuccessor = !!v.decommission_date;
+  const stayingRenter =
+    linkedContracts.find((c) => c.status === "aktiv")?.renter_name ?? null;
+  type CandRow = {
+    id: string;
+    plate: string;
+    manufacturer: string | null;
+    model: string | null;
+    status: string | null;
+    decommission_date: string | null;
+  };
+  const labelFor = (c: CandRow): string => {
+    const t = buildVehicleType(c.manufacturer, c.model);
+    return t ? `${c.plate} · ${t}` : c.plate;
+  };
+  let successorCandidates: { id: string; label: string }[] = [];
+  let assignedVehicleLabel: string | null = null;
+  if (showSuccessor) {
+    const { data: candRows } = await supabase
+      .from("vehicles")
+      .select("id, plate, manufacturer, model, status, decommission_date")
+      .neq("id", v.id)
+      .order("plate", { ascending: true });
+    const cand = (candRows ?? []) as CandRow[];
+    successorCandidates = cand
+      .filter((c) => !isDecommissioned(c))
+      .map((c) => ({ id: c.id, label: labelFor(c) }));
+    if (v.successor_vehicle_id) {
+      const found = cand.find((c) => c.id === v.successor_vehicle_id);
+      if (found) assignedVehicleLabel = labelFor(found);
+    }
+  }
+
   return (
     <>
       <Topbar section={`Fahrzeug · ${v.plate}`} />
@@ -218,6 +254,20 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
                   {decom.daysLeft != null && decom.daysLeft >= 0 ? "Tage" : "überfällig"}
                 </div>
               </div>
+            </div>
+          )}
+
+          {showSuccessor && (
+            <div className="mt-6">
+              <SuccessorPanel
+                vehicleId={v.id}
+                decommissionDate={v.decommission_date}
+                status={v.successor_status}
+                stayingRenter={stayingRenter}
+                assignedVehicleLabel={assignedVehicleLabel}
+                assignedContractId={v.successor_contract_id}
+                candidates={successorCandidates}
+              />
             </div>
           )}
 
