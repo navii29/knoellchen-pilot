@@ -80,6 +80,13 @@ export const VEHICLE_FIELDS: FieldDef[] = [
   { key: "available_from", label: "Verfügbar ab", hint: "YYYY-MM-DD" },
   { key: "accessories", label: "Zubehör" },
   { key: "echoes_device_id", label: "Echoes-Tracker-ID" },
+  // EK-/Kostenfelder (nur Inhaber — der Import filtert sie für Mitarbeiter raus)
+  { key: "cost_monthly", label: "Monatliche Kosten / Leasing (EK, €)" },
+  { key: "cost_daily", label: "Tägliche Kosten (EK, €)" },
+  { key: "target_daily_rate", label: "Soll-Tagespreis (€)" },
+  { key: "onetime_cost_supplier", label: "Einmalkosten Lieferant (€)" },
+  { key: "onetime_cost_pickup", label: "Kosten Abholung (€)" },
+  { key: "onetime_cost_return", label: "Kosten Rückverbringung (€)" },
 ];
 
 // =========================================================
@@ -117,6 +124,22 @@ const NUMBER_KEYS = new Set([
   "monthly_rate",
   "deposit",
   "extra_km_price",
+  "cost_monthly",
+  "cost_daily",
+  "target_daily_rate",
+  "onetime_cost_supplier",
+  "onetime_cost_pickup",
+  "onetime_cost_return",
+]);
+
+// EK-/Kostenfelder — nur Inhaber dürfen sie via CSV importieren.
+export const VEHICLE_COST_KEYS = new Set([
+  "cost_monthly",
+  "cost_daily",
+  "target_daily_rate",
+  "onetime_cost_supplier",
+  "onetime_cost_pickup",
+  "onetime_cost_return",
 ]);
 const INT_KEYS = new Set([
   "power_ps",
