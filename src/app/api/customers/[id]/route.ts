@@ -67,13 +67,45 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   const body = (await req.json()) as Record<string, unknown>;
+  const admin = createAdminClient();
   const patch: Record<string, unknown> = {};
 
-  // Firmenkunde-Namensfelder: kommen immer als Set aus dem Formular (customer_type
-  // gesetzt). last_name wird dann aus Firmenname/Rechtsform abgeleitet.
+  // Firmenkunde-Namensfelder. last_name wird für Firmen aus Firmenname/Rechtsform
+  // gespiegelt. Wird customer_type/company_name/legal_form NICHT mitgeschickt
+  // (z. B. Teil-PATCH nur mit legal_form oder last_name), den fehlenden Teil aus
+  // der DB nachladen — sonst kippt eine Firma versehentlich zu privat oder der
+  // last_name-Spiegel wird mit einem freien Wert überschrieben.
   let namingApplied = false;
-  if ("customer_type" in body) {
-    const naming = resolveCustomerNaming(body);
+  const touchesNaming =
+    "customer_type" in body ||
+    "company_name" in body ||
+    "legal_form" in body ||
+    "last_name" in body;
+  if (touchesNaming) {
+    let existing: {
+      customer_type?: string | null;
+      company_name?: string | null;
+      legal_form?: string | null;
+    } | null = null;
+    if (
+      !("customer_type" in body) ||
+      !("company_name" in body) ||
+      !("legal_form" in body)
+    ) {
+      const { data } = await admin
+        .from("customers")
+        .select("customer_type, company_name, legal_form")
+        .eq("id", params.id)
+        .eq("org_id", auth.org_id)
+        .maybeSingle();
+      existing = data;
+    }
+    const naming = resolveCustomerNaming({
+      customer_type: "customer_type" in body ? body.customer_type : existing?.customer_type,
+      company_name: "company_name" in body ? body.company_name : existing?.company_name,
+      legal_form: "legal_form" in body ? body.legal_form : existing?.legal_form,
+      last_name: "last_name" in body ? body.last_name : undefined,
+    });
     if ("error" in naming) {
       return NextResponse.json({ error: naming.error }, { status: 400 });
     }
@@ -81,12 +113,11 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
     patch.company_name = naming.company_name;
     patch.legal_form = naming.legal_form;
     patch.last_name = naming.last_name;
-    if (naming.customer_type === "firma") patch.first_name = null;
     namingApplied = true;
   }
 
   for (const k of FIELDS) {
-    if (namingApplied && (k === "last_name" || k === "first_name")) continue;
+    if (namingApplied && k === "last_name") continue;
     if (k in body) {
       const v = trimOrNull(body[k]);
       if (v !== undefined) patch[k] = v;
@@ -101,7 +132,6 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: "Keine Änderungen" }, { status: 400 });
   }
-  const admin = createAdminClient();
   const { data, error } = await admin
     .from("customers")
     .update(patch)

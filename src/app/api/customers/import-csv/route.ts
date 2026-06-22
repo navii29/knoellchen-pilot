@@ -120,7 +120,7 @@ export const POST = async (req: Request) => {
         company_name: naming.company_name,
         legal_form: naming.legal_form,
         last_name: naming.last_name,
-        first_name: naming.customer_type === "firma" ? null : mapped.first_name ?? null,
+        first_name: mapped.first_name ?? null,
         org_id: auth.org_id,
       });
       results.push({ row_index: i + 1, ok: true });
