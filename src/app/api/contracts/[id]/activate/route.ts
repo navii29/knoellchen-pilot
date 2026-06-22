@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { logActivity } from "@/lib/activity";
 import {
   LexOfficeError,
   buildContractInvoice,
@@ -139,6 +140,14 @@ export const POST = async (_req: Request, { params }: Ctx) => {
     .eq("id", params.id)
     .eq("org_id", auth.org_id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await logActivity(
+    admin,
+    auth.user.id,
+    auth.org_id,
+    "contract.activate",
+    (contract as { contract_nr?: string })?.contract_nr ?? null
+  );
 
   return NextResponse.json({
     ok: true,

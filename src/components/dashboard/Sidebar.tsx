@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
+  Activity,
   AlertOctagon,
   BarChart3,
   Calendar,
@@ -39,6 +40,7 @@ const ITEMS: Array<{
   { href: "/dashboard/vehicles", label: "Fahrzeuge", Icon: Car },
   { href: "/dashboard/calendar", label: "Kalender", Icon: Calendar },
   { href: "/dashboard/reports", label: "Auswertung", Icon: BarChart3, ownerOnly: true },
+  { href: "/dashboard/monitoring", label: "Überwachung", Icon: Activity, ownerOnly: true },
   { href: "/dashboard/settings", label: "Einstellungen", Icon: Settings },
 ];
 
