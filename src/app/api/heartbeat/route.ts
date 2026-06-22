@@ -25,35 +25,20 @@ export const POST = async (req: Request) => {
   const body = (await req.json().catch(() => ({}))) as { path?: unknown };
   const path = typeof body.path === "string" ? body.path.slice(0, 200) : null;
 
-  const now = new Date();
-  const day = utcDay(now);
+  const day = utcDay(new Date());
   const admin = createAdminClient();
 
-  const { data: existing } = await admin
-    .from("user_activity_daily")
-    .select("active_seconds, last_active")
-    .eq("user_id", user.id)
-    .eq("day", day)
-    .maybeSingle();
-
-  let activeSeconds = 0;
-  if (existing) {
-    const gap = (now.getTime() - new Date(existing.last_active as string).getTime()) / 1000;
-    const add = gap > 0 && gap < HEARTBEAT_IDLE_GAP_S ? Math.min(gap, HEARTBEAT_MAX_ADD_S) : 0;
-    activeSeconds = Math.round((Number(existing.active_seconds) || 0) + add);
-  }
-
-  await admin.from("user_activity_daily").upsert(
-    {
-      user_id: user.id,
-      org_id: profile.org_id,
-      day,
-      active_seconds: activeSeconds,
-      last_active: now.toISOString(),
-      current_path: path,
-    },
-    { onConflict: "user_id,day" }
-  );
+  // Atomare Akkumulation in der DB (Migration 053): Lückenberechnung + Schreiben
+  // in einer Anweisung — kein Read-Modify-Write mehr, daher keine Lost/Double
+  // Updates bei mehreren Tabs / gleichzeitigen Pings.
+  await admin.rpc("record_heartbeat", {
+    p_user_id: user.id,
+    p_org_id: profile.org_id,
+    p_day: day,
+    p_path: path,
+    p_idle_gap_s: HEARTBEAT_IDLE_GAP_S,
+    p_max_add_s: HEARTBEAT_MAX_ADD_S,
+  });
 
   return NextResponse.json({ ok: true });
 };

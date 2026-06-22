@@ -144,22 +144,39 @@ export const POST = async (req: Request) => {
     for (const row of insertRows) dedupByPlate.set(String(row.plate), row);
     const uniqueRows = [...dedupByPlate.values()];
 
-    // Upsert per (org_id, plate) — Duplikate werden überschrieben
-    const { error, data } = await admin
+    // Upsert per (org_id, plate) — Duplikate werden überschrieben. Bei einem
+    // Batch-Fehler (eine fehlerhafte Zeile) zeilenweise nachfassen, damit nicht
+    // der ganze Import verloren geht.
+    let inserted = 0;
+    const bulk = await admin
       .from("vehicles")
       .upsert(uniqueRows, { onConflict: "org_id,plate" })
       .select("id");
-
-    if (error) {
-      return NextResponse.json(
-        { error: `Datenbank-Fehler: ${error.message}` },
-        { status: 500 }
-      );
+    if (!bulk.error) {
+      inserted = bulk.data?.length ?? uniqueRows.length;
+    } else {
+      const failures: string[] = [];
+      for (const row of uniqueRows) {
+        const one = await admin
+          .from("vehicles")
+          .upsert(row, { onConflict: "org_id,plate" })
+          .select("id")
+          .single();
+        if (one.error) failures.push(`${row.plate}: ${one.error.message}`);
+        else inserted++;
+      }
+      return NextResponse.json({
+        ok: true,
+        inserted,
+        skipped: results.filter((r) => !r.ok).length,
+        failures,
+        results,
+      });
     }
 
     return NextResponse.json({
       ok: true,
-      inserted: data?.length ?? insertRows.length,
+      inserted,
       skipped: results.filter((r) => !r.ok).length,
       results,
     });

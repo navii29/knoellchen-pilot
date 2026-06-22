@@ -104,14 +104,20 @@ export const POST = async (req: Request) => {
 
     type Row = { row_index: number; ok: boolean; error?: string };
     const results: Row[] = [];
+    const resultByRow = new Map<number, Row>();
     const insertRows: Record<string, unknown>[] = [];
+    const insertMeta: number[] = []; // row_index je insertRow
     parsed.rows.forEach((raw, i) => {
+      const r: Row = { row_index: i + 1, ok: true };
+      results.push(r);
+      resultByRow.set(i + 1, r);
       const mapped = applyMapping(raw, cleanMapping);
       // Privat braucht Nachname, Firma braucht Firmenname (wird automatisch
       // erkannt, wenn eine Firmenname-Spalte gemappt ist).
       const naming = resolveCustomerNaming(mapped);
       if ("error" in naming) {
-        results.push({ row_index: i + 1, ok: false, error: naming.error });
+        r.ok = false;
+        r.error = naming.error;
         return;
       }
       insertRows.push({
@@ -123,7 +129,7 @@ export const POST = async (req: Request) => {
         first_name: mapped.first_name ?? null,
         org_id: auth.org_id,
       });
-      results.push({ row_index: i + 1, ok: true });
+      insertMeta.push(i + 1);
     });
 
     if (insertRows.length === 0) {
@@ -135,21 +141,31 @@ export const POST = async (req: Request) => {
       });
     }
 
-    const { error, data } = await admin
-      .from("customers")
-      .insert(insertRows)
-      .select("id");
-
-    if (error) {
-      return NextResponse.json(
-        { error: `Datenbank-Fehler: ${error.message}` },
-        { status: 500 }
-      );
+    // Bulk-Insert; schlägt er wegen einer einzigen fehlerhaften Zeile fehl (DB-
+    // Constraint), zeilenweise nachfassen, damit nicht der ganze Import verloren
+    // geht. Die fehlerhafte Zeile wird in results markiert.
+    let inserted = 0;
+    const bulk = await admin.from("customers").insert(insertRows).select("id");
+    if (!bulk.error) {
+      inserted = bulk.data?.length ?? insertRows.length;
+    } else {
+      for (let j = 0; j < insertRows.length; j++) {
+        const one = await admin.from("customers").insert(insertRows[j]).select("id").single();
+        if (one.error) {
+          const r = resultByRow.get(insertMeta[j]);
+          if (r) {
+            r.ok = false;
+            r.error = `DB: ${one.error.message}`;
+          }
+        } else {
+          inserted++;
+        }
+      }
     }
 
     return NextResponse.json({
       ok: true,
-      inserted: data?.length ?? insertRows.length,
+      inserted,
       skipped: results.filter((r) => !r.ok).length,
       results,
     });
