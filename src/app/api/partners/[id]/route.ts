@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { ownerOnly } from "@/lib/team";
 import type { CommissionType, PartnerType } from "@/lib/partners";
 
 const requireAuth = async () => {
@@ -52,6 +53,8 @@ const numOrNull = (v: unknown): number | null | undefined => {
 };
 
 export const PATCH = async (req: Request, { params }: Ctx) => {
+  const gate = await ownerOnly();
+  if (!gate.ok) return gate.res;
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
@@ -96,6 +99,8 @@ export const PATCH = async (req: Request, { params }: Ctx) => {
 };
 
 export const DELETE = async (_req: Request, { params }: Ctx) => {
+  const gate = await ownerOnly();
+  if (!gate.ok) return gate.res;
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 

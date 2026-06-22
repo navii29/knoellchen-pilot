@@ -1,17 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { VehiclesClient } from "./VehiclesClient";
+import { myRole } from "@/lib/team";
+import { redactVehicleCost } from "@/lib/redact";
 import type { Vehicle } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function VehiclesPage() {
   const supabase = createClient();
+  const isOwner = (await myRole()) === "owner";
   const { data } = await supabase
     .from("vehicles")
     .select("*")
     .order("plate", { ascending: true });
-  const vehicles = (data || []) as Vehicle[];
+  // Kostenfelder für Mitarbeiter aus dem Client-Payload entfernen.
+  const vehicles = ((data || []) as Vehicle[]).map((v) => redactVehicleCost(v, isOwner));
   return (
     <>
       <Topbar section="Fahrzeuge" />

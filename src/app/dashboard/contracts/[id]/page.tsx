@@ -5,6 +5,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ContractActions } from "./ContractActions";
+import { redactContractPartner } from "@/lib/redact";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeReturnSummary } from "@/lib/km";
 import { isContractOverdue, localTodayIso } from "@/lib/contract-utils";
@@ -377,7 +378,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
           {/* Actions */}
           <div className="mt-6">
             <ContractActions
-              contract={c}
+              contract={redactContractPartner(c, isOwner)}
               pdfUrl={pdfUrl}
               lexofficeEnabled={lexofficeEnabled}
             />

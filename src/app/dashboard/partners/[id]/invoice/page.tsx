@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { InvoiceClient } from "./InvoiceClient";
+import { requireOwnerPage } from "@/lib/team";
 import type { SalesPartner } from "@/lib/partners";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +12,7 @@ export default async function PartnerInvoicePage({
 }: {
   params: { id: string };
 }) {
+  await requireOwnerPage(); // Partner-Abrechnung nur für Inhaber
   const supabase = createClient();
   const { data: partner } = await supabase
     .from("sales_partners")
