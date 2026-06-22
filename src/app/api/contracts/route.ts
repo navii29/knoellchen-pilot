@@ -4,7 +4,9 @@ import { nextContractNr } from "@/lib/contract-utils";
 import { computeExtraKm } from "@/lib/km";
 import { normalizePlate } from "@/lib/plate";
 import { myRole } from "@/lib/team";
+import { redactContractPartner } from "@/lib/redact";
 import { logActivity } from "@/lib/activity";
+import type { Contract } from "@/lib/types";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -56,7 +58,27 @@ export const POST = async (req: Request) => {
     v == null || v === "" ? null : Number(v);
 
   const customerIdRaw = (body.customer_id as string)?.trim();
-  const customerId = customerIdRaw && customerIdRaw.length > 0 ? customerIdRaw : null;
+  const customerIdInput = customerIdRaw && customerIdRaw.length > 0 ? customerIdRaw : null;
+
+  // SECURITY (Multi-Tenant): customer_id muss zur eigenen Org gehoeren. Ohne
+  // diese Pruefung liesse sich ein Vertrag per FK auf einen Fremd-Org-Kunden
+  // setzen (Single-Column-FK customers(id) ohne org), wodurch z. B. checkin-link
+  // die E-Mail eines fremden Mandanten zurueckgeben wuerde.
+  let customerId: string | null = null;
+  if (customerIdInput) {
+    const { data: cust } = await admin
+      .from("customers")
+      .select("id")
+      .eq("id", customerIdInput)
+      .eq("org_id", auth.org_id)
+      .maybeSingle();
+    if (!cust)
+      return NextResponse.json(
+        { error: "Kunde gehört nicht zu dieser Organisation." },
+        { status: 400 }
+      );
+    customerId = cust.id;
+  }
 
   const kmPickup = numeric(body.km_pickup);
   const kmReturn = numeric(body.km_return);
@@ -130,11 +152,27 @@ export const POST = async (req: Request) => {
   };
 
   // Mitarbeiter dürfen keine Partner-Verrechnung setzen (Partner = owner-only).
-  if ((await myRole()) !== "owner") {
+  const isOwner = (await myRole()) === "owner";
+  if (!isOwner) {
     insertRow.partner_id = null;
     insertRow.partner_purchase_price = null;
     insertRow.partner_selling_price = null;
     insertRow.partner_commission = null;
+  } else if (insertRow.partner_id) {
+    // SECURITY (Multi-Tenant): partner_id muss zur eigenen Org gehoeren, sonst
+    // referenziert der Vertrag einen Partner einer fremden Organisation.
+    const { data: p } = await admin
+      .from("sales_partners")
+      .select("id")
+      .eq("id", insertRow.partner_id)
+      .eq("org_id", auth.org_id)
+      .maybeSingle();
+    if (!p) {
+      insertRow.partner_id = null;
+      insertRow.partner_purchase_price = null;
+      insertRow.partner_selling_price = null;
+      insertRow.partner_commission = null;
+    }
   }
 
   const { data, error } = await admin
@@ -150,7 +188,11 @@ export const POST = async (req: Request) => {
     "contract.create",
     (data as { contract_nr?: string })?.contract_nr ?? null
   );
-  return NextResponse.json({ ok: true, contract: data });
+  // Defense-in-depth: Partner-Verrechnung nie ungereinigt an Mitarbeiter zurueck.
+  return NextResponse.json({
+    ok: true,
+    contract: redactContractPartner(data as Contract, isOwner),
+  });
 };
 
 export const DELETE = async (req: Request) => {
