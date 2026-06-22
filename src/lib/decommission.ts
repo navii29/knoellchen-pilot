@@ -47,26 +47,26 @@ export const computeDecommission = (vehicle: Pick<Vehicle, "decommission_date">)
       ring: "#fecaca",
     };
   }
-  if (daysLeft <= 7) {
+  if (daysLeft <= 14) {
     return {
       daysLeft,
       level: "urgent",
       label: `${daysLeft} ${daysLeft === 1 ? "Tag" : "Tage"} bis Aussteuerung`,
-      color: "#ea580c", // orange-600
+      color: "#ea580c", // orange-600 (kräftiger in den letzten 2 Wochen)
       textColor: "#c2410c",
       bg: "#fff7ed",
       ring: "#fed7aa",
     };
   }
-  if (daysLeft <= 21) {
+  if (daysLeft <= 45) {
     return {
       daysLeft,
       level: "warn",
       label: `${daysLeft} Tage bis Aussteuerung`,
-      color: "#ca8a04", // yellow-600
-      textColor: "#a16207",
-      bg: "#fefce8",
-      ring: "#fde68a",
+      color: "#f97316", // orange-500 — ab 45 Tagen orange, damit es auffällt
+      textColor: "#c2410c",
+      bg: "#fff7ed",
+      ring: "#fed7aa",
     };
   }
   return {
@@ -82,7 +82,7 @@ export const computeDecommission = (vehicle: Pick<Vehicle, "decommission_date">)
 
 export const isDecommissionAlertWindow = (
   vehicle: Pick<Vehicle, "decommission_date">,
-  windowDays = 21
+  windowDays = 45
 ): boolean => {
   const info = computeDecommission(vehicle);
   return info.daysLeft !== null && info.daysLeft <= windowDays;

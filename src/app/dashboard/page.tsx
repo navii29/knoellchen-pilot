@@ -169,7 +169,7 @@ export default async function DashboardPage() {
   const allVehicles = (vehicles ?? []) as Vehicle[];
   const active = (activeContractsRaw ?? []) as ActiveContractRow[];
 
-  const decommissionAlerts = allVehicles.filter((v) => isDecommissionAlertWindow(v, 21));
+  const decommissionAlerts = allVehicles.filter((v) => isDecommissionAlertWindow(v, 45));
 
   // Handlungsbedarf-Zähler
   const neu = allTickets.filter((t) => t.status === "neu").length;

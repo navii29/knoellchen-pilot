@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Car, ChevronRight, FileSpreadsheet, Loader2, Plus, Trash2 } from "lucide-react";
+import { Car, ChevronRight, Download, FileSpreadsheet, Loader2, Plus, Trash2 } from "lucide-react";
 import { CsvImportModal } from "@/components/dashboard/CsvImportModal";
 import {
   BulkBar,
@@ -119,6 +119,12 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
         description="Stammdaten, Verfügbarkeit, Preise — alles in einem Datensatz pro Auto."
         actions={
           <>
+            <a
+              href="/api/vehicles/export"
+              className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn border border-hairline bg-paper text-ink-soft hover:bg-canvas hover:text-ink transition-colors"
+            >
+              <Download size={14} /> Exportieren
+            </a>
             <Button
               variant="ghost"
               size="sm"

@@ -30,16 +30,20 @@ describe("computeDecommission", () => {
     expect(r.daysLeft).toBeLessThan(0);
   });
 
-  it("in 3 Tagen → urgent", () => {
+  it("in 3 Tagen → urgent (≤14)", () => {
     expect(computeDecommission({ decommission_date: isoInDays(3) }).level).toBe("urgent");
   });
 
-  it("in 14 Tagen → warn", () => {
-    expect(computeDecommission({ decommission_date: isoInDays(14) }).level).toBe("warn");
+  it("in 14 Tagen → urgent (Grenze)", () => {
+    expect(computeDecommission({ decommission_date: isoInDays(14) }).level).toBe("urgent");
   });
 
-  it("in 40 Tagen → ok", () => {
-    expect(computeDecommission({ decommission_date: isoInDays(40) }).level).toBe("ok");
+  it("in 30 Tagen → warn (orange, ≤45)", () => {
+    expect(computeDecommission({ decommission_date: isoInDays(30) }).level).toBe("warn");
+  });
+
+  it("in 60 Tagen → ok", () => {
+    expect(computeDecommission({ decommission_date: isoInDays(60) }).level).toBe("ok");
   });
 });
 
