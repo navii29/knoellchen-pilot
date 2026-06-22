@@ -195,7 +195,7 @@ Die Felder sind mit Buchstaben/Ziffern codiert. Nutze diese Zuordnung:
 - D.3 -> Handelsbezeichnung (Modell)
 - E   -> Fahrzeug-Identifizierungsnummer (FIN/VIN, 17 Zeichen)
 - P.3 -> Kraftstoff / Energiequelle
-- P.2 -> Nennleistung in kW (nur die kW-Zahl, nicht die Drehzahl)
+- P.2 -> Nennleistung in kW. ACHTUNG Format: "kW /Nenndrehzahl", z. B. "110 /3000" bedeutet 110 kW. Nimm AUSSCHLIESSLICH die Zahl VOR dem Schrägstrich. NIEMALS die Drehzahl danach mitnehmen und NIEMALS beide Zahlen zusammenhängen (also nicht 1103000, nicht 1100). Typische PKW-Leistung: 40–600 kW. Bei Unsicherheit lieber null.
 - P.1 -> Hubraum in cm³
 - S.1 -> Sitzplätze einschließlich Fahrersitz
 - R   -> Farbe des Fahrzeugs
@@ -220,7 +220,7 @@ Antworte AUSSCHLIESSLICH mit gültigem JSON (keine Erklärungen, kein Markdown):
   "model": "Handelsbezeichnung oder null",
   "vin": "FIN oder null",
   "fuel_type": "Kraftstoff — wähle exakt einen aus: [${FUEL_TYPES.join(", ")}], sonst null",
-  "power_kw": Zahl oder null,
+  "power_kw": Nennleistung in kW als Zahl, z. B. 110 (NUR der Wert vor dem "/", typ. 40–600), oder null,
   "displacement_ccm": Zahl oder null,
   "seats": Zahl oder null,
   "color": "deutscher Farbname normal geschrieben (z. B. Schwarz) oder null",
