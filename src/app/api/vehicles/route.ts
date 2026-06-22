@@ -4,6 +4,7 @@ import { normalizePlate } from "@/lib/plate";
 import { VEHICLE_STATUSES, buildVehicleType } from "@/lib/vehicle";
 import { myRole } from "@/lib/team";
 import { redactVehicleCost } from "@/lib/redact";
+import { logActivity } from "@/lib/activity";
 import { syncVehicleToLexoffice } from "@/lib/lexoffice-vehicle-sync";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
 
@@ -157,6 +158,8 @@ export const POST = async (req: Request) => {
   if (lexId && lexId !== vehicle.lexoffice_product_id) {
     vehicle.lexoffice_product_id = lexId;
   }
+
+  await logActivity(admin, user.id, profile.org_id, "vehicle.create", vehicle.plate);
 
   return NextResponse.json({ ok: true, vehicle: redactVehicleCost(vehicle, isOwner) });
 };

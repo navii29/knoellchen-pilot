@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/dashboard/Sidebar";
+import { Heartbeat } from "@/components/dashboard/Heartbeat";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,8 @@ export default async function DashboardLayout({
 
   return (
     <div className="md:h-screen md:flex bg-canvas min-h-screen relative isolate">
+      {/* Misst aktive Zeit fürs Inhaber-Überwachungs-Dashboard. */}
+      <Heartbeat />
       {/* Aurora field — the luminous light the Liquid Glass refracts. */}
       <div className="workspace-aurora" aria-hidden />
       <Sidebar

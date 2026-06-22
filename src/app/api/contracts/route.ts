@@ -4,6 +4,7 @@ import { nextContractNr } from "@/lib/contract-utils";
 import { computeExtraKm } from "@/lib/km";
 import { normalizePlate } from "@/lib/plate";
 import { myRole } from "@/lib/team";
+import { logActivity } from "@/lib/activity";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -142,6 +143,13 @@ export const POST = async (req: Request) => {
     .select("*")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await logActivity(
+    admin,
+    auth.user.id,
+    auth.org_id,
+    "contract.create",
+    (data as { contract_nr?: string })?.contract_nr ?? null
+  );
   return NextResponse.json({ ok: true, contract: data });
 };
 
