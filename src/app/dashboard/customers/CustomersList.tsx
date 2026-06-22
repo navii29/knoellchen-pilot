@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, FileSpreadsheet, Loader2, Plus, Trash2, Users } from "lucide-react";
+import { Building2, ChevronRight, FileSpreadsheet, Loader2, Plus, Trash2, Users } from "lucide-react";
 import { CsvImportModal } from "@/components/dashboard/CsvImportModal";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button, ButtonLink } from "@/components/ui/Button";
@@ -14,10 +14,16 @@ import {
   SelectCheckbox,
   useRowSelection,
 } from "@/components/dashboard/bulk-select";
+import { customerDisplayName, isCompany } from "@/lib/customer";
 import type { Customer } from "@/lib/types";
 
-const fullName = (c: Customer) =>
-  [c.title, c.first_name, c.last_name].filter(Boolean).join(" ");
+const fullName = (c: Customer) => customerDisplayName(c);
+
+const CompanyTag = () => (
+  <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 align-middle">
+    <Building2 size={10} /> Firma
+  </span>
+);
 
 const fullAddress = (c: Customer) =>
   [
@@ -40,6 +46,7 @@ export const CustomersList = ({ initial }: { initial: Customer[] }) => {
     return initial.filter((c) => {
       return (
         fullName(c).toLowerCase().includes(needle) ||
+        (c.company_name || "").toLowerCase().includes(needle) ||
         (c.email || "").toLowerCase().includes(needle) ||
         (c.phone || "").toLowerCase().includes(needle) ||
         (c.license_nr || "").toLowerCase().includes(needle) ||
@@ -158,8 +165,14 @@ export const CustomersList = ({ initial }: { initial: Customer[] }) => {
               <Link href={`/dashboard/customers/${c.id}`} style={{ display: "contents" }}>
                 <span className="text-ink truncate">
                   {fullName(c) || "—"}
-                  {c.salutation && (
-                    <span className="text-ink-muted text-[12px] ml-2">{c.salutation}</span>
+                  {isCompany(c) ? (
+                    <span className="ml-2">
+                      <CompanyTag />
+                    </span>
+                  ) : (
+                    c.salutation && (
+                      <span className="text-ink-muted text-[12px] ml-2">{c.salutation}</span>
+                    )
                   )}
                 </span>
                 <span className="text-ink-muted text-[12.5px] truncate">{c.email || "—"}</span>
@@ -187,8 +200,9 @@ export const CustomersList = ({ initial }: { initial: Customer[] }) => {
                 className="flex items-start gap-3 flex-1 min-w-0 active:bg-canvas"
               >
                 <div className="flex-1 min-w-0 space-y-0.5">
-                  <div className="text-[14px] font-medium text-ink truncate">
-                    {fullName(c) || "—"}
+                  <div className="text-[14px] font-medium text-ink truncate flex items-center gap-2">
+                    <span className="truncate">{fullName(c) || "—"}</span>
+                    {isCompany(c) && <CompanyTag />}
                   </div>
                   <div className="text-[12px] text-ink-muted truncate">{c.email || "—"}</div>
                   {c.phone && (

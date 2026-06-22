@@ -38,6 +38,9 @@ const org: Organization = {
 const customer: Customer = {
   id: "cust-1",
   org_id: org.id,
+  customer_type: "privat",
+  company_name: null,
+  legal_form: null,
   salutation: "Herr",
   title: null,
   first_name: "Hall Construction",

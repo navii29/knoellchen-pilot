@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  Building2,
   Camera,
   CreditCard,
   IdCard,
@@ -11,17 +12,22 @@ import {
   Save,
   ScanText,
   Sparkles,
+  User,
   UserPlus,
 } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Panel } from "@/components/ui/Panel";
 import { Button } from "@/components/ui/Button";
+import { LEGAL_FORMS, COUNTRIES } from "@/lib/customer";
 import type { CustomerDocumentType, ParsedCustomerData } from "@/lib/types";
 
 type Mode = "choose" | "ai" | "manual";
 
 type FormState = {
+  customer_type: "privat" | "firma";
+  company_name: string;
+  legal_form: string;
   salutation: string;
   title: string;
   first_name: string;
@@ -31,6 +37,7 @@ type FormState = {
   house_nr: string;
   zip: string;
   city: string;
+  country: string;
   email: string;
   phone: string;
   license_nr: string;
@@ -43,6 +50,9 @@ type FormState = {
 };
 
 const empty: FormState = {
+  customer_type: "privat",
+  company_name: "",
+  legal_form: "",
   salutation: "",
   title: "",
   first_name: "",
@@ -52,6 +62,7 @@ const empty: FormState = {
   house_nr: "",
   zip: "",
   city: "",
+  country: "Deutschland",
   email: "",
   phone: "",
   license_nr: "",
@@ -139,7 +150,12 @@ export const NewCustomerClient = () => {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!data.last_name.trim()) {
+    if (data.customer_type === "firma") {
+      if (!data.company_name.trim()) {
+        setError("Firmenname ist Pflichtfeld");
+        return;
+      }
+    } else if (!data.last_name.trim()) {
       setError("Nachname ist Pflichtfeld");
       return;
     }
@@ -327,33 +343,62 @@ export const NewCustomerClient = () => {
           )}
 
           <Panel>
-            <Section title="Person">
-              <Field label="Anrede">
-                <select value={data.salutation} onChange={set("salutation")} className="field">
-                  <option value="">—</option>
-                  <option value="Herr">Herr</option>
-                  <option value="Frau">Frau</option>
-                  <option value="Divers">Divers</option>
-                </select>
-              </Field>
-              <Field label="Titel">
-                <input value={data.title} onChange={set("title")} placeholder="Dr., Prof." className="field" />
-              </Field>
-              <Field label="Vorname">
-                <input value={data.first_name} onChange={set("first_name")} className="field" />
-              </Field>
-              <Field label="Nachname *">
-                <input required value={data.last_name} onChange={set("last_name")} className="field" />
-              </Field>
-              <Field label="Geburtsdatum">
-                <input
-                  type="date"
-                  value={data.birthday}
-                  onChange={set("birthday")}
-                  className="field font-mono tnum"
-                />
-              </Field>
-            </Section>
+            <div className="data-label mb-3">Kundentyp</div>
+            <CustomerTypeToggle
+              value={data.customer_type}
+              onChange={(t) => setData((d) => ({ ...d, customer_type: t }))}
+            />
+            {data.customer_type === "firma" ? (
+              <Section title="Firma">
+                <Field label="Firmenname *">
+                  <input
+                    required
+                    value={data.company_name}
+                    onChange={set("company_name")}
+                    placeholder="z. B. LEVRA SERVICE"
+                    className="field"
+                  />
+                </Field>
+                <Field label="Rechtsform">
+                  <select value={data.legal_form} onChange={set("legal_form")} className="field">
+                    <option value="">—</option>
+                    {LEGAL_FORMS.map((f) => (
+                      <option key={f} value={f}>
+                        {f}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </Section>
+            ) : (
+              <Section title="Person">
+                <Field label="Anrede">
+                  <select value={data.salutation} onChange={set("salutation")} className="field">
+                    <option value="">—</option>
+                    <option value="Herr">Herr</option>
+                    <option value="Frau">Frau</option>
+                    <option value="Divers">Divers</option>
+                  </select>
+                </Field>
+                <Field label="Titel">
+                  <input value={data.title} onChange={set("title")} placeholder="Dr., Prof." className="field" />
+                </Field>
+                <Field label="Vorname">
+                  <input value={data.first_name} onChange={set("first_name")} className="field" />
+                </Field>
+                <Field label="Nachname *">
+                  <input required value={data.last_name} onChange={set("last_name")} className="field" />
+                </Field>
+                <Field label="Geburtsdatum">
+                  <input
+                    type="date"
+                    value={data.birthday}
+                    onChange={set("birthday")}
+                    className="field font-mono tnum"
+                  />
+                </Field>
+              </Section>
+            )}
           </Panel>
 
           <Panel>
@@ -369,6 +414,15 @@ export const NewCustomerClient = () => {
               </Field>
               <Field label="Ort">
                 <input value={data.city} onChange={set("city")} className="field" />
+              </Field>
+              <Field label="Land">
+                <select value={data.country} onChange={set("country")} className="field">
+                  {COUNTRIES.map((land) => (
+                    <option key={land} value={land}>
+                      {land}
+                    </option>
+                  ))}
+                </select>
               </Field>
             </Section>
           </Panel>
@@ -449,6 +503,34 @@ export const NewCustomerClient = () => {
     </>
   );
 };
+
+const CustomerTypeToggle = ({
+  value,
+  onChange,
+}: {
+  value: "privat" | "firma";
+  onChange: (t: "privat" | "firma") => void;
+}) => (
+  <div className="inline-flex rounded-btn border border-hairline bg-canvas p-0.5 mb-4">
+    {(
+      [
+        { v: "privat", label: "Privatperson", Icon: User },
+        { v: "firma", label: "Firma", Icon: Building2 },
+      ] as const
+    ).map(({ v, label, Icon }) => (
+      <button
+        key={v}
+        type="button"
+        onClick={() => onChange(v)}
+        className={`inline-flex items-center gap-1.5 rounded-[6px] px-3 py-1.5 text-[13px] font-medium transition-colors ${
+          value === v ? "bg-paper text-ink shadow-sm" : "text-ink-muted hover:text-ink"
+        }`}
+      >
+        <Icon size={14} /> {label}
+      </button>
+    ))}
+  </div>
+);
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div>

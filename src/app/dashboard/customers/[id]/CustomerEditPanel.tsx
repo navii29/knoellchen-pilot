@@ -2,15 +2,19 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Pencil, Save } from "lucide-react";
+import { Building2, Loader2, Pencil, Save, User } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { Button } from "@/components/ui/Button";
+import { LEGAL_FORMS, COUNTRIES } from "@/lib/customer";
 import type { Customer } from "@/lib/types";
 
 // Inline-Bearbeiten der Kundendaten auf der Detailseite: "Bearbeiten" schaltet
 // die read-only-Karten gegen ein Formular über alle Felder. Speichern via
 // PATCH /api/customers/[id], danach zurück zur Ansicht (router.refresh).
 type FormState = {
+  customer_type: "privat" | "firma";
+  company_name: string;
+  legal_form: string;
   salutation: string;
   title: string;
   first_name: string;
@@ -32,6 +36,9 @@ type FormState = {
 };
 
 const fromCustomer = (c: Customer): FormState => ({
+  customer_type: c.customer_type === "firma" ? "firma" : "privat",
+  company_name: c.company_name ?? "",
+  legal_form: c.legal_form ?? "",
   salutation: c.salutation ?? "",
   title: c.title ?? "",
   first_name: c.first_name ?? "",
@@ -103,7 +110,12 @@ const CustomerEditForm = ({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!data.last_name.trim()) {
+    if (data.customer_type === "firma") {
+      if (!data.company_name.trim()) {
+        setError("Firmenname ist Pflichtfeld");
+        return;
+      }
+    } else if (!data.last_name.trim()) {
       setError("Nachname ist Pflichtfeld");
       return;
     }
@@ -133,28 +145,72 @@ const CustomerEditForm = ({
       </div>
 
       <Panel>
-        <Section title="Person">
-          <Field label="Anrede">
-            <select value={data.salutation} onChange={set("salutation")} className="field">
-              <option value="">—</option>
-              <option value="Herr">Herr</option>
-              <option value="Frau">Frau</option>
-              <option value="Divers">Divers</option>
-            </select>
-          </Field>
-          <Field label="Titel">
-            <input value={data.title} onChange={set("title")} placeholder="Dr., Prof." className="field" />
-          </Field>
-          <Field label="Vorname">
-            <input value={data.first_name} onChange={set("first_name")} className="field" />
-          </Field>
-          <Field label="Nachname *">
-            <input required value={data.last_name} onChange={set("last_name")} className="field" />
-          </Field>
-          <Field label="Geburtsdatum">
-            <input type="date" value={data.birthday} onChange={set("birthday")} className="field font-mono tnum" />
-          </Field>
-        </Section>
+        <div className="data-label mb-3">Kundentyp</div>
+        <div className="inline-flex rounded-btn border border-hairline bg-canvas p-0.5 mb-4">
+          {(
+            [
+              { v: "privat", label: "Privatperson", Icon: User },
+              { v: "firma", label: "Firma", Icon: Building2 },
+            ] as const
+          ).map(({ v, label, Icon }) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setData((d) => ({ ...d, customer_type: v }))}
+              className={`inline-flex items-center gap-1.5 rounded-[6px] px-3 py-1.5 text-[13px] font-medium transition-colors ${
+                data.customer_type === v ? "bg-paper text-ink shadow-sm" : "text-ink-muted hover:text-ink"
+              }`}
+            >
+              <Icon size={14} /> {label}
+            </button>
+          ))}
+        </div>
+        {data.customer_type === "firma" ? (
+          <Section title="Firma">
+            <Field label="Firmenname *">
+              <input
+                required
+                value={data.company_name}
+                onChange={set("company_name")}
+                placeholder="z. B. LEVRA SERVICE"
+                className="field"
+              />
+            </Field>
+            <Field label="Rechtsform">
+              <select value={data.legal_form} onChange={set("legal_form")} className="field">
+                <option value="">—</option>
+                {LEGAL_FORMS.map((f) => (
+                  <option key={f} value={f}>
+                    {f}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </Section>
+        ) : (
+          <Section title="Person">
+            <Field label="Anrede">
+              <select value={data.salutation} onChange={set("salutation")} className="field">
+                <option value="">—</option>
+                <option value="Herr">Herr</option>
+                <option value="Frau">Frau</option>
+                <option value="Divers">Divers</option>
+              </select>
+            </Field>
+            <Field label="Titel">
+              <input value={data.title} onChange={set("title")} placeholder="Dr., Prof." className="field" />
+            </Field>
+            <Field label="Vorname">
+              <input value={data.first_name} onChange={set("first_name")} className="field" />
+            </Field>
+            <Field label="Nachname *">
+              <input required value={data.last_name} onChange={set("last_name")} className="field" />
+            </Field>
+            <Field label="Geburtsdatum">
+              <input type="date" value={data.birthday} onChange={set("birthday")} className="field font-mono tnum" />
+            </Field>
+          </Section>
+        )}
       </Panel>
 
       <Panel>
@@ -172,7 +228,13 @@ const CustomerEditForm = ({
             <input value={data.city} onChange={set("city")} className="field" />
           </Field>
           <Field label="Land">
-            <input value={data.country} onChange={set("country")} placeholder="Deutschland" className="field" />
+            <select value={data.country || "Deutschland"} onChange={set("country")} className="field">
+              {COUNTRIES.map((land) => (
+                <option key={land} value={land}>
+                  {land}
+                </option>
+              ))}
+            </select>
           </Field>
         </Section>
       </Panel>

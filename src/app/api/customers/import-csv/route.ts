@@ -6,6 +6,7 @@ import {
   parseCsvText,
   type ColumnMapping,
 } from "@/lib/csv-import";
+import { resolveCustomerNaming } from "@/lib/customer";
 import { decodeCsvFile } from "@/lib/encoding";
 import { mapCsvColumns } from "@/lib/anthropic";
 import { normalizePlate } from "@/lib/plate";
@@ -106,16 +107,22 @@ export const POST = async (req: Request) => {
     const insertRows: Record<string, unknown>[] = [];
     parsed.rows.forEach((raw, i) => {
       const mapped = applyMapping(raw, cleanMapping);
-      const lastName = String(mapped.last_name ?? "").trim();
-      if (!lastName) {
-        results.push({
-          row_index: i + 1,
-          ok: false,
-          error: "Pflichtfeld 'Nachname' fehlt",
-        });
+      // Privat braucht Nachname, Firma braucht Firmenname (wird automatisch
+      // erkannt, wenn eine Firmenname-Spalte gemappt ist).
+      const naming = resolveCustomerNaming(mapped);
+      if ("error" in naming) {
+        results.push({ row_index: i + 1, ok: false, error: naming.error });
         return;
       }
-      insertRows.push({ ...mapped, org_id: auth.org_id });
+      insertRows.push({
+        ...mapped,
+        customer_type: naming.customer_type,
+        company_name: naming.company_name,
+        legal_form: naming.legal_form,
+        last_name: naming.last_name,
+        first_name: naming.customer_type === "firma" ? null : mapped.first_name ?? null,
+        org_id: auth.org_id,
+      });
       results.push({ row_index: i + 1, ok: true });
     });
 

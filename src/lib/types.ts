@@ -307,6 +307,11 @@ export interface ParsedContractData {
 export interface Customer {
   id: string;
   org_id: string;
+  // Firmenkunden (Migration 052): 'privat' | 'firma'. Bei Firmen hält last_name
+  // gespiegelt "Firmenname Rechtsform" (Abwärtskompatibilität für Verträge/PDFs).
+  customer_type: string;
+  company_name: string | null;
+  legal_form: string | null;
   salutation: string | null;
   title: string | null;
   first_name: string | null;

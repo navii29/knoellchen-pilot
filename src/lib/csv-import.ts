@@ -34,6 +34,9 @@ export type FieldDef = {
 };
 
 export const CUSTOMER_FIELDS: FieldDef[] = [
+  { key: "customer_type", label: "Kundentyp", hint: "privat / firma" },
+  { key: "company_name", label: "Firmenname", hint: "bei Firmenkunden" },
+  { key: "legal_form", label: "Rechtsform", hint: "GmbH, UG, AG" },
   { key: "salutation", label: "Anrede", hint: "Herr, Frau" },
   { key: "title", label: "Titel", hint: "Dr., Prof." },
   { key: "first_name", label: "Vorname" },

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { resolveCustomerNaming } from "@/lib/customer";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -39,16 +40,21 @@ export const POST = async (req: Request) => {
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const body = (await req.json()) as Record<string, unknown>;
-  if (!body.last_name || String(body.last_name).trim() === "") {
-    return NextResponse.json({ error: "Pflichtfeld fehlt: last_name" }, { status: 400 });
+  const naming = resolveCustomerNaming(body);
+  if ("error" in naming) {
+    return NextResponse.json({ error: naming.error }, { status: 400 });
   }
 
   const insertRow = {
     org_id: auth.org_id,
+    customer_type: naming.customer_type,
+    company_name: naming.company_name,
+    legal_form: naming.legal_form,
     salutation: trimOrNull(body.salutation),
     title: trimOrNull(body.title),
-    first_name: trimOrNull(body.first_name),
-    last_name: String(body.last_name).trim(),
+    // Bei Firmen kein Vorname (sonst verfälscht er die Namenszusammensetzung).
+    first_name: naming.customer_type === "firma" ? null : trimOrNull(body.first_name),
+    last_name: naming.last_name,
     birthday: trimOrNull(body.birthday),
     street: trimOrNull(body.street),
     house_nr: trimOrNull(body.house_nr),
