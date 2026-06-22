@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { VEHICLE_STATUSES } from "@/lib/vehicle";
+import { normalizePlate } from "@/lib/plate";
 import { myRole } from "@/lib/team";
 import { redactVehicleCost } from "@/lib/redact";
 import { syncVehicleToLexoffice } from "@/lib/lexoffice-vehicle-sync";
@@ -158,6 +159,14 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
       if (v !== undefined) patch[k] = v;
     }
   }
+  // Kennzeichen separat (Sonderbehandlung: normalisieren + Eindeutigkeit). Wurde
+  // bislang gar nicht akzeptiert -> Korrektur eines vom OCR falsch erkannten
+  // Kennzeichens am Auto-Entwurf wurde stillschweigend verworfen.
+  if ("plate" in body) {
+    const np = normalizePlate(String(body.plate ?? ""));
+    if (!np) return NextResponse.json({ error: "Kennzeichen ungültig" }, { status: 400 });
+    patch.plate = np;
+  }
   if ("decommission_reminded" in body) {
     patch.decommission_reminded = Boolean(body.decommission_reminded);
   }
@@ -195,7 +204,14 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
     .eq("org_id", auth.org_id)
     .select("*")
     .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    if (error.code === "23505")
+      return NextResponse.json(
+        { error: "Kennzeichen ist bereits an einem anderen Fahrzeug vergeben." },
+        { status: 409 }
+      );
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   // LexOffice-Sync nur wenn relevante Felder geändert wurden (Title-, Preis-
   // oder Beschreibungsfelder) ODER wenn die Article-ID noch fehlt (Backfill).
