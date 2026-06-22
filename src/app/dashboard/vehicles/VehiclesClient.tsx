@@ -12,7 +12,12 @@ import {
 } from "@/components/dashboard/bulk-select";
 import { fmtDate } from "@/lib/utils";
 import { computeDecommission } from "@/lib/decommission";
-import { VEHICLE_STATUS_META, buildVehicleType, isDecommissioned } from "@/lib/vehicle";
+import {
+  VEHICLE_STATUS_META,
+  SUCCESSOR_STATUS_META,
+  buildVehicleType,
+  isDecommissioned,
+} from "@/lib/vehicle";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FilterTabs, SearchInput } from "@/components/ui/Toolbar";
@@ -36,6 +41,21 @@ const VehicleStatusPill = ({ status }: { status: VehicleStatus }) => {
       style={{ background: meta.bg, color: meta.text, boxShadow: `inset 0 0 0 1px ${meta.ring}` }}
     >
       <span className="w-1.5 h-1.5 rounded-full" style={{ background: meta.color }} />
+      {meta.label}
+    </span>
+  );
+};
+
+/** Nachfolge-Hinweis (Folgefahrzeug zugeteilt / ersatzlos) — nur wenn gesetzt. */
+const SuccessorPill = ({ status }: { status: string | null }) => {
+  if (!status) return null;
+  const meta = SUCCESSOR_STATUS_META[status];
+  if (!meta) return null;
+  return (
+    <span
+      className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-full border align-middle"
+      style={{ background: meta.bg, color: meta.color, borderColor: meta.color + "33" }}
+    >
       {meta.label}
     </span>
   );
@@ -221,6 +241,11 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
                       unvollständig
                     </span>
                   )}
+                  {v.successor_status && (
+                    <span className="ml-2">
+                      <SuccessorPill status={v.successor_status} />
+                    </span>
+                  )}
                 </Link>
                 <Link href={`/dashboard/vehicles/${v.id}`} className="text-[12.5px] text-ink-muted truncate">
                   {v.body_type || "—"}
@@ -301,6 +326,7 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
                     <div className="flex items-center gap-2 flex-wrap">
                       <Plate value={v.plate} size="sm" />
                       <VehicleStatusPill status={v.status} />
+                      <SuccessorPill status={v.successor_status} />
                     </div>
                     <div className="text-[13px] text-ink truncate">{name}</div>
                     <div className="text-[11px] font-mono text-ink-muted truncate">
