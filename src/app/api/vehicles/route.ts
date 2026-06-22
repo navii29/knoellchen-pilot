@@ -115,6 +115,9 @@ export const POST = async (req: Request) => {
     cost_daily: numOrNull(body.cost_daily),
     cost_monthly: numOrNull(body.cost_monthly),
     target_daily_rate: numOrNull(body.target_daily_rate),
+    onetime_cost_supplier: numOrNull(body.onetime_cost_supplier),
+    onetime_cost_pickup: numOrNull(body.onetime_cost_pickup),
+    onetime_cost_return: numOrNull(body.onetime_cost_return),
 
     accessories: trimOrNull(body.accessories),
     status,
@@ -141,6 +144,9 @@ export const POST = async (req: Request) => {
     delete r.cost_daily;
     delete r.cost_monthly;
     delete r.target_daily_rate;
+    delete r.onetime_cost_supplier;
+    delete r.onetime_cost_pickup;
+    delete r.onetime_cost_return;
   }
 
   const admin = createAdminClient();

@@ -68,6 +68,11 @@ type VehicleLite = Pick<
   | "cost_monthly"
   | "target_daily_rate"
   | "daily_rate"
+  | "onetime_cost_supplier"
+  | "onetime_cost_pickup"
+  | "onetime_cost_return"
+  | "first_registration"
+  | "decommission_date"
 >;
 
 type ContractLite = Pick<
@@ -87,13 +92,36 @@ const buildLabel = (v: VehicleLite): string =>
   v.vehicle_type ||
   "Fahrzeug";
 
-// Falls cost_daily nicht direkt gesetzt ist, leite es aus cost_monthly / 30 ab.
+// Summe der Einmalkosten (Lieferant + Abholung + Rückverbringung).
+export const onetimeCostsTotal = (v: VehicleLite): number =>
+  (Number(v.onetime_cost_supplier) || 0) +
+  (Number(v.onetime_cost_pickup) || 0) +
+  (Number(v.onetime_cost_return) || 0);
+
+/**
+ * Effektive Tageskosten = laufende Kosten (cost_daily ODER cost_monthly/30)
+ * PLUS die über die Haltedauer (Erstzulassung → Aussteuerung) umgelegten
+ * Einmalkosten. Gibt null zurück, wenn gar keine Kosten hinterlegt sind.
+ */
 export const effectiveCostDaily = (v: VehicleLite): number | null => {
-  if (v.cost_daily != null && Number(v.cost_daily) > 0)
-    return Number(v.cost_daily);
-  if (v.cost_monthly != null && Number(v.cost_monthly) > 0)
-    return round2(Number(v.cost_monthly) / 30);
-  return null;
+  let daily = 0;
+  let has = false;
+  if (v.cost_daily != null && Number(v.cost_daily) > 0) {
+    daily += Number(v.cost_daily);
+    has = true;
+  } else if (v.cost_monthly != null && Number(v.cost_monthly) > 0) {
+    daily += Number(v.cost_monthly) / 30;
+    has = true;
+  }
+  const onetime = onetimeCostsTotal(v);
+  if (onetime > 0 && v.first_registration && v.decommission_date) {
+    const holdDays = periodDays(v.first_registration, v.decommission_date);
+    if (holdDays > 0) {
+      daily += onetime / holdDays;
+      has = true;
+    }
+  }
+  return has ? round2(daily) : null;
 };
 
 export const computeVehicleMargin = (args: {
