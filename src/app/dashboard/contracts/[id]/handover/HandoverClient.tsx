@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -14,20 +14,23 @@ import {
   X,
 } from "lucide-react";
 import { POSITIONS, SEVERITY_STYLE } from "@/lib/handover";
-import type {
-  DamageComparisonResult,
-  HandoverPhoto,
-  HandoverPhotoType,
-  HandoverPosition,
-} from "@/lib/types";
+import type { CompareResultMap } from "@/lib/handover";
+import type { HandoverPhoto, HandoverPhotoType, HandoverPosition } from "@/lib/types";
 
 type PhotoWithUrl = HandoverPhoto & { url: string | null };
 
-type CompareResultMap = Record<
-  string,
-  | { ok: true; data: DamageComparisonResult }
-  | { ok: false; error: string }
->;
+const fmtComparedAt = (iso: string): string =>
+  new Date(iso).toLocaleString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+// Persistierte Map (JSONB) defensiv in unsere Form bringen.
+const coerceComparison = (raw: unknown): CompareResultMap =>
+  raw && typeof raw === "object" ? (raw as CompareResultMap) : {};
 
 export const HandoverClient = ({
   contractId,
@@ -35,12 +38,16 @@ export const HandoverClient = ({
   plate,
   renterName,
   initialPhotos,
+  initialComparison,
+  comparisonAt,
 }: {
   contractId: string;
   contractNr: string;
   plate: string;
   renterName: string;
   initialPhotos: PhotoWithUrl[];
+  initialComparison: unknown;
+  comparisonAt: string | null;
 }) => {
   const router = useRouter();
   const [tab, setTab] = useState<HandoverPhotoType>("pickup");
@@ -48,9 +55,15 @@ export const HandoverClient = ({
   const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [comparing, setComparing] = useState(false);
-  const [results, setResults] = useState<CompareResultMap>({});
+  // Aus dem persistierten Vergleich initialisieren — Ergebnis ist sofort
+  // sichtbar, ohne erneut Tokens zu verbrennen.
+  const [results, setResults] = useState<CompareResultMap>(() =>
+    coerceComparison(initialComparison)
+  );
+  const [comparedAt, setComparedAt] = useState<string | null>(comparisonAt);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const autoRunRef = useRef(false);
 
   const photoFor = (type: HandoverPhotoType, position: HandoverPosition) =>
     photos.find((p) => p.type === type && p.position === position);
@@ -128,6 +141,7 @@ export const HandoverClient = ({
     }
     const j = (await res.json()) as { results: CompareResultMap };
     setResults(j.results);
+    setComparedAt(new Date().toISOString());
   };
 
   const compareOne = async (position: HandoverPosition) => {
@@ -146,11 +160,26 @@ export const HandoverClient = ({
     }
     const j = (await res.json()) as { results: CompareResultMap };
     setResults((prev) => ({ ...prev, ...j.results }));
+    setComparedAt(new Date().toISOString());
   };
 
   const completePairs = POSITIONS.filter(
     (p) => photoFor("pickup", p.key) && photoFor("return", p.key)
   ).length;
+
+  // Auto-Run genau einmal beim Mount: nur wenn Rücknahme-Fotos existieren UND
+  // noch kein persistierter Vergleich vorliegt. Bereits ausgewertete Verträge
+  // laufen NICHT erneut (spart Tokens) — manuelles "neu auswerten" bleibt.
+  useEffect(() => {
+    if (autoRunRef.current) return;
+    autoRunRef.current = true;
+    const hasReturnPhotos = initialPhotos.some((p) => p.type === "return");
+    if (hasReturnPhotos && !comparisonAt) {
+      void compareAll();
+    }
+    // Absichtlich nur beim Mount — Abhängigkeiten bewusst leer.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>
@@ -201,7 +230,10 @@ export const HandoverClient = ({
           const result = results[p.key];
           const showResult = tab === "return" && result?.ok;
           const sev = showResult ? result.data.severity : null;
-          const sevStyle = sev ? SEVERITY_STYLE[sev] : null;
+          const sevStyle =
+            sev && sev in SEVERITY_STYLE
+              ? SEVERITY_STYLE[sev as keyof typeof SEVERITY_STYLE]
+              : null;
 
           return (
             <div
@@ -339,12 +371,12 @@ export const HandoverClient = ({
           className="inline-flex items-center gap-1.5 bg-signal text-white text-[13px] px-4 h-9 rounded-btn font-medium shadow-signal hover:bg-signal-strong disabled:opacity-50 transition-colors"
         >
           {comparing ? <Loader2 size={14} className="animate-spin" /> : <ScanSearch size={14} />}
-          Alle Positionen vergleichen
+          {comparedAt ? "Neu auswerten" : "Alle Positionen vergleichen"}
         </button>
       </div>
 
       {Object.keys(results).length > 0 && (
-        <ResultSummary results={results} />
+        <ResultSummary results={results} comparedAt={comparedAt} />
       )}
     </>
   );
@@ -378,18 +410,33 @@ const TabButton = ({
   </button>
 );
 
-const ResultSummary = ({ results }: { results: CompareResultMap }) => {
+const ResultSummary = ({
+  results,
+  comparedAt,
+}: {
+  results: CompareResultMap;
+  comparedAt: string | null;
+}) => {
   const counts = { none: 0, minor: 0, major: 0 };
   Object.values(results).forEach((r) => {
-    if (r.ok) counts[r.data.severity] += 1;
+    if (r.ok && r.data.severity in counts) {
+      counts[r.data.severity as keyof typeof counts] += 1;
+    }
   });
   const total = counts.none + counts.minor + counts.major;
   if (total === 0) return null;
 
   return (
     <div className="mt-4 panel p-4">
-      <div className="data-label text-ink-muted mb-2 flex items-center gap-1.5">
-        <CheckCircle2 size={12} /> Vergleichs-Ergebnis
+      <div className="data-label text-ink-muted mb-2 flex items-center justify-between gap-2">
+        <span className="flex items-center gap-1.5">
+          <CheckCircle2 size={12} /> Vergleichs-Ergebnis
+        </span>
+        {comparedAt && (
+          <span className="font-mono text-[11px] font-normal normal-case tracking-normal">
+            {fmtComparedAt(comparedAt)}
+          </span>
+        )}
       </div>
       <div className="flex items-center gap-3 flex-wrap">
         <Pill style={SEVERITY_STYLE.none} count={counts.none} label="Kein Schaden" />

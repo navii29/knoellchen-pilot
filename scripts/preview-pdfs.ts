@@ -177,6 +177,10 @@ const contract: Contract = {
   risk_override_reason: null,
   email_sent_at: null,
   email_sent_to: null,
+  damage_comparison: null,
+  damage_comparison_at: null,
+  has_new_damage: null,
+  damage_max_severity: null,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };

@@ -1,5 +1,49 @@
 import type { DamageSeverity, HandoverPosition } from "./types";
 
+/** Ein einzelnes Positions-Ergebnis aus dem KI-Schadenvergleich. */
+export type CompareEntry =
+  | { ok: true; data: { has_damage: boolean; description: string; severity: string } }
+  | { ok: false; error: string };
+
+/** Positions-Map (position -> Ergebnis) wie sie die Compare-Route liefert/speichert. */
+export type CompareResultMap = Record<string, CompareEntry>;
+
+const SEVERITY_RANK: Record<string, number> = { none: 0, minor: 1, major: 2 };
+
+/**
+ * Aggregiert die Positions-Map zu einer Zusammenfassung für den Vertrag.
+ * - has_new_damage: true, wenn mind. eine OK-Position has_damage hat.
+ * - max_severity: höchste Stufe (major > minor > none) über alle OK-Positionen
+ *   mit has_damage; null, wenn es keine OK-Ergebnisse gibt.
+ */
+export const summarizeComparison = (
+  results: CompareResultMap
+): { has_new_damage: boolean; max_severity: DamageSeverity | null } => {
+  let hasNewDamage = false;
+  let anyOk = false;
+  let maxRank = -1;
+  let maxSeverity: DamageSeverity | null = null;
+
+  for (const entry of Object.values(results)) {
+    if (!entry.ok) continue;
+    anyOk = true;
+    if (entry.data.has_damage) {
+      hasNewDamage = true;
+      const rank = SEVERITY_RANK[entry.data.severity] ?? -1;
+      if (rank > maxRank) {
+        maxRank = rank;
+        maxSeverity = entry.data.severity as DamageSeverity;
+      }
+    }
+  }
+
+  return {
+    has_new_damage: hasNewDamage,
+    // Ohne OK-Ergebnisse: null. Mit OK-Ergebnissen aber ohne Schaden: 'none'.
+    max_severity: anyOk ? maxSeverity ?? "none" : null,
+  };
+};
+
 export const POSITIONS: ReadonlyArray<{
   key: HandoverPosition;
   label: string;

@@ -48,6 +48,8 @@ export default async function HandoverPage({ params }: { params: { id: string } 
             plate={c.plate}
             renterName={c.renter_name}
             initialPhotos={photosWithUrl}
+            initialComparison={c.damage_comparison}
+            comparisonAt={c.damage_comparison_at}
           />
         </div>
       </div>

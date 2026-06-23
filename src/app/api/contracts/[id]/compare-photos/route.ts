@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { compareHandoverPhotos } from "@/lib/anthropic";
-import { POSITIONS } from "@/lib/handover";
+import { POSITIONS, summarizeComparison } from "@/lib/handover";
+import type { CompareResultMap } from "@/lib/handover";
 import type { HandoverPhoto, HandoverPosition } from "@/lib/types";
 
 export const maxDuration = 60;
@@ -39,7 +40,7 @@ export const POST = async (req: Request, { params }: { params: { id: string } })
   const admin = createAdminClient();
   const { data: contract } = await admin
     .from("contracts")
-    .select("id")
+    .select("id, damage_comparison")
     .eq("id", params.id)
     .eq("org_id", auth.org_id)
     .maybeSingle();
@@ -57,11 +58,7 @@ export const POST = async (req: Request, { params }: { params: { id: string } })
 
   // Gruppiere nach Position, brauche pickup + return
   const positionsToProcess = position ? [position] : POSITIONS.map((p) => p.key);
-  const results: Record<
-    string,
-    | { ok: true; data: { has_damage: boolean; description: string; severity: string } }
-    | { ok: false; error: string }
-  > = {};
+  const results: CompareResultMap = {};
 
   for (const pos of positionsToProcess) {
     const pickup = all.find((p) => p.position === pos && p.type === "pickup");
@@ -98,6 +95,27 @@ export const POST = async (req: Request, { params }: { params: { id: string } })
       };
     }
   }
+
+  // Bei Einzel-Position-Vergleich nur diese Position aktualisieren, die übrigen
+  // bereits gespeicherten Ergebnisse erhalten — damit die persistierte Map nicht
+  // auf eine einzelne Position zusammenschrumpft.
+  const previous = (contract.damage_comparison ?? {}) as CompareResultMap;
+  const merged: CompareResultMap = position ? { ...previous, ...results } : results;
+
+  // Aggregierte Zusammenfassung für den Vertrag berechnen.
+  const summary = summarizeComparison(merged);
+
+  // Org-scoped persistieren — Ergebnis geht beim Neuladen nicht mehr verloren.
+  await admin
+    .from("contracts")
+    .update({
+      damage_comparison: merged,
+      damage_comparison_at: new Date().toISOString(),
+      has_new_damage: summary.has_new_damage,
+      damage_max_severity: summary.max_severity,
+    })
+    .eq("id", params.id)
+    .eq("org_id", auth.org_id);
 
   return NextResponse.json({ ok: true, results });
 };
