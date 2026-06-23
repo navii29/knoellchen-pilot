@@ -43,15 +43,14 @@ export const POST = async (req: Request) => {
   if (!plate) return NextResponse.json({ error: "Kennzeichen ungültig" }, { status: 400 });
 
   // Anreicherung des (ggf. neu angelegten) Fahrzeugs aus den Vertrags-OCR-Daten.
-  // HINWEIS: Es gibt KEINE vehicles.vin-Spalte (nur fin_number) — vin wird daher
-  // bewusst NICHT in die vehicles-Tabelle geschrieben, nur OCR-seitig erfasst.
+  // Die OCR-FIN (Feld "vin") wird in die Spalte fin_number geschrieben.
   const trimStr = (v: unknown) => {
     const s = typeof v === "string" ? v.trim() : "";
     return s.length > 0 ? s : null;
   };
-  // Spalten existieren: manufacturer, model, color, first_registration, fuel_type.
-  // Der DB-Trigger sync_vehicle_type baut vehicle_type aus manufacturer/model neu —
-  // das ist gewünscht und wird hier nicht umgangen.
+  // Spalten existieren: manufacturer, model, color, first_registration, fuel_type,
+  // fin_number. Der DB-Trigger sync_vehicle_type baut vehicle_type aus
+  // manufacturer/model neu — das ist gewünscht und wird hier nicht umgangen.
   const vehiclePatch: Record<string, string> = {};
   for (const [key, raw] of [
     ["manufacturer", body.manufacturer],
@@ -59,6 +58,7 @@ export const POST = async (req: Request) => {
     ["color", body.color],
     ["first_registration", body.first_registration],
     ["fuel_type", body.fuel_type],
+    ["fin_number", body.vin],
   ] as const) {
     const val = trimStr(raw);
     if (val !== null) vehiclePatch[key] = val;
@@ -74,7 +74,7 @@ export const POST = async (req: Request) => {
     );
   const { data: vehicle } = await admin
     .from("vehicles")
-    .select("id, manufacturer, model, color, first_registration, fuel_type")
+    .select("id, manufacturer, model, color, first_registration, fuel_type, fin_number")
     .eq("org_id", auth.org_id)
     .eq("plate", plate)
     .maybeSingle();
@@ -91,6 +91,7 @@ export const POST = async (req: Request) => {
       "color",
       "first_registration",
       "fuel_type",
+      "fin_number",
     ] as const) {
       const ocrVal = vehiclePatch[key];
       const current = (vehicle as Record<string, unknown>)[key];
