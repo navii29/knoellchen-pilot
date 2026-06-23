@@ -145,10 +145,16 @@ export const POST = async (req: Request, { params }: Ctx) => {
     })),
   ]);
 
-  // Best-effort risk check — MUST NOT block or fail the sign response.
+  // Best-effort risk check — MUST NOT fail the sign response, but the persisted
+  // risk-consent record is GDPR-relevant, so it must actually complete.
+  // Next.js 14.2.35 does NOT ship `unstable_after`/`after` (verified: absent from
+  // next/server and the whole next dist tree), so a floating promise would be
+  // dropped when the serverless instance freezes after the response. We therefore
+  // AWAIT the guarded call: errors are swallowed (never blocks/fails the sign),
+  // but completion is guaranteed before the instance can freeze.
   // Only runs when the customer explicitly gave risk-consent during sign.
   if (body.risk_consent === true) {
-    runRiskCheck(admin, session.org_id, c.id, { setConsent: true }).catch(
+    await runRiskCheck(admin, session.org_id, c.id, { setConsent: true }).catch(
       () => undefined
     );
   }
