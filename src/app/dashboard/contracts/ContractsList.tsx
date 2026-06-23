@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, FileSignature, Loader2, Plus, Trash2 } from "lucide-react";
+import { ChevronRight, FileSignature, FileSpreadsheet, Loader2, Plus, Trash2 } from "lucide-react";
 import { fmtDate } from "@/lib/utils";
 import { isContractOverdue, localTodayIso } from "@/lib/contract-utils";
 import type { Contract, ContractStatus } from "@/lib/types";
@@ -13,6 +13,7 @@ import { Panel } from "@/components/ui/Panel";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FilterTabs, SearchInput } from "@/components/ui/Toolbar";
 import { Button, ButtonLink } from "@/components/ui/Button";
+import { CsvImportModal } from "@/components/dashboard/CsvImportModal";
 import {
   BulkBar,
   SelectCheckbox,
@@ -61,6 +62,7 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const today = useMemo(() => localTodayIso(), []);
 
   const filtered = useMemo(() => {
@@ -116,11 +118,24 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
         title="Mietverträge"
         description="Mietverträge sind die Grundlage für die automatische Strafzettel-Zuordnung."
         actions={
-          <ButtonLink href="/dashboard/contracts/new" variant="signal" size="sm">
-            <Plus size={14} /> Neuer Vertrag
-          </ButtonLink>
+          <>
+            <Button variant="ghost" size="sm" onClick={() => setImportOpen(true)}>
+              <FileSpreadsheet size={14} /> CSV importieren
+            </Button>
+            <ButtonLink href="/dashboard/contracts/new" variant="signal" size="sm">
+              <Plus size={14} /> Neuer Vertrag
+            </ButtonLink>
+          </>
         }
       />
+
+      {importOpen && (
+        <CsvImportModal
+          title="Verträge aus CSV importieren"
+          endpoint="/api/contracts/import-csv"
+          onClose={() => setImportOpen(false)}
+        />
+      )}
 
       <div className="mt-6 flex items-center justify-between flex-wrap gap-3">
         <FilterTabs

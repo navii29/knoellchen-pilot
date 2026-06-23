@@ -59,3 +59,17 @@ describe("normalizeValue — Datum (Kalender-Validierung)", () => {
     expect(d("32.13.2020")).toBeNull();
   });
 });
+
+describe("normalizeValue — Vertrags-Felder (Schlüssel-Sets)", () => {
+  it("Vertrags-Datumsfelder werden als Datum normalisiert", () => {
+    expect(normalizeValue("pickup_date", "15.03.2023")).toBe("2023-03-15");
+    expect(normalizeValue("return_date", "20.03.2023")).toBe("2023-03-20");
+    expect(normalizeValue("renter_license_expiry", "01.01.2030")).toBe("2030-01-01");
+  });
+
+  it("Gesamtbetrag als Zahl, Km als Ganzzahl", () => {
+    expect(normalizeValue("total_amount", "1.299,90")).toBe(1299.9);
+    expect(normalizeValue("km_pickup", "12.345")).toBe(12345);
+    expect(normalizeValue("km_limit", "2000")).toBe(2000);
+  });
+});

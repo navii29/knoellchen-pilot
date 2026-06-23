@@ -92,6 +92,34 @@ export const VEHICLE_FIELDS: FieldDef[] = [
   { key: "onetime_cost_return", label: "Kosten Rückverbringung (€)" },
 ];
 
+// Mietverträge. Bewusst OHNE Partner-/Margenfelder (die bleiben Inhaber-only und
+// werden nicht per CSV gesetzt). Preise hier sind Verkaufspreise (Tagespreis,
+// Gesamtbetrag, Kaution), keine EK-Kosten.
+export const CONTRACT_FIELDS: FieldDef[] = [
+  { key: "contract_nr", label: "Vertragsnummer", hint: "leer = automatisch" },
+  { key: "plate", label: "Kennzeichen", required: true },
+  { key: "vehicle_type", label: "Fahrzeug" },
+  { key: "renter_name", label: "Mietername", required: true },
+  { key: "renter_email", label: "E-Mail" },
+  { key: "renter_phone", label: "Telefon" },
+  { key: "renter_address", label: "Adresse" },
+  { key: "renter_birthday", label: "Geburtsdatum", hint: "YYYY-MM-DD" },
+  { key: "renter_license_nr", label: "Führerschein-Nr." },
+  { key: "renter_license_class", label: "Führerschein-Klasse" },
+  { key: "renter_license_expiry", label: "FS gültig bis", hint: "YYYY-MM-DD" },
+  { key: "pickup_date", label: "Abholdatum", required: true, hint: "YYYY-MM-DD" },
+  { key: "return_date", label: "Rückgabedatum", required: true, hint: "YYYY-MM-DD" },
+  { key: "pickup_time", label: "Abholzeit" },
+  { key: "return_time", label: "Rückgabezeit" },
+  { key: "daily_rate", label: "Tagespreis (€)" },
+  { key: "total_amount", label: "Gesamtbetrag (€)" },
+  { key: "deposit", label: "Kaution (€)" },
+  { key: "km_pickup", label: "Km bei Abholung" },
+  { key: "km_limit", label: "Km-Limit" },
+  { key: "status", label: "Status", hint: "aktiv, abgeschlossen, storniert" },
+  { key: "notes", label: "Notizen" },
+];
+
 // =========================================================
 // Wert-Normalisierung pro Feldtyp
 // =========================================================
@@ -184,6 +212,8 @@ const NUMBER_KEYS = new Set([
   "onetime_cost_supplier",
   "onetime_cost_pickup",
   "onetime_cost_return",
+  // Vertrags-Import
+  "total_amount",
 ]);
 
 // EK-/Kostenfelder — nur Inhaber dürfen sie via CSV importieren.
@@ -202,12 +232,20 @@ const INT_KEYS = new Set([
   "km_at_intake",
   "max_km_total",
   "inclusive_km_month",
+  // Vertrags-Import
+  "km_pickup",
+  "km_limit",
 ]);
 const DATE_KEYS = new Set([
   "birthday",
   "license_expiry",
   "first_registration",
   "available_from",
+  // Vertrags-Import
+  "pickup_date",
+  "return_date",
+  "renter_birthday",
+  "renter_license_expiry",
 ]);
 
 export const normalizeValue = (key: string, raw: string): unknown => {
