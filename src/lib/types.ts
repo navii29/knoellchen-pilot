@@ -323,6 +323,12 @@ export interface ParsedContractData {
   contract_nr?: string | null;
   plate?: string | null;
   vehicle_type?: string | null;
+  manufacturer?: string | null;
+  model?: string | null;
+  color?: string | null;
+  first_registration?: string | null;
+  fuel_type?: string | null;
+  vin?: string | null;
   renter_name?: string | null;
   renter_email?: string | null;
   renter_phone?: string | null;

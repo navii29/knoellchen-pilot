@@ -41,18 +41,71 @@ export const POST = async (req: Request) => {
   const admin = createAdminClient();
   const plate = normalizePlate(body.plate as string);
   if (!plate) return NextResponse.json({ error: "Kennzeichen ungültig" }, { status: 400 });
+
+  // Anreicherung des (ggf. neu angelegten) Fahrzeugs aus den Vertrags-OCR-Daten.
+  // HINWEIS: Es gibt KEINE vehicles.vin-Spalte (nur fin_number) — vin wird daher
+  // bewusst NICHT in die vehicles-Tabelle geschrieben, nur OCR-seitig erfasst.
+  const trimStr = (v: unknown) => {
+    const s = typeof v === "string" ? v.trim() : "";
+    return s.length > 0 ? s : null;
+  };
+  // Spalten existieren: manufacturer, model, color, first_registration, fuel_type.
+  // Der DB-Trigger sync_vehicle_type baut vehicle_type aus manufacturer/model neu —
+  // das ist gewünscht und wird hier nicht umgangen.
+  const vehiclePatch: Record<string, string> = {};
+  for (const [key, raw] of [
+    ["manufacturer", body.manufacturer],
+    ["model", body.model],
+    ["color", body.color],
+    ["first_registration", body.first_registration],
+    ["fuel_type", body.fuel_type],
+  ] as const) {
+    const val = trimStr(raw);
+    if (val !== null) vehiclePatch[key] = val;
+  }
+
   await admin
     .from("vehicles")
     .upsert(
-      { org_id: auth.org_id, plate, vehicle_type: body.vehicle_type ?? null },
+      // Nur Nicht-Null-Felder mitschreiben, damit bei einem frisch angelegten
+      // Fahrzeug keine NULLs ueber die Spalten-Defaults geschrieben werden.
+      { org_id: auth.org_id, plate, vehicle_type: body.vehicle_type ?? null, ...vehiclePatch },
       { onConflict: "org_id,plate", ignoreDuplicates: true }
     );
   const { data: vehicle } = await admin
     .from("vehicles")
-    .select("id")
+    .select("id, manufacturer, model, color, first_registration, fuel_type")
     .eq("org_id", auth.org_id)
     .eq("plate", plate)
     .maybeSingle();
+
+  // Fill-if-empty: bestand das Fahrzeug bereits (oder wurde durch einen
+  // parallelen Vorgang anders befuellt), ergaenzen wir NUR Felder, die in der DB
+  // aktuell NULL/leer sind — bestehende Nicht-Null-Werte werden NIE ueberschrieben.
+  // Das erfuellt "auch wenn das Fahrzeug bereits vorhanden ist".
+  if (vehicle) {
+    const fillPatch: Record<string, string> = {};
+    for (const key of [
+      "manufacturer",
+      "model",
+      "color",
+      "first_registration",
+      "fuel_type",
+    ] as const) {
+      const ocrVal = vehiclePatch[key];
+      const current = (vehicle as Record<string, unknown>)[key];
+      const currentEmpty =
+        current == null || (typeof current === "string" && current.trim() === "");
+      if (ocrVal != null && currentEmpty) fillPatch[key] = ocrVal;
+    }
+    if (Object.keys(fillPatch).length > 0) {
+      await admin
+        .from("vehicles")
+        .update(fillPatch)
+        .eq("org_id", auth.org_id)
+        .eq("plate", plate);
+    }
+  }
 
   const numeric = (v: unknown) =>
     v == null || v === "" ? null : Number(v);
