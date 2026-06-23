@@ -2,11 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2, Save } from "lucide-react";
+import { Check, IdCard, Loader2, Save } from "lucide-react";
 import type { Customer } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
+import { DocScanStep } from "@/components/portal/DocScanStep";
 
-export const ProfileClient = ({ initial }: { initial: Customer }) => {
+export const ProfileClient = ({
+  initial,
+  hasLicensePhoto,
+  hasIdCardPhoto,
+}: {
+  initial: Customer;
+  hasLicensePhoto: boolean;
+  hasIdCardPhoto: boolean;
+}) => {
   const router = useRouter();
   const [data, setData] = useState({
     first_name: initial.first_name ?? "",
@@ -33,6 +42,23 @@ export const ProfileClient = ({ initial }: { initial: Customer }) => {
       setData((d) => ({ ...d, [k]: e.target.value }));
       setSaved(false);
     };
+
+  // Nach erfolgreichem Scan: erkannte Felder ins Formular übernehmen — aber nur
+  // dort, wo bisher leer (überschreibt keine bereits erfassten Angaben).
+  const mergeParsed = (parsed: Record<string, string | null>) => {
+    setData((d) => {
+      const next = { ...d };
+      for (const k of Object.keys(d) as Array<keyof typeof d>) {
+        const v = parsed[k];
+        if (typeof v === "string" && v.trim() && !next[k].trim()) {
+          next[k] = v.trim();
+        }
+      }
+      return next;
+    });
+    setSaved(false);
+    router.refresh();
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -158,10 +184,103 @@ export const ProfileClient = ({ initial }: { initial: Customer }) => {
         </div>
       </form>
 
+      <DocumentsSection
+        hasLicensePhoto={hasLicensePhoto}
+        hasIdCardPhoto={hasIdCardPhoto}
+        onParsed={mergeParsed}
+      />
+
       <PasswordSection />
     </div>
   );
 };
+
+const DocumentsSection = ({
+  hasLicensePhoto,
+  hasIdCardPhoto,
+  onParsed,
+}: {
+  hasLicensePhoto: boolean;
+  hasIdCardPhoto: boolean;
+  onParsed: (parsed: Record<string, string | null>) => void;
+}) => (
+  <div className="glass-card rounded-card p-5 space-y-4">
+    <div className="flex items-center gap-2 kicker text-ink-muted">
+      <IdCard size={12} /> Führerschein &amp; Ausweis hochladen
+    </div>
+    <p className="text-[12.5px] text-ink-soft leading-snug">
+      Lade deine Dokumente vorab hoch — dann geht der Check-in / die
+      Vertragsabwicklung schneller. Deine Daten werden automatisch erkannt und
+      ins Profil übernommen.
+    </p>
+
+    <DocumentSlot
+      title="Führerschein"
+      already={hasLicensePhoto}
+      uploadUrl="/api/portal/profile/document?doc_type=license"
+      ctaLabel={hasLicensePhoto ? "Neues Foto aufnehmen" : "Foto aufnehmen"}
+      exampleHint="Tipp: Beide langen Seiten vollständig im Bild, kein Reflex auf dem Hologramm."
+      parseFields={[
+        { label: "Name", keys: ["first_name", "last_name"], join: " " },
+        { label: "Geburtsdatum", keys: ["birthday"] },
+        { label: "Führerschein-Nr.", keys: ["license_nr"] },
+        { label: "Klassen", keys: ["license_class"] },
+        { label: "Gültig bis", keys: ["license_expiry"] },
+      ]}
+      onParsed={onParsed}
+    />
+
+    <DocumentSlot
+      title="Personalausweis"
+      already={hasIdCardPhoto}
+      uploadUrl="/api/portal/profile/document?doc_type=id_card"
+      ctaLabel={hasIdCardPhoto ? "Neues Foto aufnehmen" : "Foto aufnehmen"}
+      exampleHint="Tipp: Personalausweis Vorderseite genügt — die Adresse steht dort."
+      parseFields={[
+        { label: "Ausweis-Nr.", keys: ["id_card_nr"] },
+        { label: "Straße", keys: ["street", "house_nr"], join: " " },
+        { label: "PLZ + Ort", keys: ["zip", "city"], join: " " },
+      ]}
+      onParsed={onParsed}
+    />
+  </div>
+);
+
+const DocumentSlot = ({
+  title,
+  already,
+  uploadUrl,
+  ctaLabel,
+  exampleHint,
+  parseFields,
+  onParsed,
+}: {
+  title: string;
+  already: boolean;
+  uploadUrl: string;
+  ctaLabel: string;
+  exampleHint: string;
+  parseFields: Array<{ label: string; keys: string[]; join?: string }>;
+  onParsed: (parsed: Record<string, string | null>) => void;
+}) => (
+  <div className="bg-paper border border-hairline rounded-card p-4 space-y-3">
+    <div className="flex items-center justify-between">
+      <div className="text-[13px] font-medium text-ink">{title}</div>
+      {already && (
+        <span className="inline-flex items-center gap-1 text-[12px] text-emerald-700">
+          <Check size={13} /> hinterlegt
+        </span>
+      )}
+    </div>
+    <DocScanStep
+      uploadUrl={uploadUrl}
+      ctaLabel={ctaLabel}
+      exampleHint={exampleHint}
+      parseFields={parseFields}
+      onSuccess={onParsed}
+    />
+  </div>
+);
 
 const PasswordSection = () => {
   const [oldPw, setOldPw] = useState("");
