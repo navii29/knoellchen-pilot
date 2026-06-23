@@ -16,7 +16,12 @@ export const GET = async (req: Request) => {
   const tokenHash = url.searchParams.get("token_hash");
   const type = url.searchParams.get("type") as EmailOtpType | null;
   const next = url.searchParams.get("next") || "/dashboard";
-  const safeNext = next.startsWith("/") ? next : "/dashboard";
+  // Open-Redirect verhindern: nur interne Pfade. Protokoll-relative URLs
+  // (//evil.com, /\evil.com) werden vom Browser als externe Domain interpretiert.
+  const safeNext =
+    next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\")
+      ? next
+      : "/dashboard";
 
   if (!tokenHash || !type) {
     return NextResponse.redirect(new URL("/login?error=auth", url.origin));
