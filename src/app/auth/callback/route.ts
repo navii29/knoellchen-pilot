@@ -34,6 +34,10 @@ export const GET = async (req: Request) => {
   }
 
   // next ist nur ein interner Pfad — niemals offene Weiterleitung erlauben.
-  const safeNext = next.startsWith("/") ? next : "/dashboard";
+  // Protokoll-relative URLs (//evil.com, /\evil.com) ausschließen.
+  const safeNext =
+    next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\")
+      ? next
+      : "/dashboard";
   return NextResponse.redirect(new URL(safeNext, url.origin));
 };
