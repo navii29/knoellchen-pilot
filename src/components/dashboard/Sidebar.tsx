@@ -12,6 +12,7 @@ import {
   ChevronRight,
   FileSignature,
   FileText,
+  Globe,
   Handshake,
   LayoutDashboard,
   Settings,
@@ -43,6 +44,7 @@ const ITEMS: Array<{
   { href: "/dashboard/calendar", label: "Kalender", Icon: Calendar },
   { href: "/dashboard/reports", label: "Auswertung", Icon: BarChart3, ownerOnly: true },
   { href: "/dashboard/monitoring", label: "Überwachung", Icon: Activity, perm: "monitoring" },
+  { href: "/dashboard/website", label: "Mietseite", Icon: Globe, perm: "settings" },
   { href: "/dashboard/settings", label: "Einstellungen", Icon: Settings, perm: "settings" },
 ];
 
