@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Trash2, UserPlus, ShieldCheck, User, SlidersHorizontal } from "lucide-react";
+import { Loader2, Trash2, UserPlus, ShieldCheck, User, SlidersHorizontal, KeyRound } from "lucide-react";
 import { PERMISSION_CATALOG } from "@/lib/permissions";
 
 type Member = {
@@ -126,6 +126,32 @@ export const TeamCard = () => {
     }
   };
 
+  const resetPassword = async (m: Member) => {
+    const pw = window.prompt(
+      `Neues Start-Passwort für ${m.full_name || m.email} (mindestens 8 Zeichen):`
+    );
+    if (pw == null) return;
+    setErr(null);
+    setMsg(null);
+    if (pw.length < 8) {
+      setErr("Passwort muss mindestens 8 Zeichen lang sein.");
+      return;
+    }
+    const res = await fetch(`/api/team/${m.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pw }),
+    });
+    const j = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+    if (!res.ok || !j.ok) {
+      setErr(j.error ?? "Passwort konnte nicht gesetzt werden");
+      return;
+    }
+    setMsg(
+      `Passwort für ${m.email} gesetzt. Bitte der Person mitteilen — sie kann es danach selbst ändern.`
+    );
+  };
+
   return (
     <div className="panel p-5">
       <div className="flex items-center justify-between mb-1">
@@ -187,6 +213,14 @@ export const TeamCard = () => {
                           <SlidersHorizontal size={13} /> Rechte
                         </button>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => resetPassword(m)}
+                        className="text-[11px] px-2 h-7 rounded-btn inline-flex items-center gap-1 text-ink-muted hover:text-ink hover:bg-black/[0.04]"
+                        title="Passwort zurücksetzen"
+                      >
+                        <KeyRound size={13} /> Passwort
+                      </button>
                       <button
                         type="button"
                         onClick={() => toggleRole(m)}
