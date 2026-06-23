@@ -10,6 +10,7 @@ import {
   loadSpecialTermsForContract,
   loadVehicleForContract,
 } from "@/lib/contract-loaders";
+import { runRiskCheck } from "@/lib/risk-check.server";
 
 const loadLogoBase64 = async (
   admin: ReturnType<typeof createAdminClient>,
@@ -36,7 +37,10 @@ export const POST = async (req: Request, { params }: Ctx) => {
   const session = await getPortalSession();
   if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-  const body = (await req.json().catch(() => ({}))) as { signature_data?: string };
+  const body = (await req.json().catch(() => ({}))) as {
+    signature_data?: string;
+    risk_consent?: boolean;
+  };
   const sig = body.signature_data;
   if (!isPngDataUrl(sig)) {
     return NextResponse.json(
@@ -140,6 +144,14 @@ export const POST = async (req: Request, { params }: Ctx) => {
       ip: signedIp,
     })),
   ]);
+
+  // Best-effort risk check — MUST NOT block or fail the sign response.
+  // Only runs when the customer explicitly gave risk-consent during sign.
+  if (body.risk_consent === true) {
+    runRiskCheck(admin, session.org_id, c.id, { setConsent: true }).catch(
+      () => undefined
+    );
+  }
 
   return NextResponse.json({ ok: true, signed_at: signedAt });
 };
