@@ -25,6 +25,10 @@ export interface Organization {
   email_automation_enabled: boolean;
   lexoffice_enabled: boolean;
   // lexoffice_api_key absichtlich NICHT im Type — darf nie ans Frontend gelangen.
+  // Externe Bonitätsauskunft (Migration 056): Anbieter + API-URL sind unkritisch.
+  credit_provider: string | null;
+  credit_api_url: string | null;
+  // credit_api_key absichtlich NICHT im Type — darf nie ans Frontend gelangen.
   echoes_account_id: string | null;
   echoes_enabled: boolean;
   // echoes_api_key absichtlich NICHT im Type — darf nie ans Frontend gelangen.
@@ -344,6 +348,14 @@ export interface Customer {
   marketing_opt_in: boolean | null;
   consent_at: string | null;
   consent_source: string | null;
+  // Externe Bonitätsauskunft (Migration 056). Ampel: 'gruen'|'gelb'|'rot'|null.
+  credit_score: number | null;
+  credit_rating: string | null;
+  credit_decision: string | null;
+  credit_provider: string | null;
+  credit_checked_at: string | null;
+  credit_consent: boolean;
+  credit_raw: unknown;
   notes: string | null;
   created_at: string;
   updated_at: string;

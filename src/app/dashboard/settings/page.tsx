@@ -11,7 +11,7 @@ import type { Organization } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 const SAFE_COLUMNS =
-  "id, name, street, zip, city, phone, email, tax_number, processing_fee, iban, bic, account_holder, kleinunternehmer, slug, inbound_email, lexoffice_enabled, echoes_account_id, echoes_enabled, rental_terms, logo_path, landlord_signature_name, created_at";
+  "id, name, street, zip, city, phone, email, tax_number, processing_fee, iban, bic, account_holder, kleinunternehmer, slug, inbound_email, lexoffice_enabled, echoes_account_id, echoes_enabled, credit_provider, credit_api_url, rental_terms, logo_path, landlord_signature_name, created_at";
 
 export default async function SettingsPage() {
   // Mitarbeiter ohne 'settings'-Recht werden auf /dashboard umgeleitet.
@@ -20,13 +20,14 @@ export default async function SettingsPage() {
   const { data } = await supabase
     .from("organizations")
     .select(
-      `${SAFE_COLUMNS}, lexoffice_api_key, echoes_api_key, shopify_shop_domain, shopify_admin_token, shopify_webhook_token, landlord_signature_data`
+      `${SAFE_COLUMNS}, lexoffice_api_key, echoes_api_key, credit_api_key, shopify_shop_domain, shopify_admin_token, shopify_webhook_token, landlord_signature_data`
     )
     .single();
 
   const {
     lexoffice_api_key,
     echoes_api_key,
+    credit_api_key,
     shopify_admin_token,
     shopify_shop_domain,
     shopify_webhook_token,
@@ -35,6 +36,7 @@ export default async function SettingsPage() {
   } = (data ?? {}) as {
     lexoffice_api_key?: string | null;
     echoes_api_key?: string | null;
+    credit_api_key?: string | null;
     shopify_admin_token?: string | null;
     shopify_shop_domain?: string | null;
     shopify_webhook_token?: string | null;
@@ -44,6 +46,8 @@ export default async function SettingsPage() {
     typeof lexoffice_api_key === "string" && lexoffice_api_key.length > 0;
   const echoesHasKey =
     typeof echoes_api_key === "string" && echoes_api_key.length > 0;
+  const creditHasKey =
+    typeof credit_api_key === "string" && credit_api_key.length > 0;
   // Blob (PNG) bleibt serverseitig; an den Client geht nur, OB eine
   // Unterschrift hinterlegt ist.
   const landlordHasSignature =
@@ -74,6 +78,7 @@ export default async function SettingsPage() {
             org={safe as unknown as Organization}
             lexofficeHasKey={lexofficeHasKey}
             echoesHasKey={echoesHasKey}
+            creditHasKey={creditHasKey}
             landlordHasSignature={landlordHasSignature}
           />
           <ShopifyImportCard

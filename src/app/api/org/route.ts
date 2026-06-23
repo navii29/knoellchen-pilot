@@ -39,18 +39,23 @@ const ALL_BUCKETS = [
 ];
 
 const SAFE_COLUMNS =
-  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, echoes_account_id, echoes_enabled, rental_terms, onboarding_completed, onboarding_step, shopify_shop_domain, shopify_webhook_token, landlord_signature_name, created_at";
+  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, echoes_account_id, echoes_enabled, credit_provider, credit_api_url, rental_terms, onboarding_completed, onboarding_step, shopify_shop_domain, shopify_webhook_token, landlord_signature_name, created_at";
 
 const stripSecrets = <T extends Record<string, unknown>>(row: T) => {
   const copy = { ...row } as T & {
     lexoffice_api_key?: string;
     echoes_api_key?: string;
     shopify_admin_token?: string;
+    credit_api_key?: string;
   };
   delete copy.lexoffice_api_key;
   delete copy.echoes_api_key;
   delete copy.shopify_admin_token;
-  return copy as Omit<T, "lexoffice_api_key" | "echoes_api_key" | "shopify_admin_token">;
+  delete copy.credit_api_key;
+  return copy as Omit<
+    T,
+    "lexoffice_api_key" | "echoes_api_key" | "shopify_admin_token" | "credit_api_key"
+  >;
 };
 
 /**
@@ -106,6 +111,9 @@ export const PATCH = async (req: Request) => {
     "echoes_api_key",
     "echoes_account_id",
     "echoes_enabled",
+    "credit_provider",
+    "credit_api_url",
+    "credit_api_key",
     "rental_terms",
     "shopify_shop_domain",
     "shopify_admin_token",
@@ -134,6 +142,21 @@ export const PATCH = async (req: Request) => {
   if ("echoes_account_id" in update) {
     const v = update.echoes_account_id;
     update.echoes_account_id =
+      typeof v === "string" && v.trim().length > 0 ? v.trim() : null;
+  }
+  if ("credit_provider" in update) {
+    const v = update.credit_provider;
+    update.credit_provider =
+      typeof v === "string" && v.trim().length > 0 ? v.trim() : null;
+  }
+  if ("credit_api_url" in update) {
+    const v = update.credit_api_url;
+    update.credit_api_url =
+      typeof v === "string" && v.trim().length > 0 ? v.trim() : null;
+  }
+  if ("credit_api_key" in update) {
+    const v = update.credit_api_key;
+    update.credit_api_key =
       typeof v === "string" && v.trim().length > 0 ? v.trim() : null;
   }
   if ("shopify_shop_domain" in update) {
@@ -197,6 +220,7 @@ export const PATCH = async (req: Request) => {
     org: stripSecrets(data),
     lexoffice_has_key: false,
     echoes_has_key: false,
+    credit_has_key: false,
   });
 };
 
@@ -216,7 +240,7 @@ export const GET = async () => {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("organizations")
-    .select(`${SAFE_COLUMNS}, lexoffice_api_key, echoes_api_key`)
+    .select(`${SAFE_COLUMNS}, lexoffice_api_key, echoes_api_key, credit_api_key`)
     .eq("id", profile.org_id)
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -228,12 +252,16 @@ export const GET = async () => {
   const echoesHasKey =
     typeof row.echoes_api_key === "string" &&
     (row.echoes_api_key as string).length > 0;
+  const creditHasKey =
+    typeof row.credit_api_key === "string" &&
+    (row.credit_api_key as string).length > 0;
 
   return NextResponse.json({
     ok: true,
     org: stripSecrets(row),
     lexoffice_has_key: lexofficeHasKey,
     echoes_has_key: echoesHasKey,
+    credit_has_key: creditHasKey,
   });
 };
 
