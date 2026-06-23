@@ -3,6 +3,7 @@ import {
   levelFromScore,
   assembleRiskSignals,
   deriveHeuristicScore,
+  normalizeAiRisk,
   RISK_THRESHOLDS,
 } from "./risk";
 
@@ -316,5 +317,125 @@ describe("deriveHeuristicScore", () => {
     const result = deriveHeuristicScore(signals);
     expect(result.score).toBeLessThanOrEqual(100);
     expect(result.score).toBeGreaterThanOrEqual(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// normalizeAiRisk
+// ---------------------------------------------------------------------------
+describe("normalizeAiRisk", () => {
+  const heuristic: import("./risk").RiskResult = {
+    level: "gelb",
+    score: 50,
+    summary: "Heuristik-Zusammenfassung.",
+    factors: [{ label: "Heuristik-Faktor", severity: "warn" }],
+  };
+
+  it("valid AI output passes through — score rounded, level recomputed from score", () => {
+    const raw = {
+      score: 72.6,
+      summary: "Führerschein abgelaufen.",
+      factors: [{ label: "Führerschein abgelaufen", severity: "alarm", detail: "seit 2020" }],
+    };
+    const result = normalizeAiRisk(raw, heuristic);
+    expect(result.score).toBe(73);           // Math.round(72.6)
+    expect(result.level).toBe("rot");        // 73 >= 67
+    expect(result.summary).toBe("Führerschein abgelaufen.");
+    expect(result.factors[0].label).toBe("Führerschein abgelaufen");
+    expect(result.factors[0].severity).toBe("alarm");
+    expect(result.factors[0].detail).toBe("seit 2020");
+  });
+
+  it("garbage raw (string) → returns heuristic unchanged", () => {
+    const result = normalizeAiRisk("nicht JSON", heuristic);
+    expect(result).toEqual(heuristic);
+  });
+
+  it("empty object → all fields fall back to heuristic", () => {
+    const result = normalizeAiRisk({}, heuristic);
+    expect(result.score).toBe(heuristic.score);
+    expect(result.level).toBe(heuristic.level);
+    expect(result.summary).toBe(heuristic.summary);
+    expect(result.factors).toEqual(heuristic.factors);
+  });
+
+  it("null raw → returns heuristic unchanged", () => {
+    const result = normalizeAiRisk(null, heuristic);
+    expect(result).toEqual(heuristic);
+  });
+
+  it("out-of-range score 999 → falls back to heuristic.score", () => {
+    const raw = { score: 999, summary: "Zu hoch.", factors: [] };
+    const result = normalizeAiRisk(raw, heuristic);
+    expect(result.score).toBe(heuristic.score);
+    expect(result.level).toBe(heuristic.level);
+  });
+
+  it("out-of-range score -5 → falls back to heuristic.score", () => {
+    const raw = { score: -5, summary: "Negativ.", factors: [] };
+    const result = normalizeAiRisk(raw, heuristic);
+    expect(result.score).toBe(heuristic.score);
+    expect(result.level).toBe(heuristic.level);
+  });
+
+  it("AI level gruen contradicting score 80 → level becomes rot (recomputed from score)", () => {
+    // level field is ignored; we only pass score in the AI payload spec,
+    // but normalizeAiRisk must handle an unexpected level key gracefully
+    const raw = { score: 80, level: "gruen", summary: "Widerspruch.", factors: [] };
+    const result = normalizeAiRisk(raw, heuristic);
+    expect(result.score).toBe(80);
+    expect(result.level).toBe("rot"); // derived from 80, not from raw.level
+  });
+
+  it("factor with invalid severity → coerced to info", () => {
+    const raw = {
+      score: 50,
+      summary: "Test.",
+      factors: [{ label: "Faktor", severity: "critical" }],
+    };
+    const result = normalizeAiRisk(raw, heuristic);
+    expect(result.factors[0].severity).toBe("info");
+  });
+
+  it("factor without label → dropped", () => {
+    const raw = {
+      score: 50,
+      summary: "Test.",
+      factors: [
+        { severity: "warn" },                              // no label → drop
+        { label: "Gültiger Faktor", severity: "info" },
+      ],
+    };
+    const result = normalizeAiRisk(raw, heuristic);
+    expect(result.factors).toHaveLength(1);
+    expect(result.factors[0].label).toBe("Gültiger Faktor");
+  });
+
+  it("more than 8 factors → only first 8 kept", () => {
+    const raw = {
+      score: 40,
+      summary: "Viele Faktoren.",
+      factors: Array.from({ length: 12 }, (_, i) => ({
+        label: `Faktor ${i + 1}`,
+        severity: "info",
+      })),
+    };
+    const result = normalizeAiRisk(raw, heuristic);
+    expect(result.factors).toHaveLength(8);
+    expect(result.factors[0].label).toBe("Faktor 1");
+    expect(result.factors[7].label).toBe("Faktor 8");
+  });
+
+  it("summary truncated to 300 chars", () => {
+    const longSummary = "A".repeat(400);
+    const raw = { score: 50, summary: longSummary, factors: [] };
+    const result = normalizeAiRisk(raw, heuristic);
+    expect(result.summary).toHaveLength(300);
+  });
+
+  it("empty summary string → falls back to heuristic.summary", () => {
+    const raw = { score: 50, summary: "   ", factors: [] };
+    const result = normalizeAiRisk(raw, heuristic);
+    expect(result.summary).toBe(heuristic.summary);
   });
 });

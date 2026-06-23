@@ -8,6 +8,7 @@ import type {
   ParsedLeasingContract,
 } from "./types";
 import { MANUFACTURERS, FUEL_TYPES, BODY_TYPES } from "./vehicle";
+import { normalizeAiRisk, type RiskSignals, type RiskResult } from "@/lib/risk";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
@@ -456,6 +457,60 @@ export const compareHandoverPhotos = async (
   if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
   const data = JSON.parse(jsonMatch[0]) as DamageComparisonResult;
   return { data, raw: response };
+};
+
+// =========================================================
+// KI-gestützter Risikocheck für den Self-Check-in
+// =========================================================
+
+const RISK_SYSTEM_PROMPT = `Du bist ein erfahrener Experte für Risikobewertung in Autovermietungen.
+Du erhältst abgeleitete Risikosignale (JSON) sowie einen deterministischen Heuristik-Vorschlag.
+Bewerte das Mietrisiko und verfeinere die Einschätzung anhand der gegebenen Signale.
+
+Wichtig:
+- Erfinde KEINE Daten, die nicht in den Signalen enthalten sind.
+- Ein höherer Score bedeutet höheres Risiko (0 = kein Risiko, 100 = maximales Risiko).
+- Antworte AUSSCHLIESSLICH mit gültigem JSON (keine Erklärungen, kein Markdown):
+{
+  "score": <Zahl 0–100>,
+  "summary": "<1 kurzer deutscher Satz zur wichtigsten Auffälligkeit>",
+  "factors": [
+    { "label": "<kurzer deutscher Titel>", "severity": "info|warn|alarm", "detail": "<optionale Details>" }
+  ]
+}
+
+Gib kein "level"-Feld zurück — das wird aus dem Score berechnet.`;
+
+export const assessRentalRisk = async (
+  signals: RiskSignals,
+  heuristic: RiskResult
+): Promise<RiskResult> => {
+  try {
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1024,
+      system: RISK_SYSTEM_PROMPT,
+      messages: [
+        {
+          role: "user",
+          content: JSON.stringify({ signals, heuristic }),
+        },
+      ],
+    });
+
+    const text = response.content
+      .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
+      .map((b) => b.text)
+      .join("");
+
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return heuristic;
+
+    const parsed: unknown = JSON.parse(jsonMatch[0]);
+    return normalizeAiRisk(parsed, heuristic);
+  } catch {
+    return heuristic;
+  }
 };
 
 // =========================================================

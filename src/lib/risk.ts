@@ -360,3 +360,66 @@ export function deriveHeuristicScore(signals: RiskSignals): RiskResult {
 
   return { level, score: clampedScore, summary, factors };
 }
+
+// ---------------------------------------------------------------------------
+// normalizeAiRisk — defensiver Validator für rohe KI-Antworten
+// PURE: kein Netzwerk, kein SDK — vollständig unit-testbar.
+// ---------------------------------------------------------------------------
+
+export const normalizeAiRisk = (raw: unknown, heuristic: RiskResult): RiskResult => {
+  if (raw === null || typeof raw !== "object") return heuristic;
+
+  const r = raw as Record<string, unknown>;
+
+  // --- Score ---
+  const rawScore = r["score"];
+  const finalScore =
+    typeof rawScore === "number" &&
+    isFinite(rawScore) &&
+    rawScore >= 0 &&
+    rawScore <= 100
+      ? Math.round(rawScore)
+      : heuristic.score;
+
+  // --- Level (always derived deterministically from finalScore) ---
+  const level = levelFromScore(finalScore);
+
+  // --- Summary ---
+  const rawSummary = r["summary"];
+  const summary =
+    typeof rawSummary === "string" && rawSummary.trim().length > 0
+      ? rawSummary.trim().slice(0, 300)
+      : heuristic.summary;
+
+  // --- Factors ---
+  const VALID_SEVERITIES = new Set<string>(["info", "warn", "alarm"]);
+  const rawFactors = r["factors"];
+  let factors: RiskFactor[];
+
+  if (Array.isArray(rawFactors) && rawFactors.length > 0) {
+    factors = rawFactors
+      .filter((x): x is Record<string, unknown> => x !== null && typeof x === "object")
+      .filter((x) => {
+        const label = x["label"];
+        return typeof label === "string" && String(label).trim().length > 0;
+      })
+      .slice(0, 8)
+      .map((x) => {
+        const label = String(x["label"]).slice(0, 120);
+        const rawSev = x["severity"];
+        const severity: RiskFactor["severity"] = VALID_SEVERITIES.has(String(rawSev))
+          ? (rawSev as RiskFactor["severity"])
+          : "info";
+        const rawDetail = x["detail"];
+        const detail =
+          typeof rawDetail === "string" && rawDetail.trim().length > 0
+            ? rawDetail.trim()
+            : undefined;
+        return { label, severity, detail };
+      });
+  } else {
+    factors = heuristic.factors;
+  }
+
+  return { level, score: finalScore, summary, factors };
+};
