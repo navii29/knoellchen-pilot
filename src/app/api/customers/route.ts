@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { resolveCustomerNaming } from "@/lib/customer";
+import { requirePermission } from "@/lib/team";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -38,6 +39,8 @@ export const GET = async () => {
 export const POST = async (req: Request) => {
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const gate = await requirePermission("create_master_data");
+  if (!gate.ok) return gate.res;
 
   const body = (await req.json()) as Record<string, unknown>;
   const naming = resolveCustomerNaming(body);

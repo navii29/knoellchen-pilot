@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { resolveCustomerNaming } from "@/lib/customer";
+import { requirePermission } from "@/lib/team";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -147,6 +148,8 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
 export const DELETE = async (_req: Request, { params }: RouteCtx) => {
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const gate = await requirePermission("delete");
+  if (!gate.ok) return gate.res;
   const admin = createAdminClient();
 
   // GDPR Art. 17: zuerst die sensiblen Ausweis-/Führerschein-Dateien aus dem

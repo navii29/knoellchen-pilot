@@ -3,7 +3,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { nextContractNr } from "@/lib/contract-utils";
 import { computeExtraKm } from "@/lib/km";
 import { normalizePlate } from "@/lib/plate";
-import { myRole } from "@/lib/team";
+import { myRole, requirePermission } from "@/lib/team";
 import { redactContractPartner } from "@/lib/redact";
 import { logActivity } from "@/lib/activity";
 import type { Contract } from "@/lib/types";
@@ -210,6 +210,8 @@ export const POST = async (req: Request) => {
 export const DELETE = async (req: Request) => {
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const gate = await requirePermission("delete");
+  if (!gate.ok) return gate.res;
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id fehlt" }, { status: 400 });

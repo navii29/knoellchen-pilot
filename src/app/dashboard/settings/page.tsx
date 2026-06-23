@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { requirePermissionPage } from "@/lib/team";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { SettingsClient } from "./SettingsClient";
 import { ShopifyImportCard } from "@/components/dashboard/ShopifyImportCard";
@@ -13,6 +14,8 @@ const SAFE_COLUMNS =
   "id, name, street, zip, city, phone, email, tax_number, processing_fee, iban, bic, account_holder, kleinunternehmer, slug, inbound_email, lexoffice_enabled, echoes_account_id, echoes_enabled, rental_terms, logo_path, landlord_signature_name, created_at";
 
 export default async function SettingsPage() {
+  // Mitarbeiter ohne 'settings'-Recht werden auf /dashboard umgeleitet.
+  await requirePermissionPage("settings");
   const supabase = createClient();
   const { data } = await supabase
     .from("organizations")

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Trash2, UserPlus, ShieldCheck, User } from "lucide-react";
+import { Loader2, Trash2, UserPlus, ShieldCheck, User, SlidersHorizontal } from "lucide-react";
+import { PERMISSION_CATALOG } from "@/lib/permissions";
 
 type Member = {
   id: string;
@@ -9,6 +10,7 @@ type Member = {
   email: string | null;
   role: string;
   created_at: string;
+  permissions: string[];
 };
 
 export const TeamCard = () => {
@@ -25,6 +27,7 @@ export const TeamCard = () => {
   const [fEmail, setFEmail] = useState("");
   const [fPass, setFPass] = useState("");
   const [busy, setBusy] = useState(false);
+  const [rightsFor, setRightsFor] = useState<string | null>(null);
 
   const load = async () => {
     const res = await fetch("/api/team");
@@ -104,6 +107,25 @@ export const TeamCard = () => {
     load();
   };
 
+  const updatePermissions = async (m: Member, key: string, checked: boolean) => {
+    const next = checked
+      ? [...new Set([...(m.permissions ?? []), key])]
+      : (m.permissions ?? []).filter((p) => p !== key);
+    setErr(null);
+    // Optimistisch aktualisieren, bei Fehler neu laden.
+    setMembers((prev) => prev.map((x) => (x.id === m.id ? { ...x, permissions: next } : x)));
+    const res = await fetch(`/api/team/${m.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ permissions: next }),
+    });
+    const j = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+    if (!res.ok || !j.ok) {
+      setErr(j.error ?? "Rechte konnten nicht gespeichert werden");
+      load();
+    }
+  };
+
   return (
     <div className="panel p-5">
       <div className="flex items-center justify-between mb-1">
@@ -128,50 +150,96 @@ export const TeamCard = () => {
         </div>
       ) : (
         <div className="space-y-1.5">
-          {members.map((m) => (
-            <div
-              key={m.id}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-input border border-hairline bg-paper"
-            >
-              <div className="w-8 h-8 rounded-full bg-canvas border border-hairline flex items-center justify-center text-ink-muted shrink-0">
-                {m.role === "owner" ? <ShieldCheck size={15} /> : <User size={15} />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[13.5px] text-ink truncate">
-                  {m.full_name || m.email}
-                  {m.id === meId && <span className="text-ink-muted"> · Sie</span>}
-                </div>
-                <div className="text-[12px] text-ink-muted truncate">{m.email}</div>
-              </div>
-              <span
-                className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                  m.role === "owner" ? "bg-signal/12 text-signal" : "bg-black/[0.05] text-ink-muted"
-                }`}
-              >
-                {m.role === "owner" ? "Inhaber" : "Mitglied"}
-              </span>
-              {isOwner && m.id !== meId && (
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => toggleRole(m)}
-                    className="text-[11px] text-ink-muted hover:text-ink px-2 h-7 rounded-btn hover:bg-black/[0.04]"
-                    title="Rolle wechseln"
+          {members.map((m) => {
+            const isMemberRole = m.role !== "owner";
+            const open = rightsFor === m.id;
+            return (
+              <div key={m.id}>
+                <div className="flex items-center gap-3 px-3 py-2.5 rounded-input border border-hairline bg-paper">
+                  <div className="w-8 h-8 rounded-full bg-canvas border border-hairline flex items-center justify-center text-ink-muted shrink-0">
+                    {m.role === "owner" ? <ShieldCheck size={15} /> : <User size={15} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13.5px] text-ink truncate">
+                      {m.full_name || m.email}
+                      {m.id === meId && <span className="text-ink-muted"> · Sie</span>}
+                    </div>
+                    <div className="text-[12px] text-ink-muted truncate">{m.email}</div>
+                  </div>
+                  <span
+                    className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                      m.role === "owner" ? "bg-signal/12 text-signal" : "bg-black/[0.05] text-ink-muted"
+                    }`}
                   >
-                    {m.role === "owner" ? "→ Mitglied" : "→ Inhaber"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeMember(m)}
-                    className="text-ink-muted hover:text-red-600 w-7 h-7 inline-flex items-center justify-center rounded-btn hover:bg-red-50"
-                    title="Entfernen"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                    {m.role === "owner" ? "Inhaber" : "Mitglied"}
+                  </span>
+                  {isOwner && m.id !== meId && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      {isMemberRole && (
+                        <button
+                          type="button"
+                          onClick={() => setRightsFor(open ? null : m.id)}
+                          className={`text-[11px] px-2 h-7 rounded-btn inline-flex items-center gap-1 ${
+                            open ? "bg-signal/12 text-signal" : "text-ink-muted hover:text-ink hover:bg-black/[0.04]"
+                          }`}
+                          title="Rechte"
+                        >
+                          <SlidersHorizontal size={13} /> Rechte
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => toggleRole(m)}
+                        className="text-[11px] text-ink-muted hover:text-ink px-2 h-7 rounded-btn hover:bg-black/[0.04]"
+                        title="Rolle wechseln"
+                      >
+                        {m.role === "owner" ? "→ Mitglied" : "→ Inhaber"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeMember(m)}
+                        className="text-ink-muted hover:text-red-600 w-7 h-7 inline-flex items-center justify-center rounded-btn hover:bg-red-50"
+                        title="Entfernen"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
+
+                {isOwner && isMemberRole && open && (
+                  <div className="mt-1.5 mb-1 ml-3 mr-1 p-3 rounded-input border border-hairline bg-canvas">
+                    <div className="text-[11px] text-ink-muted mb-2.5">
+                      Rechte für {m.full_name || m.email}. Margen, Kosten und Partner bleiben
+                      grundsätzlich nur dem Inhaber vorbehalten.
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1">
+                      {PERMISSION_CATALOG.map((p) => {
+                        const checked = (m.permissions ?? []).includes(p.key);
+                        return (
+                          <label
+                            key={p.key}
+                            className="flex items-start gap-2 cursor-pointer text-[12.5px] py-1"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => updatePermissions(m, p.key, e.target.checked)}
+                              className="mt-0.5 w-3.5 h-3.5 accent-signal shrink-0"
+                            />
+                            <span className="leading-snug">
+                              <span className="text-ink font-medium">{p.label}</span>
+                              <span className="text-ink-muted"> — {p.description}</span>
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

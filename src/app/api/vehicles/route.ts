@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { normalizePlate } from "@/lib/plate";
 import { VEHICLE_STATUSES, buildVehicleType } from "@/lib/vehicle";
-import { myRole } from "@/lib/team";
+import { myRole, requirePermission } from "@/lib/team";
 import { redactVehicleCost } from "@/lib/redact";
 import { logActivity } from "@/lib/activity";
 import { syncVehicleToLexoffice } from "@/lib/lexoffice-vehicle-sync";
@@ -35,6 +35,8 @@ const dateOrNull = (v: unknown): string | null => {
 };
 
 export const POST = async (req: Request) => {
+  const gate = await requirePermission("create_master_data");
+  if (!gate.ok) return gate.res;
   const supabase = createClient();
   const {
     data: { user },
@@ -172,6 +174,8 @@ export const POST = async (req: Request) => {
 };
 
 export const DELETE = async (req: Request) => {
+  const gate = await requirePermission("delete");
+  if (!gate.ok) return gate.res;
   const supabase = createClient();
   const {
     data: { user },

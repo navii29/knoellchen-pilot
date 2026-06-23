@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
+import { hasPermission, type PermissionKey } from "@/lib/permissions";
 
 type BadgeKey = "tickets" | "contracts" | "customers" | "damage";
 
@@ -29,6 +30,7 @@ const ITEMS: Array<{
   Icon: typeof Car;
   badgeKey?: BadgeKey;
   ownerOnly?: boolean;
+  perm?: PermissionKey;
 }> = [
   { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
   { href: "/dashboard/assistant", label: "Assistent", Icon: WandSparkles },
@@ -40,8 +42,8 @@ const ITEMS: Array<{
   { href: "/dashboard/vehicles", label: "Fahrzeuge", Icon: Car },
   { href: "/dashboard/calendar", label: "Kalender", Icon: Calendar },
   { href: "/dashboard/reports", label: "Auswertung", Icon: BarChart3, ownerOnly: true },
-  { href: "/dashboard/monitoring", label: "Überwachung", Icon: Activity, ownerOnly: true },
-  { href: "/dashboard/settings", label: "Einstellungen", Icon: Settings },
+  { href: "/dashboard/monitoring", label: "Überwachung", Icon: Activity, perm: "monitoring" },
+  { href: "/dashboard/settings", label: "Einstellungen", Icon: Settings, perm: "settings" },
 ];
 
 export const SIDEBAR_OPEN_EVENT = "dashboard:open-sidebar";
@@ -49,6 +51,7 @@ export const SIDEBAR_OPEN_EVENT = "dashboard:open-sidebar";
 export const Sidebar = ({
   orgName,
   userRole = "member",
+  userPermissions = [],
   ticketCount,
   contractCount,
   customerCount,
@@ -56,12 +59,14 @@ export const Sidebar = ({
 }: {
   orgName: string;
   userRole?: string;
+  userPermissions?: string[];
   ticketCount: number;
   contractCount: number;
   customerCount: number;
   damageCount: number;
 }) => {
   const isOwner = userRole === "owner";
+  const me = { role: userRole, permissions: userPermissions };
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -105,6 +110,7 @@ export const Sidebar = ({
       </div>
       {ITEMS.map((it) => {
         if (it.ownerOnly && !isOwner) return null;
+        if (it.perm && !hasPermission(me, it.perm)) return null;
         const isActive =
           it.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(it.href);
         const badge =

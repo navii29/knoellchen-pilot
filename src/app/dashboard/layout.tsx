@@ -18,7 +18,7 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from("users")
-    .select("org_id, role")
+    .select("org_id, role, permissions")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -53,6 +53,7 @@ export default async function DashboardLayout({
       <Sidebar
         orgName={org?.name || "Mein Konto"}
         userRole={profile.role ?? "member"}
+        userPermissions={Array.isArray(profile.permissions) ? profile.permissions : []}
         ticketCount={openTickets || 0}
         contractCount={activeContracts || 0}
         customerCount={customers || 0}

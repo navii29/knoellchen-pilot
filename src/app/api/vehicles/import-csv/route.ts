@@ -10,7 +10,7 @@ import {
 import { mapCsvColumns } from "@/lib/anthropic";
 import { decodeCsvFile } from "@/lib/encoding";
 import { normalizePlate } from "@/lib/plate";
-import { myRole } from "@/lib/team";
+import { myRole, requirePermission } from "@/lib/team";
 
 export const maxDuration = 60;
 
@@ -31,6 +31,8 @@ const requireAuth = async () => {
 export const POST = async (req: Request) => {
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const gate = await requirePermission("import_export");
+  if (!gate.ok) return gate.res;
 
   // Mitarbeiter dürfen keine EK-/Kostenfelder importieren — Zielfelder & erlaubte
   // Schlüssel je nach Rolle einschränken (sonst Lücke in der Margen-Sperre).

@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { MAX_BULK, orgFromSession, parseIdList } from "@/lib/bulk";
+import { requirePermission } from "@/lib/team";
 
 // Mehrere Fahrzeuge auf einmal löschen (nur eigene Org). Mit einem Vertrag
 // verknüpfte Fahrzeuge sind per FK geschützt — dann schlägt die Aktion ab.
 export const POST = async (req: Request) => {
+  const gate = await requirePermission("delete");
+  if (!gate.ok) return gate.res;
   const orgId = await orgFromSession();
   if (!orgId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
