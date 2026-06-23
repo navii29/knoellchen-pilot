@@ -96,7 +96,7 @@ export const SendEmailButton = ({
         </select>
         <Button type="button" variant="ink" size="sm" onClick={send} disabled={busy}>
           {busy ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
-          {sentAt ? "Erneut per E-Mail senden" : "Per E-Mail senden"}
+          {sentAt ? `${entry.sendLabel} (erneut)` : entry.sendLabel}
         </Button>
         <div className="text-[12.5px] text-ink-muted">
           {recipient ? (

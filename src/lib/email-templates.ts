@@ -38,6 +38,8 @@ export type EmailTemplateCatalogEntry = {
   description: string;
   /** Hängt diese Vorlage das Vertrags-/Rechnungs-PDF an? */
   attachesPdf: boolean;
+  /** Kurzes Aktions-Label für den Sende-Button, z. B. "Vertrag senden". */
+  sendLabel: string;
 };
 
 export const EMAIL_TEMPLATE_CATALOG: EmailTemplateCatalogEntry[] = [
@@ -46,6 +48,7 @@ export const EMAIL_TEMPLATE_CATALOG: EmailTemplateCatalogEntry[] = [
     label: "Mietvertrag & Unterlagen",
     description: "Sendet den Mietvertrag als PDF an den Kunden.",
     attachesPdf: true,
+    sendLabel: "Vertrag senden",
   },
   {
     key: "checkin_invite",
@@ -53,36 +56,42 @@ export const EMAIL_TEMPLATE_CATALOG: EmailTemplateCatalogEntry[] = [
     description:
       "Lädt den Kunden ein, den Check-in vorab online zu erledigen (mit Link).",
     attachesPdf: false,
+    sendLabel: "Check-in-Einladung senden",
   },
   {
     key: "invoice",
     label: "Ihre Rechnung",
     description: "Sendet die Rechnung als PDF an den Kunden.",
     attachesPdf: true,
+    sendLabel: "Rechnung senden",
   },
   {
     key: "payment_reminder",
     label: "Zahlungserinnerung",
     description: "Freundliche Erinnerung an einen noch offenen Betrag.",
     attachesPdf: false,
+    sendLabel: "Zahlungserinnerung senden",
   },
   {
     key: "return_reminder",
     label: "Erinnerung: Fahrzeugrückgabe",
     description: "Erinnert den Kunden an den anstehenden Rückgabetermin.",
     attachesPdf: false,
+    sendLabel: "Rückgabe-Erinnerung senden",
   },
   {
     key: "deposit_release",
     label: "Kaution freigegeben",
     description: "Bestätigt die Rückgabe bzw. Freigabe der Kaution.",
     attachesPdf: false,
+    sendLabel: "Kaution-Mail senden",
   },
   {
     key: "general",
     label: "Freie Nachricht",
     description: "Leere Vorlage für eine individuell formulierte Nachricht.",
     attachesPdf: false,
+    sendLabel: "Nachricht senden",
   },
 ];
 
