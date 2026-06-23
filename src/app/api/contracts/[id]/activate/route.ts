@@ -55,6 +55,20 @@ export const POST = async (_req: Request, { params }: Ctx) => {
       { status: 400 }
     );
 
+  // Soft-block: Hohes Risiko ohne Freigabe → Aktivierung verweigern.
+  if (
+    (contract as { risk_level?: string | null }).risk_level === "rot" &&
+    !(contract as { risk_override_at?: string | null }).risk_override_at
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "Risiko: hoch (rot). Bitte die Risikoprüfung ansehen und bei Bedarf freigeben, bevor der Vertrag aktiviert wird.",
+      },
+      { status: 409 }
+    );
+  }
+
   const { data: org } = await admin
     .from("organizations")
     .select("lexoffice_api_key, lexoffice_enabled")

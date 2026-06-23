@@ -317,6 +317,7 @@ const Step4Sign = ({
   const padRef = useRef<SignaturePad | null>(null);
   const [hasInk, setHasInk] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  const [riskConsent, setRiskConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -371,7 +372,7 @@ const Step4Sign = ({
       const res = await fetch(`/api/portal/contracts/${contractId}/sign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ signature_data: png }),
+        body: JSON.stringify({ signature_data: png, risk_consent: riskConsent }),
       });
       const j = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!res.ok || !j.ok) {
@@ -463,6 +464,19 @@ const Step4Sign = ({
               Mietbedingungen. Mir ist bekannt, dass diese digitale
               Unterschrift dieselbe Rechtswirkung hat wie eine
               handschriftliche.
+            </span>
+          </label>
+
+          <label className="bg-paper border border-hairline rounded-card p-4 mb-3 flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={riskConsent}
+              onChange={(e) => setRiskConsent(e.target.checked)}
+              className="mt-0.5 w-4 h-4 accent-signal shrink-0"
+            />
+            <span className="text-[13px] text-ink-soft leading-snug">
+              Ich willige in eine Bonitäts-/Risikoprüfung zur Vertragsabwicklung ein.{" "}
+              <span className="text-ink-muted">(optional)</span>
             </span>
           </label>
         </>

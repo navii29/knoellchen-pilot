@@ -12,6 +12,7 @@ import { isContractOverdue, localTodayIso } from "@/lib/contract-utils";
 import { POSITIONS } from "@/lib/handover";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { Plate } from "@/components/ui/Plate";
+import { RiskBadge } from "@/components/contract/RiskBadge";
 import type { Contract, DamageReport, HandoverPhoto, Ticket, Vehicle } from "@/lib/types";
 import type { ContractStatus } from "@/lib/types";
 
@@ -246,6 +247,20 @@ export default async function ContractDetailPage({ params }: { params: { id: str
               fuelReturn={c.fuel_level_return}
             />
           ) : null}
+
+          {/* Risk check */}
+          <div className="mt-6">
+            <RiskBadge
+              contractId={c.id}
+              risk_level={c.risk_level ?? null}
+              risk_score={c.risk_score ?? null}
+              risk_summary={c.risk_summary ?? null}
+              risk_factors={c.risk_factors ?? null}
+              risk_checked_at={c.risk_checked_at ?? null}
+              risk_override_at={c.risk_override_at ?? null}
+              risk_override_reason={c.risk_override_reason ?? null}
+            />
+          </div>
 
           {/* Info cards */}
           <div className="mt-6 grid sm:grid-cols-2 gap-3">
