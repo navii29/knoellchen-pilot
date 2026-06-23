@@ -37,6 +37,17 @@ export default async function HandoverPage({ params }: { params: { id: string } 
     })
   );
 
+  // Kunden-E-Mail (org-scoped) für den „Per E-Mail senden"-Knopf im Protokoll.
+  let customerEmail: string | null = c.renter_email;
+  if (c.customer_id) {
+    const { data: cust } = await supabase
+      .from("customers")
+      .select("email")
+      .eq("id", c.customer_id)
+      .maybeSingle();
+    if (cust?.email) customerEmail = cust.email;
+  }
+
   return (
     <>
       <Topbar section={`Übergabe · ${c.contract_nr}`} />
@@ -50,6 +61,19 @@ export default async function HandoverPage({ params }: { params: { id: string } 
             initialPhotos={photosWithUrl}
             initialComparison={c.damage_comparison}
             comparisonAt={c.damage_comparison_at}
+            customerEmail={customerEmail}
+            protocolPrefill={{
+              pickup: {
+                km: c.km_pickup,
+                fuel: c.fuel_level_pickup,
+                condition: c.damages_at_handover,
+              },
+              return: {
+                km: c.km_return,
+                fuel: c.fuel_level_return,
+                condition: c.condition_at_return,
+              },
+            }}
           />
         </div>
       </div>

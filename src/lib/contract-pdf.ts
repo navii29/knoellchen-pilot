@@ -29,7 +29,7 @@ const LOCAL_CHROME_PATHS = [
   "/usr/bin/chromium-browser",
 ];
 
-const launchOptions = async (): Promise<LaunchOptions> => {
+export const launchOptions = async (): Promise<LaunchOptions> => {
   if (isServerless) {
     return {
       args: chromium.args,
@@ -48,6 +48,35 @@ const launchOptions = async (): Promise<LaunchOptions> => {
     headless: true,
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   };
+};
+
+// Rendert ein fertiges A4-HTML via headless Chrome zu einem PDF-Buffer.
+// Gemeinsamer Renderer für den Mietvertrag und das Übergabeprotokoll, damit
+// die Puppeteer-Launch-/PDF-Optionen (A4, printBackground, Fußzeile mit
+// Seitenzahlen) an EINER Stelle leben.
+export const renderHtmlToPdf = async (html: string): Promise<Buffer> => {
+  const browser = await puppeteer.launch(await launchOptions());
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "domcontentloaded" });
+    await page.emulateMediaType("print");
+    const pdf = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      preferCSSPageSize: true,
+      displayHeaderFooter: true,
+      headerTemplate: "<div></div>",
+      footerTemplate: `
+        <div style="font-size:7.5pt; color:#888; text-align:center; width:100%; padding: 0 14mm;">
+          <span class="pageNumber"></span> / <span class="totalPages"></span>
+        </div>
+      `,
+      margin: { top: "0", right: "0", bottom: "0", left: "0" },
+    });
+    return Buffer.from(pdf);
+  } finally {
+    await browser.close();
+  }
 };
 
 export const generateContractPdf = async (args: {
@@ -71,26 +100,5 @@ export const generateContractPdf = async (args: {
     specialTerms: args.specialTerms ?? [],
   });
 
-  const browser = await puppeteer.launch(await launchOptions());
-  try {
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "domcontentloaded" });
-    await page.emulateMediaType("print");
-    const pdf = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      preferCSSPageSize: true,
-      displayHeaderFooter: true,
-      headerTemplate: "<div></div>",
-      footerTemplate: `
-        <div style="font-size:7.5pt; color:#888; text-align:center; width:100%; padding: 0 14mm;">
-          <span class="pageNumber"></span> / <span class="totalPages"></span>
-        </div>
-      `,
-      margin: { top: "0", right: "0", bottom: "0", left: "0" },
-    });
-    return Buffer.from(pdf);
-  } finally {
-    await browser.close();
-  }
+  return renderHtmlToPdf(html);
 };

@@ -289,6 +289,16 @@ export interface Contract {
   has_new_damage: boolean | null;
   damage_max_severity: string | null; // 'none' | 'minor' | 'major' | null
 
+  // Digitales Übergabeprotokoll (Migration 060). Zustand bei Übergabe nutzt
+  // das bestehende damages_at_handover. Unterschriften als PNG-Data-URL.
+  condition_at_return: string | null;
+  handover_sig_lessor_pickup: string | null;
+  handover_sig_renter_pickup: string | null;
+  handover_sig_lessor_return: string | null;
+  handover_sig_renter_return: string | null;
+  handover_protocol_pickup_path: string | null;
+  handover_protocol_return_path: string | null;
+
   created_at: string;
   updated_at: string;
 }
