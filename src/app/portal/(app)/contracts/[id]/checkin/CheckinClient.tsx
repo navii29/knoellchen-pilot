@@ -58,7 +58,12 @@ export const CheckinClient = ({
 }) => {
   const router = useRouter();
   const start = Math.min(Math.max(initialStep, 1), TOTAL);
-  const [step, setStep] = useState<number>(alreadySigned ? TOTAL : start);
+  // Schritt am echten Fortschritt (checkin_step) ausrichten — NICHT auf "Fertig"
+  // springen, nur weil signed_at gesetzt ist (das kann auch ein Betreiber-/
+  // Dashboard-Signieren sein). Ist der Vertrag schon unterschrieben, überspringt
+  // der Unterschrift-Schritt das erneute Signieren (alreadySigned), der Check-in
+  // gilt aber erst nach Durchlaufen der Schritte als abgeschlossen.
+  const [step, setStep] = useState<number>(start);
   const [photoCount, setPhotoCount] = useState<number>(uploadedPositions.length);
 
   const persistStep = useCallback(

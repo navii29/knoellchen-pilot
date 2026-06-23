@@ -114,6 +114,11 @@ export const POST = async (req: Request, { params }: Ctx) => {
       signature_data: sig,
       signed_at: signedAt,
       signed_ip: signedIp,
+      // Kunden-Unterschrift = letzter Self-Check-in-Schritt → Check-in fertig.
+      // (Der Abschluss-Status hängt am checkin_step, nicht an signed_at, damit
+      // ein Betreiber-/Dashboard-Signieren den Self-Check-in NICHT vorab als
+      // "abgeschlossen" markiert.)
+      checkin_step: 5,
     })
     .eq("id", c.id)
     .eq("org_id", session.org_id);
