@@ -283,6 +283,12 @@ export interface Contract {
   email_sent_at: string | null;
   email_sent_to: string | null;
 
+  // KI-Schadenvergleich Übergabe vs. Rücknahme (Migration 059)
+  damage_comparison: unknown; // Positions-Map: position -> { ok, data|error }
+  damage_comparison_at: string | null;
+  has_new_damage: boolean | null;
+  damage_max_severity: string | null; // 'none' | 'minor' | 'major' | null
+
   created_at: string;
   updated_at: string;
 }

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { AlertOctagon, ArrowLeft, Calendar, Camera, ChevronRight, Coins, Plus, ScrollText, User } from "lucide-react";
+import { AlertOctagon, ArrowLeft, Calendar, Camera, ChevronRight, Coins, Plus, ScanSearch, ScrollText, User } from "lucide-react";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
@@ -9,7 +9,7 @@ import { redactContractPartner } from "@/lib/redact";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeReturnSummary } from "@/lib/km";
 import { isContractOverdue, localTodayIso } from "@/lib/contract-utils";
-import { POSITIONS } from "@/lib/handover";
+import { POSITIONS, SEVERITY_STYLE } from "@/lib/handover";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { Plate } from "@/components/ui/Plate";
 import { RiskBadge } from "@/components/contract/RiskBadge";
@@ -442,6 +442,13 @@ export default async function ContractDetailPage({ params }: { params: { id: str
                 Fotos verwalten <ChevronRight size={12} />
               </Link>
             </div>
+            <DamageComparisonRow
+              contractId={c.id}
+              comparedAt={c.damage_comparison_at ?? null}
+              hasNewDamage={c.has_new_damage ?? null}
+              maxSeverity={c.damage_max_severity ?? null}
+              returnCount={returnCount}
+            />
             {handoverPhotos.length === 0 ? (
               <Link
                 href={`/dashboard/contracts/${c.id}/handover`}
@@ -711,6 +718,72 @@ const SelfServiceStatus = ({
         />
       </div>
     </Panel>
+  );
+};
+
+/* ── KI-Schadenvergleich-Badge ──
+   Zeigt das gespeicherte KI-Verdikt (kein/leichter/schwerer Schaden) bzw. einen
+   dezenten Auswerten-Link, wenn Rücknahme-Fotos da sind aber noch kein Vergleich
+   existiert. Keine Kosten-/Margendaten — nur das Schadensverdikt. */
+const DamageComparisonRow = ({
+  contractId,
+  comparedAt,
+  hasNewDamage,
+  maxSeverity,
+  returnCount,
+}: {
+  contractId: string;
+  comparedAt: string | null;
+  hasNewDamage: boolean | null;
+  maxSeverity: string | null;
+  returnCount: number;
+}) => {
+  // Noch kein Vergleich, aber Rücknahme-Fotos vorhanden → dezenter Auswerten-Link.
+  if (!comparedAt) {
+    if (returnCount === 0) return null;
+    return (
+      <div className="mb-3">
+        <Link
+          href={`/dashboard/contracts/${contractId}/handover`}
+          className="inline-flex items-center gap-1.5 text-[12px] text-ink-soft hover:text-ink transition-colors"
+        >
+          <ScanSearch size={12} /> Übergabe-Fotos auswerten <ChevronRight size={12} />
+        </Link>
+      </div>
+    );
+  }
+
+  // Verdikt: kein neuer Schaden → grün; sonst nach höchster Stufe einfärben.
+  const sevKey: keyof typeof SEVERITY_STYLE =
+    hasNewDamage === false
+      ? "none"
+      : maxSeverity === "major"
+      ? "major"
+      : maxSeverity === "minor"
+      ? "minor"
+      : "none";
+  const style = SEVERITY_STYLE[sevKey];
+  const label =
+    hasNewDamage === false
+      ? "KI-Vergleich: kein neuer Schaden"
+      : sevKey === "major"
+      ? "KI-Vergleich: schwerer Schaden erkannt"
+      : sevKey === "minor"
+      ? "KI-Vergleich: leichter Schaden erkannt"
+      : "KI-Vergleich: kein neuer Schaden";
+
+  return (
+    <div className="mb-3">
+      <Link
+        href={`/dashboard/contracts/${contractId}/handover`}
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-medium transition-opacity hover:opacity-80"
+        style={{ background: style.bg, color: style.text, boxShadow: `inset 0 0 0 1px ${style.ring}` }}
+      >
+        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: style.color }} />
+        {label}
+        <ChevronRight size={12} />
+      </Link>
+    </div>
   );
 };
 

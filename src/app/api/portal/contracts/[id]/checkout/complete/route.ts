@@ -50,6 +50,13 @@ export const POST = async (req: Request, { params }: Ctx) => {
   // da der Edge-Worker die Connection bis zur API-Antwort offen hält.
   // Falls die Compare-Route lange dauert, läuft sie weiter ohne den
   // Kunden zu blockieren.
+  //
+  // WICHTIG: Dieser Trigger ist nur "best effort" und env-gated
+  // (INTERNAL_API_SECRET). Die Compare-Route persistiert das Ergebnis zwar
+  // mittlerweile am Vertrag, aber die ZUVERLÄSSIGE Sichtbarkeit kommt vom
+  // Auto-Run im Dashboard (HandoverClient): beim Öffnen der Übergabe-Seite
+  // wird der Vergleich genau einmal nachgeholt, falls noch keiner
+  // persistiert ist. Der Checkout darf hier NICHT auf den Vergleich warten.
   const compareUrl = `${
     process.env.NEXT_PUBLIC_APP_URL ??
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
