@@ -13,6 +13,8 @@ import { POSITIONS } from "@/lib/handover";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { Plate } from "@/components/ui/Plate";
 import { RiskBadge } from "@/components/contract/RiskBadge";
+import { SendEmailButton } from "@/components/contract/SendEmailButton";
+import { Mail } from "lucide-react";
 import type { Contract, DamageReport, HandoverPhoto, Ticket, Vehicle } from "@/lib/types";
 import type { ContractStatus } from "@/lib/types";
 
@@ -171,6 +173,18 @@ export default async function ContractDetailPage({ params }: { params: { id: str
   );
   const pickupCount = handoverPhotos.filter((p) => p.type === "pickup").length;
   const returnCount = handoverPhotos.filter((p) => p.type === "return").length;
+
+  // Empfänger für den E-Mail-Versand: Kunden-E-Mail (org-scoped) bzw. renter_email.
+  let recipientEmail: string | null = c.renter_email ?? null;
+  if (c.customer_id) {
+    const { data: cust } = await admin
+      .from("customers")
+      .select("email")
+      .eq("id", c.customer_id)
+      .eq("org_id", c.org_id) // SECURITY: multi-tenant isolation
+      .maybeSingle();
+    recipientEmail = (cust?.email as string | null) || recipientEmail;
+  }
 
   return (
     <>
@@ -397,6 +411,21 @@ export default async function ContractDetailPage({ params }: { params: { id: str
               pdfUrl={pdfUrl}
               lexofficeEnabled={lexofficeEnabled}
             />
+          </div>
+
+          {/* Vertrag per E-Mail an den Mieter senden */}
+          <div className="mt-6">
+            <Panel>
+              <div className="flex items-center gap-1.5 data-label text-ink-muted mb-3">
+                <Mail size={12} /> Vertrag versenden
+              </div>
+              <SendEmailButton
+                contractId={c.id}
+                recipient={recipientEmail}
+                alreadySentAt={c.email_sent_at ?? null}
+                alreadySentTo={c.email_sent_to ?? null}
+              />
+            </Panel>
           </div>
 
           {/* Handover photos */}

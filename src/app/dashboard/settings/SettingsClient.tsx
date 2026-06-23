@@ -7,10 +7,12 @@ import {
   Calculator,
   Check,
   ChevronRight,
+  Copy,
   FileSignature,
   Image as ImageIcon,
   Loader2,
   Lock,
+  Mail,
   MapPin,
   RotateCcw,
   Save,
@@ -250,6 +252,21 @@ export const SettingsClient = ({
             hasKey={creditHasKey}
             initialProvider={org.credit_provider || ""}
             initialApiUrl={org.credit_api_url || ""}
+          />
+        </Section>
+
+        <Section
+          title="E-Mail-Versand"
+          subtitle="Mietverträge per E-Mail von Ihrer eigenen, verifizierten Absenderdomain senden."
+        >
+          <EmailSendingCard
+            initialDomain={org.email_domain || ""}
+            initialStatus={org.email_domain_status || "none"}
+            initialRecords={org.email_dns_records}
+            initialSenderName={org.sender_name || org.name || ""}
+            initialSenderEmail={org.sender_email || ""}
+            initialSubject={org.contract_email_subject || ""}
+            initialBody={org.contract_email_body || ""}
           />
         </Section>
 
@@ -1233,6 +1250,375 @@ const CreditBureauCard = ({
         <span>
           Die Auskunft darf nur mit Einwilligung des Kunden eingeholt werden. Nur
           der Inhaber kann eine Prüfung auslösen.
+        </span>
+      </div>
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// E-Mail-Versand: eigene, verifizierte Absenderdomain (Shopify-Prinzip) +
+// Absenderadresse + Vertrags-E-Mail-Vorlage.
+//   • Domain anlegen → /api/org/email-domain { action: "create" } → CNAMEs
+//   • beim DNS-Anbieter eintragen → "Verifizieren" (action: "verify")
+//   • Absender + Vorlage werden via PATCH /api/org gespeichert.
+// Der Plattform-Key (RESEND_API_KEY) liegt nur serverseitig — hier nie sichtbar.
+// ---------------------------------------------------------------------------
+type DnsRecord = {
+  type: string;
+  name: string;
+  value: string;
+  ttl?: string;
+  priority?: number;
+};
+
+const DOMAIN_STATUS_META: Record<
+  string,
+  { label: string; cls: string }
+> = {
+  none: { label: "Nicht eingerichtet", cls: "bg-stone-100 text-stone-600 border-stone-200" },
+  pending: { label: "Verifizierung ausstehend", cls: "bg-amber-50 text-amber-700 border-amber-200" },
+  verified: { label: "Verifiziert", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  failed: { label: "Fehlgeschlagen", cls: "bg-rose-50 text-rose-700 border-rose-200" },
+};
+
+const EMAIL_PLACEHOLDERS: { key: string; label: string }[] = [
+  { key: "{{mieter}}", label: "Name des Mieters" },
+  { key: "{{firma}}", label: "Ihr Firmenname" },
+  { key: "{{kennzeichen}}", label: "Kennzeichen" },
+  { key: "{{fahrzeug}}", label: "Fahrzeug" },
+  { key: "{{vertragsnummer}}", label: "Vertragsnummer" },
+  { key: "{{abholdatum}}", label: "Abholdatum" },
+  { key: "{{rueckgabedatum}}", label: "Rückgabedatum" },
+];
+
+const toRecordArray = (raw: unknown): DnsRecord[] => {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((r): r is Record<string, unknown> => typeof r === "object" && r !== null)
+    .map((r) => ({
+      type: typeof r.type === "string" ? r.type : "CNAME",
+      name: typeof r.name === "string" ? r.name : "",
+      value: typeof r.value === "string" ? r.value : "",
+      ttl: typeof r.ttl === "string" ? r.ttl : undefined,
+      priority: typeof r.priority === "number" ? r.priority : undefined,
+    }));
+};
+
+const CopyButton = ({ value }: { value: string }) => {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(value);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        } catch {
+          /* clipboard nicht verfügbar — ignorieren */
+        }
+      }}
+      className="inline-flex items-center justify-center w-6 h-6 rounded text-ink-muted hover:text-ink hover:bg-ink/5 shrink-0"
+      aria-label="Kopieren"
+    >
+      {copied ? <Check size={12} /> : <Copy size={12} />}
+    </button>
+  );
+};
+
+const EmailSendingCard = ({
+  initialDomain,
+  initialStatus,
+  initialRecords,
+  initialSenderName,
+  initialSenderEmail,
+  initialSubject,
+  initialBody,
+}: {
+  initialDomain: string;
+  initialStatus: string;
+  initialRecords: unknown;
+  initialSenderName: string;
+  initialSenderEmail: string;
+  initialSubject: string;
+  initialBody: string;
+}) => {
+  const [domainInput, setDomainInput] = useState(initialDomain);
+  const [domain, setDomain] = useState(initialDomain);
+  const [status, setStatus] = useState(initialStatus || "none");
+  const [records, setRecords] = useState<DnsRecord[]>(toRecordArray(initialRecords));
+
+  const [senderName, setSenderName] = useState(initialSenderName);
+  const [senderEmail, setSenderEmail] = useState(initialSenderEmail);
+  const [subject, setSubject] = useState(initialSubject);
+  const [body, setBody] = useState(initialBody);
+
+  const [busy, setBusy] = useState<null | "create" | "verify" | "refresh" | "save">(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const meta = DOMAIN_STATUS_META[status] ?? DOMAIN_STATUS_META.none;
+
+  const callDomain = async (
+    action: "create" | "verify" | "refresh",
+    payload?: Record<string, unknown>
+  ) => {
+    setBusy(action);
+    setErr(null);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/org/email-domain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, ...payload }),
+      });
+      const j = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        status?: string;
+        domain?: string;
+        records?: unknown;
+        error?: string;
+      };
+      if (!res.ok || !j.ok) {
+        setErr(j.error || "Aktion fehlgeschlagen.");
+        return;
+      }
+      if (typeof j.domain === "string") setDomain(j.domain);
+      if (typeof j.status === "string") setStatus(j.status);
+      if (j.records !== undefined) setRecords(toRecordArray(j.records));
+      if (action === "create") setMsg("Domain angelegt — bitte die DNS-Einträge setzen.");
+      else if (action === "verify")
+        setMsg(j.status === "verified" ? "Domain verifiziert." : "Noch nicht verifiziert — DNS-Einträge prüfen.");
+      else setMsg("Status aktualisiert.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const saveTemplate = async () => {
+    setBusy("save");
+    setErr(null);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/org", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sender_name: senderName.trim() || null,
+          sender_email: senderEmail.trim() || null,
+          contract_email_subject: subject.trim() || null,
+          contract_email_body: body.trim() || null,
+        }),
+      });
+      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!res.ok || !j.ok) {
+        setErr(j.error || "Speichern fehlgeschlagen.");
+        return;
+      }
+      setMsg("Absender und Vorlage gespeichert.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* ── Schritt 1: Sende-Domain ── */}
+      <div>
+        <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+          <div className="data-label flex items-center gap-1.5">
+            <Mail size={13} className="text-ink-muted" /> Absenderdomain
+          </div>
+          <span
+            className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full border ${meta.cls}`}
+          >
+            {status === "verified" && <Check size={11} />}
+            {meta.label}
+          </span>
+        </div>
+        <div className="flex items-end gap-2 flex-wrap">
+          <Field label="Domain">
+            <input
+              value={domainInput}
+              onChange={(e) => setDomainInput(e.target.value)}
+              placeholder="mein-autohaus.de"
+              className="field"
+              autoComplete="off"
+            />
+          </Field>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => callDomain("create", { domain: domainInput.trim() })}
+            disabled={busy !== null || domainInput.trim().length === 0}
+          >
+            {busy === "create" ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
+            Domain anlegen
+          </Button>
+        </div>
+        <p className="mt-2 text-[11.5px] text-ink-muted">
+          Sie behalten Ihre Domain — es werden nur DNS-Einträge ergänzt. Tragen Sie
+          die folgenden Einträge bei Ihrem DNS-Anbieter ein und klicken dann auf
+          &bdquo;Verifizieren&ldquo;.
+        </p>
+      </div>
+
+      {/* ── DNS-Records ── */}
+      {records.length > 0 && (
+        <div className="rounded-panel border border-hairline bg-canvas overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-hairline flex items-center justify-between gap-3 flex-wrap">
+            <div className="data-label">DNS-Einträge für {domain || "Ihre Domain"}</div>
+            <button
+              type="button"
+              onClick={() => callDomain("verify")}
+              disabled={busy !== null}
+              className="inline-flex items-center gap-1.5 text-[12px] font-medium text-ink-soft hover:text-ink"
+            >
+              {busy === "verify" ? (
+                <Loader2 size={12} className="animate-spin" />
+              ) : (
+                <ShieldCheck size={12} />
+              )}
+              Verifizieren
+            </button>
+          </div>
+          <div className="overflow-x-auto scroll-thin">
+            <table className="w-full text-[12px]">
+              <thead>
+                <tr className="text-left text-ink-muted">
+                  <th className="font-medium px-4 py-2">Typ</th>
+                  <th className="font-medium px-4 py-2">Name / Host</th>
+                  <th className="font-medium px-4 py-2">Wert</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.map((r, i) => (
+                  <tr key={i} className="border-t border-hairline align-top">
+                    <td className="px-4 py-2 font-mono text-ink-soft whitespace-nowrap">{r.type}</td>
+                    <td className="px-4 py-2 font-mono text-ink">
+                      <div className="flex items-start gap-1.5">
+                        <span className="break-all">{r.name}</span>
+                        <CopyButton value={r.name} />
+                      </div>
+                    </td>
+                    <td className="px-4 py-2 font-mono text-ink">
+                      <div className="flex items-start gap-1.5">
+                        <span className="break-all">{r.value}</span>
+                        <CopyButton value={r.value} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-4 py-2 border-t border-hairline flex items-center justify-end">
+            <button
+              type="button"
+              onClick={() => callDomain("refresh")}
+              disabled={busy !== null}
+              className="inline-flex items-center gap-1.5 text-[11.5px] text-ink-muted hover:text-ink"
+            >
+              {busy === "refresh" ? (
+                <Loader2 size={11} className="animate-spin" />
+              ) : (
+                <RotateCcw size={11} />
+              )}
+              Status & Einträge aktualisieren
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Schritt 2: Absender ── */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        <Field label="Absender-Name">
+          <input
+            value={senderName}
+            onChange={(e) => setSenderName(e.target.value)}
+            placeholder="Muster Autovermietung"
+            className="field"
+          />
+        </Field>
+        <Field label="Absender-Adresse">
+          <input
+            type="email"
+            value={senderEmail}
+            onChange={(e) => setSenderEmail(e.target.value)}
+            placeholder={domain ? `info@${domain}` : "info@mein-autohaus.de"}
+            className="field"
+            autoComplete="off"
+          />
+        </Field>
+      </div>
+      <p className="-mt-2 text-[11.5px] text-ink-muted">
+        Die Absender-Adresse muss auf der verifizierten Domain liegen
+        {domain ? ` (z. B. info@${domain})` : ""}.
+      </p>
+
+      {/* ── Schritt 3: Vertrags-E-Mail-Vorlage ── */}
+      <div className="space-y-3">
+        <Field label="Betreff">
+          <input
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="Ihr Mietvertrag {{vertragsnummer}} – {{firma}}"
+            className="field"
+          />
+        </Field>
+        <Field label="Nachricht">
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={10}
+            placeholder="Guten Tag {{mieter}}, im Anhang finden Sie Ihren Mietvertrag …"
+            className="field text-[13px] leading-[1.55] resize-y"
+          />
+        </Field>
+        <div className="rounded-panel border border-hairline bg-canvas px-3 py-2.5">
+          <div className="data-label mb-1.5">Verfügbare Platzhalter</div>
+          <div className="flex flex-wrap gap-1.5">
+            {EMAIL_PLACEHOLDERS.map((p) => (
+              <span
+                key={p.key}
+                title={p.label}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono bg-paper border border-hairline text-ink-soft"
+              >
+                {p.key}
+              </span>
+            ))}
+          </div>
+          <p className="mt-1.5 text-[11px] text-ink-muted">
+            Leer lassen, um die freundliche Standard-Vorlage zu verwenden.
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-[12px]">
+          {msg && <span className="text-emerald-700">{msg}</span>}
+          {err && <span className="text-rose-700">{err}</span>}
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={saveTemplate}
+          disabled={busy !== null}
+        >
+          {busy === "save" ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+          Absender &amp; Vorlage speichern
+        </Button>
+      </div>
+
+      <div className="flex items-start gap-2 text-[11.5px] text-ink-muted">
+        <ShieldCheck size={13} className="mt-px shrink-0 text-ink-muted" />
+        <span>
+          E-Mails werden ausschließlich über Ihre verifizierte Domain versendet.
+          Der Versanddienst-Zugang liegt zentral auf der Plattform — Sie müssen
+          keinen API-Schlüssel hinterlegen.
         </span>
       </div>
     </div>

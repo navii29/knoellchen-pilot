@@ -39,7 +39,7 @@ const ALL_BUCKETS = [
 ];
 
 const SAFE_COLUMNS =
-  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, echoes_account_id, echoes_enabled, credit_provider, credit_api_url, rental_terms, onboarding_completed, onboarding_step, shopify_shop_domain, shopify_webhook_token, landlord_signature_name, created_at";
+  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, echoes_account_id, echoes_enabled, credit_provider, credit_api_url, email_provider, email_domain, email_domain_id, email_domain_status, email_dns_records, contract_email_subject, contract_email_body, rental_terms, onboarding_completed, onboarding_step, shopify_shop_domain, shopify_webhook_token, landlord_signature_name, created_at";
 
 const stripSecrets = <T extends Record<string, unknown>>(row: T) => {
   const copy = { ...row } as T & {
@@ -114,6 +114,12 @@ export const PATCH = async (req: Request) => {
     "credit_provider",
     "credit_api_url",
     "credit_api_key",
+    // E-Mail-Versand (Migration 057): Absender (wiederverwendete sender_*-Spalten)
+    // + Vertrags-E-Mail-Vorlage. Alle unkritisch (kein Secret).
+    "sender_name",
+    "sender_email",
+    "contract_email_subject",
+    "contract_email_body",
     "rental_terms",
     "shopify_shop_domain",
     "shopify_admin_token",
@@ -158,6 +164,17 @@ export const PATCH = async (req: Request) => {
     const v = update.credit_api_key;
     update.credit_api_key =
       typeof v === "string" && v.trim().length > 0 ? v.trim() : null;
+  }
+  for (const k of [
+    "sender_name",
+    "sender_email",
+    "contract_email_subject",
+    "contract_email_body",
+  ] as const) {
+    if (k in update) {
+      const v = update[k];
+      update[k] = typeof v === "string" && v.trim().length > 0 ? v.trim() : null;
+    }
   }
   if ("shopify_shop_domain" in update) {
     const v = update.shopify_shop_domain;

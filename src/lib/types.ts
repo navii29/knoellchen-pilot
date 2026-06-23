@@ -29,6 +29,16 @@ export interface Organization {
   credit_provider: string | null;
   credit_api_url: string | null;
   // credit_api_key absichtlich NICHT im Type — darf nie ans Frontend gelangen.
+  // E-Mail-Versand von eigener, verifizierter Absenderdomain (Migration 057).
+  // Alle Felder unkritisch: Domain-ID / DNS-Records / Status sind zum Anzeigen
+  // gedacht. Der Plattform-Key (RESEND_API_KEY) liegt nur in der Server-Env.
+  email_provider: string | null;
+  email_domain: string | null;
+  email_domain_id: string | null;
+  email_domain_status: string | null; // 'none' | 'pending' | 'verified' | 'failed'
+  email_dns_records: unknown;
+  contract_email_subject: string | null;
+  contract_email_body: string | null;
   echoes_account_id: string | null;
   echoes_enabled: boolean;
   // echoes_api_key absichtlich NICHT im Type — darf nie ans Frontend gelangen.
@@ -268,6 +278,10 @@ export interface Contract {
   risk_override_by: string | null;
   risk_override_at: string | null;
   risk_override_reason: string | null;
+
+  // Dokumentenversand per E-Mail (Migration 057)
+  email_sent_at: string | null;
+  email_sent_to: string | null;
 
   created_at: string;
   updated_at: string;
