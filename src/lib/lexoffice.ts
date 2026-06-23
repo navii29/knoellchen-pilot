@@ -75,6 +75,7 @@ export type LxInvoiceResponse = {
   resourceUri?: string;
   createdDate?: string;
   voucherNumber?: string;
+  voucherStatus?: string;
 };
 
 export type LxProfile = {
