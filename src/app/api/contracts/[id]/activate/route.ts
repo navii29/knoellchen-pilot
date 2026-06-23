@@ -71,7 +71,7 @@ export const POST = async (_req: Request, { params }: Ctx) => {
 
   const { data: org } = await admin
     .from("organizations")
-    .select("lexoffice_api_key, lexoffice_enabled")
+    .select("lexoffice_api_key, lexoffice_enabled, kleinunternehmer")
     .eq("id", auth.org_id)
     .single();
 
@@ -121,7 +121,11 @@ export const POST = async (_req: Request, { params }: Ctx) => {
       }
       // 2) Separate, steuerneutrale Kautions-Rechnung
       if (!depositInvoiceId && Number(contract.deposit ?? 0) > 0) {
-        const depInvoice = buildDepositInvoice(contract, customer ?? null);
+        const depInvoice = buildDepositInvoice(
+          contract,
+          customer ?? null,
+          Boolean(org?.kleinunternehmer)
+        );
         const depResult = await lxCreateInvoice(apiKey, depInvoice);
         depositInvoiceId = depResult.id;
         await admin

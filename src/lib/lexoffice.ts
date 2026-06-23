@@ -440,7 +440,8 @@ export const buildContractInvoice = (
 // Miet-Rechnung gestellt (§ 3a UStG, durchlaufender Posten).
 export const buildDepositInvoice = (
   contract: ContractLike,
-  customer: CustomerLike | null
+  customer: CustomerLike | null,
+  kleinunternehmer = false
 ): LxInvoice => {
   const deposit = round2(Number(contract.deposit ?? 0));
   return {
@@ -457,7 +458,11 @@ export const buildDepositInvoice = (
       },
     ],
     totalPrice: { currency: "EUR" },
-    taxConditions: { taxType: "vatfree" },
+    // "vatfree" erlaubt LexOffice NUR bei Kleinunternehmer-/steuerbefreiten Orgs
+    // ("406 No vatfree invoices allowed for this organization"). Regelbesteuerte
+    // Orgs bekommen die Kaution als "net" mit 0 % USt — steuerneutral, aber von
+    // LexOffice akzeptiert.
+    taxConditions: { taxType: kleinunternehmer ? "vatfree" : "net" },
     shippingConditions: {
       shippingType: "service",
       shippingDate: isoWithTimezone(new Date(contract.pickup_date)),
