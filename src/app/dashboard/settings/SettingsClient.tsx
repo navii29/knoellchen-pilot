@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -265,9 +265,14 @@ export const SettingsClient = ({
             initialRecords={org.email_dns_records}
             initialSenderName={org.sender_name || org.name || ""}
             initialSenderEmail={org.sender_email || ""}
-            initialSubject={org.contract_email_subject || ""}
-            initialBody={org.contract_email_body || ""}
           />
+        </Section>
+
+        <Section
+          title="E-Mail-Vorlagen"
+          subtitle="Vorgefertigte Vorlagen pro Anlass — frei anpassbar oder jederzeit auf den Standard zurücksetzbar."
+        >
+          <EmailTemplatesCard />
         </Section>
 
         <Link
@@ -1285,11 +1290,16 @@ const DOMAIN_STATUS_META: Record<
 const EMAIL_PLACEHOLDERS: { key: string; label: string }[] = [
   { key: "{{mieter}}", label: "Name des Mieters" },
   { key: "{{firma}}", label: "Ihr Firmenname" },
+  { key: "{{vermieter}}", label: "Ihr Firmenname (Vermieter)" },
+  { key: "{{absender}}", label: "Absender-Name" },
   { key: "{{kennzeichen}}", label: "Kennzeichen" },
   { key: "{{fahrzeug}}", label: "Fahrzeug" },
   { key: "{{vertragsnummer}}", label: "Vertragsnummer" },
   { key: "{{abholdatum}}", label: "Abholdatum" },
   { key: "{{rueckgabedatum}}", label: "Rückgabedatum" },
+  { key: "{{betrag}}", label: "Gesamtbetrag (€)" },
+  { key: "{{kaution}}", label: "Kaution (€)" },
+  { key: "{{checkin_link}}", label: "Online-Check-in-Link" },
 ];
 
 const toRecordArray = (raw: unknown): DnsRecord[] => {
@@ -1333,16 +1343,12 @@ const EmailSendingCard = ({
   initialRecords,
   initialSenderName,
   initialSenderEmail,
-  initialSubject,
-  initialBody,
 }: {
   initialDomain: string;
   initialStatus: string;
   initialRecords: unknown;
   initialSenderName: string;
   initialSenderEmail: string;
-  initialSubject: string;
-  initialBody: string;
 }) => {
   const [domainInput, setDomainInput] = useState(initialDomain);
   const [domain, setDomain] = useState(initialDomain);
@@ -1351,8 +1357,6 @@ const EmailSendingCard = ({
 
   const [senderName, setSenderName] = useState(initialSenderName);
   const [senderEmail, setSenderEmail] = useState(initialSenderEmail);
-  const [subject, setSubject] = useState(initialSubject);
-  const [body, setBody] = useState(initialBody);
 
   const [busy, setBusy] = useState<null | "create" | "verify" | "refresh" | "save">(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -1396,7 +1400,7 @@ const EmailSendingCard = ({
     }
   };
 
-  const saveTemplate = async () => {
+  const saveSender = async () => {
     setBusy("save");
     setErr(null);
     setMsg(null);
@@ -1407,8 +1411,6 @@ const EmailSendingCard = ({
         body: JSON.stringify({
           sender_name: senderName.trim() || null,
           sender_email: senderEmail.trim() || null,
-          contract_email_subject: subject.trim() || null,
-          contract_email_body: body.trim() || null,
         }),
       });
       const j = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
@@ -1416,7 +1418,7 @@ const EmailSendingCard = ({
         setErr(j.error || "Speichern fehlgeschlagen.");
         return;
       }
-      setMsg("Absender und Vorlage gespeichert.");
+      setMsg("Absender gespeichert.");
     } finally {
       setBusy(null);
     }
@@ -1558,44 +1560,6 @@ const EmailSendingCard = ({
         {domain ? ` (z. B. info@${domain})` : ""}.
       </p>
 
-      {/* ── Schritt 3: Vertrags-E-Mail-Vorlage ── */}
-      <div className="space-y-3">
-        <Field label="Betreff">
-          <input
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder="Ihr Mietvertrag {{vertragsnummer}} – {{firma}}"
-            className="field"
-          />
-        </Field>
-        <Field label="Nachricht">
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={10}
-            placeholder="Guten Tag {{mieter}}, im Anhang finden Sie Ihren Mietvertrag …"
-            className="field text-[13px] leading-[1.55] resize-y"
-          />
-        </Field>
-        <div className="rounded-panel border border-hairline bg-canvas px-3 py-2.5">
-          <div className="data-label mb-1.5">Verfügbare Platzhalter</div>
-          <div className="flex flex-wrap gap-1.5">
-            {EMAIL_PLACEHOLDERS.map((p) => (
-              <span
-                key={p.key}
-                title={p.label}
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono bg-paper border border-hairline text-ink-soft"
-              >
-                {p.key}
-              </span>
-            ))}
-          </div>
-          <p className="mt-1.5 text-[11px] text-ink-muted">
-            Leer lassen, um die freundliche Standard-Vorlage zu verwenden.
-          </p>
-        </div>
-      </div>
-
       <div className="flex items-center justify-between gap-3">
         <div className="text-[12px]">
           {msg && <span className="text-emerald-700">{msg}</span>}
@@ -1605,11 +1569,11 @@ const EmailSendingCard = ({
           type="button"
           variant="ghost"
           size="sm"
-          onClick={saveTemplate}
+          onClick={saveSender}
           disabled={busy !== null}
         >
           {busy === "save" ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-          Absender &amp; Vorlage speichern
+          Absender speichern
         </Button>
       </div>
 
@@ -1618,10 +1582,262 @@ const EmailSendingCard = ({
         <span>
           E-Mails werden ausschließlich über Ihre verifizierte Domain versendet.
           Der Versanddienst-Zugang liegt zentral auf der Plattform — Sie müssen
-          keinen API-Schlüssel hinterlegen.
+          keinen API-Schlüssel hinterlegen. Die Text-Vorlagen verwalten Sie im
+          Abschnitt &bdquo;E-Mail-Vorlagen&ldquo;.
         </span>
       </div>
     </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// E-Mail-Vorlagen-Bibliothek: pro Anlass eine Vorlage (Betreff + Nachricht),
+// ladbar/anpassbar/zurücksetzbar über /api/org/email-templates (Inhaber-only).
+// ---------------------------------------------------------------------------
+type LoadedTemplate = {
+  key: string;
+  label: string;
+  description: string;
+  attachesPdf: boolean;
+  subject: string;
+  body: string;
+  isCustom: boolean;
+};
+
+const EmailTemplatesCard = () => {
+  const [items, setItems] = useState<LoadedTemplate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoadErr(null);
+    try {
+      const res = await fetch("/api/org/email-templates");
+      const j = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        templates?: LoadedTemplate[];
+        error?: string;
+      };
+      if (!res.ok || !j.ok || !Array.isArray(j.templates)) {
+        setLoadErr(j.error || "Vorlagen konnten nicht geladen werden.");
+        return;
+      }
+      setItems(j.templates);
+    } catch {
+      setLoadErr("Vorlagen konnten nicht geladen werden.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (loading)
+    return (
+      <div className="flex items-center gap-2 text-[13px] text-ink-muted">
+        <Loader2 size={14} className="animate-spin" /> Vorlagen werden geladen …
+      </div>
+    );
+
+  if (loadErr)
+    return (
+      <div className="text-[13px] text-rose-700 bg-rose-50 border border-rose-200 rounded-panel px-3 py-2">
+        {loadErr}
+      </div>
+    );
+
+  return (
+    <div className="space-y-4">
+      {items.map((t) => (
+        <EmailTemplateRow
+          key={t.key}
+          template={t}
+          onChanged={(next) =>
+            setItems((arr) => arr.map((x) => (x.key === t.key ? next : x)))
+          }
+        />
+      ))}
+
+      <div className="rounded-panel border border-hairline bg-canvas px-3 py-2.5">
+        <div className="data-label mb-1.5">Verfügbare Platzhalter</div>
+        <div className="flex flex-wrap gap-1.5">
+          {EMAIL_PLACEHOLDERS.map((p) => (
+            <span
+              key={p.key}
+              title={p.label}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono bg-paper border border-hairline text-ink-soft"
+            >
+              {p.key}
+            </span>
+          ))}
+        </div>
+        <p className="mt-1.5 text-[11px] text-ink-muted">
+          Platzhalter werden beim Versand automatisch ausgefüllt. Felder leer
+          lassen, um die freundliche Standard-Vorlage zu verwenden.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const EmailTemplateRow = ({
+  template,
+  onChanged,
+}: {
+  template: LoadedTemplate;
+  onChanged: (next: LoadedTemplate) => void;
+}) => {
+  const [subject, setSubject] = useState(template.subject);
+  const [body, setBody] = useState(template.body);
+  const [busy, setBusy] = useState<null | "save" | "reset">(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const save = async () => {
+    setBusy("save");
+    setMsg(null);
+    setErr(null);
+    try {
+      const res = await fetch("/api/org/email-templates", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: template.key, subject, body }),
+      });
+      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!res.ok || !j.ok) {
+        setErr(j.error || "Speichern fehlgeschlagen.");
+        return;
+      }
+      onChanged({ ...template, subject, body, isCustom: true });
+      setMsg("Gespeichert.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const reset = async () => {
+    if (!confirm(`Vorlage „${template.label}“ auf den Standard zurücksetzen?`)) return;
+    setBusy("reset");
+    setMsg(null);
+    setErr(null);
+    try {
+      const res = await fetch(
+        `/api/org/email-templates?key=${encodeURIComponent(template.key)}`,
+        { method: "DELETE" }
+      );
+      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!res.ok || !j.ok) {
+        setErr(j.error || "Zurücksetzen fehlgeschlagen.");
+        return;
+      }
+      // Standard erneut vom Server holen, damit Felder den Default zeigen.
+      const refetch = await fetch("/api/org/email-templates");
+      const rj = (await refetch.json().catch(() => ({}))) as {
+        templates?: LoadedTemplate[];
+      };
+      const fresh = rj.templates?.find((x) => x.key === template.key);
+      if (fresh) {
+        setSubject(fresh.subject);
+        setBody(fresh.body);
+        onChanged(fresh);
+      }
+      setMsg("Auf Standard zurückgesetzt.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <details className="rounded-panel border border-hairline bg-paper overflow-hidden group">
+      <summary className="flex items-center gap-3 px-4 py-3 cursor-pointer list-none">
+        <Mail size={14} className="text-ink-muted shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-display font-semibold text-[13.5px] tracking-tight text-ink">
+              {template.label}
+            </span>
+            {template.attachesPdf && (
+              <span className="inline-flex items-center gap-1 text-[10.5px] font-medium px-1.5 py-0.5 rounded-full border bg-stone-50 text-stone-600 border-stone-200">
+                PDF-Anhang
+              </span>
+            )}
+            <span
+              className={`inline-flex items-center gap-1 text-[10.5px] font-medium px-1.5 py-0.5 rounded-full border ${
+                template.isCustom
+                  ? "bg-blue-50 text-blue-700 border-blue-200"
+                  : "bg-stone-100 text-stone-600 border-stone-200"
+              }`}
+            >
+              {template.isCustom ? "angepasst" : "Standard"}
+            </span>
+          </div>
+          <div className="text-[12px] text-ink-muted mt-0.5 truncate">
+            {template.description}
+          </div>
+        </div>
+        <ChevronRight
+          size={15}
+          className="text-ink-muted transition group-open:rotate-90 shrink-0"
+        />
+      </summary>
+
+      <div className="px-4 pb-4 pt-1 space-y-3 border-t border-hairline">
+        <Field label="Betreff">
+          <input
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="field"
+          />
+        </Field>
+        <Field label="Nachricht">
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={10}
+            className="field text-[13px] leading-[1.55] resize-y"
+          />
+        </Field>
+
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="text-[12px]">
+            {msg && <span className="text-emerald-700">{msg}</span>}
+            {err && <span className="text-rose-700">{err}</span>}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={reset}
+              disabled={busy !== null}
+              className="inline-flex items-center gap-1.5 text-[12px] text-ink-muted hover:text-ink disabled:opacity-50"
+            >
+              {busy === "reset" ? (
+                <Loader2 size={12} className="animate-spin" />
+              ) : (
+                <RotateCcw size={12} />
+              )}
+              Auf Standard zurücksetzen
+            </button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={save}
+              disabled={busy !== null}
+            >
+              {busy === "save" ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Save size={13} />
+              )}
+              Speichern
+            </Button>
+          </div>
+        </div>
+      </div>
+    </details>
   );
 };
 
