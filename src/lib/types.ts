@@ -254,6 +254,17 @@ export interface Contract {
   selected_special_terms: string[];
   custom_special_terms: string | null;
 
+  // KI-Risikocheck (Migration 055)
+  risk_consent: boolean;
+  risk_level: string | null;
+  risk_score: number | null;
+  risk_summary: string | null;
+  risk_factors: unknown;
+  risk_checked_at: string | null;
+  risk_override_by: string | null;
+  risk_override_at: string | null;
+  risk_override_reason: string | null;
+
   created_at: string;
   updated_at: string;
 }
