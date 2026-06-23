@@ -36,7 +36,10 @@ export const POST = async (req: Request) => {
   if (file.size > 12 * 1024 * 1024)
     return NextResponse.json({ error: "Datei zu groß (max 12 MB)" }, { status: 400 });
 
-  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const rawExt = (file.name.split(".").pop() || "").toLowerCase();
+  // Nur bekannte Endungen zulassen — sonst (z. B. Dateiname ohne Punkt)
+  // landet der ganze Name als "Endung" im Storage-Pfad.
+  const ext = ["jpg", "jpeg", "png", "webp", "pdf"].includes(rawExt) ? rawExt : "jpg";
   const stamp = Date.now().toString(36);
   // Org-präfixierter Pfad, strikt auf die eigene Session gescoped.
   const path = `${session.org_id}/${session.customer_id}/profile/${docType}-${stamp}.${ext}`;
@@ -70,12 +73,20 @@ export const POST = async (req: Request) => {
 
   // Customer-Felder NUR dort ergänzen, wo bisher leer — nie überschreiben, was
   // der Betreiber bereits eingetragen hat.
-  const { data: customer } = await admin
+  const { data: customer, error: selErr } = await admin
     .from("customers")
     .select("*")
     .eq("id", session.customer_id)
     .eq("org_id", session.org_id)
-    .single();
+    .maybeSingle();
+  // Bei SELECT-Fehler oder fehlendem Datensatz NICHT schreiben — sonst würde
+  // fillIfEmpty jedes Feld als leer behandeln und vorhandene Daten überschreiben.
+  if (selErr)
+    return NextResponse.json(
+      { error: "Kundendaten konnten nicht geladen werden." },
+      { status: 500 }
+    );
+  if (!customer) return NextResponse.json({ error: "Kunde nicht gefunden" }, { status: 404 });
 
   const fillIfEmpty = (key: keyof typeof parsed.data, current: unknown) => {
     const v = parsed.data[key];
@@ -91,11 +102,12 @@ export const POST = async (req: Request) => {
     if (v != null) updates[k] = v;
   }
 
-  await admin
+  const { error: updErr } = await admin
     .from("customers")
     .update(updates)
     .eq("id", session.customer_id)
     .eq("org_id", session.org_id);
+  if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
 
   const data = {
     first_name: parsed.data.first_name ?? null,
