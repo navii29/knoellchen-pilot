@@ -13,6 +13,7 @@ import { POSITIONS, SEVERITY_STYLE } from "@/lib/handover";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { Plate } from "@/components/ui/Plate";
 import { RiskBadge } from "@/components/contract/RiskBadge";
+import { ExtensionRequests, type ContractExtension } from "@/components/contract/ExtensionRequests";
 import { SendEmailButton } from "@/components/contract/SendEmailButton";
 import { Mail } from "lucide-react";
 import type { Contract, DamageReport, HandoverPhoto, Ticket, Vehicle } from "@/lib/types";
@@ -186,6 +187,15 @@ export default async function ContractDetailPage({ params }: { params: { id: str
     recipientEmail = (cust?.email as string | null) || recipientEmail;
   }
 
+  // Offene Verlängerungs-Anfragen — RLS-scoped über den eingeloggten Nutzer.
+  const { data: extensionRows } = await supabase
+    .from("contract_extensions")
+    .select("*")
+    .eq("contract_id", c.id)
+    .eq("status", "angefragt")
+    .order("created_at", { ascending: false });
+  const pendingExtensions = (extensionRows ?? []) as ContractExtension[];
+
   return (
     <>
       <Topbar section={`Vertrag · ${c.contract_nr}`} />
@@ -275,6 +285,13 @@ export default async function ContractDetailPage({ params }: { params: { id: str
               risk_override_reason={c.risk_override_reason ?? null}
             />
           </div>
+
+          {/* Verlängerungs-Anfragen (nur wenn offen) */}
+          <ExtensionRequests
+            contractId={c.id}
+            extensions={pendingExtensions}
+            contractReturnDate={c.return_date}
+          />
 
           {/* Info cards */}
           <div className="mt-6 grid sm:grid-cols-2 gap-3">
