@@ -2,16 +2,23 @@ import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/activity";
 import { loadCustomerForContract } from "@/lib/contract-loaders";
+import { emailConfigured, renderTemplate, sendDocumentEmail } from "@/lib/email";
 import {
-  emailConfigured,
-  renderTemplate,
-  sendDocumentEmail,
-  DEFAULT_CONTRACT_EMAIL_SUBJECT,
-  DEFAULT_CONTRACT_EMAIL_BODY,
-} from "@/lib/email";
+  EMAIL_TEMPLATE_CATALOG,
+  isEmailTemplateKey,
+  resolveTemplate,
+  type EmailTemplateKey,
+} from "@/lib/email-templates";
 import { customerDisplayName } from "@/lib/customer";
-import { fmtDate } from "@/lib/utils";
+import { fmtDate, fmtEur } from "@/lib/utils";
+import { portalBaseUrl } from "@/lib/portal-auth";
 import type { Contract, Organization } from "@/lib/types";
+
+// {{betrag}}/{{kaution}} als € — anders als fmtEur liefert ein fehlender Wert
+// hier den LEEREN String (kein „—“), damit der Platzhalter im Text sauber
+// verschwindet statt einen Bindestrich zu hinterlassen.
+const eurOrEmpty = (n: number | null | undefined): string =>
+  n == null ? "" : fmtEur(n);
 
 export const maxDuration = 30;
 
@@ -50,10 +57,21 @@ const textToHtml = (text: string): string =>
 // Mietvertrag samt PDF per E-Mail an den Kunden senden. Operative Aktion —
 // jedes authentifizierte Org-Mitglied darf sie auslösen. Strikt org-scoped.
 // ---------------------------------------------------------------------------
-export const POST = async (_req: Request, { params }: { params: { id: string } }) => {
+export const POST = async (req: Request, { params }: { params: { id: string } }) => {
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   const { user, org_id: orgId } = auth;
+
+  // --- Vorlage wählen: Body { template_key? } — Default 'contract' (BC). Ein
+  //     gesetzter, aber unbekannter Schlüssel wird abgelehnt. ---
+  const reqBody = (await req.json().catch(() => ({}))) as { template_key?: unknown };
+  if (reqBody.template_key != null && !isEmailTemplateKey(reqBody.template_key))
+    return NextResponse.json({ error: "Unbekannte Vorlage." }, { status: 400 });
+  const templateKey: EmailTemplateKey = isEmailTemplateKey(reqBody.template_key)
+    ? reqBody.template_key
+    : "contract";
+  const catalogEntry = EMAIL_TEMPLATE_CATALOG.find((e) => e.key === templateKey)!;
+  const attachesPdf = catalogEntry.attachesPdf;
 
   const admin = createAdminClient();
 
@@ -106,29 +124,57 @@ export const POST = async (_req: Request, { params }: { params: { id: string } }
       { status: 400 }
     );
 
-  // --- Vertrags-PDF beschaffen: bevorzugt die signierte Fassung (generated-docs),
-  //     sonst das hochgeladene/erzeugte PDF (contract-uploads). ---
-  let pdfBytes: ArrayBuffer | null = null;
-  if (c.signed_contract_path) {
-    const { data } = await admin.storage
-      .from("generated-docs")
-      .download(c.signed_contract_path);
-    if (data) pdfBytes = await data.arrayBuffer();
-  }
-  if (!pdfBytes && c.contract_pdf_path) {
-    const { data } = await admin.storage
-      .from("contract-uploads")
-      .download(c.contract_pdf_path);
-    if (data) pdfBytes = await data.arrayBuffer();
-  }
-  if (!pdfBytes)
-    return NextResponse.json(
-      { error: "Kein Vertrags-PDF vorhanden — bitte zuerst erzeugen/signieren." },
-      { status: 400 }
-    );
-  const contentBase64 = Buffer.from(pdfBytes).toString("base64");
+  // --- Wirksame Vorlage auflösen: Tabellen-Override → (für 'contract') Legacy-
+  //     Spalten → Code-Default. Strikt org-scoped. ---
+  const { data: overrideRow } = await admin
+    .from("email_templates")
+    .select("subject, body")
+    .eq("org_id", orgId) // SECURITY: multi-tenant isolation
+    .eq("template_key", templateKey)
+    .maybeSingle();
+  const legacyOverride =
+    templateKey === "contract"
+      ? { subject: org.contract_email_subject, body: org.contract_email_body }
+      : null;
+  const tpl = resolveTemplate(
+    (overrideRow as { subject: string | null; body: string | null } | null) ??
+      legacyOverride,
+    templateKey
+  );
 
-  // --- Platzhalter aus Vertrag/Kunde befüllen ---
+  // --- Vertrags-PDF nur bei Vorlagen mit Anhang (contract/invoice) beschaffen.
+  //     Bevorzugt signierte Fassung (generated-docs), sonst contract-uploads. ---
+  const attachments: { filename: string; contentBase64: string }[] = [];
+  if (attachesPdf) {
+    let pdfBytes: ArrayBuffer | null = null;
+    if (c.signed_contract_path) {
+      const { data } = await admin.storage
+        .from("generated-docs")
+        .download(c.signed_contract_path);
+      if (data) pdfBytes = await data.arrayBuffer();
+    }
+    if (!pdfBytes && c.contract_pdf_path) {
+      const { data } = await admin.storage
+        .from("contract-uploads")
+        .download(c.contract_pdf_path);
+      if (data) pdfBytes = await data.arrayBuffer();
+    }
+    if (!pdfBytes)
+      return NextResponse.json(
+        { error: "Kein Vertrags-PDF vorhanden — bitte zuerst erzeugen/signieren." },
+        { status: 400 }
+      );
+    const filename =
+      templateKey === "invoice"
+        ? `Rechnung-${c.contract_nr}.pdf`
+        : `Mietvertrag-${c.contract_nr}.pdf`;
+    attachments.push({
+      filename,
+      contentBase64: Buffer.from(pdfBytes).toString("base64"),
+    });
+  }
+
+  // --- Platzhalter aus Vertrag/Kunde/Org befüllen ---
   const mieter =
     (customer ? customerDisplayName(customer) : "") || c.renter_name || "";
   const vars: Record<string, string> = {
@@ -139,16 +185,15 @@ export const POST = async (_req: Request, { params }: { params: { id: string } }
     vertragsnummer: c.contract_nr ?? "",
     abholdatum: c.pickup_date ? fmtDate(c.pickup_date) : "",
     rueckgabedatum: c.return_date ? fmtDate(c.return_date) : "",
+    betrag: eurOrEmpty(c.total_amount),
+    kaution: eurOrEmpty(c.deposit),
+    checkin_link: `${portalBaseUrl()}/portal/contracts/${c.id}`,
+    vermieter: org.name ?? "",
+    absender: org.sender_name ?? "",
   };
 
-  const subject = renderTemplate(
-    org.contract_email_subject || DEFAULT_CONTRACT_EMAIL_SUBJECT,
-    vars
-  );
-  const bodyText = renderTemplate(
-    org.contract_email_body || DEFAULT_CONTRACT_EMAIL_BODY,
-    vars
-  );
+  const subject = renderTemplate(tpl.subject, vars);
+  const bodyText = renderTemplate(tpl.body, vars);
   const html = textToHtml(bodyText);
 
   // --- Versenden — Fehler des Anbieters sauber als 502 melden ---
@@ -160,9 +205,7 @@ export const POST = async (_req: Request, { params }: { params: { id: string } }
       subject,
       html,
       replyTo: fromEmail,
-      attachments: [
-        { filename: `Mietvertrag-${c.contract_nr}.pdf`, contentBase64 },
-      ],
+      attachments,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "E-Mail konnte nicht versendet werden.";
