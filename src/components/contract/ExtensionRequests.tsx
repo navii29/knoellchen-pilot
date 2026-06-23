@@ -120,7 +120,7 @@ function ExtensionCard({
         <span className="text-amber-400 text-[16px] select-none">&#8594;</span>
         <div>
           <div className="text-[11px] text-amber-700/70 uppercase tracking-wider mb-0.5">
-            Gewuenscht
+            Gewünscht
           </div>
           <div className="font-mono tnum text-amber-900 font-medium">
             {fmtDateOpt(ext.requested_return_date, ext.requested_return_time)}
@@ -132,13 +132,13 @@ function ExtensionCard({
       <div className="flex flex-wrap gap-4 text-[12.5px] text-amber-800">
         {ext.extra_days != null && ext.extra_days > 0 && (
           <span>
-            <span className="font-mono tnum font-semibold">{ext.extra_days}</span> Tage
-            {ext.extra_days === 1 ? " " : " "}extra
+            <span className="font-mono tnum font-semibold">{ext.extra_days}</span>{" "}
+            {ext.extra_days === 1 ? "Tag" : "Tage"} extra
           </span>
         )}
         {ext.est_cost != null && (
           <span>
-            Geschaetzte Zusatzkosten:{" "}
+            Geschätzte Zusatzkosten:{" "}
             <span className="font-mono tnum font-semibold">{fmtEur(ext.est_cost)}</span>
           </span>
         )}
