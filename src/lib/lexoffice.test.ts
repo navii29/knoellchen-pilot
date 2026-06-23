@@ -101,11 +101,16 @@ describe("buildContractInvoice — Miet-Rechnung", () => {
 });
 
 describe("buildDepositInvoice — Kautions-Rechnung (steuerneutral)", () => {
-  it("ist steuerfrei (vatfree) mit 0% USt auf die einzige Position", () => {
-    const inv = buildDepositInvoice(mkContract({ deposit: 500 }), null);
-    expect(inv.taxConditions.taxType).toBe("vatfree");
-    expect(inv.lineItems).toHaveLength(1);
-    expect(inv.lineItems[0].unitPrice.taxRatePercentage).toBe(0);
+  it("Regelbesteuerung: net mit 0% USt; Kleinunternehmer: vatfree", () => {
+    // Regelbesteuerte Org: "net" mit 0 % (LexOffice lehnt vatfree sonst ab).
+    const reg = buildDepositInvoice(mkContract({ deposit: 500 }), null);
+    expect(reg.taxConditions.taxType).toBe("net");
+    expect(reg.lineItems).toHaveLength(1);
+    expect(reg.lineItems[0].unitPrice.taxRatePercentage).toBe(0);
+    // Kleinunternehmer: vatfree.
+    const klein = buildDepositInvoice(mkContract({ deposit: 500 }), null, true);
+    expect(klein.taxConditions.taxType).toBe("vatfree");
+    expect(klein.lineItems[0].unitPrice.taxRatePercentage).toBe(0);
   });
 
   it("stellt die Kaution als POSITIVEN Betrag in Rechnung (kein Minus)", () => {
@@ -154,11 +159,12 @@ describe("Stress/Fuzz — 5000 zufällige Verträge, Invarianten müssen halten"
     }
   });
 
-  it("Kautions-Rechnung: immer vatfree, genau 1 Position, 0% USt, Betrag = gerundete Kaution", () => {
+  it("Kautions-Rechnung: 1 Position, 0% USt, Betrag = gerundete Kaution; net (Regel) / vatfree (Kleinunternehmer)", () => {
     for (let i = 0; i < 5000; i++) {
       const deposit = Math.round(Math.random() * 9999 * 100) / 100;
-      const inv = buildDepositInvoice(mkContract({ deposit }), null);
-      expect(inv.taxConditions.taxType).toBe("vatfree");
+      const klein = Math.random() < 0.5;
+      const inv = buildDepositInvoice(mkContract({ deposit }), null, klein);
+      expect(inv.taxConditions.taxType).toBe(klein ? "vatfree" : "net");
       expect(inv.lineItems).toHaveLength(1);
       expect(inv.lineItems[0].unitPrice.taxRatePercentage).toBe(0);
       const amt = inv.lineItems[0].unitPrice.netAmount;
