@@ -13,6 +13,7 @@ export const ACTION_LABELS: Record<string, string> = {
   "contract.create": "Vertrag angelegt",
   "contract.activate": "Vertrag aktiviert (Rechnung)",
   "contract.return": "Rückgabe erfasst",
+  "contract.email_sent": "Vertrag per E-Mail gesendet",
   "vehicle.create": "Fahrzeug angelegt",
   "customer.create": "Kunde angelegt",
   "damage.create": "Schaden gemeldet",

@@ -11,7 +11,7 @@ import type { Organization } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 const SAFE_COLUMNS =
-  "id, name, street, zip, city, phone, email, tax_number, processing_fee, iban, bic, account_holder, kleinunternehmer, slug, inbound_email, lexoffice_enabled, echoes_account_id, echoes_enabled, credit_provider, credit_api_url, rental_terms, logo_path, landlord_signature_name, created_at";
+  "id, name, street, zip, city, phone, email, tax_number, processing_fee, iban, bic, account_holder, kleinunternehmer, slug, inbound_email, sender_name, sender_email, lexoffice_enabled, echoes_account_id, echoes_enabled, credit_provider, credit_api_url, email_domain, email_domain_id, email_domain_status, email_dns_records, contract_email_subject, contract_email_body, rental_terms, logo_path, landlord_signature_name, created_at";
 
 export default async function SettingsPage() {
   // Mitarbeiter ohne 'settings'-Recht werden auf /dashboard umgeleitet.
