@@ -17,6 +17,7 @@ import { isContractOverdue, localTodayIso } from "@/lib/contract-utils";
 import { CustomerActions } from "./CustomerActions";
 import { CustomerEditPanel } from "./CustomerEditPanel";
 import { CustomerDocumentsCard } from "./CustomerDocumentsCard";
+import { CreditCard as CreditBureauCard } from "@/components/customer/CreditCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -55,10 +56,23 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
   // Org des eingeloggten Users — für die Pfad-Absicherung der Storage-Dokumente.
   const { data: profile } = await supabase
     .from("users")
-    .select("org_id")
+    .select("org_id, role")
     .eq("id", user.id)
     .single();
   const orgId = (profile?.org_id as string | undefined) ?? null;
+  const isOwner = profile?.role === "owner";
+
+  // Ist ein Bonitäts-Anbieter konfiguriert? (org-scoped via RLS)
+  let providerConfigured = false;
+  if (orgId) {
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("credit_provider")
+      .eq("id", orgId)
+      .maybeSingle();
+    const cp = org?.credit_provider;
+    providerConfigured = typeof cp === "string" && cp.trim().length > 0;
+  }
   // Nur Dokumente signieren, deren Pfad zur eigenen Org gehört — ein manipulierter
   // Pfad (z. B. via fremder org_id) darf keine fremden Ausweis-Scans offenlegen.
   const orgOwnsPath = (p: string | null): p is string =>
@@ -167,6 +181,19 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
               customerId={c.id}
               licenseUrl={licenseUrl}
               idCardUrl={idCardUrl}
+            />
+          </div>
+
+          <div className="mt-6">
+            <CreditBureauCard
+              customerId={c.id}
+              credit_score={c.credit_score}
+              credit_rating={c.credit_rating}
+              credit_decision={c.credit_decision}
+              credit_provider={c.credit_provider}
+              credit_checked_at={c.credit_checked_at}
+              isOwner={isOwner}
+              providerConfigured={providerConfigured}
             />
           </div>
 

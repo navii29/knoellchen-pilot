@@ -14,12 +14,14 @@ import {
   MapPin,
   RotateCcw,
   Save,
+  ShieldCheck,
   Trash2,
   TrendingUp,
   Upload,
   Wifi,
 } from "lucide-react";
 import { DEFAULT_RENTAL_TERMS } from "@/lib/rental-terms";
+import { CREDIT_PROVIDERS } from "@/lib/credit-bureau";
 import type { Organization } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
@@ -32,11 +34,13 @@ export const SettingsClient = ({
   org,
   lexofficeHasKey,
   echoesHasKey,
+  creditHasKey,
   landlordHasSignature,
 }: {
   org: Organization;
   lexofficeHasKey: boolean;
   echoesHasKey: boolean;
+  creditHasKey: boolean;
   landlordHasSignature: boolean;
 }) => {
   const [data, setData] = useState({
@@ -235,6 +239,17 @@ export const SettingsClient = ({
               setData((d) => ({ ...d, echoes_account_id: v }))
             }
             onToggle={(v) => setData((d) => ({ ...d, echoes_enabled: v }))}
+          />
+        </Section>
+
+        <Section
+          title="Bonitätsauskunft"
+          subtitle="Externe Bonitätsprüfung für Kunden — Anbieter und Zugangsdaten hinterlegen."
+        >
+          <CreditBureauCard
+            hasKey={creditHasKey}
+            initialProvider={org.credit_provider || ""}
+            initialApiUrl={org.credit_api_url || ""}
           />
         </Section>
 
@@ -1051,6 +1066,175 @@ const EchoesCard = ({
           </div>
         </div>
       </label>
+    </div>
+  );
+};
+
+// Externe Bonitätsauskunft: Anbieter + (für den generischen Adapter) API-URL,
+// plus ein write-only API-Key. Speichert via PATCH /api/org. Der Key wird nur
+// gesendet, wenn ein neuer eingegeben wurde — und nie zurückgelesen.
+const CreditBureauCard = ({
+  hasKey,
+  initialProvider,
+  initialApiUrl,
+}: {
+  hasKey: boolean;
+  initialProvider: string;
+  initialApiUrl: string;
+}) => {
+  const [provider, setProvider] = useState(initialProvider || "mock");
+  const [apiUrl, setApiUrl] = useState(initialApiUrl);
+  const [keyInput, setKeyInput] = useState("");
+  const [hasKeyLocal, setHasKeyLocal] = useState(hasKey);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const showUrl = provider === "generic";
+
+  const save = async () => {
+    setErr(null);
+    setMsg(null);
+    setSaving(true);
+    try {
+      const payload: Record<string, unknown> = {
+        credit_provider: provider || null,
+        credit_api_url: apiUrl.trim() || null,
+      };
+      // Key nur senden, wenn ein neuer eingegeben wurde (write-only).
+      if (keyInput.trim().length > 0) payload.credit_api_key = keyInput.trim();
+      const res = await fetch("/api/org", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErr(j.error ?? "Speichern fehlgeschlagen.");
+        return;
+      }
+      if (keyInput.trim().length > 0) setHasKeyLocal(true);
+      setKeyInput("");
+      setMsg("Gespeichert.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeKey = async () => {
+    if (!confirm("Bonitäts-API-Key wirklich entfernen?")) return;
+    setSaving(true);
+    setErr(null);
+    try {
+      const res = await fetch("/api/org", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credit_api_key: null }),
+      });
+      if (res.ok) {
+        setHasKeyLocal(false);
+        setMsg("API-Key entfernt.");
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid sm:grid-cols-2 gap-4">
+        <Field label="Anbieter">
+          <select
+            value={provider}
+            onChange={(e) => setProvider(e.target.value)}
+            className="field"
+          >
+            {CREDIT_PROVIDERS.map((p) => (
+              <option key={p.key} value={p.key}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+        {showUrl && (
+          <Field label="API-URL (generischer Adapter)">
+            <input
+              value={apiUrl}
+              onChange={(e) => setApiUrl(e.target.value)}
+              placeholder="https://api.anbieter.de/bonitaet"
+              className="field"
+            />
+          </Field>
+        )}
+      </div>
+
+      <div className="rounded-panel border border-hairline bg-canvas p-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 text-[13.5px] font-medium text-ink">
+            <Lock size={14} className="text-ink-muted" />
+            Bonitäts-API-Key
+            {hasKeyLocal && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <Check size={11} /> Hinterlegt
+              </span>
+            )}
+          </div>
+          {hasKeyLocal && (
+            <button
+              type="button"
+              onClick={removeKey}
+              disabled={saving}
+              className="text-[12px] text-ink-muted hover:text-rose-700"
+            >
+              Entfernen
+            </button>
+          )}
+        </div>
+
+        <div className="mt-3 flex items-center gap-2">
+          <input
+            type="password"
+            value={keyInput}
+            onChange={(e) => setKeyInput(e.target.value)}
+            placeholder={
+              hasKeyLocal
+                ? "•••••••••••••••• (zum Ersetzen neuen Key eingeben)"
+                : "API-Key des Anbieters einfügen"
+            }
+            className="field flex-1"
+            autoComplete="off"
+          />
+        </div>
+        <div className="mt-2 text-[11px] text-ink-muted">
+          Der Schlüssel wird ausschließlich serverseitig verwendet und niemals an
+          den Browser gesendet. Für den Demo-/Mock-Anbieter ist kein Key nötig.
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-[12px]">
+          {msg && <span className="text-emerald-700">{msg}</span>}
+          {err && <span className="text-rose-700">{err}</span>}
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={save}
+          disabled={saving}
+        >
+          {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+          Speichern
+        </Button>
+      </div>
+
+      <div className="flex items-start gap-2 text-[11.5px] text-ink-muted">
+        <ShieldCheck size={13} className="mt-px shrink-0 text-ink-muted" />
+        <span>
+          Die Auskunft darf nur mit Einwilligung des Kunden eingeholt werden. Nur
+          der Inhaber kann eine Prüfung auslösen.
+        </span>
+      </div>
     </div>
   );
 };

@@ -29,6 +29,8 @@ const org: Organization = {
   sender_name: null,
   email_automation_enabled: true,
   lexoffice_enabled: false,
+  credit_provider: null,
+  credit_api_url: null,
   echoes_account_id: null,
   echoes_enabled: false,
   rental_terms: null,
