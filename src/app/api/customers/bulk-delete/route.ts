@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { requirePermission } from "@/lib/team";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -22,6 +23,8 @@ const requireAuth = async () => {
 export const POST = async (req: Request) => {
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const gate = await requirePermission("delete");
+  if (!gate.ok) return gate.res;
 
   const body = (await req.json().catch(() => ({}))) as { ids?: unknown };
   const ids = Array.isArray(body.ids)

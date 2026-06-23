@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { requirePermission } from "@/lib/team";
 import type { Vehicle } from "@/lib/types";
 
 // CSV-Wert escapen (deutsches Excel: Semikolon-Trenner, UTF-8 mit BOM).
@@ -16,6 +17,8 @@ const esc = (v: unknown): string => {
 };
 
 export const GET = async () => {
+  const gate = await requirePermission("import_export");
+  if (!gate.ok) return gate.res;
   const supabase = createClient();
   const {
     data: { user },

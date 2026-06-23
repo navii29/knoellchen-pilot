@@ -7,6 +7,7 @@ import {
   type ColumnMapping,
 } from "@/lib/csv-import";
 import { resolveCustomerNaming } from "@/lib/customer";
+import { requirePermission } from "@/lib/team";
 import { decodeCsvFile } from "@/lib/encoding";
 import { mapCsvColumns } from "@/lib/anthropic";
 import { normalizePlate } from "@/lib/plate";
@@ -34,6 +35,8 @@ void normalizePlate; // not used here, only in vehicles route
 export const POST = async (req: Request) => {
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const gate = await requirePermission("import_export");
+  if (!gate.ok) return gate.res;
 
   const url = new URL(req.url);
   const action = url.searchParams.get("action") ?? "analyze";

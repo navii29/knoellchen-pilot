@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { getMembership } from "@/lib/team";
+import { sanitizePermissions } from "@/lib/permissions";
 
 type Ctx = { params: { id: string } };
 
@@ -16,15 +17,19 @@ const ownerCount = async (
   return count ?? 0;
 };
 
-// PATCH — Rolle ändern (nur Owner). Verhindert, dass der letzte Owner degradiert wird.
+// PATCH — Rolle und/oder Rechte ändern (nur Owner). Verhindert, dass der letzte
+// Owner degradiert wird. Rechte (permissions) gelten nur für Mitarbeiter; Inhaber
+// haben immer alle Rechte.
 export const PATCH = async (req: Request, { params }: Ctx) => {
   const me = await getMembership();
   if (!me) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   if (me.role !== "owner")
-    return NextResponse.json({ error: "Nur Inhaber können Rollen ändern." }, { status: 403 });
+    return NextResponse.json({ error: "Nur Inhaber können Rollen/Rechte ändern." }, { status: 403 });
 
-  const body = (await req.json().catch(() => ({}))) as { role?: string };
-  const role = body.role === "owner" ? "owner" : "member";
+  const body = (await req.json().catch(() => ({}))) as {
+    role?: string;
+    permissions?: unknown;
+  };
 
   const admin = createAdminClient();
   const { data: target } = await admin
@@ -35,20 +40,33 @@ export const PATCH = async (req: Request, { params }: Ctx) => {
     .maybeSingle();
   if (!target) return NextResponse.json({ error: "Mitglied nicht gefunden" }, { status: 404 });
 
-  if (target.role === "owner" && role === "member" && (await ownerCount(admin, me.orgId)) <= 1) {
-    return NextResponse.json(
-      { error: "Die Organisation braucht mindestens einen Inhaber." },
-      { status: 400 }
-    );
+  const patch: Record<string, unknown> = {};
+
+  if ("role" in body) {
+    const role = body.role === "owner" ? "owner" : "member";
+    if (target.role === "owner" && role === "member" && (await ownerCount(admin, me.orgId)) <= 1) {
+      return NextResponse.json(
+        { error: "Die Organisation braucht mindestens einen Inhaber." },
+        { status: 400 }
+      );
+    }
+    patch.role = role;
   }
+
+  if ("permissions" in body) {
+    patch.permissions = sanitizePermissions(body.permissions);
+  }
+
+  if (Object.keys(patch).length === 0)
+    return NextResponse.json({ error: "Nichts zu ändern." }, { status: 400 });
 
   const { error } = await admin
     .from("users")
-    .update({ role })
+    .update(patch)
     .eq("id", params.id)
     .eq("org_id", me.orgId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, role });
+  return NextResponse.json({ ok: true, ...patch });
 };
 
 // DELETE — Mitglied entfernen (nur Owner). Kein Selbst-Entfernen, kein letzter Owner.

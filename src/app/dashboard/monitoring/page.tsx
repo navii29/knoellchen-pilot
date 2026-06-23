@@ -1,6 +1,6 @@
 import { Activity, Circle, Clock, Gauge, Zap } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/server";
-import { requireOwnerPage } from "@/lib/team";
+import { requirePermissionPage } from "@/lib/team";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
@@ -41,7 +41,7 @@ const pageLabel = (path: string | null): string => {
 };
 
 export default async function MonitoringPage() {
-  const me = await requireOwnerPage(); // nur Inhaber
+  const me = await requirePermissionPage("monitoring"); // Inhaber oder Recht "monitoring"
   const admin = createAdminClient();
   const today = utcDay();
   const dayStart = new Date();
