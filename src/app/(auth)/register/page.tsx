@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, MailCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
@@ -16,6 +16,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingConfirm, setPendingConfirm] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +27,10 @@ export default function RegisterPage() {
     const { data: signUp, error: signUpErr } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName, org_name: orgName } },
+      options: {
+        data: { full_name: fullName, org_name: orgName },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
     if (signUpErr) {
       setError(signUpErr.message);
@@ -34,15 +38,16 @@ export default function RegisterPage() {
       return;
     }
 
+    // Keine Session ⇒ E-Mail-Bestätigung ist aktiv. Org + Owner-Profil werden
+    // erst nach dem Klick auf den Bestätigungslink im /auth/callback angelegt
+    // (org_name liegt in den user_metadata). Nutzer: Postfach prüfen.
     if (!signUp.session) {
-      const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
-      if (signInErr) {
-        setError(signInErr.message);
-        setLoading(false);
-        return;
-      }
+      setPendingConfirm(true);
+      setLoading(false);
+      return;
     }
 
+    // Session vorhanden (Bestätigung deaktiviert) ⇒ Org sofort anlegen.
     const res = await fetch("/api/auth/bootstrap", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -105,6 +110,20 @@ export default function RegisterPage() {
             <Link href="/"><Logo size={30} /></Link>
           </div>
 
+          {pendingConfirm ? (
+            <div className="bg-paper border border-hairline rounded-card shadow-panel p-7 text-center">
+              <div className="inline-flex w-11 h-11 rounded-full bg-canvas border border-hairline items-center justify-center text-ink-soft mb-3">
+                <MailCheck size={18} />
+              </div>
+              <h1 className="apple-display text-ink text-[22px]">Bestätigen Sie Ihre E-Mail</h1>
+              <p className="text-[14px] text-ink-muted mt-2 leading-snug">
+                Wir haben einen Bestätigungslink an{" "}
+                <span className="text-ink">{email}</span> geschickt. Klicken Sie
+                darauf, um Ihr Konto zu aktivieren — danach geht es direkt los.
+              </p>
+            </div>
+          ) : (
+          <>
           <div className="mb-8">
             <h1 className="apple-display text-ink text-[32px] leading-[1.05]">
               Konto erstellen
@@ -179,6 +198,8 @@ export default function RegisterPage() {
               </Button>
             </form>
           </div>
+          </>
+          )}
 
           <p className="mt-5 text-[13.5px] text-ink-muted text-center">
             Schon registriert?{" "}
