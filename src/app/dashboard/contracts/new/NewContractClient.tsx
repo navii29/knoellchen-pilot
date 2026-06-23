@@ -27,6 +27,12 @@ type FormState = {
   contract_nr: string;
   plate: string;
   vehicle_type: string;
+  manufacturer: string;
+  model: string;
+  color: string;
+  first_registration: string;
+  fuel_type: string;
+  vin: string;
   customer_id: string;
   renter_name: string;
   renter_email: string;
@@ -66,6 +72,12 @@ const empty: FormState = {
   contract_nr: "",
   plate: "",
   vehicle_type: "",
+  manufacturer: "",
+  model: "",
+  color: "",
+  first_registration: "",
+  fuel_type: "",
+  vin: "",
   customer_id: "",
   renter_name: "",
   renter_email: "",
@@ -239,6 +251,12 @@ export const NewContractClient = ({
       contract_nr: d.contract_nr || "",
       plate: d.plate || "",
       vehicle_type: d.vehicle_type || "",
+      manufacturer: d.manufacturer || "",
+      model: d.model || "",
+      color: d.color || "",
+      first_registration: d.first_registration || "",
+      fuel_type: d.fuel_type || "",
+      vin: d.vin || "",
       customer_id: "",
       renter_name: d.renter_name || "",
       renter_email: d.renter_email || "",
@@ -303,6 +321,14 @@ export const NewContractClient = ({
 
     const payload = {
       ...data,
+      // Fahrzeug-Anreicherung aus dem Vertrags-OCR (leer -> null, damit die
+      // API nie Leerstrings ueber bestehende Fahrzeugdaten schreibt).
+      manufacturer: data.manufacturer.trim() || null,
+      model: data.model.trim() || null,
+      color: data.color.trim() || null,
+      first_registration: data.first_registration.trim() || null,
+      fuel_type: data.fuel_type.trim() || null,
+      vin: data.vin.trim() || null,
       daily_rate: numeric(data.daily_rate),
       total_amount: numeric(data.total_amount),
       deposit: numeric(data.deposit),
@@ -534,6 +560,24 @@ export const NewContractClient = ({
             </div>
             <Field label="Fahrzeugtyp">
               <input value={data.vehicle_type} onChange={set("vehicle_type")} placeholder="VW Golf VIII" className="field" />
+            </Field>
+            <Field label="Hersteller">
+              <input value={data.manufacturer} onChange={set("manufacturer")} placeholder="VW" className="field" />
+            </Field>
+            <Field label="Modell">
+              <input value={data.model} onChange={set("model")} placeholder="Golf VIII" className="field" />
+            </Field>
+            <Field label="Farbe">
+              <input value={data.color} onChange={set("color")} placeholder="Schwarz" className="field" />
+            </Field>
+            <Field label="Erstzulassung">
+              <input type="date" value={data.first_registration} onChange={set("first_registration")} className="field font-mono tnum" />
+            </Field>
+            <Field label="Kraftstoff">
+              <input value={data.fuel_type} onChange={set("fuel_type")} placeholder="Benzin" className="field" />
+            </Field>
+            <Field label="FIN">
+              <input value={data.vin} onChange={set("vin")} placeholder="17-stellig" className="field font-mono tnum" />
             </Field>
           </FormSection>
 
