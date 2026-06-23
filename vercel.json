@@ -10,7 +10,7 @@
       "schedule": "0 7 * * *"
     },
     {
-      "path": "/api/cron/contracts-autostop",
+      "path": "/api/cron/contracts-return-due",
       "schedule": "0 5 * * *"
     },
     {
