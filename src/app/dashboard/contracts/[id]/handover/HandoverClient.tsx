@@ -16,8 +16,11 @@ import {
 import { POSITIONS, SEVERITY_STYLE } from "@/lib/handover";
 import type { CompareResultMap } from "@/lib/handover";
 import type { HandoverPhoto, HandoverPhotoType, HandoverPosition } from "@/lib/types";
+import { ProtocolPanel, type ProtocolPrefill } from "./ProtocolPanel";
 
 type PhotoWithUrl = HandoverPhoto & { url: string | null };
+
+type ProtocolPrefillByType = Record<HandoverPhotoType, ProtocolPrefill>;
 
 const fmtComparedAt = (iso: string): string =>
   new Date(iso).toLocaleString("de-DE", {
@@ -40,6 +43,8 @@ export const HandoverClient = ({
   initialPhotos,
   initialComparison,
   comparisonAt,
+  customerEmail,
+  protocolPrefill,
 }: {
   contractId: string;
   contractNr: string;
@@ -48,6 +53,8 @@ export const HandoverClient = ({
   initialPhotos: PhotoWithUrl[];
   initialComparison: unknown;
   comparisonAt: string | null;
+  customerEmail: string | null;
+  protocolPrefill: ProtocolPrefillByType;
 }) => {
   const router = useRouter();
   const [tab, setTab] = useState<HandoverPhotoType>("pickup");
@@ -378,6 +385,14 @@ export const HandoverClient = ({
       {Object.keys(results).length > 0 && (
         <ResultSummary results={results} comparedAt={comparedAt} />
       )}
+
+      <ProtocolPanel
+        key={tab}
+        contractId={contractId}
+        type={tab}
+        prefill={protocolPrefill[tab]}
+        customerEmail={customerEmail}
+      />
     </>
   );
 };

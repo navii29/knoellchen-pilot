@@ -21,7 +21,10 @@ import { DEFAULT_RENTAL_TERMS } from "./rental-terms";
 // =====================================================
 // Hilfsfunktionen
 // =====================================================
-const esc = (s: string | number | null | undefined): string => {
+// HTML-Escaping für interpolierte Werte (verhindert Attribut-/Tag-Breakout in
+// der PDF-Vorlage). Exportiert, damit verwandte Generatoren (z. B. das
+// Übergabeprotokoll) denselben Helfer nutzen statt einen eigenen zu bauen.
+export const esc = (s: string | number | null | undefined): string => {
   if (s == null) return "";
   return String(s)
     .replace(/&/g, "&amp;")

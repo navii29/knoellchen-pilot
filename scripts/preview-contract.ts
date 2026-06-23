@@ -239,6 +239,13 @@ const contract: Contract = {
   damage_comparison_at: null,
   has_new_damage: null,
   damage_max_severity: null,
+  condition_at_return: null,
+  handover_sig_lessor_pickup: null,
+  handover_sig_renter_pickup: null,
+  handover_sig_lessor_return: null,
+  handover_sig_renter_return: null,
+  handover_protocol_pickup_path: null,
+  handover_protocol_return_path: null,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
