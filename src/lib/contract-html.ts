@@ -1,9 +1,8 @@
-// HTML-Template für den 6-seitigen Mietvertrag, das von Puppeteer in
-// contract-pdf.ts zu einem A4-PDF gerendert wird. Inline-CSS, keine
-// externen Assets. Logo + Signatur kommen als Data-URI rein.
+// HTML-Template für den 6-seitigen Mietvertrag (eazycar-Design), das von
+// Puppeteer in contract-pdf.ts zu einem A4-PDF gerendert wird. Inline-CSS,
+// keine externen Assets. Logo, Fahrzeugbild und Signatur kommen als Data-URI
+// rein. Alle interpolierten Werte werden via esc() escaped.
 
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type {
   Contract,
   ContractInsuranceType,
@@ -21,20 +20,22 @@ import { DEFAULT_RENTAL_TERMS } from "./rental-terms";
 // =====================================================
 // Hilfsfunktionen
 // =====================================================
-// HTML-Escaping für interpolierte Werte (verhindert Attribut-/Tag-Breakout in
-// der PDF-Vorlage). Exportiert, damit verwandte Generatoren (z. B. das
-// Übergabeprotokoll) denselben Helfer nutzen statt einen eigenen zu bauen.
+
+// HTML-Escaping für interpolierte Werte (verhindert Attribut-/Tag-Breakout).
+// Exportiert, damit verwandte Generatoren (Übergabeprotokoll) denselben Helfer
+// nutzen statt einen eigenen zu bauen.
 export const esc = (s: string | number | null | undefined): string => {
   if (s == null) return "";
   return String(s)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 };
 
 const fmtNum = (v: number | null | undefined): string =>
-  v == null ? "" : v.toLocaleString("de-DE");
+  v == null ? "" : Number(v).toLocaleString("de-DE");
 
 const today = () => new Date().toISOString();
 
@@ -46,7 +47,7 @@ const customerFullName = (c: Customer | null, fallback: string): string => {
 
 const customerStreet = (c: Customer | null, fallback: string | null): string => {
   if (!c) return fallback ?? "";
-  return [c.street, c.house_nr].filter(Boolean).join(" ");
+  return [c.street, c.house_nr].filter(Boolean).join(" ") || fallback || "";
 };
 
 const vehicleModel = (v: Vehicle | null, fallback: string | null): string => {
@@ -58,17 +59,12 @@ const vehicleModel = (v: Vehicle | null, fallback: string | null): string => {
   return fallback ?? "";
 };
 
-// Name in Druckschrift für die Vermieter-Seite (Seite 3/6). Eigener Name der
-// Org, sonst Firmenname.
-const landlordPrintName = (org: Organization): string =>
-  org.landlord_signature_name?.trim() || org.name;
-
 const computeDays = (pickup: string, returnDate: string): number => {
   const a = new Date(pickup);
   const b = new Date(returnDate);
-  if (isNaN(a.getTime()) || isNaN(b.getTime())) return 0;
+  if (isNaN(a.getTime()) || isNaN(b.getTime())) return 1;
   const ms = b.setHours(0, 0, 0, 0) - a.setHours(0, 0, 0, 0);
-  return Math.max(1, Math.ceil(ms / 86_400_000));
+  return Math.max(1, Math.round(ms / 86_400_000));
 };
 
 const grossToNet = (gross: number): { net: number; vat: number } => {
@@ -83,393 +79,182 @@ const dateTimeLabel = (date: string | null, time: string | null): string => {
   return time ? `${d}, ${time} Uhr` : d;
 };
 
+// Anzahl der Schadenseinträge aus dem Freitext ableiten (für Übergabeprotokoll).
+const countDamages = (raw: string | null | undefined): number => {
+  const t = (raw ?? "").trim();
+  if (!t || t.toLowerCase() === "keine") return 0;
+  return t.split(/[\n/;]+/).map((s) => s.trim()).filter(Boolean).length;
+};
+
+// =====================================================
+// Inline-Icons (lucide-Stil, blau eingefärbt über currentColor)
+// =====================================================
+const I = {
+  user: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>`,
+  car: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13"/><path d="M4 17h16v-3.5a1.5 1.5 0 0 0-.5-1.1L19 13H5l-.5-.6A1.5 1.5 0 0 0 4 13.5z"/><circle cx="7.5" cy="17" r="1.3"/><circle cx="16.5" cy="17" r="1.3"/></svg>`,
+  calendar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v3M16 3v3"/></svg>`,
+  gauge: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14l4-4"/><path d="M4 19a8 8 0 1 1 16 0"/><circle cx="12" cy="14" r="1.2"/></svg>`,
+  lock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`,
+  shield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>`,
+  wallet: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 14h2"/></svg>`,
+  check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4.5 4.5L19 7"/></svg>`,
+  mail: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg>`,
+  phone: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h3l1.5 4-2 1.5a12 12 0 0 0 5 5l1.5-2 4 1.5V20a2 2 0 0 1-2 2A16 16 0 0 1 4 5 2 2 0 0 1 6 3z"/></svg>`,
+  chat: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-4 3v-3H4z"/></svg>`,
+  message: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v10H8l-4 3z"/><path d="M8 9h8M8 12h5"/></svg>`,
+  mailbox: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10a4 4 0 0 1 8 0v8H4z"/><path d="M12 10h6a3 3 0 0 1 3 3v5h-9"/><path d="M8 10v4"/></svg>`,
+  key: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3.5"/><path d="M10.5 10.5L20 20M16 16l2-2M18 18l2-2"/></svg>`,
+  fuel: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="9" height="17" rx="1.5"/><path d="M4 11h9"/><path d="M16 7l3 3v6a2 2 0 0 1-4 0V5"/></svg>`,
+  wrench: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6a4 4 0 0 0-5 5l-6 6 3 3 6-6a4 4 0 0 0 5-5l-2.5 2.5-2.5-.5-.5-2.5z"/></svg>`,
+  doc: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 13h6M9 16h6"/></svg>`,
+  alert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>`,
+};
+
+const BLUE = "#2f6bdf";
 
 // =====================================================
 // CSS
 // =====================================================
 const CSS = `
-  @page {
-    size: A4;
-    margin: 14mm 16mm 16mm 16mm;
-  }
+  @page { size: A4; margin: 0; }
   * { box-sizing: border-box; }
   html, body {
     font-family: 'Helvetica Neue', 'Helvetica', Arial, sans-serif;
-    color: #1e1e1e;
-    margin: 0;
-    padding: 0;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    color: #1f2937; margin: 0; padding: 0;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
-  body { font-size: 8.5pt; line-height: 1.3; }
+  body { font-size: 9.5pt; line-height: 1.4; }
+
   .page {
-    page-break-after: always;
     position: relative;
-    display: flex;
-    flex-direction: column;
-    min-height: 263mm;
+    width: 210mm; min-height: 297mm;
+    padding: 16mm 16mm 20mm 16mm;
+    page-break-after: always;
+    display: flex; flex-direction: column;
   }
   .page:last-child { page-break-after: auto; }
 
-  /* Seite, die nur ein Vollbild zeigt (Übergabeprotokoll-Template) */
-  .page.page-image {
-    padding: 0;
-    margin: 0;
-    display: block;
-    min-height: 0;
-    position: relative;
-  }
-  .page.page-image img {
-    display: block;
-    width: 100%;
-    height: auto;
-    margin: 0;
-  }
+  /* ---------- Kopfzeile ---------- */
+  .head { display: flex; justify-content: space-between; align-items: flex-start; }
+  .head .logo img { height: 9mm; max-width: 60mm; object-fit: contain; }
+  .head .logo .fb { color: ${BLUE}; font-size: 17pt; font-weight: 800; letter-spacing: -0.02em; }
+  .head .doc-meta { text-align: right; line-height: 1.5; }
+  .head .doc-meta .t { font-size: 7.5pt; letter-spacing: 0.18em; color: #9ca3af; font-weight: 600; }
+  .head .doc-meta .n { font-size: 8.5pt; font-weight: 700; color: #374151; }
 
-  /* Overlay-Callout für Schäden + Foto-Hinweis auf Seite 6.
-     Top: 51% landet exakt im freien Streifen zwischen Fahrzeugskizze und
-     "Erschwerte Übernahmebedingungen". */
-  .ho-overlay {
-    position: absolute;
-    left: 6%;
-    right: 6%;
-    top: 38%;
-    background: #fff8e1;
-    border: 0.6pt solid #d4a017;
-    padding: 0.8mm 2.5mm;
-    font-size: 7pt;
-    line-height: 1.3;
-    box-shadow: 0 0 1mm rgba(0,0,0,0.08);
-  }
-  .ho-overlay b { color: #8a5a00; margin-right: 0.5mm; }
+  .foot-num { position: absolute; bottom: 9mm; right: 16mm; font-size: 7.5pt; color: #9ca3af; }
+  .foot-org { position: absolute; bottom: 9mm; left: 16mm; font-size: 7.5pt; color: #9ca3af; line-height: 1.5; }
 
-  .logo { text-align: center; padding-top: 1mm; padding-bottom: 3mm; }
-  .logo.left { text-align: left; }
-  .logo img { max-height: 20mm; max-width: 90mm; object-fit: contain; }
-  .logo.left img { max-height: 18mm; max-width: 70mm; }
-  .logo-fallback {
-    color: #0d9488;
-    font-size: 22pt;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-  }
-  .logo.left .logo-fallback { font-size: 18pt; }
+  .kicker { color: ${BLUE}; font-size: 8pt; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+  .section-h { display: flex; align-items: center; gap: 2mm; font-size: 11pt; font-weight: 800; letter-spacing: 0.12em; color: #111827; text-transform: uppercase; margin-bottom: 4mm; }
+  .section-h .bar { width: 4mm; height: 0.9mm; background: ${BLUE}; border-radius: 1mm; }
 
-  /* ---------- Seite 1 ---------- */
-  .contract-meta { margin-top: 1mm; font-size: 9.5pt; }
-  .contract-meta b { font-weight: 700; margin-right: 10mm; }
-  .subtitle { margin-top: 0.5mm; font-size: 8.5pt; color: #1e1e1e; }
+  /* ---------- Seite 1 Hero ---------- */
+  .hero { display: flex; align-items: flex-start; gap: 6mm; margin-top: 8mm; }
+  .hero .left { flex: 1; min-width: 0; }
+  .hero .mv { color: ${BLUE}; font-size: 9pt; font-weight: 700; letter-spacing: 0.18em; }
+  .hero h1 { font-size: 26pt; font-weight: 800; line-height: 1.06; letter-spacing: -0.01em; margin: 3mm 0 0; color: #0f172a; }
+  .hero .dates { margin-top: 6mm; font-size: 13pt; font-weight: 600; color: #1f2937; }
+  .hero .dur { margin-top: 1mm; font-size: 11pt; font-weight: 700; color: ${BLUE}; }
+  .hero .img { width: 78mm; height: 46mm; display: flex; align-items: center; justify-content: flex-end; }
+  .hero .img img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-  .form { width: 100%; border-collapse: collapse; margin-top: 3mm; }
-  .form tr td { padding: 0.55mm 0; vertical-align: top; font-size: 8.5pt; line-height: 1.25; }
-  .form td.label { width: 55mm; color: #1e1e1e; }
-  .form td.value { color: #1e1e1e; }
-  .form td.right { text-align: right; padding-left: 4mm; white-space: nowrap; }
-  .form .gap td { padding-top: 1.8mm; padding-bottom: 0; }
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; margin-top: 9mm; }
+  .card { border: 0.4pt solid #e5e7eb; border-radius: 2.5mm; padding: 3.5mm; min-height: 40mm; }
+  .card .ic { width: 6mm; height: 6mm; color: ${BLUE}; margin-bottom: 2mm; }
+  .card .ic svg { width: 100%; height: 100%; }
+  .card .lbl { font-size: 7pt; letter-spacing: 0.13em; color: #9ca3af; font-weight: 700; text-transform: uppercase; }
+  .card .nm { font-size: 9.5pt; font-weight: 700; color: #111827; margin-top: 1.5mm; }
+  .card .ln { font-size: 8pt; color: #6b7280; margin-top: 0.6mm; line-height: 1.35; }
+  .card .ln.strong { color: #1f2937; font-weight: 600; }
+  .card .sub { font-size: 7pt; letter-spacing: 0.08em; color: #9ca3af; font-weight: 600; text-transform: uppercase; margin-top: 2.5mm; }
 
-  .sigs { margin-top: auto; padding-top: 4mm; }
-  .sigs .row { display: flex; justify-content: space-between; gap: 10mm; }
-  .sig-block { flex: 1; }
-  .sig-block .date { font-size: 9pt; padding-bottom: 1mm; min-height: 5mm; text-align: center; }
-  .sig-block .line { border-top: 0.5pt solid #888; height: 0; margin-bottom: 1.5mm; }
-  .sig-block .name { font-size: 8.5pt; }
-  .sig-block .signature-img { height: 13mm; display: flex; align-items: flex-end; justify-content: center; }
-  .sig-block .signature-img img { max-height: 13mm; max-width: 60mm; }
+  .price { margin-top: 6mm; background: #eef3fd; border: 0.4pt solid #dbe6fb; border-radius: 3mm; padding: 5mm; }
+  .price .top { display: flex; align-items: flex-end; gap: 8mm; }
+  .price .big { font-size: 30pt; font-weight: 800; color: #0f172a; line-height: 1; }
+  .price .vsm { font-size: 7.5pt; color: #6b7280; margin-top: 1.5mm; }
+  .price .bd { display: flex; gap: 7mm; padding-bottom: 1.5mm; }
+  .price .bd .it .k { font-size: 7pt; color: #6b7280; }
+  .price .bd .it .v { font-size: 9pt; font-weight: 700; color: #1f2937; margin-top: 0.4mm; }
+  .price .row2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5mm; margin-top: 5mm; padding-top: 4mm; border-top: 0.4pt solid #dbe6fb; }
+  .price .row2 .blk { display: flex; gap: 2.5mm; }
+  .price .row2 .blk .ic { width: 5mm; height: 5mm; color: ${BLUE}; flex-shrink: 0; }
+  .price .row2 .blk .ic svg { width: 100%; height: 100%; }
+  .price .row2 .blk .k { font-size: 7pt; letter-spacing: 0.1em; color: #9ca3af; font-weight: 700; text-transform: uppercase; }
+  .price .row2 .blk .v { font-size: 9pt; font-weight: 700; color: #1f2937; margin-top: 0.6mm; }
+  .price .row2 .blk .v2 { font-size: 7.5pt; color: #6b7280; margin-top: 0.4mm; }
 
-  /* ---------- Seite 2/3 AGB ---------- */
-  .agb-title {
-    font-style: italic;
-    font-weight: 700;
-    font-size: 13pt;
-    text-align: center;
-    margin: 0 0 4mm 0;
-  }
-  .agb-cols {
-    column-count: 2;
-    column-gap: 6mm;
-    font-size: 7.5pt;
-    line-height: 1.35;
-    text-align: justify;
-  }
-  .agb-cols p { margin: 0 0 1.5mm 0; break-inside: avoid; }
-  .agb-cols p strong { display: block; font-weight: 700; margin-bottom: 0.3mm; }
-  .agb-stand { margin-top: auto; text-align: right; font-size: 7.5pt; padding-top: 4mm; }
+  /* ---------- Datentabellen (Seite 2) ---------- */
+  .dtable { width: 100%; border-collapse: collapse; }
+  .dtable td { padding: 1.7mm 0; vertical-align: top; border-bottom: 0.4pt solid #f0f1f3; font-size: 9pt; }
+  .dtable tr:last-child td { border-bottom: 0; }
+  .dtable td.k { color: #6b7280; width: 52%; }
+  .dtable td.v { color: #111827; font-weight: 600; text-align: right; }
+  .block-gap { height: 8mm; }
 
-  .special-box {
-    border: 0.5pt solid #333;
-    margin-top: 2mm;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    font-size: 7.5pt;
-    line-height: 1.4;
-  }
-  .special-box .cell { padding: 3mm 4mm; }
-  .special-box .cell + .cell { border-left: 0.5pt solid #333; }
-  .special-box .heading { font-weight: 700; margin-bottom: 2mm; }
-  .special-list { margin: 0; padding-left: 5mm; }
-  .special-list li { margin-bottom: 1.5mm; }
+  /* ---------- Sondervereinbarungen (Seite 3) ---------- */
+  .sv { list-style: none; margin: 0; padding: 0; }
+  .sv li { display: flex; align-items: center; gap: 3mm; padding: 2.4mm 0; border-bottom: 0.4pt solid #f0f1f3; font-size: 9.5pt; color: #1f2937; }
+  .sv li:last-child { border-bottom: 0; }
+  .sv .chk { width: 5mm; height: 5mm; border-radius: 50%; background: ${BLUE}; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .sv .chk svg { width: 3.2mm; height: 3.2mm; }
 
-  /* Einzelne Spalte für die Sondervereinbarungen (statt 2-spaltiger Box) */
-  .special-single {
-    margin-top: 4mm;
-    font-size: 8.5pt;
-    line-height: 1.4;
-    column-count: 2;
-    column-gap: 8mm;
-  }
-  .special-single .heading {
-    font-weight: 700;
-    margin-bottom: 2mm;
-    column-span: all;
-  }
-  .special-single .special-list { padding-left: 5mm; }
-  .special-single .special-list li { break-inside: avoid; margin-bottom: 1.5mm; }
+  /* ---------- AGB (Seite 4) ---------- */
+  .agb p { margin: 0 0 3mm; font-size: 8.5pt; line-height: 1.5; color: #374151; }
+  .agb p strong { display: block; color: #111827; font-size: 9pt; letter-spacing: 0.04em; margin-bottom: 0.6mm; }
 
-  /* Schlichtere Sigs für Seite 3 — wie Ollies Original */
-  .agb-sigs { margin-top: auto; padding-top: 8mm; display: flex; gap: 12mm; }
-  .agb-sigs .col { flex: 1; }
-  .agb-sigs .date { font-size: 9pt; margin-bottom: 1mm; }
-  .agb-sigs .line { border-top: 0.5pt solid #888; padding-top: 1mm; font-size: 8.5pt; min-height: 5mm; }
+  /* ---------- Datenschutz (Seite 5) ---------- */
+  .ds-intro { font-size: 9pt; color: #374151; line-height: 1.5; margin-bottom: 5mm; }
+  .ds-list { display: flex; flex-direction: column; gap: 0; }
+  .ds-row { display: flex; align-items: center; gap: 3mm; padding: 3mm 0; border-bottom: 0.4pt solid #f0f1f3; }
+  .ds-row .ic { width: 5.5mm; height: 5.5mm; color: ${BLUE}; }
+  .ds-row .ic svg { width: 100%; height: 100%; }
+  .ds-row .nm { flex: 1; font-size: 9.5pt; color: #1f2937; }
+  .ds-row .box { width: 4.5mm; height: 4.5mm; border: 0.6pt solid #cbd5e1; border-radius: 1mm; }
+  .sign-area { margin-top: auto; padding-top: 10mm; display: flex; gap: 10mm; }
+  .sign-area .f { flex: 1; }
+  .sign-area .f .ln { border-top: 0.5pt solid #9ca3af; margin-bottom: 1.4mm; height: 14mm; display: flex; align-items: flex-end; justify-content: center; }
+  .sign-area .f .ln img { max-height: 13mm; max-width: 55mm; }
+  .sign-area .f .cap { font-size: 7.5pt; color: #9ca3af; }
+  .sign-area .f .val { font-size: 9pt; color: #1f2937; margin-bottom: 1mm; }
 
-  /* ---------- Seite 4 Datenschutz ---------- */
-  .privacy-title {
-    font-weight: 700;
-    font-size: 14pt;
-    text-align: center;
-    margin: 4mm 0 6mm 0;
-  }
-  .privacy-intro { font-size: 9pt; margin-bottom: 6mm; }
-  .privacy-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 5mm 8mm;
-    font-size: 9pt;
-    margin-bottom: 6mm;
-  }
-  .privacy-grid .row { display: flex; gap: 3mm; align-items: baseline; }
-  .privacy-grid .row .lbl { font-weight: 600; min-width: 22mm; }
-  .privacy-grid .row .val {
-    flex: 1;
-    border-bottom: 0.4pt solid #aaa;
-    padding-bottom: 0.5mm;
-    min-height: 4.5mm;
-  }
-  .privacy-body { font-size: 9pt; margin-bottom: 4mm; }
-  .privacy-bullets { font-size: 9pt; margin: 1mm 0 4mm 0; padding-left: 6mm; }
-  .privacy-bullets li { margin-bottom: 0.6mm; }
-
-  /* ---------- Seite 5 AGB-Bestätigung ---------- */
-  .conf-title { font-weight: 700; font-size: 11.5pt; margin: 12mm 0 8mm 0; }
-  .conf-body { font-size: 10pt; margin-bottom: 35mm; }
-  .conf-field { display: flex; flex-direction: column; max-width: 90mm; margin-bottom: 18mm; }
-  .conf-field .val { min-height: 5mm; padding-bottom: 1mm; border-bottom: 0.5pt solid #888; font-size: 10pt; }
-  .conf-field .lbl { font-size: 8pt; color: #666; margin-top: 1mm; }
-  .conf-bottom { display: flex; justify-content: space-between; gap: 10mm; }
-  .conf-bottom .field { flex: 1; }
-  .conf-bottom .field .val { min-height: 5mm; padding-bottom: 1mm; border-bottom: 0.5pt solid #888; font-size: 10pt; }
-  .conf-bottom .field .lbl { font-size: 8pt; color: #666; margin-top: 1mm; }
-
-  /* ---------- Seite 6 Übergabeprotokoll ---------- */
-  .ho-header { border-top: 1.2pt solid #cc2828; padding-top: 1mm; margin-bottom: 4mm; }
-  .ho-title {
-    text-align: right;
-    font-weight: 700;
-    font-size: 17pt;
-    letter-spacing: 0.02em;
-  }
-  .ho-meta { width: 100%; border-collapse: collapse; margin-bottom: 3mm; }
-  .ho-meta td { font-size: 8.5pt; padding: 1mm 0; vertical-align: bottom; }
-  .ho-meta .lbl { font-weight: 700; padding-right: 2mm; width: 30mm; }
-  .ho-meta .val {
-    border-bottom: 0.4pt solid #bbb;
-    min-width: 50mm;
-    padding-bottom: 0.5mm;
-  }
-  .ho-intro { font-size: 7pt; color: #555; margin-bottom: 3mm; }
-
-  .ho-fzg-label { font-weight: 700; font-size: 9pt; margin-right: 3mm; }
-  .ho-legend { font-size: 7.5pt; color: #333; }
-
-  .car-row { display: flex; gap: 4mm; margin: 1mm 0 4mm 0; }
-  .car-row svg { flex: 1; height: 36mm; }
-
-  .ho-section-title { font-weight: 700; font-size: 9.5pt; margin: 3mm 0 1mm 0; }
-  .ho-subnote { font-size: 7pt; color: #555; margin-bottom: 1mm; }
-
-  .erschwert { display: flex; align-items: center; gap: 4mm; font-size: 8pt; }
-  .erschwert .lbl { font-weight: 700; }
-  .erschwert .item { display: inline-flex; align-items: center; gap: 1.2mm; }
-
-  .tech-check { display: grid; grid-template-columns: 1fr 1fr; gap: 1mm 6mm; font-size: 8pt; }
-  .tech-check .row { display: flex; align-items: center; }
-  .tech-check .row .name { flex: 1; }
-  .tech-check .row .opts { display: flex; gap: 1.5mm; align-items: center; }
-
-  .bereifung { display: grid; grid-template-columns: 15mm auto auto auto 1fr; gap: 1mm 3mm; font-size: 8pt; align-items: center; }
-  .bereifung .row { display: contents; }
-  .bereifung .item { display: inline-flex; align-items: center; gap: 1.2mm; }
-  .bereifung .tread { font-size: 7.5pt; white-space: nowrap; }
-
-  .innenraum { display: grid; grid-template-columns: 1fr 1fr; gap: 1mm 6mm; font-size: 8pt; }
-  .innenraum .row { display: flex; align-items: center; gap: 2mm; }
-  .innenraum .row .name { flex: 1; }
-  .innenraum .row .bvr { display: inline-flex; gap: 2.5mm; }
-
-  .dokumente { display: grid; grid-template-columns: 1fr 1fr; gap: 1mm 6mm; font-size: 8pt; }
-  .dokumente .row { display: flex; align-items: center; }
-  .dokumente .row .name { flex: 1; }
-
-  /* Dokumente in 3 Spalten — wie Ollies Original */
-  .dokumente-3 {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 1.2mm 5mm;
-    font-size: 8pt;
-  }
-  .dokumente-3 .row { display: flex; align-items: center; }
-  .dokumente-3 .row .name { flex: 1; }
-
-  .ho-divider { border-top: 0.4pt solid #888; margin: 4mm 0 3mm 0; }
-
-  .ho-foot-fields { display: flex; gap: 10mm; font-size: 7.5pt; color: #666; }
-  .ho-foot-fields > div { flex: 1; display: flex; align-items: flex-end; gap: 2mm; }
-  .ho-foot-fields .ln { flex: 1; border-top: 0.4pt solid #888; padding-top: 1mm; min-height: 4mm; }
-  .ho-foot-fields .ln-uhr { display: inline-block; min-width: 22mm; border-top: 0.4pt solid #888; padding-top: 1mm; min-height: 4mm; }
-  .ho-foot-fields .lbl { font-size: 7.5pt; color: #666; }
-
-  .check {
-    display: inline-block;
-    width: 3mm;
-    height: 3mm;
-    border: 0.5pt solid #333;
-    background: #fff;
-    vertical-align: -0.4mm;
-  }
-  .check.checked { background: #1e1e1e; }
-  .check-label { font-size: 8pt; }
-
-  .ho-bottom {
-    margin-top: 4mm;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 0 5mm;
-  }
-  .ho-bottom .field { display: flex; flex-direction: column; }
-  .ho-bottom .field .ln { border-top: 0.4pt solid #888; padding-top: 1mm; }
-  .ho-bottom .field .lbl { font-size: 7.5pt; color: #666; }
-
-  .ho-sigs { display: flex; gap: 10mm; margin-top: 6mm; }
-  .ho-sigs .col { flex: 1; }
-  .ho-sigs .heading { font-weight: 700; font-size: 9.5pt; margin-bottom: 1mm; }
-  .ho-sigs .subnote { font-size: 7.5pt; color: #666; margin-bottom: 1mm; }
-  .ho-sigs .name { font-size: 9pt; margin-bottom: 1.5mm; min-height: 5mm; }
-  .ho-sigs .line { border-top: 0.5pt solid #888; padding-top: 1mm; font-size: 7.5pt; color: #666; }
-
-  /* Unterschrift-Tinte, die direkt auf einer Unterschriftslinie sitzt
-     (Seite 3 Sondervereinbarungen, Seite 4 Datenschutz). */
-  .sig-ink { height: 11mm; display: flex; align-items: flex-end; justify-content: flex-start; }
-  .sig-ink img { max-height: 11mm; max-width: 55mm; }
-
-  /* Seite 6 (Übergabeprotokoll, Vollbild-Template): Name in Druckschrift +
-     Unterschrift des Kunden werden über den rechten Block
-     "Bevollmächtigter / Kunde" gelegt. Positionen in % der Template-Bildhöhe;
-     bei Anpassungen lokal rendern und prüfen. */
-  .ho-cust-name {
-    position: absolute;
-    left: 70%;
-    width: 25%;
-    top: 88.8%;
-    text-align: center;
-    font-size: 8pt;
-    white-space: nowrap;
-    overflow: hidden;
-  }
-  .ho-cust-sig {
-    position: absolute;
-    left: 70%;
-    width: 25%;
-    top: 89.2%;
-    height: 11mm;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-  }
-  .ho-cust-sig img { max-height: 11mm; max-width: 95%; }
-
-  /* Seite 6: Name + Unterschrift des Vermieters/Abholers im mittleren Block
-     "Bevollmächtigter" (links neben dem Kunden-Block). */
-  .ho-land-name {
-    position: absolute;
-    left: 42%;
-    width: 25%;
-    top: 88.8%;
-    text-align: center;
-    font-size: 8pt;
-    white-space: nowrap;
-    overflow: hidden;
-  }
-  .ho-land-sig {
-    position: absolute;
-    left: 42%;
-    width: 25%;
-    top: 89.2%;
-    height: 11mm;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-  }
-  .ho-land-sig img { max-height: 11mm; max-width: 95%; }
-
+  /* ---------- Übergabeprotokoll (Seite 6) ---------- */
+  .ho-img { width: 100%; height: 64mm; display: flex; align-items: center; justify-content: center; margin: 6mm 0; }
+  .ho-img img { max-width: 78%; max-height: 100%; object-fit: contain; }
+  .ho-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4mm; }
+  .ho-stats .s { text-align: center; padding: 5mm 2mm; }
+  .ho-stats .s .ic { width: 7mm; height: 7mm; color: ${BLUE}; margin: 0 auto 2.5mm; }
+  .ho-stats .s .ic svg { width: 100%; height: 100%; }
+  .ho-stats .s .lbl { font-size: 7pt; letter-spacing: 0.12em; color: #9ca3af; font-weight: 700; text-transform: uppercase; }
+  .ho-stats .s .val { font-size: 13pt; font-weight: 800; color: #111827; margin-top: 1.5mm; }
 `;
 
-
 // =====================================================
-// Wiederverwendbare Bausteine
+// Bausteine
 // =====================================================
-const formRow = (
-  label: string,
-  value: string,
-  rightValue?: string
-): string => {
-  if (rightValue) {
-    return `<tr>
-      <td class="label">${esc(label)}</td>
-      <td class="value">${esc(value)}</td>
-      <td class="right">${esc(rightValue)}</td>
-    </tr>`;
-  }
-  return `<tr>
-    <td class="label">${esc(label)}</td>
-    <td class="value" colspan="2">${esc(value)}</td>
-  </tr>`;
-};
+const logoMark = (logoDataUri: string | null, orgName: string): string =>
+  logoDataUri
+    ? `<div class="logo"><img src="${esc(logoDataUri)}" alt="${esc(orgName)}" /></div>`
+    : `<div class="logo"><div class="fb">${esc(orgName)}</div></div>`;
 
-const gapRow = (): string => `<tr class="gap"><td colspan="3"></td></tr>`;
-
-const logoBlock = (
+const pageHead = (
   logoDataUri: string | null,
-  orgName: string,
-  align: "center" | "left" = "center"
-): string => {
-  const cls = align === "left" ? "logo left" : "logo";
-  return logoDataUri
-    ? `<div class="${cls}"><img src="${esc(logoDataUri)}" alt="${esc(orgName)}" /></div>`
-    : `<div class="${cls}"><div class="logo-fallback">${esc(orgName)}</div></div>`;
-};
-
-
-const sigBlock = (
-  date: string,
-  name: string,
-  signatureImg: string | null
+  org: Organization,
+  contract: Contract
 ): string => `
-  <div class="sig-block">
-    ${signatureImg ? `<div class="signature-img"><img src="${esc(signatureImg)}" alt="Signatur" /></div>` : ""}
-    <div class="date">${esc(date)}</div>
-    <div class="line"></div>
-    <div class="name">${esc(name)}</div>
+  <div class="head">
+    ${logoMark(logoDataUri, org.name)}
+    <div class="doc-meta">
+      <div class="t">MIETVERTRAG</div>
+      <div class="n">${esc(contract.contract_nr)} / ${esc(fmtDate(today()))}</div>
+    </div>
   </div>
 `;
+
+const footNum = (n: number): string =>
+  `<div class="foot-num">Seite ${n} von 6</div>`;
+
+const icon = (svg: string): string => `<span class="ic">${svg}</span>`;
 
 // =====================================================
 // Seiten
@@ -480,21 +265,19 @@ const renderPage1 = (
   customer: Customer | null,
   vehicle: Vehicle | null,
   logoDataUri: string | null,
-  signaturePngBase64: string | null
+  vehicleImageDataUri: string | null
 ): string => {
-  const dateStr = fmtDate(today());
   const fullName = customerFullName(customer, contract.renter_name);
-  const street = customerStreet(customer, contract.renter_address);
   const days = computeDays(contract.pickup_date, contract.return_date);
+  const model = vehicleModel(vehicle, contract.vehicle_type);
+  const power = vehicle?.power_ps != null ? `${vehicle.power_ps} PS` : "";
+  const fuel = vehicle?.fuel_type ?? "";
+  const powerFuel = [power, fuel].filter(Boolean).join("  |  ");
   const kmInclusive =
     contract.km_limit ??
     (vehicle?.inclusive_km_month
       ? Math.round((vehicle.inclusive_km_month * days) / 30)
       : null);
-  const returnLocation =
-    [org.street, [org.zip, org.city].filter(Boolean).join(" ")]
-      .filter(Boolean)
-      .join(", ") || "";
 
   const gross =
     contract.total_amount != null
@@ -502,7 +285,8 @@ const renderPage1 = (
       : contract.daily_rate != null
       ? Number(contract.daily_rate) * days
       : 0;
-  const { net: priceNet, vat: priceVat } = grossToNet(gross);
+  const { net, vat } = grossToNet(gross);
+
   const paymentLabel =
     contract.payment_method != null
       ? PAYMENT_METHOD_LABEL[contract.payment_method as ContractPaymentMethod]
@@ -511,99 +295,149 @@ const renderPage1 = (
     contract.insurance_type != null
       ? INSURANCE_TYPE_LABEL[contract.insurance_type as ContractInsuranceType]
       : INSURANCE_TYPE_LABEL.full;
-  const insRight =
+  const insDed =
     contract.insurance_deductible != null
-      ? `${fmtEur(Number(contract.insurance_deductible))} SB`
+      ? `${fmtEur(Number(contract.insurance_deductible))} Selbstbeteiligung`
       : "";
 
-  const cityLabel = org.city?.trim() ?? "";
-  const cityDate = cityLabel ? `${cityLabel}, ${dateStr}` : dateStr;
+  const addrLines = [
+    customerStreet(customer, contract.renter_address),
+    [customer?.zip, customer?.city].filter(Boolean).join(" "),
+    customer?.country ?? "",
+  ].filter(Boolean);
+  const phone = customer?.phone ?? contract.renter_phone ?? "";
+  const email = customer?.email ?? contract.renter_email ?? "";
+  const durFrom = dateTimeLabel(contract.pickup_date, contract.pickup_time);
+  const durTo = dateTimeLabel(contract.return_date, contract.return_time);
+
+  const heroImg = vehicleImageDataUri
+    ? `<div class="img"><img src="${esc(vehicleImageDataUri)}" alt="${esc(model)}" /></div>`
+    : "";
 
   return `
     <div class="page">
-      ${logoBlock(logoDataUri, org.name)}
-      <div class="contract-meta">
-        <b>Mietvertrag-Nr.:</b>${esc(contract.contract_nr)} / ${esc(dateStr)}
+      ${pageHead(logoDataUri, org, contract)}
+
+      <div class="hero">
+        <div class="left">
+          <div class="mv">MIETVERTRAG</div>
+          <h1>${esc(model)}</h1>
+          <div class="dates">${esc(fmtDate(contract.pickup_date))} – ${esc(fmtDate(contract.return_date))}</div>
+          <div class="dur">${days} ${days === 1 ? "TAG" : "TAGE"}</div>
+        </div>
+        ${heroImg}
       </div>
-      <div class="subtitle">Langzeitmiete/Dauermiete/Langzeitüberlassung</div>
 
-      <table class="form">
-        ${formRow("Mieter - Name, Vorname:", fullName)}
-        ${formRow("Straße:", street)}
-        ${formRow("Postleitzahl:", customer?.zip ?? "")}
-        ${formRow("Ort:", customer?.city ?? "")}
-        ${formRow("Land:", customer?.country ?? "")}
-        ${formRow("Telefonnummer:", customer?.phone ?? contract.renter_phone ?? "")}
-        ${formRow("E-Mail:", customer?.email ?? contract.renter_email ?? "")}
-        ${gapRow()}
-        ${formRow("Fahrer:", fullName)}
-        ${formRow("Führerschein-Nr.:", customer?.license_nr ?? contract.renter_license_nr ?? "")}
-        ${formRow("Ausweisnummer:", customer?.id_card_nr ?? "")}
-        ${formRow("Fahrer 2:", contract.driver2_name ?? "")}
-        ${formRow("Führerschein-Nr. Fahrer 2:", contract.driver2_license ?? "")}
-        ${gapRow()}
-        ${formRow("Mietobjekt:", vehicleModel(vehicle, contract.vehicle_type))}
-        ${formRow("Leistung:", vehicle?.power_ps != null ? `${vehicle.power_ps} PS` : "")}
-        ${formRow("Treibstoff:", vehicle?.fuel_type ?? "")}
-        ${formRow("FIN:", vehicle?.fin_number ?? "")}
-        ${formRow("Amtl. Kennzeichen:", contract.plate)}
-        ${formRow("Zubehör:", vehicle?.accessories ?? "")}
-        ${gapRow()}
-        ${formRow("Lieferkosten:", fmtEur(Number(contract.delivery_cost ?? 0)))}
-        ${formRow("Abholkosten:", fmtEur(Number(contract.pickup_cost ?? 0)))}
-        ${formRow("Fahrzeugschlüssel:", `${contract.keys_count ?? 1} Fahrzeugschlüssel`)}
-        ${formRow("Schäden bei Übergabe:", contract.damages_at_handover ?? "Keine")}
-        ${formRow("KM-Stand bei Übergabe:", contract.km_pickup != null ? `${fmtNum(contract.km_pickup)} Km` : "")}
-        ${formRow("Tankfüllstand bei Übergabe:", contract.fuel_level_pickup ?? "")}
-        ${formRow("Übergabe an Mieter:", dateTimeLabel(contract.pickup_date, contract.pickup_time))}
-        ${formRow("Mietdauer:", `${days} ${days === 1 ? "Tag" : "Tage"}`)}
-        ${formRow("Rückgabe an Vermieter:", dateTimeLabel(contract.return_date, contract.return_time))}
-        ${formRow("Rückgabeort:", returnLocation)}
-        ${formRow("Vereinbarte Laufleistung / KM:", kmInclusive != null ? `${fmtNum(kmInclusive)} Km` : "")}
-        ${gapRow()}
-        ${formRow("Vertragsbedingungen:", `AGB vom ${dateStr}`)}
-        ${formRow("Preis Zusatztage:", contract.daily_rate != null ? fmtEur(Number(contract.daily_rate)) : "")}
-        ${formRow("Sondervereinbarungen:", contract.special_terms ?? "—")}
-        ${formRow("Einzelmietpreis netto:", gross > 0 ? fmtEur(priceNet) : "")}
-        ${formRow("zzgl. 19% MwSt.:", gross > 0 ? fmtEur(priceVat) : "")}
-        ${formRow("Einzelmietpreis brutto:", gross > 0 ? fmtEur(gross) : "")}
-        ${formRow("Zahlungsart:", paymentLabel)}
-        ${formRow("Kaution:", contract.deposit != null ? fmtEur(Number(contract.deposit)) : "")}
-        ${formRow("Versicherung:", insBase, insRight)}
-        ${formRow("Preis Mehrkilometer in Euro:", vehicle?.extra_km_price != null ? fmtEur(Number(vehicle.extra_km_price)) : "")}
-      </table>
-
-      <div class="sigs">
-        <div class="row">
-          ${sigBlock(cityDate, fullName, signaturePngBase64)}
-          ${sigBlock(cityDate, `Vermieter - ${org.name}`, org.landlord_signature_data ?? null)}
+      <div class="cards">
+        <div class="card">
+          ${icon(I.user)}
+          <div class="lbl">Mieter</div>
+          <div class="nm">${esc(fullName)}</div>
+          ${addrLines.map((l) => `<div class="ln">${esc(l)}</div>`).join("")}
+          ${phone ? `<div class="ln" style="margin-top:1.5mm">${esc(phone)}</div>` : ""}
+          ${email ? `<div class="ln">${esc(email)}</div>` : ""}
+        </div>
+        <div class="card">
+          ${icon(I.car)}
+          <div class="lbl">Fahrzeug</div>
+          <div class="nm">${esc(model)}</div>
+          ${powerFuel ? `<div class="ln strong">${esc(powerFuel)}</div>` : ""}
+          <div class="sub">Kennzeichen</div>
+          <div class="ln strong">${esc(contract.plate)}</div>
+          ${vehicle?.fin_number ? `<div class="sub">FIN</div><div class="ln">${esc(vehicle.fin_number)}</div>` : ""}
+        </div>
+        <div class="card">
+          ${icon(I.calendar)}
+          <div class="lbl">Mietdauer</div>
+          <div class="sub" style="margin-top:1.5mm">von</div>
+          <div class="ln strong">${esc(durFrom)}</div>
+          <div class="sub">bis</div>
+          <div class="ln strong">${esc(durTo)}</div>
+          <div class="nm" style="margin-top:2mm">${days} ${days === 1 ? "TAG" : "TAGE"}</div>
+        </div>
+        <div class="card">
+          ${icon(I.gauge)}
+          <div class="lbl">Laufleistung</div>
+          <div class="sub" style="margin-top:1.5mm">Inklusive</div>
+          <div class="nm">${kmInclusive != null ? `${fmtNum(kmInclusive)} km` : "—"}</div>
+          ${vehicle?.extra_km_price != null ? `<div class="sub">Preis Mehrkilometer</div><div class="ln strong">${esc(fmtEur(Number(vehicle.extra_km_price)))} / km</div>` : ""}
         </div>
       </div>
+
+      <div class="price">
+        <div class="top">
+          <div>
+            <div class="kicker">Gesamtpreis (Brutto)</div>
+            <div class="big">${gross > 0 ? esc(fmtEur(gross)) : "—"}</div>
+            <div class="vsm">inkl. 19 % MwSt.</div>
+          </div>
+          ${
+            gross > 0
+              ? `<div class="bd">
+                  <div class="it"><div class="k">Einzelmietpreis netto</div><div class="v">${esc(fmtEur(net))}</div></div>
+                  <div class="it"><div class="k">zzgl. 19 % MwSt.</div><div class="v">${esc(fmtEur(vat))}</div></div>
+                  <div class="it"><div class="k">Einzelmietpreis brutto</div><div class="v">${esc(fmtEur(gross))}</div></div>
+                </div>`
+              : ""
+          }
+        </div>
+        <div class="row2">
+          <div class="blk">${icon(I.lock)}<div><div class="k">Kaution</div><div class="v">${contract.deposit != null ? esc(fmtEur(Number(contract.deposit))) : "—"}</div></div></div>
+          <div class="blk">${icon(I.shield)}<div><div class="k">Versicherung</div><div class="v">${esc(insBase)}</div>${insDed ? `<div class="v2">${esc(insDed)}</div>` : ""}</div></div>
+          <div class="blk">${icon(I.wallet)}<div><div class="k">Zahlungsart</div><div class="v">${esc(paymentLabel)}</div></div></div>
+        </div>
+      </div>
+
+      <div class="foot-org">
+        ${esc(org.name)}<br/>
+        ${esc([org.street, [org.zip, org.city].filter(Boolean).join(" ")].filter(Boolean).join(", "))}<br/>
+        ${esc([org.phone ? `Tel. ${org.phone}` : "", org.email].filter(Boolean).join(" | "))}
+      </div>
+      ${footNum(1)}
     </div>
   `;
 };
 
-// AGB-Text in HTML-Paragraphen umwandeln. Jeder Block: heading line (fett),
-// danach optional rest. Doppelte Newlines trennen Blöcke.
-const agbHtml = (terms: string): string => {
-  const paragraphs = terms.trim().split(/\n\s*\n/);
-  return paragraphs
-    .map((p) => {
-      const lines = p.split("\n");
-      const heading = lines[0].trim();
-      const rest = lines.slice(1).join(" ").trim();
-      return `<p><strong>${esc(heading)}</strong>${rest ? esc(rest) : ""}</p>`;
-    })
-    .join("");
-};
+const renderPage2 = (
+  org: Organization,
+  contract: Contract,
+  vehicle: Vehicle | null,
+  logoDataUri: string | null
+): string => {
+  const model = vehicleModel(vehicle, contract.vehicle_type);
+  const returnLocation =
+    [org.name, org.street].filter(Boolean).join(" - ") ||
+    [org.street, [org.zip, org.city].filter(Boolean).join(" ")].filter(Boolean).join(", ");
 
-const renderPage2 = (org: Organization): string => {
-  const terms = org.rental_terms?.trim() || DEFAULT_RENTAL_TERMS.trim();
+  const row = (k: string, v: string) =>
+    `<tr><td class="k">${esc(k)}</td><td class="v">${esc(v) || "–"}</td></tr>`;
+
   return `
     <div class="page">
-      <div class="agb-title">ALLGEMEINE VERMIETBEDINGUNGEN ${esc(org.name)}</div>
-      <div class="agb-cols">${agbHtml(terms)}</div>
-      <div class="agb-stand">Stand: ${esc(fmtDate(today()))}</div>
+      ${pageHead(logoDataUri, org, contract)}
+      <div style="margin-top:9mm"></div>
+      <div class="section-h"><span class="bar"></span>Fahrzeugdaten</div>
+      <table class="dtable">
+        ${row("Hersteller / Modell", model)}
+        ${row("Leistung", vehicle?.power_ps != null ? `${vehicle.power_ps} PS` : "")}
+        ${row("Treibstoff", vehicle?.fuel_type ?? "")}
+        ${row("FIN", vehicle?.fin_number ?? "")}
+        ${row("Kennzeichen", contract.plate)}
+        ${row("Zubehör", vehicle?.accessories ?? "")}
+        ${row("Fahrzeugschlüssel", `${contract.keys_count ?? 1} Fahrzeugschlüssel`)}
+        ${row("Schäden bei Übergabe", contract.damages_at_handover ?? "Keine")}
+        ${row("KM-Stand bei Übergabe", contract.km_pickup != null ? `${fmtNum(contract.km_pickup)} km` : "")}
+        ${row("Tankfüllstand bei Übergabe", contract.fuel_level_pickup ?? "")}
+      </table>
+
+      <div class="block-gap"></div>
+      <div class="section-h"><span class="bar"></span>Übergabe / Rückgabe</div>
+      <table class="dtable">
+        ${row("Übergabe an Mieter", dateTimeLabel(contract.pickup_date, contract.pickup_time))}
+        ${row("Rückgabe an Vermieter", dateTimeLabel(contract.return_date, contract.return_time))}
+        ${row("Rückgabeort", returnLocation)}
+      </table>
+      ${footNum(2)}
     </div>
   `;
 };
@@ -612,121 +446,62 @@ const renderPage3 = (
   org: Organization,
   contract: Contract,
   logoDataUri: string | null,
-  specialTerms: SpecialTermsTemplate[],
-  signaturePngBase64: string | null
+  specialTerms: SpecialTermsTemplate[]
 ): string => {
-  const dateStr = fmtDate(today());
-  const cityLabel = org.city?.trim() ?? "";
-  const cityDate = cityLabel ? `${cityLabel}, ${dateStr}` : dateStr;
-  const fullName = contract.renter_name;
+  const items: string[] = specialTerms.map((t) => t.text.trim()).filter(Boolean);
   const customText = contract.custom_special_terms?.trim() ?? "";
-
-  // Liste: erst alle ausgewählten Templates, danach Freitext-Vereinbarungen
-  // als zusätzliche nummerierte Einträge.
-  const items: string[] = specialTerms.map((t) => t.text.trim());
   if (customText) {
-    // Mehrere durch Zeilenumbruch getrennte Freitext-Einträge separat zählen
-    const customLines = customText
-      .split(/\n+/)
-      .map((l) => l.trim())
-      .filter(Boolean);
-    items.push(...customLines);
+    items.push(
+      ...customText.split(/\n+/).map((l) => l.trim()).filter(Boolean)
+    );
   }
-
-  const listHtml = items.length
-    ? items.map((t) => `<li>${esc(t)}</li>`).join("")
-    : `<li style="list-style:none;color:#888">Keine Sondervereinbarungen.</li>`;
+  const list = items.length
+    ? items
+        .map(
+          (t) =>
+            `<li><span class="chk">${I.check}</span><span>${esc(t)}</span></li>`
+        )
+        .join("")
+    : `<li><span>Keine Sondervereinbarungen.</span></li>`;
 
   return `
     <div class="page">
-      ${logoBlock(logoDataUri, org.name, "left")}
-      <div class="special-single">
-        <div class="heading">Sondervereinbarungen:</div>
-        <ol class="special-list">${listHtml}</ol>
-      </div>
-      <div class="agb-sigs">
-        <div class="col">
-          <div class="date">${esc(cityDate)}</div>
-          <div class="sig-ink">${signaturePngBase64 ? `<img src="${esc(signaturePngBase64)}" alt="Unterschrift" />` : ""}</div>
-          <div class="line">${esc(fullName)}</div>
-        </div>
-        <div class="col">
-          <div class="date">${esc(cityDate)}</div>
-          <div class="sig-ink">${org.landlord_signature_data ? `<img src="${esc(org.landlord_signature_data)}" alt="Unterschrift Vermieter" />` : ""}</div>
-          <div class="line">${esc(landlordPrintName(org))}</div>
-        </div>
-      </div>
+      ${pageHead(logoDataUri, org, contract)}
+      <div style="margin-top:9mm"></div>
+      <div class="section-h"><span class="bar"></span>Sondervereinbarungen</div>
+      <ul class="sv">${list}</ul>
+      ${footNum(3)}
     </div>
   `;
 };
 
+// AGB-Text in HTML-Paragraphen umwandeln. Erste Zeile fett (Überschrift),
+// Rest als Fließtext. Doppelte Leerzeilen trennen Blöcke.
+const agbHtml = (terms: string): string =>
+  terms
+    .trim()
+    .split(/\n\s*\n/)
+    .map((p) => {
+      const lines = p.split("\n");
+      const heading = lines[0].trim();
+      const rest = lines.slice(1).join(" ").trim();
+      return `<p><strong>${esc(heading)}</strong>${rest ? esc(rest) : ""}</p>`;
+    })
+    .join("");
+
 const renderPage4 = (
   org: Organization,
   contract: Contract,
-  customer: Customer | null,
-  signaturePngBase64: string | null
+  logoDataUri: string | null
 ): string => {
-  const dateStr = fmtDate(today());
-  const street = customerStreet(customer, contract.renter_address);
-  const zipCity = [customer?.zip, customer?.city].filter(Boolean).join(" ");
-  const email = customer?.email ?? contract.renter_email ?? "";
-  const phone = customer?.phone ?? contract.renter_phone ?? "";
-
-  const bullets = [
-    "Finanzierungsanfragen",
-    "Leasinganfragen",
-    "Kaufverträge",
-    "Angebote",
-    "Kundenbetreuung",
-    "Kundeninformationen",
-    "Werbung",
-    "Mietverträge",
-    "Sonstige vertragliche Unterlagen",
-  ];
-
+  const terms = org.rental_terms?.trim() || DEFAULT_RENTAL_TERMS.trim();
   return `
     <div class="page">
-      <div class="privacy-title">Datenschutzrechtliche Einwilligungserklärung</div>
-      <div class="privacy-intro">
-        Die nachstehende Einwilligungserklärung erfolgt freiwillig und kann jederzeit für die Zukunft geändert oder widerrufen werden.
-      </div>
-
-      <div class="privacy-grid">
-        <div class="row"><div class="lbl">Name:</div><div class="val">${esc(customer?.last_name ?? contract.renter_name)}</div></div>
-        <div class="row"><div class="lbl">Vorname:</div><div class="val">${esc(customer?.first_name ?? "")}</div></div>
-        <div class="row"><div class="lbl">Straße:</div><div class="val">${esc(street)}</div></div>
-        <div class="row"><div class="lbl">PLZ, Ort:</div><div class="val">${esc(zipCity)}</div></div>
-        <div class="row"><div class="lbl">E-Mail:</div><div class="val">${esc(email)}</div></div>
-        <div class="row"><div class="lbl">Telefon:</div><div class="val">${esc(phone)}</div></div>
-        <div class="row"><div class="lbl">Mobilfunk:</div><div class="val">${esc(phone)}</div></div>
-        <div class="row"><div class="lbl">Telefax:</div><div class="val"></div></div>
-      </div>
-
-      <div class="privacy-body">
-        Sämtliche Personen- und Vertragsdaten aus diesem Vertrag und den mit diesem Vertrag zusammenhängenden Verträgen und Vereinbarungen werden zur Erfüllung und Abwicklung der Verträge und Vereinbarungen (z.B. Finanzierung, Mieten, Leasing, Einplanung und Produktion des Fahrzeuges, Sicherstellung des Preisschutzes, Garantieabwicklung, Kauf und Verkauf) verwendet.
-      </div>
-
-      <div class="privacy-body">Unter der Nutzung der Daten ist folgendes zu verstehen:</div>
-      <div class="privacy-body">Schriftliche, elektronische und telefonische Kontaktaufnahme im Rahmen der</div>
-      <ul class="privacy-bullets">
-        ${bullets.map((b) => `<li>${esc(b)}</li>`).join("")}
-      </ul>
-
-      <div class="privacy-body">Ich willige für obige Zwecke in die Kontaktaufnahme über folgende Kontaktwege ein:</div>
-      <div class="privacy-body" style="margin-bottom:1mm">Post, E-Mail, Telefon, Telefax, Whats-App, SMS</div>
-      <div class="privacy-body">nicht gewünschtes bitte streichen.</div>
-
-      <div class="sigs">
-        <div style="display:flex;gap:6mm;align-items:flex-end">
-          <div><span style="font-size:9pt">Datum:</span> <span style="font-size:9pt">${esc(dateStr)}</span></div>
-          <div style="flex:1;display:flex;gap:3mm;align-items:flex-end">
-            <span style="font-size:9pt">Unterschrift:</span>
-            <span style="flex:1;border-bottom:0.5pt solid #888;min-height:11mm;display:flex;align-items:flex-end;justify-content:center">
-              ${signaturePngBase64 ? `<img src="${esc(signaturePngBase64)}" alt="Unterschrift" style="max-height:10mm;max-width:55mm" />` : ""}
-            </span>
-          </div>
-        </div>
-      </div>
+      ${pageHead(logoDataUri, org, contract)}
+      <div style="margin-top:9mm"></div>
+      <div class="section-h"><span class="bar"></span>Allgemeine Mietbedingungen</div>
+      <div class="agb">${agbHtml(terms)}</div>
+      ${footNum(4)}
     </div>
   `;
 };
@@ -735,119 +510,93 @@ const renderPage5 = (
   org: Organization,
   contract: Contract,
   customer: Customer | null,
-  logoDataUri: string | null
+  logoDataUri: string | null,
+  signaturePngBase64: string | null
 ): string => {
-  const dateStr = fmtDate(today());
-  const cityLabel = org.city?.trim() ?? "";
-  const cityDate = cityLabel ? `${cityLabel}, ${dateStr}` : dateStr;
   const fullName = customerFullName(customer, contract.renter_name);
+  const cityLabel = org.city?.trim() ?? "";
+  const cityDate = cityLabel
+    ? `${cityLabel}, ${fmtDate(today())}`
+    : fmtDate(today());
+
+  const channels: Array<[string, string]> = [
+    [I.mail, "E-Mail"],
+    [I.phone, "Telefon"],
+    [I.chat, "WhatsApp"],
+    [I.message, "SMS"],
+    [I.mailbox, "Post"],
+  ];
 
   return `
     <div class="page">
-      ${logoBlock(logoDataUri, org.name, "left")}
-      <div class="conf-title">
-        Bestätigung der allgemeinen Vermietbedingungen und Einreisebeschränkungen
+      ${pageHead(logoDataUri, org, contract)}
+      <div style="margin-top:9mm"></div>
+      <div class="section-h"><span class="bar"></span>Datenschutzeinwilligung</div>
+      <div class="ds-intro">
+        Ich willige ein, dass die ${esc(org.name)} meine personenbezogenen Daten zur Abwicklung
+        des Mietvertrages sowie zur Kontaktaufnahme zu folgenden Zwecken nutzen darf:
       </div>
-      <div class="conf-body">
-        Hiermit bestätige ich, dass ich die allgemeinen Vermietbedingungen sowie die Einreisebeschränkungen der ${esc(org.name)} vollständig erhalten und gelesen habe und diese vollumfänglich akzeptiere.
+      <div class="ds-list">
+        ${channels
+          .map(
+            ([ic, nm]) =>
+              `<div class="ds-row">${icon(ic)}<div class="nm">${esc(nm)}</div><div class="box"></div></div>`
+          )
+          .join("")}
       </div>
 
-      <div class="conf-field">
-        <div class="val">${esc(fullName)}</div>
-        <div class="lbl">Name in Druckbuchstaben</div>
-      </div>
-
-      <div class="conf-bottom">
-        <div class="field">
+      <div class="sign-area">
+        <div class="f">
           <div class="val">${esc(cityDate)}</div>
-          <div class="lbl">Ort/Datum</div>
+          <div class="ln"></div>
+          <div class="cap">Ort, Datum</div>
         </div>
-        <div class="field">
+        <div class="f">
           <div class="val">&nbsp;</div>
-          <div class="lbl">Unterschrift</div>
+          <div class="ln">${signaturePngBase64 ? `<img src="${esc(signaturePngBase64)}" alt="Unterschrift" />` : ""}</div>
+          <div class="cap">Unterschrift Mieter${fullName ? ` · ${esc(fullName)}` : ""}</div>
         </div>
       </div>
-
+      ${footNum(5)}
     </div>
   `;
-};
-
-// Übergabeprotokoll-Template als statisches Image (Ollies Original-Scan mit
-// händisch geweißten Kundendaten). Wird einmal beim Modulladen in Memory
-// gehalten, danach pro Request als Data-URI eingebettet.
-let HANDOVER_TEMPLATE_DATA_URI: string | null = null;
-const loadHandoverTemplate = (): string => {
-  if (HANDOVER_TEMPLATE_DATA_URI) return HANDOVER_TEMPLATE_DATA_URI;
-  try {
-    const path = join(process.cwd(), "src/lib/assets/handover-template.jpg");
-    const buf = readFileSync(path);
-    HANDOVER_TEMPLATE_DATA_URI = `data:image/jpeg;base64,${buf.toString("base64")}`;
-    return HANDOVER_TEMPLATE_DATA_URI;
-  } catch {
-    return "";
-  }
 };
 
 const renderPage6 = (
   org: Organization,
   contract: Contract,
-  customer: Customer | null,
-  signaturePngBase64: string | null
+  vehicle: Vehicle | null,
+  logoDataUri: string | null,
+  vehicleImageDataUri: string | null
 ): string => {
-  const tplUri = loadHandoverTemplate();
-  const fullName = customerFullName(customer, contract.renter_name);
+  const km = contract.km_pickup != null ? `${fmtNum(contract.km_pickup)} km` : "—";
+  const tank = contract.fuel_level_pickup ?? "—";
+  const keys = String(contract.keys_count ?? 1);
+  const damages = String(countDamages(contract.damages_at_handover));
 
-  // Overlay-Hinweis: nur wenn Schäden gemeldet ODER Fotos vorhanden sind.
-  const damages = contract.damages_at_handover?.trim() ?? "";
-  const hasDamages = damages && damages.toLowerCase() !== "keine";
-  const photoCount = Array.isArray(contract.pickup_photos)
-    ? contract.pickup_photos.length
-    : 0;
-  const hasOverlay = hasDamages || photoCount > 0;
+  const heroImg = vehicleImageDataUri
+    ? `<div class="ho-img"><img src="${esc(vehicleImageDataUri)}" alt="${esc(vehicleModel(vehicle, contract.vehicle_type))}" /></div>`
+    : `<div class="ho-img"></div>`;
 
-  const overlayParts: string[] = [];
-  if (hasDamages)
-    overlayParts.push(`<b>Schäden bei Übergabe:</b> ${esc(damages)}`);
-  if (photoCount > 0)
-    overlayParts.push(
-      `<b>Foto-Doku:</b> ${photoCount} ${photoCount === 1 ? "Foto" : "Fotos"} im System`
-    );
-  const overlay = hasOverlay
-    ? `<div class="ho-overlay">${overlayParts.join(" &nbsp;·&nbsp; ")}</div>`
-    : "";
+  const stat = (ic: string, lbl: string, val: string) =>
+    `<div class="s">${icon(ic)}<div class="lbl">${esc(lbl)}</div><div class="val">${esc(val)}</div></div>`;
 
-  // Name (Druckschrift) + Unterschrift des Kunden im rechten Block
-  // "Bevollmächtigter / Kunde". Name immer, Unterschrift nur wenn signiert.
-  const custName = `<div class="ho-cust-name">${esc(fullName)}</div>`;
-  const custSig = signaturePngBase64
-    ? `<div class="ho-cust-sig"><img src="${esc(signaturePngBase64)}" alt="Unterschrift" /></div>`
-    : "";
-
-  // Vermieter/Abholer im mittleren Block — nur wenn eine Vermieter-Unterschrift
-  // hinterlegt ist (sonst bleibt der Block leer fürs handschriftliche Signieren).
-  const landSig = org.landlord_signature_data ?? null;
-  const landName = landSig
-    ? `<div class="ho-land-name">${esc(landlordPrintName(org))}</div>`
-    : "";
-  const landSigEl = landSig
-    ? `<div class="ho-land-sig"><img src="${esc(landSig)}" alt="Unterschrift Vermieter" /></div>`
-    : "";
-
-  if (tplUri) {
-    return `
-      <div class="page page-image">
-        <img src="${tplUri}" alt="Übergabeprotokoll" />
-        ${overlay}
-        ${custName}
-        ${custSig}
-        ${landName}
-        ${landSigEl}
+  return `
+    <div class="page">
+      ${pageHead(logoDataUri, org, contract)}
+      <div style="margin-top:9mm"></div>
+      <div class="section-h"><span class="bar"></span>Übergabeprotokoll</div>
+      ${heroImg}
+      <div class="ho-stats">
+        ${stat(I.gauge, "KM-Stand", km)}
+        ${stat(I.fuel, "Tankstand", tank)}
+        ${stat(I.key, "Schlüssel", keys)}
+        ${stat(I.alert, "Schäden", damages)}
       </div>
-    `;
-  }
-  return `<div class="page"><div style="padding:20mm">Übergabeprotokoll-Template fehlt.</div></div>`;
+      ${footNum(6)}
+    </div>
+  `;
 };
-
 
 // =====================================================
 // Public
@@ -861,6 +610,7 @@ export const buildContractHtml = (args: {
   logoDataUri?: string | null;
   signaturePngBase64?: string | null;
   specialTerms?: SpecialTermsTemplate[];
+  vehicleImageDataUri?: string | null;
 }): string => {
   const {
     org,
@@ -870,9 +620,8 @@ export const buildContractHtml = (args: {
     logoDataUri = null,
     signaturePngBase64 = null,
     specialTerms = [],
+    vehicleImageDataUri = null,
   } = args;
-  // `tires` aktuell nicht mehr verwendet (Seite 6 ist ein Blanko-Protokoll),
-  // bleibt aber im API-Parameter für künftige Erweiterungen.
   void args.tires;
 
   return `<!DOCTYPE html>
@@ -883,12 +632,12 @@ export const buildContractHtml = (args: {
 <style>${CSS}</style>
 </head>
 <body>
-${renderPage1(org, contract, customer, vehicle, logoDataUri, signaturePngBase64)}
-${renderPage2(org)}
-${renderPage3(org, contract, logoDataUri, specialTerms, signaturePngBase64)}
-${renderPage4(org, contract, customer, signaturePngBase64)}
-${renderPage5(org, contract, customer, logoDataUri)}
-${renderPage6(org, contract, customer, signaturePngBase64)}
+${renderPage1(org, contract, customer, vehicle, logoDataUri, vehicleImageDataUri)}
+${renderPage2(org, contract, vehicle, logoDataUri)}
+${renderPage3(org, contract, logoDataUri, specialTerms)}
+${renderPage4(org, contract, logoDataUri)}
+${renderPage5(org, contract, customer, logoDataUri, signaturePngBase64)}
+${renderPage6(org, contract, vehicle, logoDataUri, vehicleImageDataUri)}
 </body>
 </html>`;
 };

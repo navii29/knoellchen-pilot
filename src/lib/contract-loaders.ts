@@ -64,6 +64,36 @@ export const loadCurrentTireForVehicle = async (
   return (data as VehicleTire | null) ?? null;
 };
 
+// Titelbild des Fahrzeugs (ältestes Foto) als Data-URI fürs Vertrags-PDF.
+// org-scoped; null, wenn kein Foto vorhanden oder Download scheitert.
+export const loadVehiclePhotoDataUri = async (
+  admin: SupabaseClient,
+  orgId: string,
+  vehicleId: string | null
+): Promise<string | null> => {
+  if (!vehicleId) return null;
+  const { data: rows } = await admin
+    .from("vehicle_photos")
+    .select("photo_path")
+    .eq("vehicle_id", vehicleId)
+    .eq("org_id", orgId)
+    .order("created_at", { ascending: true })
+    .limit(1);
+  const path = rows?.[0]?.photo_path as string | undefined;
+  if (!path) return null;
+  const { data, error } = await admin.storage.from("vehicle-photos").download(path);
+  if (error || !data) return null;
+  const lower = path.toLowerCase();
+  const mime =
+    lower.endsWith(".png")
+      ? "image/png"
+      : lower.endsWith(".webp")
+      ? "image/webp"
+      : "image/jpeg";
+  const buf = Buffer.from(await data.arrayBuffer());
+  return `data:${mime};base64,${buf.toString("base64")}`;
+};
+
 export const loadSpecialTermsForContract = async (
   admin: SupabaseClient,
   orgId: string,
