@@ -64,6 +64,14 @@ const mimeFromPath = (path: string): string => {
 const labelForPosition = (position: string): string =>
   POSITIONS.find((p) => p.key === position)?.label ?? position;
 
+// Eine leere/blanke Canvas erzeugt zwar eine gültige PNG-Data-URL (isPngDataUrl
+// passt), enthält aber kaum Daten. Mindestgröße der dekodierten Bytes erzwingen,
+// damit eine echte Unterschrift vorliegt.
+const hasInk = (dataUrl: string): boolean => {
+  const b64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+  return Buffer.from(b64, "base64").length > 1024;
+};
+
 // km robust parsen — leerer/ungültiger Wert ⇒ null (kein Überschreiben).
 const parseKm = (v: number | string | undefined): number | null => {
   if (v == null || v === "") return null;
@@ -100,6 +108,12 @@ export const POST = async (req: Request, { params }: Ctx) => {
   if (!isPngDataUrl(sigLessor) || !isPngDataUrl(sigRenter)) {
     return NextResponse.json(
       { error: "Ungültige Unterschrift (erwartet: data:image/png;base64,…) — beide Felder." },
+      { status: 400 }
+    );
+  }
+  if (!hasInk(sigLessor) || !hasInk(sigRenter)) {
+    return NextResponse.json(
+      { error: "Unterschrift fehlt — beide Felder müssen unterschrieben sein." },
       { status: 400 }
     );
   }

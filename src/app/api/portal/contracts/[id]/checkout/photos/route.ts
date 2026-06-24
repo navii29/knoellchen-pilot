@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { loadPortalContract } from "@/lib/portal-contract-guard";
 import type { HandoverPosition } from "@/lib/types";
+import { UploadGuardError, validateUpload } from "@/lib/upload-guard";
 
 export const maxDuration = 30;
 
@@ -24,23 +25,26 @@ export const POST = async (req: Request, { params }: Ctx) => {
   if (!ctx) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const form = await req.formData();
-  const file = form.get("file");
   const position = String(form.get("position") || "");
-  if (!(file instanceof File))
-    return NextResponse.json({ error: "Datei fehlt" }, { status: 400 });
   if (!VALID_POSITIONS.includes(position as HandoverPosition))
     return NextResponse.json({ error: "Ungültige Position" }, { status: 400 });
-  if (file.size > 12 * 1024 * 1024)
-    return NextResponse.json({ error: "Datei zu groß (max 12 MB)" }, { status: 400 });
+  let valid;
+  try {
+    valid = validateUpload(form.get("file"));
+  } catch (e) {
+    if (e instanceof UploadGuardError)
+      return NextResponse.json({ error: e.message }, { status: 400 });
+    throw e;
+  }
+  const { ext, contentType } = valid;
 
-  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
   const stamp = Date.now().toString(36);
   const path = `${ctx.session.org_id}/${params.id}/return/${position}-${stamp}.${ext}`;
-  const buf = Buffer.from(await file.arrayBuffer());
+  const buf = Buffer.from(await valid.file.arrayBuffer());
 
   const { error: upErr } = await ctx.admin.storage
     .from("handover-photos")
-    .upload(path, buf, { contentType: file.type, upsert: true });
+    .upload(path, buf, { contentType, upsert: true });
   if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
 
   const { data: existing } = await ctx.admin

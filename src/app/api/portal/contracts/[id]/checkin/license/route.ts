@@ -1,47 +1,62 @@
 import { NextResponse } from "next/server";
 import { loadPortalContract } from "@/lib/portal-contract-guard";
 import { parseCustomerDocument } from "@/lib/anthropic";
+import { UploadGuardError, validateUpload } from "@/lib/upload-guard";
 
 export const maxDuration = 60;
 
 type Ctx = { params: { id: string } };
+
+// Storage-Endung -> Claude-Vision-MediaType. HEIC/HEIF kann die Vision-API nicht
+// lesen — solche Bilder werden gespeichert, aber beim OCR übersprungen.
+const VISION_MEDIA: Record<string, "image/jpeg" | "image/png" | "image/webp" | "application/pdf"> =
+  {
+    pdf: "application/pdf",
+    jpg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+  };
 
 export const POST = async (req: Request, { params }: Ctx) => {
   const ctx = await loadPortalContract(params.id);
   if (!ctx) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const form = await req.formData();
-  const file = form.get("file");
-  if (!(file instanceof File))
-    return NextResponse.json({ error: "Datei fehlt" }, { status: 400 });
-  if (file.size > 12 * 1024 * 1024)
-    return NextResponse.json({ error: "Datei zu groß (max 12 MB)" }, { status: 400 });
+  let valid;
+  try {
+    valid = validateUpload(form.get("file"));
+  } catch (e) {
+    if (e instanceof UploadGuardError)
+      return NextResponse.json({ error: e.message }, { status: 400 });
+    throw e;
+  }
+  const { ext, contentType } = valid;
 
-  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
   const stamp = Date.now().toString(36);
   const path = `${ctx.session.org_id}/portal/${ctx.session.customer_id}/license-${stamp}.${ext}`;
-  const buf = Buffer.from(await file.arrayBuffer());
+  const buf = Buffer.from(await valid.file.arrayBuffer());
 
   const { error: upErr } = await ctx.admin.storage
     .from("customer-documents")
-    .upload(path, buf, { contentType: file.type, upsert: true });
+    .upload(path, buf, { contentType, upsert: true });
   if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
 
-  const mediaType =
-    ext === "pdf"
-      ? "application/pdf"
-      : ext === "png"
-      ? "image/png"
-      : ext === "webp"
-      ? "image/webp"
-      : "image/jpeg";
+  const mediaType = VISION_MEDIA[ext];
+  if (!mediaType) {
+    // HEIC/HEIF: gespeichert, aber kein OCR möglich.
+    return NextResponse.json({
+      ok: true,
+      parsed: null,
+      storage_path: path,
+    });
+  }
 
   let parsed;
   try {
     parsed = await parseCustomerDocument([
       {
         base64: buf.toString("base64"),
-        mediaType: mediaType as "image/jpeg" | "image/png" | "image/webp" | "application/pdf",
+        mediaType,
       },
     ]);
   } catch (e) {

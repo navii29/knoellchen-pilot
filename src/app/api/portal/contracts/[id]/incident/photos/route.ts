@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { loadPortalContract } from "@/lib/portal-contract-guard";
+import { UploadGuardError, validateUpload } from "@/lib/upload-guard";
 
 export const maxDuration = 30;
 
@@ -11,18 +12,22 @@ export const POST = async (req: Request, { params }: { params: { id: string } })
   if (!ctx) return NextResponse.json({ error: "Nicht angemeldet" }, { status: 401 });
 
   const form = await req.formData();
-  const file = form.get("file");
-  if (!(file instanceof File)) return NextResponse.json({ error: "Datei fehlt" }, { status: 400 });
-  if (file.size > 12 * 1024 * 1024)
-    return NextResponse.json({ error: "Datei zu groß (max 12 MB)" }, { status: 400 });
+  let valid;
+  try {
+    valid = validateUpload(form.get("file"));
+  } catch (e) {
+    if (e instanceof UploadGuardError)
+      return NextResponse.json({ error: e.message }, { status: 400 });
+    throw e;
+  }
+  const { ext, contentType } = valid;
 
-  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
   const path = `${ctx.session.org_id}/${params.id}/incident/${randomUUID()}.${ext}`;
-  const buf = Buffer.from(await file.arrayBuffer());
+  const buf = Buffer.from(await valid.file.arrayBuffer());
 
   const { error } = await ctx.admin.storage
     .from("damage-photos")
-    .upload(path, buf, { contentType: file.type, upsert: true });
+    .upload(path, buf, { contentType, upsert: true });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ ok: true, path });
