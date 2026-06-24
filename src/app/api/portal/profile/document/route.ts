@@ -2,22 +2,9 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { getPortalSession } from "@/lib/portal-auth";
 import { parseCustomerDocument } from "@/lib/anthropic";
+import { mergeCustomerDocFields } from "@/lib/customer-docs";
 
 export const maxDuration = 60;
-
-// Felder, die je Dokumenttyp aus dem OCR-Ergebnis in die leeren Customer-Felder
-// übernommen werden — identisch zu den Check-in-Routen, nur ohne Vertrag.
-const FILL_KEYS = {
-  license: [
-    "first_name",
-    "last_name",
-    "birthday",
-    "license_nr",
-    "license_class",
-    "license_expiry",
-  ],
-  id_card: ["first_name", "last_name", "id_card_nr", "street", "house_nr", "zip", "city"],
-} as const;
 
 export const POST = async (req: Request) => {
   // Portal-Session (JWT + lebende portal_sessions-Zeile) — KEIN Vertrag nötig.
@@ -62,10 +49,12 @@ export const POST = async (req: Request) => {
 
   let parsed;
   try {
-    parsed = await parseCustomerDocument(
-      buf.toString("base64"),
-      mediaType as "image/jpeg" | "image/png" | "image/webp" | "application/pdf"
-    );
+    parsed = await parseCustomerDocument([
+      {
+        base64: buf.toString("base64"),
+        mediaType: mediaType as "image/jpeg" | "image/png" | "image/webp" | "application/pdf",
+      },
+    ]);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: `Auslesung fehlgeschlagen: ${msg}` }, { status: 500 });
@@ -88,19 +77,11 @@ export const POST = async (req: Request) => {
     );
   if (!customer) return NextResponse.json({ error: "Kunde nicht gefunden" }, { status: 404 });
 
-  const fillIfEmpty = (key: keyof typeof parsed.data, current: unknown) => {
-    const v = parsed.data[key];
-    if (typeof v !== "string" || !v.trim()) return null;
-    return current == null || current === "" ? v : null;
-  };
-
+  const { patch } = mergeCustomerDocFields(customer, parsed.data, docType);
   const updates: Record<string, unknown> = {
     [docType === "license" ? "license_photo_path" : "id_card_photo_path"]: path,
+    ...patch,
   };
-  for (const k of FILL_KEYS[docType]) {
-    const v = fillIfEmpty(k, customer?.[k]);
-    if (v != null) updates[k] = v;
-  }
 
   const { error: updErr } = await admin
     .from("customers")

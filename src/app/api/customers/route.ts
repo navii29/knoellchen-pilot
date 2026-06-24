@@ -72,7 +72,9 @@ export const POST = async (req: Request) => {
     license_expiry: trimOrNull(body.license_expiry),
     id_card_nr: trimOrNull(body.id_card_nr),
     license_photo_path: trimOrNull(body.license_photo_path),
+    license_photo_back_path: trimOrNull(body.license_photo_back_path),
     id_card_photo_path: trimOrNull(body.id_card_photo_path),
+    id_card_photo_back_path: trimOrNull(body.id_card_photo_back_path),
     notes: trimOrNull(body.notes),
   };
 

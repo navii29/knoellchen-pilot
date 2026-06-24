@@ -19,29 +19,19 @@ export const POST = async (req: Request) => {
   if (!profile) return NextResponse.json({ error: "No profile" }, { status: 401 });
 
   const form = await req.formData();
-  const file = form.get("file");
   const docTypeHint = String(form.get("doc_type") || "");
-  if (!(file instanceof File)) {
+  // Mehrere Dateien (Vorder- + Rückseite, ggf. weitere) werden GEMEINSAM
+  // ausgelesen — Legacy-Single-"file" wird über getAll mit abgedeckt.
+  const files = form.getAll("file").filter((f): f is File => f instanceof File);
+  if (files.length === 0) {
     return NextResponse.json({ error: "Datei fehlt" }, { status: 400 });
   }
-  if (file.size > 12 * 1024 * 1024) {
+  if (files.some((f) => f.size > 12 * 1024 * 1024)) {
     return NextResponse.json({ error: "Datei zu groß (max 12 MB)" }, { status: 400 });
   }
 
   const admin = createAdminClient();
-  const ext = (file.name.split(".").pop() || "bin").toLowerCase();
-  const stamp = Date.now().toString(36);
-  const path = `${profile.org_id}/staging/${stamp}.${ext}`;
-
-  const arrayBuffer = await file.arrayBuffer();
-  const buf = Buffer.from(arrayBuffer);
-
-  const { error: upErr } = await admin.storage
-    .from("customer-documents")
-    .upload(path, buf, { contentType: file.type, upsert: true });
-  if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
-
-  const mediaType =
+  const mediaFor = (ext: string): "image/jpeg" | "image/png" | "image/webp" | "application/pdf" =>
     ext === "pdf"
       ? "application/pdf"
       : ext === "png"
@@ -50,12 +40,35 @@ export const POST = async (req: Request) => {
       ? "image/webp"
       : "image/jpeg";
 
+  const storagePaths: string[] = [];
+  const images: { base64: string; mediaType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf" }[] = [];
+  let i = 0;
+  for (const file of files) {
+    const ext = (file.name.split(".").pop() || "bin").toLowerCase();
+    const stamp = `${Date.now().toString(36)}-${i++}`;
+    const path = `${profile.org_id}/staging/${stamp}.${ext}`;
+    const buf = Buffer.from(await file.arrayBuffer());
+    const { error: upErr } = await admin.storage
+      .from("customer-documents")
+      .upload(path, buf, { contentType: file.type, upsert: true });
+    if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
+    storagePaths.push(path);
+    // HEIC/HEIF kann die Vision-API nicht lesen — speichern, aber nicht ans OCR.
+    if (ext !== "heic" && ext !== "heif") {
+      images.push({ base64: buf.toString("base64"), mediaType: mediaFor(ext) });
+    }
+  }
+
+  if (images.length === 0) {
+    return NextResponse.json(
+      { error: "Format wird vom Auslesen nicht unterstützt (HEIC). Bitte JPG/PNG/PDF." },
+      { status: 400 }
+    );
+  }
+
   let parsed;
   try {
-    parsed = await parseCustomerDocument(
-      buf.toString("base64"),
-      mediaType as "image/jpeg" | "image/png" | "image/webp" | "application/pdf"
-    );
+    parsed = await parseCustomerDocument(images);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: `Claude Vision fehlgeschlagen: ${msg}` }, { status: 500 });
@@ -69,7 +82,8 @@ export const POST = async (req: Request) => {
     ok: true,
     data: parsed.data,
     document_type: documentType,
-    storage_path: path,
+    storage_path: storagePaths[0],
+    storage_paths: storagePaths,
     confidence: parsed.data.confidence ?? 0.9,
   });
 };

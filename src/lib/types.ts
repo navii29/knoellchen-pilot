@@ -381,6 +381,8 @@ export interface Customer {
   id_card_nr: string | null;
   license_photo_path: string | null;
   id_card_photo_path: string | null;
+  license_photo_back_path: string | null;
+  id_card_photo_back_path: string | null;
   marketing_opt_in: boolean | null;
   consent_at: string | null;
   consent_source: string | null;

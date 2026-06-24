@@ -75,27 +75,31 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
   }
   // Nur Dokumente signieren, deren Pfad zur eigenen Org gehört — ein manipulierter
   // Pfad (z. B. via fremder org_id) darf keine fremden Ausweis-Scans offenlegen.
-  const orgOwnsPath = (p: string | null): p is string =>
+  const orgOwnsPath = (p: string | null | undefined): p is string =>
     !!p && !!orgId && p.startsWith(`${orgId}/`);
   const licPath = c.license_photo_path;
+  const licBackPath = c.license_photo_back_path;
   const idPath = c.id_card_photo_path;
+  const idBackPath = c.id_card_photo_back_path;
 
   let licenseUrl: string | null = null;
+  let licenseBackUrl: string | null = null;
   let idCardUrl: string | null = null;
-  if (orgOwnsPath(licPath) || orgOwnsPath(idPath)) {
+  let idCardBackUrl: string | null = null;
+  const anyPath = [licPath, licBackPath, idPath, idBackPath].some(orgOwnsPath);
+  if (anyPath) {
     const admin = createAdminClient();
-    if (orgOwnsPath(licPath)) {
+    const sign = async (p: string | null | undefined): Promise<string | null> => {
+      if (!orgOwnsPath(p)) return null;
       const { data: signed } = await admin.storage
         .from("customer-documents")
-        .createSignedUrl(licPath, 3600);
-      licenseUrl = signed?.signedUrl || null;
-    }
-    if (orgOwnsPath(idPath)) {
-      const { data: signed } = await admin.storage
-        .from("customer-documents")
-        .createSignedUrl(idPath, 3600);
-      idCardUrl = signed?.signedUrl || null;
-    }
+        .createSignedUrl(p, 3600);
+      return signed?.signedUrl || null;
+    };
+    licenseUrl = await sign(licPath);
+    licenseBackUrl = await sign(licBackPath);
+    idCardUrl = await sign(idPath);
+    idCardBackUrl = await sign(idBackPath);
   }
 
   return (
@@ -180,7 +184,9 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
             <CustomerDocumentsCard
               customerId={c.id}
               licenseUrl={licenseUrl}
+              licenseBackUrl={licenseBackUrl}
               idCardUrl={idCardUrl}
+              idCardBackUrl={idCardBackUrl}
             />
           </div>
 

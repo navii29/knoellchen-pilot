@@ -45,7 +45,9 @@ type FormState = {
   license_expiry: string;
   id_card_nr: string;
   license_photo_path: string;
+  license_photo_back_path: string;
   id_card_photo_path: string;
+  id_card_photo_back_path: string;
   notes: string;
 };
 
@@ -70,7 +72,9 @@ const empty: FormState = {
   license_expiry: "",
   id_card_nr: "",
   license_photo_path: "",
+  license_photo_back_path: "",
   id_card_photo_path: "",
+  id_card_photo_back_path: "",
   notes: "",
 };
 
@@ -87,6 +91,10 @@ export const NewCustomerClient = () => {
   const [saving, setSaving] = useState(false);
   const [docHint, setDocHint] = useState<CustomerDocumentType | "">("");
   const [dragOver, setDragOver] = useState<"license" | "id_card" | "more" | null>(null);
+  // Alle hochgeladenen Bilder (Vorder-/Rückseite, weitere) — werden bei jedem
+  // neuen Upload GEMEINSAM erneut ausgelesen, damit die KI z. B. Name (vorne)
+  // und Adresse (hinten) zu EINEM Datensatz kombiniert.
+  const [docImages, setDocImages] = useState<File[]>([]);
 
   // Mirrors the hidden <input> onChange in "choose" mode: set the doc hint, switch
   // to the AI view and run the same parse pipeline used by click-to-upload.
@@ -104,8 +112,11 @@ export const NewCustomerClient = () => {
   const handlePhotoUpload = async (file: File, hintOverride?: CustomerDocumentType) => {
     setError(null);
     setParsing(true);
+    // Neues Bild an die bisher hochgeladenen anhängen und ALLE gemeinsam auslesen.
+    const allImages = [...docImages, file];
+    setDocImages(allImages);
     const fd = new FormData();
-    fd.append("file", file);
+    for (const f of allImages) fd.append("file", f);
     const hint = hintOverride ?? docHint;
     if (hint) fd.append("doc_type", hint);
     const res = await fetch("/api/customers/parse-document", { method: "POST", body: fd });
@@ -119,27 +130,34 @@ export const NewCustomerClient = () => {
       data: ParsedCustomerData;
       document_type: CustomerDocumentType | null;
       storage_path: string;
+      storage_paths?: string[];
       confidence: number;
     };
     const d = j.data;
+    const paths = j.storage_paths ?? [j.storage_path];
     const isLicense = j.document_type === "license";
+    const isId = j.document_type === "id_card";
+    // fill-if-empty: bereits gesetzte (auch vom Nutzer editierte) Werte bleiben,
+    // nur leere Felder werden aus dem (kombinierten) OCR befüllt.
     setData((prev) => ({
       ...prev,
-      salutation: d.salutation || prev.salutation,
-      title: d.title || prev.title,
-      first_name: d.first_name || prev.first_name,
-      last_name: d.last_name || prev.last_name,
-      birthday: d.birthday || prev.birthday,
-      street: d.street || prev.street,
-      house_nr: d.house_nr || prev.house_nr,
-      zip: d.zip || prev.zip,
-      city: d.city || prev.city,
-      license_nr: d.license_nr || prev.license_nr,
-      license_class: d.license_class || prev.license_class,
-      license_expiry: d.license_expiry || prev.license_expiry,
-      id_card_nr: d.id_card_nr || prev.id_card_nr,
-      license_photo_path: isLicense ? j.storage_path : prev.license_photo_path,
-      id_card_photo_path: !isLicense && j.document_type === "id_card" ? j.storage_path : prev.id_card_photo_path,
+      salutation: prev.salutation || d.salutation || "",
+      title: prev.title || d.title || "",
+      first_name: prev.first_name || d.first_name || "",
+      last_name: prev.last_name || d.last_name || "",
+      birthday: prev.birthday || d.birthday || "",
+      street: prev.street || d.street || "",
+      house_nr: prev.house_nr || d.house_nr || "",
+      zip: prev.zip || d.zip || "",
+      city: prev.city || d.city || "",
+      license_nr: prev.license_nr || d.license_nr || "",
+      license_class: prev.license_class || d.license_class || "",
+      license_expiry: prev.license_expiry || d.license_expiry || "",
+      id_card_nr: prev.id_card_nr || d.id_card_nr || "",
+      license_photo_path: isLicense ? paths[0] ?? prev.license_photo_path : prev.license_photo_path,
+      license_photo_back_path: isLicense ? paths[1] ?? prev.license_photo_back_path : prev.license_photo_back_path,
+      id_card_photo_path: isId ? paths[0] ?? prev.id_card_photo_path : prev.id_card_photo_path,
+      id_card_photo_back_path: isId ? paths[1] ?? prev.id_card_photo_back_path : prev.id_card_photo_back_path,
     }));
     setDocType(j.document_type);
     setAiConfidence(j.confidence);
@@ -316,11 +334,16 @@ export const NewCustomerClient = () => {
                 const f = e.dataTransfer.files?.[0];
                 if (f) handlePhotoUpload(f);
               }}
-              className={`flex items-center gap-3 p-3 rounded-panel border transition-colors ${
-                dragOver === "more" ? "ring-2 ring-signal/50 border-signal bg-signal/5" : "border-hairline bg-canvas"
+              role="button"
+              tabIndex={0}
+              onClick={() => fileRef.current?.click()}
+              className={`flex items-center gap-3 p-4 rounded-panel border-2 border-dashed cursor-pointer transition-colors ${
+                dragOver === "more"
+                  ? "border-signal bg-signal/10"
+                  : "border-hairline bg-canvas hover:border-signal/50 hover:bg-signal/5"
               }`}
             >
-              <Sparkles size={16} className="text-signal shrink-0" />
+              <Sparkles size={18} className="text-signal shrink-0" />
               <div className="flex-1 text-[13px] text-ink">
                 <span className="font-medium">
                   Vorgefüllt von KI ({docType === "license" ? "Führerschein" : docType === "id_card" ? "Ausweis" : "Dokument"})
@@ -330,15 +353,15 @@ export const NewCustomerClient = () => {
                     Confidence {Math.round(aiConfidence * 100)} % — bitte prüfen
                   </span>
                 )}
-                <span className="text-[12px] ml-2 text-ink-muted">— oder Datei hierher ziehen</span>
+                <div className="text-[12px] text-ink-muted mt-0.5">
+                  {docImages.length <= 1
+                    ? "Rückseite hierher ziehen oder klicken — Adresse und Ausweisnummer stehen meist hinten."
+                    : `${docImages.length} Seiten gemeinsam ausgelesen — weitere hierher ziehen oder klicken.`}
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="text-[12px] inline-flex items-center gap-1 text-ink-muted hover:text-ink"
-              >
-                <Camera size={12} /> Weiteres Dokument
-              </button>
+              <span className="text-[12px] inline-flex items-center gap-1 text-signal font-medium shrink-0">
+                <Camera size={13} /> Weitere Seite
+              </span>
             </div>
           )}
 
