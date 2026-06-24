@@ -196,7 +196,10 @@ type VehicleForArticle = {
   daily_rate: number | null;
 };
 
-export const buildVehicleArticle = (v: VehicleForArticle): LxArticle => {
+export const buildVehicleArticle = (
+  v: VehicleForArticle,
+  kleinunternehmer = false
+): LxArticle => {
   const titleBase = [v.manufacturer, v.model].filter(Boolean).join(" ").trim();
   const title = (titleBase || v.vehicle_type || "Fahrzeug") + ` (${v.plate})`;
   const description =
@@ -215,9 +218,11 @@ export const buildVehicleArticle = (v: VehicleForArticle): LxArticle => {
       ? [
           {
             currency: "EUR",
-            // LexOffice erwartet Nettopreis. Unser daily_rate ist brutto.
-            netPrice: round2(rate / 1.19),
-            taxRate: 19,
+            // Kleinunternehmer (§ 19 UStG): kein USt-Ausweis → daily_rate ist
+            // NETTO (netPrice = rate, taxRate 0). Regelbesteuert: daily_rate ist
+            // BRUTTO → Nettopreis (÷ 1,19), taxRate 19.
+            netPrice: kleinunternehmer ? round2(rate) : round2(rate / 1.19),
+            taxRate: kleinunternehmer ? 0 : 19,
           },
         ]
       : undefined;
@@ -279,6 +284,7 @@ type ContractLike = {
   return_date: string;
   actual_return_date: string | null;
   daily_rate: number | null;
+  total_amount: number | null;
   deposit: number | null;
   km_excess: number | null;
   extra_km_cost: number | null;
@@ -356,11 +362,20 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 export const buildContractInvoice = (
   contract: ContractLike,
   customer: CustomerLike | null,
-  vehicle: VehicleLike | null
+  vehicle: VehicleLike | null,
+  kleinunternehmer = false
 ): LxInvoice => {
   const endDate = contract.actual_return_date ?? contract.return_date;
   const days = daysBetween(contract.pickup_date, endDate);
   const dailyRate = Number(contract.daily_rate ?? 0);
+
+  // total_amount (ausgehandelter Gesamtbetrag, z. B. mit Rabatt) hat Vorrang vor
+  // Tage × Tagessatz — spiegelt contract-html.ts. Die Mengen-Position bleibt
+  // weiterhin "days" Tage, aber der effektive Brutto-Tagespreis wird so gewählt,
+  // dass die Positions-Summe (days × effGrossPerDay) == total_amount ergibt.
+  const totalAmount = Number(contract.total_amount ?? 0);
+  const effGrossPerDay =
+    totalAmount > 0 ? totalAmount / days : dailyRate;
 
   const vehicleLabel =
     [vehicle?.manufacturer, vehicle?.model].filter(Boolean).join(" ") ||
@@ -372,10 +387,13 @@ export const buildContractInvoice = (
   const rentalDescription = `Mietzeitraum ${formatDe(contract.pickup_date)} – ${formatDe(endDate)}`;
   const rentalUnitPrice: LxMoney = {
     currency: "EUR",
-    // daily_rate ist BRUTTO (inkl. 19%); LexOffice erwartet bei taxType "net"
-    // den Nettopreis → durch 1,19 teilen (wie buildVehicleArticle).
-    netAmount: round2(dailyRate / 1.19),
-    taxRatePercentage: 19,
+    // Kleinunternehmer (§ 19 UStG): kein USt-Ausweis → effGrossPerDay ist NETTO
+    // (netAmount = round2(effGrossPerDay), taxRate 0). Regelbesteuert:
+    // effGrossPerDay ist BRUTTO → Nettopreis (÷ 1,19), taxRate 19.
+    netAmount: kleinunternehmer
+      ? round2(effGrossPerDay)
+      : round2(effGrossPerDay / 1.19),
+    taxRatePercentage: kleinunternehmer ? 0 : 19,
   };
 
   const lineItems: LxLineItem[] = [
@@ -399,6 +417,8 @@ export const buildContractInvoice = (
         },
   ];
 
+  // Mehrkilometer bleiben additiv zur Miete (so wie im PDF / contract-html.ts) —
+  // total_amount deckt nur die Grundmiete ab, nicht spätere Mehr-km.
   const kmExcess = Number(contract.km_excess ?? 0);
   const extraKmPrice = Number(vehicle?.extra_km_price ?? 0);
   if (kmExcess > 0 && extraKmPrice > 0) {
@@ -410,8 +430,15 @@ export const buildContractInvoice = (
         .replace(".", ",")} €/km`,
       quantity: kmExcess,
       unitName: "km",
-      // extra_km_price ist ebenfalls BRUTTO → Nettopreis für LexOffice.
-      unitPrice: { currency: "EUR", netAmount: round2(extraKmPrice / 1.19), taxRatePercentage: 19 },
+      // Kleinunternehmer: extra_km_price ist NETTO (taxRate 0). Regelbesteuert:
+      // extra_km_price ist BRUTTO → Nettopreis (÷ 1,19), taxRate 19.
+      unitPrice: {
+        currency: "EUR",
+        netAmount: kleinunternehmer
+          ? round2(extraKmPrice)
+          : round2(extraKmPrice / 1.19),
+        taxRatePercentage: kleinunternehmer ? 0 : 19,
+      },
     });
   }
 
@@ -423,7 +450,8 @@ export const buildContractInvoice = (
     address: buildAddressFromCustomer(customer, contract.renter_name, contract.renter_address),
     lineItems,
     totalPrice: { currency: "EUR" },
-    taxConditions: { taxType: "net" },
+    // Kleinunternehmer (§ 19 UStG): "vatfree" (kein USt-Ausweis). Regelbesteuert: "net".
+    taxConditions: { taxType: kleinunternehmer ? "vatfree" : "net" },
     shippingConditions: {
       shippingType: "serviceperiod",
       shippingDate: isoWithTimezone(new Date(contract.pickup_date)),
@@ -479,7 +507,8 @@ export const buildDepositInvoice = (
 export const buildTicketInvoice = (
   ticket: TicketLike,
   contract: ContractLike | null,
-  customer: CustomerLike | null
+  customer: CustomerLike | null,
+  kleinunternehmer = false
 ): LxInvoice => {
   const fallbackName = ticket.ticket_nr ? `Strafzettel ${ticket.ticket_nr}` : "Strafzettel-Empfänger";
   const renterName = contract?.renter_name ?? fallbackName;
@@ -514,7 +543,13 @@ export const buildTicketInvoice = (
       description: "Aufwand für die Bearbeitung und Weiterleitung des Bescheids.",
       quantity: 1,
       unitName: "Pauschal",
-      unitPrice: { currency: "EUR", netAmount: round2(feeNet), taxRatePercentage: 19 },
+      // Kleinunternehmer (§ 19 UStG): kein USt-Ausweis auf die Gebühr → 0 %.
+      // Regelbesteuert: 19 %. (Das Bußgeld selbst bleibt immer 0 % / durchlaufend.)
+      unitPrice: {
+        currency: "EUR",
+        netAmount: round2(feeNet),
+        taxRatePercentage: kleinunternehmer ? 0 : 19,
+      },
     });
   }
 
@@ -523,7 +558,8 @@ export const buildTicketInvoice = (
     address: buildAddressFromCustomer(customer, renterName, contract?.renter_address ?? null),
     lineItems,
     totalPrice: { currency: "EUR" },
-    taxConditions: { taxType: "net" },
+    // Kleinunternehmer (§ 19 UStG): "vatfree". Regelbesteuert: "net".
+    taxConditions: { taxType: kleinunternehmer ? "vatfree" : "net" },
     shippingConditions: {
       shippingType: "service",
       shippingDate: isoWithTimezone(new Date()),

@@ -14,6 +14,7 @@ import type { Vehicle } from "./types";
 type OrgLex = {
   lexoffice_enabled: boolean;
   lexoffice_api_key: string | null;
+  kleinunternehmer: boolean | null;
 };
 
 // Lädt die LexOffice-Konfig einer Org. Service-Role-Client erforderlich,
@@ -24,7 +25,7 @@ export const loadOrgLex = async (
 ): Promise<OrgLex | null> => {
   const { data } = await admin
     .from("organizations")
-    .select("lexoffice_enabled, lexoffice_api_key")
+    .select("lexoffice_enabled, lexoffice_api_key, kleinunternehmer")
     .eq("id", orgId)
     .maybeSingle();
   return data as OrgLex | null;
@@ -40,7 +41,7 @@ export const syncVehicleToLexoffice = async (
   const org = await loadOrgLex(admin, orgId);
   if (!org?.lexoffice_enabled || !org.lexoffice_api_key) return null;
 
-  const article = buildVehicleArticle(vehicle);
+  const article = buildVehicleArticle(vehicle, Boolean(org.kleinunternehmer));
   try {
     if (vehicle.lexoffice_product_id) {
       await lxUpdateArticle(org.lexoffice_api_key, vehicle.lexoffice_product_id, article);

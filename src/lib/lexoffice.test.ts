@@ -1,8 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { buildContractInvoice, buildDepositInvoice } from "./lexoffice";
+import {
+  buildContractInvoice,
+  buildDepositInvoice,
+  buildTicketInvoice,
+} from "./lexoffice";
 
 type C = Parameters<typeof buildContractInvoice>[0];
 type V = Parameters<typeof buildContractInvoice>[2];
+type T = Parameters<typeof buildTicketInvoice>[0];
 
 const baseContract: C = {
   contract_nr: "MV-2026-0001",
@@ -14,6 +19,7 @@ const baseContract: C = {
   return_date: "2026-06-08",
   actual_return_date: null,
   daily_rate: 49,
+  total_amount: null,
   deposit: 500,
   km_excess: 0,
   extra_km_cost: null,
@@ -97,6 +103,95 @@ describe("buildContractInvoice — Miet-Rechnung", () => {
     expect(withId.lineItems[0].type).toBe("service");
     const withoutId = buildContractInvoice(mkContract(), null, baseVehicle);
     expect(withoutId.lineItems[0].type).toBe("custom");
+  });
+});
+
+describe("buildContractInvoice — Kleinunternehmer (§ 19 UStG)", () => {
+  it("ist vatfree, 0% USt, netAmount == daily_rate (KEIN ÷ 1,19)", () => {
+    const inv = buildContractInvoice(
+      mkContract({ daily_rate: 119 }),
+      null,
+      baseVehicle,
+      true
+    );
+    expect(inv.taxConditions.taxType).toBe("vatfree");
+    const rental = inv.lineItems[0];
+    expect(rental.unitPrice.taxRatePercentage).toBe(0);
+    // Kein ÷ 1,19 → daily_rate ist bereits netto.
+    expect(rental.unitPrice.netAmount).toBe(119);
+  });
+
+  it("Mehrkilometer-Position ebenfalls 0% USt, netAmount == extra_km_price", () => {
+    const inv = buildContractInvoice(
+      mkContract({ km_excess: 50 }),
+      null,
+      { ...baseVehicle, extra_km_price: 0.3 },
+      true
+    );
+    const km = inv.lineItems.find((li) => /mehrkilometer/i.test(li.name ?? ""));
+    expect(km).toBeTruthy();
+    expect(km!.unitPrice.taxRatePercentage).toBe(0);
+    expect(km!.unitPrice.netAmount).toBe(0.3);
+  });
+});
+
+describe("buildContractInvoice — total_amount hat Vorrang vor Tage×Tagessatz", () => {
+  it("Positions-Summe (Tage × Netto) entspricht dem ausgehandelten total_amount", () => {
+    // 7 Tage, daily_rate 49 → 343 €; aber total_amount 280 € (Rabatt).
+    const inv = buildContractInvoice(
+      mkContract({ daily_rate: 49, total_amount: 280 }),
+      null,
+      baseVehicle
+    );
+    const rental = inv.lineItems[0];
+    expect(rental.quantity).toBe(7);
+    // Brutto-Positions-Summe muss total_amount entsprechen.
+    const grossTotal = rental.unitPrice.netAmount * 1.19 * rental.quantity;
+    expect(grossTotal).toBeCloseTo(280, 1);
+  });
+
+  it("Kleinunternehmer + total_amount: Netto-Positions-Summe == total_amount", () => {
+    const inv = buildContractInvoice(
+      mkContract({ daily_rate: 49, total_amount: 280 }),
+      null,
+      baseVehicle,
+      true
+    );
+    const rental = inv.lineItems[0];
+    expect(rental.unitPrice.taxRatePercentage).toBe(0);
+    const netTotal = rental.unitPrice.netAmount * rental.quantity;
+    expect(netTotal).toBeCloseTo(280, 1);
+  });
+});
+
+describe("buildTicketInvoice — Kleinunternehmer (§ 19 UStG)", () => {
+  const baseTicket: T = {
+    ticket_nr: "KP-2041",
+    reference_nr: "AZ-123",
+    authority: "Stadt Berlin",
+    fine_amount: 60,
+    fee_net: 25,
+    charge_fine: true,
+    charge_fee: true,
+    offense: "Falschparken",
+    offense_date: "2026-06-05",
+  };
+
+  it("Regelbesteuerung: net, Gebühr 19%", () => {
+    const inv = buildTicketInvoice(baseTicket, null, null);
+    expect(inv.taxConditions.taxType).toBe("net");
+    const fee = inv.lineItems.find((li) => /bearbeitungsgebühr/i.test(li.name ?? ""));
+    expect(fee!.unitPrice.taxRatePercentage).toBe(19);
+  });
+
+  it("Kleinunternehmer: vatfree, Gebühr 0% USt", () => {
+    const inv = buildTicketInvoice(baseTicket, null, null, true);
+    expect(inv.taxConditions.taxType).toBe("vatfree");
+    const fee = inv.lineItems.find((li) => /bearbeitungsgebühr/i.test(li.name ?? ""));
+    expect(fee!.unitPrice.taxRatePercentage).toBe(0);
+    // Bußgeld bleibt immer 0% (durchlaufender Posten).
+    const fine = inv.lineItems.find((li) => /bußgeld/i.test(li.name ?? ""));
+    expect(fine!.unitPrice.taxRatePercentage).toBe(0);
   });
 });
 
