@@ -72,6 +72,41 @@ export const POST = async (req: Request, { params }: Ctx) => {
   }
 
   if (action === "approve") {
+    // Aktuellen Vertrag laden (org-scoped) — VOR dem Überschreiben validieren.
+    const { data: contract } = await admin
+      .from("contracts")
+      .select("contract_nr, return_date, return_time")
+      .eq("id", params.id)
+      .eq("org_id", auth.org_id)
+      .maybeSingle();
+
+    if (!contract) {
+      return NextResponse.json({ error: "Vertrag nicht gefunden" }, { status: 404 });
+    }
+
+    // Optimistic-Concurrency: Wurde das Rückgabedatum zwischenzeitlich geändert
+    // (gegenüber dem Stand, den die Anfrage gesehen hat), nicht blind überschreiben.
+    if (
+      extension.current_return_date != null &&
+      extension.current_return_date !== contract.return_date
+    ) {
+      return NextResponse.json(
+        { error: "Vertrag zwischenzeitlich geändert — bitte Anfrage neu prüfen." },
+        { status: 409 }
+      );
+    }
+
+    // Eine Verlängerung muss das Rückgabedatum in die Zukunft verschieben.
+    if (
+      contract.return_date &&
+      new Date(extension.requested_return_date) <= new Date(contract.return_date)
+    ) {
+      return NextResponse.json(
+        { error: "Das gewünschte Rückgabedatum liegt nicht nach dem aktuellen." },
+        { status: 400 }
+      );
+    }
+
     // Vertrag org-scoped aktualisieren (return_date + optional return_time).
     const contractUpdate: Record<string, unknown> = {
       return_date: extension.requested_return_date,
@@ -102,13 +137,15 @@ export const POST = async (req: Request, { params }: Ctx) => {
       return NextResponse.json({ error: extErr.message }, { status: 500 });
     }
 
-    // Aktivität protokollieren — best-effort, kein Fehler bei Ausfall.
-    const { data: contract } = await admin
-      .from("contracts")
-      .select("contract_nr")
-      .eq("id", params.id)
+    // Andere noch offene Anfragen desselben Vertrags sind jetzt veraltet —
+    // als abgelehnt markieren (best-effort, org-scoped).
+    await admin
+      .from("contract_extensions")
+      .update({ status: "abgelehnt" })
+      .eq("contract_id", params.id)
       .eq("org_id", auth.org_id)
-      .maybeSingle();
+      .eq("status", "angefragt")
+      .neq("id", extension_id);
 
     await logActivity(
       admin,

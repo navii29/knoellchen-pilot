@@ -78,15 +78,32 @@ export const POST = async (req: Request) => {
       { status: 500 }
     );
 
-  // Bereits Seiten vorhanden? Dann nur Template/Theme umgestellt — nicht neu seeden.
+  // Idempotenz: Seiten UND Blöcke prüfen. Ein früherer Lauf kann nach dem
+  // Seiten-Insert (aber vor den Blöcken) abgebrochen sein — dann gibt es Seiten
+  // ohne Blöcke und die Public-Page bliebe dauerhaft leer. In dem Fall die
+  // verwaisten Seiten löschen und sauber neu seeden.
   const { count: existingPages } = await admin
     .from("site_pages")
     .select("*", { count: "exact", head: true })
     .eq("site_id", site.id)
     .eq("org_id", orgId);
+  const { count: existingBlocks } = await admin
+    .from("site_blocks")
+    .select("*", { count: "exact", head: true })
+    .eq("site_id", site.id)
+    .eq("org_id", orgId);
 
-  if ((existingPages ?? 0) > 0) {
+  if ((existingPages ?? 0) > 0 && (existingBlocks ?? 0) > 0) {
+    // Vollständig geseedet → nur Template/Theme umgestellt, nicht neu seeden.
     return NextResponse.json({ ok: true, site, seeded: false });
+  }
+  if ((existingPages ?? 0) > 0) {
+    // Seiten ohne Blöcke (unvollständiger Vorlauf) → verwaiste Seiten entfernen.
+    await admin
+      .from("site_pages")
+      .delete()
+      .eq("site_id", site.id)
+      .eq("org_id", orgId);
   }
 
   // Org-Fahrzeuge (org-scoped, nur öffentliche Anzeigefelder) für den Seed.
@@ -115,11 +132,18 @@ export const POST = async (req: Request) => {
     .from("site_pages")
     .insert(pageRows)
     .select("id, path");
-  if (pgErr || !insertedPages)
+  if (pgErr || !insertedPages) {
+    // 23505 = unique_violation auf UNIQUE(site_id, path): ein paralleler/
+    // doppelter POST hat bereits geseedet → idempotent als Erfolg behandeln,
+    // statt mit 500 zu antworten.
+    if (pgErr?.code === "23505") {
+      return NextResponse.json({ ok: true, site, seeded: false });
+    }
     return NextResponse.json(
       { error: pgErr?.message ?? "Seiten konnten nicht angelegt werden" },
       { status: 500 }
     );
+  }
 
   const pageIdByPath = new Map(
     insertedPages.map((p) => [p.path as string, p.id as string])
@@ -140,8 +164,16 @@ export const POST = async (req: Request) => {
   });
   if (blockRows.length > 0) {
     const { error: blkErr } = await admin.from("site_blocks").insert(blockRows);
-    if (blkErr)
+    if (blkErr) {
+      // Kompensation: die gerade angelegten Seiten wieder entfernen, sonst
+      // bliebe die Site in einem halb-geseedeten Zustand (Seiten ohne Blöcke).
+      await admin
+        .from("site_pages")
+        .delete()
+        .eq("site_id", site.id)
+        .eq("org_id", orgId);
       return NextResponse.json({ error: blkErr.message }, { status: 500 });
+    }
   }
 
   return NextResponse.json({ ok: true, site, seeded: true });
