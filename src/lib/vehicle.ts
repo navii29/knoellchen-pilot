@@ -1,3 +1,4 @@
+import { normalizePlate } from "./plate";
 import type { VehicleStatus } from "./types";
 
 export const MANUFACTURERS: ReadonlyArray<string> = [
@@ -120,6 +121,47 @@ export const buildVehicleType = (
   const parts = [manufacturer?.trim(), model?.trim()].filter(Boolean);
   if (parts.length === 0) return null;
   return parts.join(" ");
+};
+
+type VehicleSearchFields = {
+  plate?: string | null;
+  manufacturer?: string | null;
+  model?: string | null;
+  vehicle_type?: string | null;
+  color?: string | null;
+  body_type?: string | null;
+  category?: string | null;
+  fin_number?: string | null;
+};
+
+/**
+ * Prüft, ob ein Fahrzeug zur freien Sucheingabe passt.
+ *
+ * Kennzeichen werden kanonisch OHNE Leerzeichen gespeichert ("M-S 8271" →
+ * "M-S8271"). Deshalb wird die Eingabe zusätzlich via normalizePlate
+ * normalisiert — sonst findet eine natürliche Eingabe mit Leerzeichen das
+ * gespeicherte Plate nie (genau dieser Bug: Kennzeichen-Suche lieferte 0
+ * Treffer). Reiner Text (z. B. "peugeot") ergibt über normalizePlate keinen
+ * Plate-Treffer und wird über die Textsuche (Hersteller/Modell/Typ/Farbe/
+ * Karosserie/Kategorie/FIN) abgedeckt.
+ */
+export const vehicleMatchesSearch = (
+  v: VehicleSearchFields,
+  query: string
+): boolean => {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  const plateNeedle = normalizePlate(query).toLowerCase();
+  if (
+    plateNeedle &&
+    normalizePlate(v.plate).toLowerCase().includes(plateNeedle)
+  ) {
+    return true;
+  }
+  const name = buildVehicleType(v.manufacturer, v.model) || v.vehicle_type || "";
+  return [v.plate, name, v.color, v.body_type, v.category, v.fin_number]
+    .filter(Boolean)
+    .some((s) => String(s).toLowerCase().includes(needle));
 };
 
 /**
