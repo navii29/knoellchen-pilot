@@ -8,6 +8,7 @@ import {
   loadCustomerForContract,
   loadSpecialTermsForContract,
   loadVehicleForContract,
+  loadVehiclePhotoDataUri,
 } from "@/lib/contract-loaders";
 
 const loadLogoBase64 = async (
@@ -102,6 +103,11 @@ export const POST = async (req: Request, { params }: Ctx) => {
     loadLogoBase64(admin, orgRow.logo_path),
   ]);
   const tires = await loadCurrentTireForVehicle(admin, vehicle?.id ?? null);
+  const vehicleImageDataUri = await loadVehiclePhotoDataUri(
+    admin,
+    auth.org_id,
+    vehicle?.id ?? null
+  );
 
   const signedAt = new Date().toISOString();
   const signedIp = extractIp(req);
@@ -122,6 +128,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
     logoPngBase64,
     signaturePngBase64: sig,
     specialTerms,
+    vehicleImageDataUri,
   });
 
   const stamp = Date.now().toString(36);
