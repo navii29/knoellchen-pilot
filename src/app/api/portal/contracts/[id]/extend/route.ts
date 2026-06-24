@@ -15,11 +15,30 @@ export const POST = async (req: Request, { params }: { params: { id: string } })
   const newDate = body.requested_return_date;
   if (!newDate) return NextResponse.json({ error: "Datum fehlt" }, { status: 400 });
 
+  // Datum strikt validieren: nur ISO-Format YYYY-MM-DD UND parsbar. Ohne diese
+  // Prüfung erzeugt new Date(<müll>) NaN → daysBetween NaN → der <=0-Guard greift
+  // NICHT (NaN <= 0 ist false), und NaN würde in extra_days/est_cost und später
+  // in contracts.return_date persistiert.
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate) || Number.isNaN(new Date(newDate).getTime())) {
+    return NextResponse.json({ error: "Ungültiges Rückgabedatum." }, { status: 400 });
+  }
+  // Uhrzeit optional — nur akzeptieren, wenn valides HH:MM, sonst null.
+  const reqTime = body.requested_return_time?.trim();
+  const requestedReturnTime =
+    reqTime && /^([01]\d|2[0-3]):[0-5]\d$/.test(reqTime) ? reqTime : null;
+
   const current = ctx.contract.return_date as string;
   const extraDays = daysBetween(current, newDate);
-  if (extraDays <= 0) {
+  // NaN-sicherer Guard + sinnvolle Obergrenze (max. 1 Jahr Verlängerung).
+  if (!Number.isFinite(extraDays) || extraDays <= 0) {
     return NextResponse.json(
       { error: "Das neue Rückgabedatum muss nach dem aktuellen liegen." },
+      { status: 400 }
+    );
+  }
+  if (extraDays > 365) {
+    return NextResponse.json(
+      { error: "Verlängerung darf maximal 365 Tage betragen." },
       { status: 400 }
     );
   }
@@ -33,7 +52,7 @@ export const POST = async (req: Request, { params }: { params: { id: string } })
     org_id: ctx.session.org_id,
     current_return_date: current,
     requested_return_date: newDate,
-    requested_return_time: body.requested_return_time?.trim() || null,
+    requested_return_time: requestedReturnTime,
     extra_days: extraDays,
     est_cost: estCost,
     status: "angefragt",

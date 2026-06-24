@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getPortalSession } from "@/lib/portal-auth";
 import { createAdminClient } from "@/lib/supabase/server";
+import { redactContractPartner } from "@/lib/redact";
+import type { Contract } from "@/lib/types";
 
 type Ctx = { params: { id: string } };
 
@@ -19,5 +21,10 @@ export const GET = async (_req: Request, { params }: Ctx) => {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) return NextResponse.json({ error: "Vertrag nicht gefunden" }, { status: 404 });
 
-  return NextResponse.json({ ok: true, contract: data });
+  // Partner-/Margen-Felder NIE ans Mieter-Portal (Owner-only). Eine Portal-Session
+  // ist niemals Inhaber → isOwner=false strippt partner_purchase_price,
+  // partner_selling_price und partner_commission.
+  const contract = redactContractPartner(data as Contract, false);
+
+  return NextResponse.json({ ok: true, contract });
 };

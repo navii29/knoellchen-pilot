@@ -18,7 +18,16 @@ export const POST = async (req: Request, { params }: { params: { id: string } })
     other_party_insurance?: string;
     photos?: string[];
   };
-  const photos = Array.isArray(body.photos) ? body.photos.slice(0, 20) : [];
+  // SECURITY: Der Client liefert Storage-Pfade. Ungefiltert könnte ein Mieter
+  // beliebige Pfade (z. B. die einer FREMDEN Org) in damage_reports.photos
+  // schreiben. Daher nur Pfade akzeptieren, die unter dem eigenen
+  // org/contract/incident-Präfix liegen UND auf eine erlaubte Bild-Endung enden.
+  const incidentPrefix = `${ctx.session.org_id}/${ctx.contract.id}/incident/`;
+  const safePhoto = (p: unknown): p is string =>
+    typeof p === "string" &&
+    p.startsWith(incidentPrefix) &&
+    /\.(jpe?g|png|webp|heic|heif)$/i.test(p);
+  const photos = (Array.isArray(body.photos) ? body.photos.filter(safePhoto) : []).slice(0, 20);
   if (!body.description?.trim() && photos.length === 0) {
     return NextResponse.json(
       { error: "Bitte eine Beschreibung oder ein Foto angeben." },

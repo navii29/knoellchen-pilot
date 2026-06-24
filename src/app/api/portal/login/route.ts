@@ -35,19 +35,30 @@ export const POST = async (req: Request) => {
   }
 
   const admin = createAdminClient();
-  const { data: login } = await admin
+  // customer_logins ist UNIQUE(org_id, email) — dieselbe E-Mail kann also in
+  // MEHREREN Orgs existieren. Ohne Org-Kontext im Login-Request laden wir ALLE
+  // aktiven Treffer und verifizieren das Passwort gegen jeden Kandidaten. Der
+  // ERSTE Treffer mit passendem Passwort bestimmt die Session. So sperren sich
+  // gleichnamige Kunden zweier Orgs nicht gegenseitig aus (maybeSingle würde bei
+  // 2 Zeilen einen Fehler werfen). Es wird nicht verraten, in welcher Org der
+  // Account liegt.
+  const { data: logins } = await admin
     .from("customer_logins")
     .select("id, customer_id, org_id, email, password_hash, active")
     .eq("email", email)
-    .eq("active", true)
-    .maybeSingle();
-  if (!login || !login.password_hash) {
-    // Generische Fehlermeldung — verrät nicht, ob die E-Mail existiert
-    return NextResponse.json({ error: "E-Mail oder Passwort falsch" }, { status: 401 });
-  }
+    .eq("active", true);
 
-  const ok = await verifyPassword(password, login.password_hash);
-  if (!ok) {
+  let login: NonNullable<typeof logins>[number] | null = null;
+  for (const candidate of logins ?? []) {
+    if (!candidate.password_hash) continue;
+    if (await verifyPassword(password, candidate.password_hash)) {
+      login = candidate;
+      break;
+    }
+  }
+  if (!login) {
+    // Generische Fehlermeldung — verrät nicht, ob die E-Mail (in irgendeiner Org)
+    // existiert.
     return NextResponse.json({ error: "E-Mail oder Passwort falsch" }, { status: 401 });
   }
 
