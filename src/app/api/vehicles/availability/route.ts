@@ -33,7 +33,7 @@ export const GET = async (req: Request) => {
   let query = admin
     .from("vehicles")
     .select(
-      "id, plate, manufacturer, model, vehicle_type, category, status, decommission_date, daily_rate, pickup_location"
+      "id, plate, manufacturer, model, vehicle_type, color, first_registration, fuel_type, fin_number, category, status, decommission_date, daily_rate, pickup_location"
     )
     .eq("org_id", profile.org_id)
     .order("plate", { ascending: true })
@@ -93,6 +93,14 @@ export const GET = async (req: Request) => {
       plate: v.plate,
       name: [v.manufacturer, v.model].filter(Boolean).join(" ") || v.vehicle_type || "",
       vehicle_type: v.vehicle_type,
+      // Reiche Stammdaten mitgeben, damit die Vertrags-Maske beim Auswählen die
+      // echten Fahrzeugdaten übernimmt (statt leerer/irreführender Platzhalter).
+      manufacturer: v.manufacturer,
+      model: v.model,
+      color: v.color,
+      first_registration: v.first_registration,
+      fuel_type: v.fuel_type,
+      fin_number: v.fin_number,
       category: v.category,
       status: v.status,
       daily_rate: v.daily_rate,
