@@ -27,12 +27,14 @@ export const POST = async (_req: Request, { params }: Ctx) => {
 
   const { data: vehicle } = await admin
     .from("vehicles")
-    .select("id, org_id, plate, vehicle_type, daily_rate, deposit")
+    .select("id, org_id, plate, manufacturer, model, vehicle_type, daily_rate, deposit")
     .eq("id", params.id)
     .eq("org_id", org_id)
     .maybeSingle();
   if (!vehicle) return NextResponse.json({ error: "Fahrzeug nicht gefunden" }, { status: 404 });
 
+  // Verträge führen kein separates manufacturer/model — nur vehicle_type.
+  // Hersteller/Modell leitet der Helper aus dem vehicle_type ab.
   const { data: contractRows } = await admin
     .from("contracts")
     .select("vehicle_type, daily_rate, deposit, pickup_date")
