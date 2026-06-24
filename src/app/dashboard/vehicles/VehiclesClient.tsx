@@ -17,6 +17,7 @@ import {
   SUCCESSOR_STATUS_META,
   buildVehicleType,
   isDecommissioned,
+  vehicleMatchesSearch,
 } from "@/lib/vehicle";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -70,7 +71,6 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
   const [error, setError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
-    const needle = q.trim().toLowerCase();
     return initial.filter((v) => {
       // Ausgeflottete Fahrzeuge (Status ODER erreichtes Ausflottungsdatum)
       // erscheinen ausschliesslich im Archiv-Tab.
@@ -81,18 +81,8 @@ export const VehiclesClient = ({ initial }: { initial: Vehicle[] }) => {
         if (archived) return false;
         if (filter !== "alle" && v.status !== filter) return false;
       }
-      if (!needle) return true;
-      const name = buildVehicleType(v.manufacturer, v.model) || v.vehicle_type || "";
-      return [
-        v.plate,
-        name,
-        v.color,
-        v.body_type,
-        v.category,
-        v.fin_number,
-      ]
-        .filter(Boolean)
-        .some((s) => String(s).toLowerCase().includes(needle));
+      // Freie Suche inkl. normalisiertem Kennzeichen-Abgleich (siehe vehicle.ts).
+      return vehicleMatchesSearch(v, q);
     });
   }, [initial, filter, q]);
 
