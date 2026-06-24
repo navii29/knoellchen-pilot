@@ -80,8 +80,17 @@ export const initials = (name: string): string =>
     .map((n) => n[0]?.toUpperCase() || "")
     .join("");
 
-export const nextTicketNr = (): string =>
-  `KP-${Date.now().toString().slice(-6)}`;
+// Ticket-Nr generieren. Das reine slice(-6) der Millisekunden wiederholt sich
+// alle ~16 min und kollidierte mit UNIQUE(org_id, ticket_nr) bei schneller/
+// paralleler Anlage. Mit dem Zufallssuffix + Retry beim Insert (siehe
+// tickets/route.ts) praktisch ausgeschlossen.
+export const nextTicketNr = (): string => {
+  const seq = Date.now().toString().slice(-6);
+  const rnd = Math.floor(Math.random() * 100)
+    .toString()
+    .padStart(2, "0");
+  return `KP-${seq}${rnd}`;
+};
 
 // Höfliche Briefanrede aus customer.salutation ableiten. Fällt sauber auf
 // "Sehr geehrte/r Frau/Herr {Name}" zurück, wenn salutation unbekannt —

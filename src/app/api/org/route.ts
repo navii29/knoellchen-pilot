@@ -58,6 +58,15 @@ const stripSecrets = <T extends Record<string, unknown>>(row: T) => {
   >;
 };
 
+// Pragmatische E-Mail-Validierung: genau ein @, nicht-leerer lokaler Teil und
+// eine Host-Domain mit Punkt. Liefert die klein-geschriebene Host-Domain zurück
+// (für den Domain-Abgleich) oder null bei ungültigem Format.
+const emailDomainOf = (raw: string): string | null => {
+  const v = raw.trim().toLowerCase();
+  const m = /^[^\s@]+@([^\s@]+\.[^\s@]+)$/.exec(v);
+  return m ? m[1] : null;
+};
+
 /**
  * Shop-Domain normalisieren + validieren. Die Admin-API läuft ausschließlich
  * über *.myshopify.com — das ist gleichzeitig der SSRF-Schutz für den Import
@@ -209,6 +218,45 @@ export const PATCH = async (req: Request) => {
   }
 
   const admin = createAdminClient();
+
+  // Absender-E-Mail prüfen: gültiges Format UND Host-Domain == verifizierte
+  // email_domain der Org. Sonst würde später (beim Versand) ein opaker 502 vom
+  // Provider auflaufen. Nur prüfen, wenn ein nicht-leerer Wert gesetzt wird.
+  if (typeof update.sender_email === "string" && update.sender_email.length > 0) {
+    const host = emailDomainOf(update.sender_email);
+    if (!host) {
+      return NextResponse.json(
+        { error: "Ungültige Absender-E-Mail-Adresse." },
+        { status: 400 }
+      );
+    }
+    const { data: orgDom } = await admin
+      .from("organizations")
+      .select("email_domain")
+      .eq("id", profile.org_id)
+      .single();
+    const emailDomain =
+      typeof orgDom?.email_domain === "string"
+        ? orgDom.email_domain.trim().toLowerCase()
+        : null;
+    if (!emailDomain) {
+      return NextResponse.json(
+        {
+          error:
+            "Bitte zuerst eine E-Mail-Domain verifizieren, bevor eine Absender-Adresse gesetzt wird.",
+        },
+        { status: 400 }
+      );
+    }
+    if (host !== emailDomain) {
+      return NextResponse.json(
+        {
+          error: `Absender-Domain muss der verifizierten Domain entsprechen (${emailDomain}).`,
+        },
+        { status: 400 }
+      );
+    }
+  }
 
   // Webhook-Token einmalig generieren, sobald Shopify konfiguriert wird —
   // damit hat jede Organisation ihre eigene, abgesicherte Webhook-URL.

@@ -99,7 +99,7 @@ export const POST = async (req: Request, { params }: { params: { id: string } })
   const { data: orgRow } = await admin
     .from("organizations")
     .select(
-      "name, sender_email, sender_name, email_domain_status, contract_email_subject, contract_email_body"
+      "name, sender_email, sender_name, email_domain, email_domain_status, contract_email_subject, contract_email_body"
     )
     .eq("id", orgId)
     .single();
@@ -110,6 +110,7 @@ export const POST = async (req: Request, { params }: { params: { id: string } })
     | "name"
     | "sender_email"
     | "sender_name"
+    | "email_domain"
     | "email_domain_status"
     | "contract_email_subject"
     | "contract_email_body"
@@ -123,6 +124,22 @@ export const POST = async (req: Request, { params }: { params: { id: string } })
       { error: "E-Mail-Versand ist noch nicht konfiguriert (Einstellungen → E-Mail-Versand)." },
       { status: 400 }
     );
+
+  // Im echten Versand-Modus muss die Absender-Domain der verifizierten
+  // email_domain entsprechen — sonst lehnt der Provider später mit einem opaken
+  // 502 ab. Hier klar als 400 abfangen.
+  if (emailConfigured()) {
+    const fromHost = fromEmail.split("@")[1]?.toLowerCase() ?? "";
+    const verifiedDomain = (org.email_domain || "").trim().toLowerCase();
+    if (!verifiedDomain || fromHost !== verifiedDomain) {
+      return NextResponse.json(
+        {
+          error: `Absender-Domain (${fromHost || "—"}) entspricht nicht der verifizierten Domain (${verifiedDomain || "—"}).`,
+        },
+        { status: 400 }
+      );
+    }
+  }
 
   // --- Wirksame Vorlage auflösen: Tabellen-Override → (für 'contract') Legacy-
   //     Spalten → Code-Default. Strikt org-scoped. ---

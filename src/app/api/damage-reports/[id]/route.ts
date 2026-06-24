@@ -78,6 +78,31 @@ export const PATCH = async (req: Request, { params }: Ctx) => {
   }
 
   const admin = createAdminClient();
+
+  // Cross-Org-Schutz: client-gelieferte Referenzen müssen zur eigenen Org
+  // gehören (nur prüfen, wenn ein nicht-leerer Wert gesetzt wird — null = lösen).
+  if (typeof patch.contract_id === "string") {
+    const { data: c } = await admin
+      .from("contracts")
+      .select("id")
+      .eq("id", patch.contract_id)
+      .eq("org_id", auth.org_id)
+      .maybeSingle();
+    if (!c) {
+      return NextResponse.json({ error: "Vertrag nicht gefunden" }, { status: 400 });
+    }
+  }
+  if (typeof patch.vehicle_id === "string") {
+    const { data: v } = await admin
+      .from("vehicles")
+      .select("id")
+      .eq("id", patch.vehicle_id)
+      .eq("org_id", auth.org_id)
+      .maybeSingle();
+    if (!v) {
+      return NextResponse.json({ error: "Fahrzeug nicht gefunden" }, { status: 400 });
+    }
+  }
   const { data, error } = await admin
     .from("damage_reports")
     .update(patch)
