@@ -182,3 +182,96 @@ export const isDecommissioned = (
   t.setHours(0, 0, 0, 0);
   return d.getTime() <= t.getTime();
 };
+
+type VehicleBackfillInput = {
+  manufacturer?: string | null;
+  model?: string | null;
+  vehicle_type?: string | null;
+  daily_rate?: number | null;
+  deposit?: number | null;
+};
+
+// Verträge tragen NUR diese Fahrzeug-/Preisfelder (kein separates
+// manufacturer/model — die Spalten existieren auf contracts nicht). Hersteller/
+// Modell werden daher unten aus dem vehicle_type abgeleitet.
+type ContractBackfillInput = {
+  pickup_date?: string | null;
+  vehicle_type?: string | null;
+  daily_rate?: number | null;
+  deposit?: number | null;
+};
+
+/**
+ * Zerlegt einen vehicle_type ("Peugeot 2008") in Hersteller + Modell anhand der
+ * bekannten Hersteller-Liste. Längster Präfix gewinnt (z. B. "Mercedes-Benz"
+ * vor einem evtl. kürzeren Treffer). Kein Treffer → null.
+ */
+const splitVehicleType = (
+  vehicleType: string
+): { manufacturer: string; model: string | null } | null => {
+  const lower = vehicleType.trim().toLowerCase();
+  const make = MANUFACTURERS.filter((m) => lower.startsWith(m.toLowerCase())).sort(
+    (a, b) => b.length - a.length
+  )[0];
+  if (!make) return null;
+  const rest = vehicleType.trim().slice(make.length).trim();
+  return { manufacturer: make, model: rest || null };
+};
+
+/**
+ * Befüllt LEERE Fahrzeug-Stammdaten/Preise aus den Verträgen des Fahrzeugs.
+ *
+ * Quelle Verträge: vehicle_type, daily_rate (Tagesmiete), deposit (Kaution).
+ * Hersteller + Modell werden zusätzlich aus dem (vorhandenen oder neu
+ * befüllten) vehicle_type abgeleitet, da Verträge sie nicht separat führen.
+ *
+ * Regel: fill-if-empty (bestehende Werte werden NIE überschrieben) und
+ * "newest wins" — pro Feld gewinnt der erste Vertrag mit nicht-leerem Wert.
+ * Der Aufrufer MUSS die Verträge nach pickup_date absteigend (neueste zuerst)
+ * übergeben, damit "newest wins" greift. Zahlenfelder nur > 0.
+ */
+export function buildVehicleBackfillFromContracts(
+  vehicle: VehicleBackfillInput,
+  contracts: ContractBackfillInput[]
+): Partial<VehicleBackfillInput> {
+  const patch: Partial<VehicleBackfillInput> = {};
+
+  if (!vehicle.vehicle_type) {
+    for (const c of contracts) {
+      if (c.vehicle_type && c.vehicle_type.trim() !== "") {
+        patch.vehicle_type = c.vehicle_type;
+        break;
+      }
+    }
+  }
+
+  if (!vehicle.daily_rate || vehicle.daily_rate <= 0) {
+    for (const c of contracts) {
+      if (c.daily_rate != null && c.daily_rate > 0) {
+        patch.daily_rate = c.daily_rate;
+        break;
+      }
+    }
+  }
+
+  if (!vehicle.deposit || vehicle.deposit <= 0) {
+    for (const c of contracts) {
+      if (c.deposit != null && c.deposit > 0) {
+        patch.deposit = c.deposit;
+        break;
+      }
+    }
+  }
+
+  // Hersteller/Modell aus dem effektiven vehicle_type ableiten (fill-if-empty).
+  const effectiveType = vehicle.vehicle_type || patch.vehicle_type || null;
+  if (effectiveType && (!vehicle.manufacturer || !vehicle.model)) {
+    const split = splitVehicleType(effectiveType);
+    if (split) {
+      if (!vehicle.manufacturer) patch.manufacturer = split.manufacturer;
+      if (!vehicle.model && split.model) patch.model = split.model;
+    }
+  }
+
+  return patch;
+}
