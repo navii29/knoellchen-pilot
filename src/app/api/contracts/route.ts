@@ -89,6 +89,10 @@ export const POST = async (req: Request) => {
   // parallelen Vorgang anders befuellt), ergaenzen wir NUR Felder, die in der DB
   // aktuell NULL/leer sind — bestehende Nicht-Null-Werte werden NIE ueberschrieben.
   // Das erfuellt "auch wenn das Fahrzeug bereits vorhanden ist".
+  // Kanonischer vehicle_type fuer den Vertrag — wird nach einem evtl. Trigger-
+  // Rebuild (manufacturer/model-Update) neu gelesen, damit Vertrag == Fahrzeug.
+  let effectiveVehicleType: string | null =
+    (vehicle?.vehicle_type as string | null) ?? null;
   if (vehicle) {
     const fillPatch: Record<string, string> = {};
     for (const key of [
@@ -105,11 +109,17 @@ export const POST = async (req: Request) => {
       if (ocrVal != null && currentEmpty) fillPatch[key] = ocrVal;
     }
     if (Object.keys(fillPatch).length > 0) {
-      await admin
+      // Mit .select(): der Trigger sync_vehicle_type baut vehicle_type aus
+      // manufacturer/model neu — wir uebernehmen genau diesen Wert.
+      const { data: updated } = await admin
         .from("vehicles")
         .update(fillPatch)
         .eq("org_id", auth.org_id)
-        .eq("plate", plate);
+        .eq("plate", plate)
+        .select("vehicle_type")
+        .maybeSingle();
+      if (updated?.vehicle_type != null)
+        effectiveVehicleType = updated.vehicle_type as string;
     }
   }
 
@@ -171,7 +181,7 @@ export const POST = async (req: Request) => {
     // Kanonischen vehicle_type aus der Fahrzeug-Stammdaten-Zeile übernehmen
     // (vom Trigger sync_vehicle_type aus manufacturer/model gebaut), damit
     // Vertrag == Fahrzeug-Master. Fallback auf den vom Client übergebenen Wert.
-    vehicle_type: (vehicle?.vehicle_type as string | null) ?? (body.vehicle_type as string) ?? null,
+    vehicle_type: effectiveVehicleType ?? (body.vehicle_type as string) ?? null,
     renter_name: String(body.renter_name).trim(),
     renter_email: (body.renter_email as string)?.trim() || null,
     renter_phone: (body.renter_phone as string)?.trim() || null,

@@ -164,20 +164,24 @@ const createVehicle: Tool = {
   },
   handler: async (input, ctx) => {
     const plate = normalizePlate(input.plate as string);
+    // insert statt upsert: ein bestehendes Fahrzeug darf NICHT blind (ggf. mit
+    // leeren Werten) ueberschrieben werden. Nur gesetzte Felder schreiben.
+    const row: Record<string, unknown> = { org_id: ctx.org_id, plate };
+    const vt =
+      typeof input.vehicle_type === "string" ? input.vehicle_type.trim() : "";
+    const col = typeof input.color === "string" ? input.color.trim() : "";
+    if (vt) row.vehicle_type = vt;
+    if (col) row.color = col;
     const { data, error } = await ctx.admin
       .from("vehicles")
-      .upsert(
-        {
-          org_id: ctx.org_id,
-          plate,
-          vehicle_type: (input.vehicle_type as string) ?? null,
-          color: (input.color as string) ?? null,
-        },
-        { onConflict: "org_id,plate" }
-      )
+      .insert(row)
       .select("id, plate, vehicle_type, color")
       .single();
-    if (error) return { ok: false, error: error.message };
+    if (error) {
+      if (error.code === "23505")
+        return { ok: false, error: "Kennzeichen ist bereits an einem Fahrzeug vergeben." };
+      return { ok: false, error: error.message };
+    }
     return { ok: true, data: { vehicle: data } };
   },
 };
