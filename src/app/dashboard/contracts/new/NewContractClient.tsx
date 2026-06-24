@@ -553,6 +553,15 @@ export const NewContractClient = ({
                     ...d,
                     plate: v.plate,
                     vehicle_type: v.vehicle_type || d.vehicle_type,
+                    // Echte Stammdaten des gewählten Fahrzeugs übernehmen — sonst
+                    // bleiben Hersteller/Modell/Farbe/Kraftstoff/FIN leer und die
+                    // Platzhalter wirken wie (falsche) Daten.
+                    manufacturer: v.manufacturer ?? "",
+                    model: v.model ?? "",
+                    color: v.color ?? "",
+                    first_registration: v.first_registration ?? "",
+                    fuel_type: v.fuel_type ?? "",
+                    fin_number: v.fin_number ?? "",
                   }))
                 }
                 onPlateChange={(plate) => setData((d) => ({ ...d, plate }))}

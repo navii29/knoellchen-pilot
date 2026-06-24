@@ -24,12 +24,30 @@ type AvailabilityVehicle = {
   plate: string;
   name: string;
   vehicle_type: string | null;
+  manufacturer: string | null;
+  model: string | null;
+  color: string | null;
+  first_registration: string | null;
+  fuel_type: string | null;
+  fin_number: string | null;
   category: string | null;
   status: string | null;
   daily_rate: number | null;
   pickup_location: string | null;
   available: boolean;
   conflicts: AvailabilityConflict[];
+};
+
+// Daten, die bei Auswahl an die Vertrags-Maske übergeben werden.
+export type PickedVehicle = {
+  plate: string;
+  vehicle_type: string;
+  manufacturer: string | null;
+  model: string | null;
+  color: string | null;
+  first_registration: string | null;
+  fuel_type: string | null;
+  fin_number: string | null;
 };
 
 const fmtDate = (iso: string) => {
@@ -68,7 +86,7 @@ export const VehiclePicker = ({
   vehicleType: string;
   pickupDate: string;
   returnDate: string;
-  onSelect: (v: { plate: string; vehicle_type: string }) => void;
+  onSelect: (v: PickedVehicle) => void;
   onPlateChange: (plate: string) => void;
   required?: boolean;
 }) => {
@@ -163,7 +181,16 @@ export const VehiclePicker = ({
   };
 
   const select = (v: AvailabilityVehicle) => {
-    onSelect({ plate: v.plate, vehicle_type: v.vehicle_type || vehicleType });
+    onSelect({
+      plate: v.plate,
+      vehicle_type: v.vehicle_type || vehicleType,
+      manufacturer: v.manufacturer,
+      model: v.model,
+      color: v.color,
+      first_registration: v.first_registration,
+      fuel_type: v.fuel_type,
+      fin_number: v.fin_number,
+    });
     setOpen(false);
   };
 
