@@ -34,6 +34,13 @@ export const maxDuration = 30;
 
 type Ctx = { params: { id: string } };
 
+// Eine leere/blanke Canvas erzeugt zwar eine gültige PNG-Data-URL, enthält aber
+// kaum Daten. Mindestgröße der dekodierten Bytes erzwingen.
+const hasInk = (dataUrl: string): boolean => {
+  const b64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+  return Buffer.from(b64, "base64").length > 1024;
+};
+
 export const POST = async (req: Request, { params }: Ctx) => {
   const session = await getPortalSession();
   if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -43,9 +50,23 @@ export const POST = async (req: Request, { params }: Ctx) => {
     risk_consent?: boolean;
   };
   const sig = body.signature_data;
+  // Längenlimit ZUERST — verhindert, dass ein riesiger Base64-String unnötig
+  // verarbeitet (und persistiert) wird (~2 MB Data-URL).
+  if (typeof sig === "string" && sig.length > 2_000_000) {
+    return NextResponse.json(
+      { error: "Unterschrift zu groß." },
+      { status: 400 }
+    );
+  }
   if (!isPngDataUrl(sig)) {
     return NextResponse.json(
       { error: "Ungültige Unterschrift" },
+      { status: 400 }
+    );
+  }
+  if (!hasInk(sig)) {
+    return NextResponse.json(
+      { error: "Unterschrift fehlt." },
       { status: 400 }
     );
   }
@@ -114,7 +135,9 @@ export const POST = async (req: Request, { params }: Ctx) => {
     });
   if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
 
-  const { error: updErr } = await admin
+  // TOCTOU-sicher: nur schreiben, solange signed_at NULL ist. Bei parallelem
+  // Doppel-Signieren gewinnt der erste Request; der zweite trifft 0 Zeilen → 409.
+  const { data: updatedRows, error: updErr } = await admin
     .from("contracts")
     .update({
       signed_contract_path: path,
@@ -128,8 +151,13 @@ export const POST = async (req: Request, { params }: Ctx) => {
       checkin_step: 5,
     })
     .eq("id", c.id)
-    .eq("org_id", session.org_id);
+    .eq("org_id", session.org_id)
+    .is("signed_at", null)
+    .select("id");
   if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
+  if (!updatedRows || updatedRows.length === 0) {
+    return NextResponse.json({ error: "Bereits unterschrieben" }, { status: 409 });
+  }
 
   // Pro-Block-Zustimmung revisionssicher erfassen (AGB + Sondervereinbarungen):
   // Text-Snapshot + Zeitstempel + IP, parallel zur Signatur.

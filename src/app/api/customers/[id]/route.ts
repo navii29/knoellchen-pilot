@@ -24,6 +24,25 @@ const trimOrNull = (v: unknown) => {
   return t === "" ? null : t;
 };
 
+// Wie trimOrNull, aber für DATE-Spalten (birthday/license_expiry): nur ein
+// gültiges ISO-Datum oder null landet im Patch. OCR/manuelle Werte wie
+// "30.05.1990"/"1990"/"unbekannt" würden sonst beim UPDATE einen Postgres-Date-
+// Fehler (500) werfen. Undefined-Passthrough bleibt erhalten: fehlt der Key,
+// wird das Feld nicht angefasst (return undefined -> Loop überspringt es).
+const DATE_KEYS = new Set(["birthday", "license_expiry"]);
+const toIsoDateOrNull = (v: unknown): string | null | undefined => {
+  if (v === undefined) return undefined;
+  if (typeof v !== "string") return null;
+  const t = v.trim();
+  if (t === "") return null;
+  const de = t.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  const iso = de ? `${de[3]}-${de[2]}-${de[1]}` : t;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const d = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString().slice(0, 10) === iso ? iso : null;
+};
+
 const FIELDS = [
   "salutation",
   "title",
@@ -120,7 +139,7 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
   for (const k of FIELDS) {
     if (namingApplied && k === "last_name") continue;
     if (k in body) {
-      const v = trimOrNull(body[k]);
+      const v = DATE_KEYS.has(k) ? toIsoDateOrNull(body[k]) : trimOrNull(body[k]);
       if (v !== undefined) patch[k] = v;
     }
   }
@@ -140,7 +159,10 @@ export const PATCH = async (req: Request, { params }: RouteCtx) => {
     .eq("org_id", auth.org_id)
     .select("*")
     .maybeSingle();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("customers PATCH update failed:", error);
+    return NextResponse.json({ error: "Kunde konnte nicht gespeichert werden" }, { status: 500 });
+  }
   if (!data) return NextResponse.json({ error: "Kunde nicht gefunden" }, { status: 404 });
   return NextResponse.json({ ok: true, customer: data });
 };

@@ -26,29 +26,64 @@ export const POST = async (req: Request) => {
   }
 
   const admin = createAdminClient();
-  const ticketNr = nextTicketNr();
   const ext = (file.name.split(".").pop() || "bin").toLowerCase();
-  const path = `${profile.org_id}/${ticketNr}/upload.${ext}`;
-
   const arrayBuffer = await file.arrayBuffer();
+
+  // Insert mit Retry-Schleife: nextTicketNr() kann (selten) mit
+  // UNIQUE(org_id, ticket_nr) kollidieren (Postgres 23505). In dem Fall ziehen
+  // wir eine neue Ticket-Nr und versuchen es erneut — ohne 500 für den Nutzer.
+  // Die Datei wird erst NACH erfolgreichem Insert hochgeladen, damit eine
+  // fehlgeschlagene Anlage keine verwaiste Upload-Datei hinterlässt.
+  let ticket: { id: string; ticket_nr: string } | null = null;
+  let path = "";
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const ticketNr = nextTicketNr();
+    path = `${profile.org_id}/${ticketNr}/upload.${ext}`;
+    const { data, error: insertErr } = await admin
+      .from("tickets")
+      .insert({
+        org_id: profile.org_id,
+        ticket_nr: ticketNr,
+        status: "neu",
+        upload_path: path,
+        source: "upload",
+        processing_fee: 25,
+      })
+      .select("id, ticket_nr")
+      .single();
+    if (!insertErr && data) {
+      ticket = data;
+      break;
+    }
+    // 23505 = unique_violation → neue Nr ziehen und erneut versuchen.
+    if (insertErr?.code === "23505") continue;
+    if (insertErr) {
+      // Anderer Fehler — nicht die Rohmeldung durchreichen.
+      return NextResponse.json(
+        { error: "Ticket konnte nicht angelegt werden" },
+        { status: 500 }
+      );
+    }
+  }
+  if (!ticket) {
+    return NextResponse.json(
+      { error: "Ticket konnte nicht angelegt werden — bitte erneut versuchen" },
+      { status: 500 }
+    );
+  }
+
+  // Datei hochladen. Schlägt der Upload fehl, das gerade angelegte Ticket wieder
+  // entfernen (Kompensation) — kein Ticket ohne Upload-Datei stehen lassen.
   const { error: upErr } = await admin.storage
     .from("ticket-uploads")
     .upload(path, arrayBuffer, { contentType: file.type, upsert: true });
-  if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
-
-  const { data: ticket, error: insertErr } = await admin
-    .from("tickets")
-    .insert({
-      org_id: profile.org_id,
-      ticket_nr: ticketNr,
-      status: "neu",
-      upload_path: path,
-      source: "upload",
-      processing_fee: 25,
-    })
-    .select("id, ticket_nr")
-    .single();
-  if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 });
+  if (upErr) {
+    await admin.from("tickets").delete().eq("id", ticket.id);
+    return NextResponse.json(
+      { error: "Datei konnte nicht gespeichert werden" },
+      { status: 500 }
+    );
+  }
 
   await admin.from("ticket_logs").insert({
     ticket_id: ticket.id,

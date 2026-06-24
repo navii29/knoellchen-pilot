@@ -50,15 +50,31 @@ export const POST = async (req: Request) => {
   const contractId = trimOrNull(body.contract_id);
   let vehicleId = trimOrNull(body.vehicle_id);
 
-  // Wenn Vertrag gewählt aber kein Vehicle, ziehen wir Vehicle aus dem Vertrag
-  if (contractId && !vehicleId) {
+  // Cross-Org-Schutz: client-gelieferte Referenzen müssen zur eigenen Org
+  // gehören, sonst entstünde eine baumelnde Fremd-Referenz.
+  if (contractId) {
     const { data: c } = await admin
       .from("contracts")
-      .select("vehicle_id")
+      .select("id, vehicle_id")
       .eq("id", contractId)
       .eq("org_id", auth.org_id)
       .maybeSingle();
-    if (c?.vehicle_id) vehicleId = c.vehicle_id;
+    if (!c) {
+      return NextResponse.json({ error: "Vertrag nicht gefunden" }, { status: 400 });
+    }
+    // Wenn Vertrag gewählt aber kein Vehicle, ziehen wir Vehicle aus dem Vertrag.
+    if (!vehicleId && c.vehicle_id) vehicleId = c.vehicle_id;
+  }
+  if (vehicleId) {
+    const { data: v } = await admin
+      .from("vehicles")
+      .select("id")
+      .eq("id", vehicleId)
+      .eq("org_id", auth.org_id)
+      .maybeSingle();
+    if (!v) {
+      return NextResponse.json({ error: "Fahrzeug nicht gefunden" }, { status: 400 });
+    }
   }
 
   const status = STATUSES.includes(body.status as DamageReportStatus)

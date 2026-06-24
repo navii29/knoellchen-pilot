@@ -112,6 +112,19 @@ export const NewCustomerClient = () => {
   const handlePhotoUpload = async (file: File, hintOverride?: CustomerDocumentType) => {
     setError(null);
     setParsing(true);
+    // BEKANNTE EINSCHRÄNKUNG (DEFERRED — bewusst nicht hier gefixt):
+    // 1) Staging-Leak: Jeder Aufruf sendet ALLE bisher hochgeladenen Bilder erneut
+    //    (combined OCR braucht Vorder-+Rückseite zusammen, um Name vorne + Adresse
+    //    hinten zu EINEM Datensatz zu kombinieren). Der Server legt sie jeweils
+    //    unter NEUEN ${org}/staging/...-Pfaden ab → frühere Aufrufe hinterlassen
+    //    verwaiste (DSGVO-relevante) ID-Scans, die nie aufgeräumt werden.
+    // 2) Vorder/Rückseite-Vertauschung: paths[0]→Vorderseite, paths[1]→Rückseite
+    //    wird rein über die Upload-REIHENFOLGE gemappt. Lädt der Nutzer zuerst die
+    //    Rückseite hoch, landet sie im Vorderseiten-Slot.
+    // Ein korrekter Fix braucht benannte Vorder-/Rückseite-Slots in DIESEM Staging-
+    // Flow (vor Kunden-Anlage) + serverseitiges Staging-Cleanup — also einen
+    // größeren UI/Route-Refactor. Bewusst NICHT als halb-kaputter Slot-Rewrite hier
+    // umgesetzt. Das bestehende combined-OCR-Verhalten bleibt unangetastet.
     // Neues Bild an die bisher hochgeladenen anhängen und ALLE gemeinsam auslesen.
     const allImages = [...docImages, file];
     setDocImages(allImages);
@@ -137,6 +150,13 @@ export const NewCustomerClient = () => {
     const paths = j.storage_paths ?? [j.storage_path];
     const isLicense = j.document_type === "license";
     const isId = j.document_type === "id_card";
+    // Es existieren nur zwei Foto-Spalten je Dokumenttyp (front/back). paths[0]
+    // wird Vorderseite, die ZULETZT hochgeladene Seite die Rückseite — so geht bei
+    // 3+ Seiten wenigstens die jeweils neueste Seite nicht verloren (statt immer
+    // nur paths[1] zu nehmen). Die OCR-Daten selbst stammen ohnehin aus ALLEN
+    // Seiten kombiniert; nur die referenzierten Pfade sind auf zwei begrenzt.
+    const frontPath = paths[0];
+    const backPath = paths.length > 1 ? paths[paths.length - 1] : undefined;
     // fill-if-empty: bereits gesetzte (auch vom Nutzer editierte) Werte bleiben,
     // nur leere Felder werden aus dem (kombinierten) OCR befüllt.
     setData((prev) => ({
@@ -154,10 +174,10 @@ export const NewCustomerClient = () => {
       license_class: prev.license_class || d.license_class || "",
       license_expiry: prev.license_expiry || d.license_expiry || "",
       id_card_nr: prev.id_card_nr || d.id_card_nr || "",
-      license_photo_path: isLicense ? paths[0] ?? prev.license_photo_path : prev.license_photo_path,
-      license_photo_back_path: isLicense ? paths[1] ?? prev.license_photo_back_path : prev.license_photo_back_path,
-      id_card_photo_path: isId ? paths[0] ?? prev.id_card_photo_path : prev.id_card_photo_path,
-      id_card_photo_back_path: isId ? paths[1] ?? prev.id_card_photo_back_path : prev.id_card_photo_back_path,
+      license_photo_path: isLicense ? frontPath ?? prev.license_photo_path : prev.license_photo_path,
+      license_photo_back_path: isLicense ? backPath ?? prev.license_photo_back_path : prev.license_photo_back_path,
+      id_card_photo_path: isId ? frontPath ?? prev.id_card_photo_path : prev.id_card_photo_path,
+      id_card_photo_back_path: isId ? backPath ?? prev.id_card_photo_back_path : prev.id_card_photo_back_path,
     }));
     setDocType(j.document_type);
     setAiConfidence(j.confidence);

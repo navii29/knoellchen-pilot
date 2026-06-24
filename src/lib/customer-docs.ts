@@ -19,6 +19,15 @@ export const CUSTOMER_DOC_FILL_KEYS = {
 
 export type CustomerDocType = keyof typeof CUSTOMER_DOC_FILL_KEYS;
 
+// DATE-Spalten: ein OCR-Datum, das KEIN gültiges ISO ist (z. B. deutsches
+// "01.03.2031"), würde das atomare UPDATE mit einem Postgres-Date-Fehler kippen
+// und damit den GANZEN Merge als ocr_error markieren — auch die guten Textfelder
+// gingen verloren. Solche Felder daher überspringen (nicht in patch, nicht in
+// filled), statt den gesamten Merge zu opfern.
+const DATE_KEYS = new Set<string>(["birthday", "license_expiry"]);
+const isStrictIsoDate = (v: string): boolean =>
+  /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v));
+
 /**
  * Fill-if-empty-Merge: liefert ein `patch` nur mit den Feldern, die laut OCR
  * einen nicht-leeren Wert haben UND beim Kunden bisher leer/null sind — bereits
@@ -39,6 +48,8 @@ export const mergeCustomerDocFields = (
   for (const key of CUSTOMER_DOC_FILL_KEYS[docType]) {
     const v = parsed[key];
     if (typeof v !== "string" || !v.trim()) continue;
+    // Nicht-ISO-Datum überspringen, damit es das atomare UPDATE nicht killt.
+    if (DATE_KEYS.has(key) && !isStrictIsoDate(v)) continue;
     const current = existing[key];
     if (current == null || current === "") {
       patch[key] = v;

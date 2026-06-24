@@ -26,25 +26,51 @@ export const POST = async (req: Request) => {
   if (files.length === 0) {
     return NextResponse.json({ error: "Datei fehlt" }, { status: 400 });
   }
-  if (files.some((f) => f.size > 12 * 1024 * 1024)) {
-    return NextResponse.json({ error: "Datei zu groß (max 12 MB)" }, { status: 400 });
+
+  // Allow-list erwarteter Formate (gespiegelt aus customers/[id]/document) — kein
+  // SVG/HTML (Stored-XSS) und keine unbekannten Typen. Die Endung wird aus
+  // file.type abgeleitet, NICHT aus file.name (manipulierbar). HEIC/HEIF wird
+  // gespeichert, aber beim OCR übersprungen.
+  const ALLOWED: Record<string, string> = {
+    "application/pdf": "pdf",
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/heic": "heic",
+    "image/heif": "heif",
+  };
+  const VISION_MEDIA: Record<
+    string,
+    "image/jpeg" | "image/png" | "image/webp" | "application/pdf"
+  > = {
+    pdf: "application/pdf",
+    jpg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+  };
+
+  for (const file of files) {
+    if (file.size === 0) {
+      return NextResponse.json({ error: "Leere Datei" }, { status: 400 });
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      return NextResponse.json({ error: "Datei zu groß (max 12 MB)" }, { status: 400 });
+    }
+    if (!ALLOWED[file.type]) {
+      return NextResponse.json(
+        { error: "Ungültiger Dateityp (erlaubt: PDF, JPG, PNG, WebP, HEIC)" },
+        { status: 400 }
+      );
+    }
   }
 
   const admin = createAdminClient();
-  const mediaFor = (ext: string): "image/jpeg" | "image/png" | "image/webp" | "application/pdf" =>
-    ext === "pdf"
-      ? "application/pdf"
-      : ext === "png"
-      ? "image/png"
-      : ext === "webp"
-      ? "image/webp"
-      : "image/jpeg";
 
   const storagePaths: string[] = [];
   const images: { base64: string; mediaType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf" }[] = [];
   let i = 0;
   for (const file of files) {
-    const ext = (file.name.split(".").pop() || "bin").toLowerCase();
+    const ext = ALLOWED[file.type];
     const stamp = `${Date.now().toString(36)}-${i++}`;
     const path = `${profile.org_id}/staging/${stamp}.${ext}`;
     const buf = Buffer.from(await file.arrayBuffer());
@@ -54,8 +80,9 @@ export const POST = async (req: Request) => {
     if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
     storagePaths.push(path);
     // HEIC/HEIF kann die Vision-API nicht lesen — speichern, aber nicht ans OCR.
-    if (ext !== "heic" && ext !== "heif") {
-      images.push({ base64: buf.toString("base64"), mediaType: mediaFor(ext) });
+    const mediaType = VISION_MEDIA[ext];
+    if (mediaType) {
+      images.push({ base64: buf.toString("base64"), mediaType });
     }
   }
 

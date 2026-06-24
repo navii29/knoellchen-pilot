@@ -77,10 +77,16 @@ export const POST = async (
       );
     }
     const recipient = body.behoerde_email || ticket.authority_email || null;
+    if (!recipient) {
+      return NextResponse.json(
+        { error: "Behörden-E-Mail fehlt — bitte Empfänger angeben" },
+        { status: 400 }
+      );
+    }
     update.authority_sent = true;
     update.authority_sent_at = nowIso;
     update.authority_sent_to = recipient;
-    if (recipient) update.authority_email = recipient;
+    update.authority_email = recipient;
     results.authority = { ok: true };
   }
 
