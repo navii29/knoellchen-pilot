@@ -30,6 +30,13 @@ const requireAuth = async () => {
 
 const ALLOWED_KEYS = new Set(CONTRACT_FIELDS.map((f) => f.key));
 
+// Harte Limits für die Commit-Phase: csv_text kommt als JSON-Body ohne
+// Größenbegrenzung herein und wird zeilenweise (seriell, mit Retry) eingefügt.
+// Eine riesige Datei würde maxDuration (60 s) sprengen und nur teilweise
+// importieren. Lieber sauber ablehnen als halb importieren.
+const MAX_ROWS = 5000;
+const MAX_CSV_BYTES = 5 * 1024 * 1024; // 5 MB
+
 export const POST = async (req: Request) => {
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -94,12 +101,29 @@ export const POST = async (req: Request) => {
         { status: 400 }
       );
 
+    // Roh-Größe begrenzen, bevor überhaupt geparst wird (DoS/Timeout-Schutz).
+    if (Buffer.byteLength(csv, "utf8") > MAX_CSV_BYTES)
+      return NextResponse.json(
+        { error: "CSV zu groß (max 5 MB). Bitte in kleineren Dateien importieren." },
+        { status: 413 }
+      );
+
     const cleanMapping: ColumnMapping = {};
     for (const [k, v] of Object.entries(mapping)) {
       cleanMapping[k] = v && ALLOWED_KEYS.has(v) ? v : null;
     }
 
     const parsed = parseCsvText(csv);
+
+    // Zeilenlimit erzwingen — seriell mit Retry eingefügt; tausende Zeilen
+    // sprengen maxDuration und führen zu Teilimporten.
+    if (parsed.rowCount > MAX_ROWS)
+      return NextResponse.json(
+        {
+          error: `Zu viele Zeilen (${parsed.rowCount}). Maximal ${MAX_ROWS} pro Import. Bitte die Datei aufteilen.`,
+        },
+        { status: 413 }
+      );
     const admin = createAdminClient();
 
     type Row = { row_index: number; ok: boolean; error?: string };
