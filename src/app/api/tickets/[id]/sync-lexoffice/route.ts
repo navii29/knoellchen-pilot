@@ -30,7 +30,7 @@ export const POST = async (_req: Request, { params }: Ctx) => {
 
   const { data: org } = await admin
     .from("organizations")
-    .select("lexoffice_api_key, lexoffice_enabled")
+    .select("lexoffice_api_key, lexoffice_enabled, kleinunternehmer")
     .eq("id", auth.org_id)
     .single();
   if (!org?.lexoffice_enabled) {
@@ -93,7 +93,12 @@ export const POST = async (_req: Request, { params }: Ctx) => {
     customer = data;
   }
 
-  const invoice = buildTicketInvoice(ticket, contract ?? null, customer ?? null);
+  const invoice = buildTicketInvoice(
+    ticket,
+    contract ?? null,
+    customer ?? null,
+    Boolean(org?.kleinunternehmer)
+  );
 
   try {
     const result = await lxCreateInvoice(org.lexoffice_api_key, invoice);
