@@ -120,6 +120,40 @@ describe("mergeCustomerDocFields", () => {
     ]);
   });
 
+  it("überspringt ein nicht-ISO OCR-Datum, behält aber die Textfelder", () => {
+    const existing = {
+      first_name: null,
+      last_name: null,
+      birthday: null,
+      license_nr: null,
+      license_class: null,
+      license_expiry: null,
+    };
+    const parsed: ParsedCustomerData = {
+      license_nr: "B072RRE2I55",
+      license_class: "B, BE",
+      // Deutsches Format — würde als DATE einen Postgres-Fehler werfen.
+      license_expiry: "01.03.2031",
+    };
+    const { patch, filled } = mergeCustomerDocFields(existing, parsed, "license");
+    expect(patch.license_nr).toBe("B072RRE2I55");
+    expect(patch.license_class).toBe("B, BE");
+    // Das ungültige Datum darf NICHT im Patch landen und nicht als filled zählen.
+    expect(patch).not.toHaveProperty("license_expiry");
+    expect(filled).toEqual(["license_nr", "license_class"]);
+  });
+
+  it("übernimmt ein gültiges ISO-Datum unverändert", () => {
+    const existing = { license_nr: null, license_expiry: null };
+    const parsed: ParsedCustomerData = {
+      license_nr: "B072RRE2I55",
+      license_expiry: "2031-03-01",
+    };
+    const { patch, filled } = mergeCustomerDocFields(existing, parsed, "license");
+    expect(patch.license_expiry).toBe("2031-03-01");
+    expect(filled).toEqual(["license_nr", "license_expiry"]);
+  });
+
   it("ignoriert leere/whitespace-OCR-Werte", () => {
     const existing = { license_nr: null, license_class: null };
     const parsed: ParsedCustomerData = {
