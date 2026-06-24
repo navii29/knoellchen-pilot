@@ -145,6 +145,10 @@ const CSS = `
   .foot-num { position: absolute; bottom: 9mm; right: 16mm; font-size: 7.5pt; color: #9ca3af; }
   .foot-org { position: absolute; bottom: 9mm; left: 16mm; font-size: 7.5pt; color: #9ca3af; line-height: 1.5; }
 
+  /* Icon-Container müssen block/inline-block sein, sonst ignorieren inline-spans
+     width/height und das SVG rendert in Default-(Riesen-)Größe. */
+  .ic { display: inline-block; line-height: 0; }
+
   .kicker { color: ${BLUE}; font-size: 8pt; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
   .section-h { display: flex; align-items: center; gap: 2mm; font-size: 11pt; font-weight: 800; letter-spacing: 0.12em; color: #111827; text-transform: uppercase; margin-bottom: 4mm; }
   .section-h .bar { width: 4mm; height: 0.9mm; background: ${BLUE}; border-radius: 1mm; }
@@ -251,8 +255,9 @@ const pageHead = (
   </div>
 `;
 
-const footNum = (n: number): string =>
-  `<div class="foot-num">Seite ${n} von 6</div>`;
+// Seitenzahl wird dynamisch von Puppeteer als Fußzeile gerendert ("Seite X von
+// Y"), damit der Zähler auch bei mehrseitigen AGB korrekt bleibt — kein
+// gebackener Footer im HTML.
 
 const icon = (svg: string): string => `<span class="ic">${svg}</span>`;
 
@@ -393,7 +398,6 @@ const renderPage1 = (
         ${esc([org.street, [org.zip, org.city].filter(Boolean).join(" ")].filter(Boolean).join(", "))}<br/>
         ${esc([org.phone ? `Tel. ${org.phone}` : "", org.email].filter(Boolean).join(" | "))}
       </div>
-      ${footNum(1)}
     </div>
   `;
 };
@@ -437,7 +441,6 @@ const renderPage2 = (
         ${row("Rückgabe an Vermieter", dateTimeLabel(contract.return_date, contract.return_time))}
         ${row("Rückgabeort", returnLocation)}
       </table>
-      ${footNum(2)}
     </div>
   `;
 };
@@ -470,7 +473,6 @@ const renderPage3 = (
       <div style="margin-top:9mm"></div>
       <div class="section-h"><span class="bar"></span>Sondervereinbarungen</div>
       <ul class="sv">${list}</ul>
-      ${footNum(3)}
     </div>
   `;
 };
@@ -501,7 +503,6 @@ const renderPage4 = (
       <div style="margin-top:9mm"></div>
       <div class="section-h"><span class="bar"></span>Allgemeine Mietbedingungen</div>
       <div class="agb">${agbHtml(terms)}</div>
-      ${footNum(4)}
     </div>
   `;
 };
@@ -557,7 +558,6 @@ const renderPage5 = (
           <div class="cap">Unterschrift Mieter${fullName ? ` · ${esc(fullName)}` : ""}</div>
         </div>
       </div>
-      ${footNum(5)}
     </div>
   `;
 };
@@ -593,7 +593,6 @@ const renderPage6 = (
         ${stat(I.key, "Schlüssel", keys)}
         ${stat(I.alert, "Schäden", damages)}
       </div>
-      ${footNum(6)}
     </div>
   `;
 };

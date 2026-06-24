@@ -67,8 +67,8 @@ export const renderHtmlToPdf = async (html: string): Promise<Buffer> => {
       displayHeaderFooter: true,
       headerTemplate: "<div></div>",
       footerTemplate: `
-        <div style="font-size:7.5pt; color:#888; text-align:center; width:100%; padding: 0 14mm;">
-          <span class="pageNumber"></span> / <span class="totalPages"></span>
+        <div style="font-size:7.5pt; color:#9ca3af; text-align:right; width:100%; padding: 0 16mm;">
+          Seite <span class="pageNumber"></span> von <span class="totalPages"></span>
         </div>
       `,
       margin: { top: "0", right: "0", bottom: "0", left: "0" },
