@@ -182,3 +182,71 @@ export const isDecommissioned = (
   t.setHours(0, 0, 0, 0);
   return d.getTime() <= t.getTime();
 };
+
+type VehicleBackfillInput = {
+  manufacturer?: string | null;
+  model?: string | null;
+  vehicle_type?: string | null;
+  daily_rate?: number | null;
+  deposit?: number | null;
+};
+
+type ContractBackfillInput = {
+  pickup_date?: string | null;
+  manufacturer?: string | null;
+  model?: string | null;
+  vehicle_type?: string | null;
+  daily_rate?: number | null;
+  deposit?: number | null;
+};
+
+/**
+ * Befüllt LEERE Fahrzeug-Stammdaten/Preise aus den Verträgen des Fahrzeugs.
+ *
+ * Regel: fill-if-empty (bestehende Werte werden NIE überschrieben) und
+ * "newest wins" — pro Feld gewinnt der erste Vertrag mit nicht-leerem Wert.
+ * Der Aufrufer MUSS die Verträge nach pickup_date absteigend (neueste zuerst)
+ * übergeben, damit "newest wins" greift. Zahlenfelder nur > 0.
+ */
+export function buildVehicleBackfillFromContracts(
+  vehicle: VehicleBackfillInput,
+  contracts: ContractBackfillInput[]
+): Partial<VehicleBackfillInput> {
+  const patch: Partial<VehicleBackfillInput> = {};
+
+  const fillString = (
+    key: "manufacturer" | "model" | "vehicle_type"
+  ): void => {
+    if (vehicle[key]) return; // bereits gesetzt → nie überschreiben
+    for (const c of contracts) {
+      const val = c[key];
+      if (val && val.trim() !== "") {
+        patch[key] = val;
+        break;
+      }
+    }
+  };
+  fillString("manufacturer");
+  fillString("model");
+  fillString("vehicle_type");
+
+  if (!vehicle.daily_rate || vehicle.daily_rate <= 0) {
+    for (const c of contracts) {
+      if (c.daily_rate != null && c.daily_rate > 0) {
+        patch.daily_rate = c.daily_rate;
+        break;
+      }
+    }
+  }
+
+  if (!vehicle.deposit || vehicle.deposit <= 0) {
+    for (const c of contracts) {
+      if (c.deposit != null && c.deposit > 0) {
+        patch.deposit = c.deposit;
+        break;
+      }
+    }
+  }
+
+  return patch;
+}

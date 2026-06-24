@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { vehicleMatchesSearch, buildVehicleType } from "./vehicle";
+import { vehicleMatchesSearch, buildVehicleType, buildVehicleBackfillFromContracts } from "./vehicle";
 
 // Reales Beispiel aus dem gemeldeten Bug: Kennzeichen wird kanonisch OHNE
 // Leerzeichen gespeichert, manufacturer/model/vehicle_type sind befüllt.
@@ -80,5 +80,91 @@ describe("buildVehicleType", () => {
   });
   it("gibt null zurück, wenn beide leer", () => {
     expect(buildVehicleType(null, null)).toBeNull();
+  });
+});
+
+describe("buildVehicleBackfillFromContracts", () => {
+  const emptyVehicle = {
+    manufacturer: null,
+    model: null,
+    vehicle_type: null,
+    daily_rate: null,
+    deposit: null,
+  };
+
+  it("befüllt Hersteller + Modell aus dem jüngsten Vertrag (newest-wins)", () => {
+    const contracts = [
+      { pickup_date: "2025-06-01", manufacturer: "Peugeot", model: null, daily_rate: 55, deposit: 300 },
+      { pickup_date: "2025-01-01", manufacturer: "VW", model: "Golf", daily_rate: 40, deposit: 200 },
+    ];
+    const patch = buildVehicleBackfillFromContracts(emptyVehicle, contracts);
+    // Hersteller aus dem jüngsten Vertrag, Modell aus dem nächsten mit Wert.
+    expect(patch.manufacturer).toBe("Peugeot");
+    expect(patch.model).toBe("Golf");
+    expect(patch.daily_rate).toBe(55);
+    expect(patch.deposit).toBe(300);
+  });
+
+  it("überschreibt vorhandenen Hersteller NICHT", () => {
+    const vehicleWithMake = { manufacturer: "Audi", model: null, vehicle_type: null, daily_rate: null, deposit: null };
+    const contracts = [
+      { pickup_date: "2025-06-01", manufacturer: "Peugeot", model: "2008", daily_rate: 50, deposit: 100 },
+    ];
+    const patch = buildVehicleBackfillFromContracts(vehicleWithMake, contracts);
+    expect(patch.manufacturer).toBeUndefined();
+    expect(patch.model).toBe("2008");
+  });
+
+  it("fills all empty fields from most-recent contract with values", () => {
+    const contracts = [
+      { pickup_date: "2025-06-01", vehicle_type: "VW Golf", daily_rate: 50, deposit: 200 },
+      { pickup_date: "2025-01-01", vehicle_type: "VW Polo", daily_rate: 40, deposit: 150 },
+    ];
+    const patch = buildVehicleBackfillFromContracts(emptyVehicle, contracts);
+    expect(patch).toEqual({ vehicle_type: "VW Golf", daily_rate: 50, deposit: 200 });
+  });
+
+  it("picks most-recent non-null value per field (newest-wins)", () => {
+    const contracts = [
+      { pickup_date: "2025-06-01", vehicle_type: null, daily_rate: 60, deposit: null },
+      { pickup_date: "2025-01-01", vehicle_type: "VW Polo", daily_rate: null, deposit: 150 },
+    ];
+    const patch = buildVehicleBackfillFromContracts(emptyVehicle, contracts);
+    expect(patch).toEqual({ vehicle_type: "VW Polo", daily_rate: 60, deposit: 150 });
+  });
+
+  it("does NOT overwrite fields already set on the vehicle", () => {
+    const vehicleWithRate = { vehicle_type: null, daily_rate: 80, deposit: null };
+    const contracts = [
+      { pickup_date: "2025-06-01", vehicle_type: "BMW 3er", daily_rate: 50, deposit: 300 },
+    ];
+    const patch = buildVehicleBackfillFromContracts(vehicleWithRate, contracts);
+    expect(patch.daily_rate).toBeUndefined();
+    expect(patch.vehicle_type).toBe("BMW 3er");
+    expect(patch.deposit).toBe(300);
+  });
+
+  it("returns {} when no contracts", () => {
+    const patch = buildVehicleBackfillFromContracts(emptyVehicle, []);
+    expect(patch).toEqual({});
+  });
+
+  it("returns {} when all fields already set", () => {
+    const fullVehicle = { vehicle_type: "Toyota Yaris", daily_rate: 40, deposit: 100 };
+    const contracts = [
+      { pickup_date: "2025-06-01", vehicle_type: "BMW X5", daily_rate: 100, deposit: 500 },
+    ];
+    const patch = buildVehicleBackfillFromContracts(fullVehicle, contracts);
+    expect(patch).toEqual({});
+  });
+
+  it("ignores numeric values <= 0", () => {
+    const contracts = [
+      { pickup_date: "2025-06-01", vehicle_type: "Fiat 500", daily_rate: 0, deposit: -1 },
+      { pickup_date: "2025-01-01", vehicle_type: null, daily_rate: 30, deposit: 100 },
+    ];
+    const patch = buildVehicleBackfillFromContracts(emptyVehicle, contracts);
+    expect(patch.daily_rate).toBe(30);
+    expect(patch.deposit).toBe(100);
   });
 });

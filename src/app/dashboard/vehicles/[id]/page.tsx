@@ -20,6 +20,7 @@ import { ContractStatusBadge } from "@/components/contract/StatusBadge";
 import { isContractOverdue, localTodayIso } from "@/lib/contract-utils";
 import { VehicleEditPanel } from "./VehicleEditPanel";
 import { VehicleDeleteButton } from "./VehicleDeleteButton";
+import { BackfillFromContractsButton } from "./BackfillFromContractsButton";
 import { VehicleEventsTimeline } from "@/components/vehicle/VehicleEventsTimeline";
 import { TuevCountdown } from "@/components/vehicle/TuevCountdown";
 import { GpsLocation } from "@/components/vehicle/GpsLocation";
@@ -102,6 +103,9 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
       .eq("vehicle_id", v.id),
   ]);
   const linkedContracts = (contracts || []) as Contract[];
+  const needsBackfill =
+    linkedContracts.length > 0 &&
+    (!v.vehicle_type || !v.daily_rate || !v.deposit);
   const vehicleEvents = (events || []) as VehicleEvent[];
   const echoesEnabled = !!(orgRow as { echoes_enabled?: boolean } | null)
     ?.echoes_enabled;
@@ -425,6 +429,10 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
             <VehicleEventsTimeline vehicleId={v.id} events={vehicleEvents} />
           </div>
 
+          {needsBackfill && (
+            <BackfillFromContractsButton vehicleId={v.id} contractCount={linkedContracts.length} />
+          )}
+
           <div className="mt-6">
             <Panel flush>
               <PanelHeader
@@ -441,13 +449,14 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
                   <Link
                     key={ct.id}
                     href={`/dashboard/contracts/${ct.id}`}
-                    className="grid grid-cols-[140px_1fr_180px_120px_24px] items-center gap-3 px-5 py-3 border-b border-hairline last:border-0 text-[13.5px] hover:bg-canvas transition-colors"
+                    className="grid grid-cols-[140px_1fr_180px_90px_90px_24px] items-center gap-3 px-5 py-3 border-b border-hairline last:border-0 text-[13.5px] hover:bg-canvas transition-colors"
                   >
                     <span className="font-mono text-[12px] text-ink-muted">{ct.contract_nr}</span>
                     <span className="text-ink truncate">{ct.renter_name}</span>
                     <span className="font-mono tnum text-[12px] text-ink-muted">
                       {fmtDate(ct.pickup_date)} → {fmtDate(ct.return_date)}
                     </span>
+                    <span className="font-mono tnum text-[12px] text-ink-muted text-right">{fmtEur(ct.daily_rate)}</span>
                     <ContractStatusBadge
                       status={ct.status}
                       overdue={isContractOverdue(ct, localTodayIso())}
