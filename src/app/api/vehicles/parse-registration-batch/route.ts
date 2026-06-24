@@ -44,8 +44,10 @@ const str = (v: unknown): string => {
 };
 
 const toFields = (d: ParsedVehicleRegistration): Record<string, string> => {
+  // Plausibilitäts-Prüfung: PKW grob 15–700 kW (kleiner Puffer über den 600 kW
+  // des Prompts) — implausible Werte lieber leer lassen als als riesige PS-Zahl.
   const kw = typeof d.power_kw === "number" && Number.isFinite(d.power_kw) ? d.power_kw : null;
-  const powerPs = kw != null && kw >= 15 && kw <= 1000 ? String(Math.round(kw * 1.35962)) : "";
+  const powerPs = kw != null && kw >= 15 && kw <= 700 ? String(Math.round(kw * 1.35962)) : "";
   return {
     plate: str(d.plate),
     manufacturer: str(d.manufacturer),

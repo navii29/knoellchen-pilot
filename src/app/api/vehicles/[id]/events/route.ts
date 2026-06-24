@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { parseDecimal } from "@/lib/utils";
 
 export const maxDuration = 30;
 
@@ -32,11 +33,7 @@ const intOrNull = (v: unknown) => {
   const n = Number(v);
   return Number.isFinite(n) ? Math.round(n) : null;
 };
-const numOrNull = (v: unknown) => {
-  if (v == null || v === "") return null;
-  const n = Number(typeof v === "string" ? v.replace(",", ".") : v);
-  return Number.isFinite(n) ? n : null;
-};
+const numOrNull = (v: unknown) => parseDecimal(v);
 
 export const GET = async (_req: Request, { params }: Ctx) => {
   const auth = await requireAuth();

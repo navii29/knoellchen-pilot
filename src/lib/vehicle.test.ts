@@ -153,6 +153,30 @@ describe("buildVehicleBackfillFromContracts", () => {
     expect(patch).toEqual({ manufacturer: "Toyota", model: "Yaris" });
   });
 
+  it("leitet Hersteller-Alias 'VW' zu 'Volkswagen' ab (Bug-Regression)", () => {
+    const v = {
+      manufacturer: null,
+      model: null,
+      vehicle_type: "VW Golf VIII",
+      daily_rate: 30,
+      deposit: 50,
+    };
+    const patch = buildVehicleBackfillFromContracts(v, []);
+    expect(patch).toEqual({ manufacturer: "Volkswagen", model: "Golf VIII" });
+  });
+
+  it("leitet Hersteller-Alias 'Mercedes' zu 'Mercedes-Benz' ab", () => {
+    const v = {
+      manufacturer: null,
+      model: null,
+      vehicle_type: "Mercedes C 200",
+      daily_rate: 30,
+      deposit: 50,
+    };
+    const patch = buildVehicleBackfillFromContracts(v, []);
+    expect(patch).toEqual({ manufacturer: "Mercedes-Benz", model: "C 200" });
+  });
+
   it("leitet nichts ab, wenn der vehicle_type keinen bekannten Hersteller enthält", () => {
     const contracts = [
       { pickup_date: "2025-06-01", vehicle_type: "Foobar X1", daily_rate: 20, deposit: 100 },

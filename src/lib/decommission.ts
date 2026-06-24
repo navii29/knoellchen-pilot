@@ -12,10 +12,18 @@ export type DecommissionInfo = {
   ring: string;
 };
 
-const startOfDay = (d: Date) => {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
+// Tagesdifferenz TZ-sicher: beide Daten als reine Kalendertage (UTC-Mitternacht)
+// interpretieren. `new Date("YYYY-MM-DD")` ist bereits UTC-Mitternacht; das
+// heutige Datum wird aus den LOKALEN Komponenten gebildet und ebenfalls als
+// UTC-Mitternacht angesetzt, damit ein lokaler vs. UTC-Versatz keinen Tag
+// verschiebt. Liefert null, wenn das Zieldatum kein gültiges YYYY-MM-DD ist.
+const daysUntil = (dateOnly: string): number | null => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) return null;
+  const target = Date.parse(`${dateOnly}T00:00:00Z`);
+  if (Number.isNaN(target)) return null;
+  const now = new Date();
+  const todayUtc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((target - todayUtc) / 86_400_000);
 };
 
 export const computeDecommission = (vehicle: Pick<Vehicle, "decommission_date">): DecommissionInfo => {
@@ -31,10 +39,19 @@ export const computeDecommission = (vehicle: Pick<Vehicle, "decommission_date">)
       ring: "#e7e5e4",
     };
   }
-  const today = startOfDay(new Date());
-  const target = startOfDay(new Date(date));
-  const ms = target.getTime() - today.getTime();
-  const daysLeft = Math.round(ms / 86_400_000);
+  const computed = daysUntil(date);
+  if (computed == null) {
+    return {
+      daysLeft: null,
+      level: "ok",
+      label: "Keine Aussteuerung gesetzt",
+      color: "#a8a29e",
+      textColor: "#57534e",
+      bg: "#f5f5f4",
+      ring: "#e7e5e4",
+    };
+  }
+  const daysLeft = computed;
 
   if (daysLeft <= 0) {
     return {

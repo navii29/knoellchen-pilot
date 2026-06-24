@@ -181,6 +181,13 @@ const normalizeNumber = (v: string): number | null => {
     const dots = t.split(".").length - 1;
     if (dots > 1) {
       s = t.replace(/\./g, ""); // 1.234.567 -> Tausender
+    } else if (/^0\./.test(t)) {
+      // Führende Null vor dem Punkt => IMMER Dezimalpunkt, nie Tausender:
+      // "0.350" ist 0,35 — nicht 350. (Die 3-Nachkommastellen-Heuristik unten
+      // würde solche Preiswerte sonst verfälschen.)
+      // HINWEIS: Preisfelder (z. B. extra_km_price) sollten idealerweise einen
+      // dezimal-strikten Parser nutzen; diese Regel ist ein minimaler Guard.
+      s = t;
     } else {
       const after = t.slice(t.indexOf(".") + 1);
       // Genau 3 Nachkommastellen => Tausender (de "1.234"); sonst Dezimalpunkt.

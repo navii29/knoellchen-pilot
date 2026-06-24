@@ -561,7 +561,13 @@ export const NewContractClient = ({
                     color: v.color ?? "",
                     first_registration: v.first_registration ?? "",
                     fuel_type: v.fuel_type ?? "",
-                    fin_number: v.fin_number ?? "",
+                    // FIN landet im vin-Feld (FormState hat kein fin_number) —
+                    // das sichtbare FIN-Input und das Submit-Payload lesen data.vin.
+                    vin: v.fin_number ?? "",
+                    // Preise nur befüllen, wenn noch leer (eine bereits gesetzte
+                    // Partner-/KI-Rate bzw. Kaution nicht überschreiben).
+                    daily_rate: d.daily_rate || (v.daily_rate != null ? String(v.daily_rate) : ""),
+                    deposit: d.deposit || (v.deposit != null ? String(v.deposit) : ""),
                   }))
                 }
                 onPlateChange={(plate) => setData((d) => ({ ...d, plate }))}

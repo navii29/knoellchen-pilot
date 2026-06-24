@@ -176,11 +176,13 @@ export const isDecommissioned = (
 ): boolean => {
   if (v.status === "ausgesteuert") return true;
   if (!v.decommission_date) return false;
-  const d = new Date(v.decommission_date);
-  d.setHours(0, 0, 0, 0);
+  // String-basierter Vergleich (TZ-sicher): `new Date(dateonly)` + lokales
+  // setHours kann in negativen UTC-Zonen einen Tag verschieben. Heutiges
+  // ISO-Datum aus den LOKALEN Komponenten ableiten und als YYYY-MM-DD
+  // (lexikografisch == chronologisch) vergleichen.
   const t = new Date(today);
-  t.setHours(0, 0, 0, 0);
-  return d.getTime() <= t.getTime();
+  const todayIso = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+  return v.decommission_date <= todayIso;
 };
 
 type VehicleBackfillInput = {
@@ -201,20 +203,42 @@ type ContractBackfillInput = {
   deposit?: number | null;
 };
 
+// Gängige Hersteller-Aliase (Kürzel/Umgangsformen) → kanonischer Name. Wird in
+// splitVehicleType ZUERST geprüft, damit "VW Golf VIII" korrekt zu
+// {Volkswagen, Golf VIII} wird (die MANUFACTURERS-Liste kennt nur "Volkswagen").
+const MANUFACTURER_ALIASES: Record<string, string> = {
+  vw: "Volkswagen",
+  mercedes: "Mercedes-Benz",
+  merc: "Mercedes-Benz",
+  mb: "Mercedes-Benz",
+};
+
 /**
- * Zerlegt einen vehicle_type ("Peugeot 2008") in Hersteller + Modell anhand der
- * bekannten Hersteller-Liste. Längster Präfix gewinnt (z. B. "Mercedes-Benz"
- * vor einem evtl. kürzeren Treffer). Kein Treffer → null.
+ * Zerlegt einen vehicle_type ("Peugeot 2008") in Hersteller + Modell.
+ *
+ * Reihenfolge: zuerst das erste Token gegen die Alias-Map prüfen ("VW",
+ * "Mercedes" …) → kanonischer Hersteller + Rest als Modell. Sonst längster
+ * Präfix aus der bekannten Hersteller-Liste (z. B. "Mercedes-Benz" vor einem
+ * kürzeren Treffer). Kein Treffer → null.
  */
 const splitVehicleType = (
   vehicleType: string
 ): { manufacturer: string; model: string | null } | null => {
-  const lower = vehicleType.trim().toLowerCase();
+  const trimmed = vehicleType.trim();
+  // 1) Alias auf dem ersten Token
+  const firstToken = trimmed.split(/\s+/)[0] ?? "";
+  const alias = MANUFACTURER_ALIASES[firstToken.toLowerCase()];
+  if (alias) {
+    const rest = trimmed.slice(firstToken.length).trim();
+    return { manufacturer: alias, model: rest || null };
+  }
+  // 2) Längster Präfix aus der kanonischen Hersteller-Liste
+  const lower = trimmed.toLowerCase();
   const make = MANUFACTURERS.filter((m) => lower.startsWith(m.toLowerCase())).sort(
     (a, b) => b.length - a.length
   )[0];
   if (!make) return null;
-  const rest = vehicleType.trim().slice(make.length).trim();
+  const rest = trimmed.slice(make.length).trim();
   return { manufacturer: make, model: rest || null };
 };
 

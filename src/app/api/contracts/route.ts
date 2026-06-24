@@ -48,15 +48,21 @@ export const POST = async (req: Request) => {
     const s = typeof v === "string" ? v.trim() : "";
     return s.length > 0 ? s : null;
   };
-  // Spalten existieren: manufacturer, model, color, first_registration, fuel_type,
-  // fin_number. Der DB-Trigger sync_vehicle_type baut vehicle_type aus
-  // manufacturer/model neu — das ist gewünscht und wird hier nicht umgangen.
+  // Spalten existieren: manufacturer, model, color, fuel_type, fin_number.
+  // Der DB-Trigger sync_vehicle_type baut vehicle_type aus manufacturer/model
+  // neu — das ist gewünscht und wird hier nicht umgangen.
+  //
+  // BEWUSST OHNE first_registration: ein DB-Trigger setzt decommission_date =
+  // first_registration + 180 Tage, wenn decommission_date NULL ist. Würde die
+  // Vertragsanlage das first_registration setzen, könnte ein Fahrzeug dadurch
+  // automatisch ausgeflottet werden und aus der Verfügbarkeit verschwinden.
+  // first_registration bleibt nur über die explizite Fahrzeug-Bearbeitung/
+  // -Backfill setzbar.
   const vehiclePatch: Record<string, string> = {};
   for (const [key, raw] of [
     ["manufacturer", body.manufacturer],
     ["model", body.model],
     ["color", body.color],
-    ["first_registration", body.first_registration],
     ["fuel_type", body.fuel_type],
     ["fin_number", body.vin],
   ] as const) {
@@ -74,7 +80,7 @@ export const POST = async (req: Request) => {
     );
   const { data: vehicle } = await admin
     .from("vehicles")
-    .select("id, manufacturer, model, color, first_registration, fuel_type, fin_number")
+    .select("id, vehicle_type, manufacturer, model, color, first_registration, fuel_type, fin_number")
     .eq("org_id", auth.org_id)
     .eq("plate", plate)
     .maybeSingle();
@@ -89,7 +95,6 @@ export const POST = async (req: Request) => {
       "manufacturer",
       "model",
       "color",
-      "first_registration",
       "fuel_type",
       "fin_number",
     ] as const) {
@@ -163,7 +168,10 @@ export const POST = async (req: Request) => {
     vehicle_id: vehicle?.id ?? null,
     customer_id: customerId,
     plate,
-    vehicle_type: (body.vehicle_type as string) ?? null,
+    // Kanonischen vehicle_type aus der Fahrzeug-Stammdaten-Zeile übernehmen
+    // (vom Trigger sync_vehicle_type aus manufacturer/model gebaut), damit
+    // Vertrag == Fahrzeug-Master. Fallback auf den vom Client übergebenen Wert.
+    vehicle_type: (vehicle?.vehicle_type as string | null) ?? (body.vehicle_type as string) ?? null,
     renter_name: String(body.renter_name).trim(),
     renter_email: (body.renter_email as string)?.trim() || null,
     renter_phone: (body.renter_phone as string)?.trim() || null,

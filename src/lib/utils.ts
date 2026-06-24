@@ -5,6 +5,34 @@
 export const isPngDataUrl = (v: unknown): v is string =>
   typeof v === "string" && /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(v);
 
+// Robustes Parsen von Dezimalzahlen mit deutscher ODER englischer Notation.
+// Wichtig: das frühere `String(v).replace(",", ".")` zerstörte Werte mit
+// Tausenderpunkt ("1.234,56" -> "1.234.56" -> NaN -> null). Hier wird der
+// jeweils ZULETZT stehende Trenner als Dezimalpunkt interpretiert, der andere
+// (Tausender) entfernt. Liefert null bei leerem/ungültigem Input.
+export const parseDecimal = (v: unknown): number | null => {
+  if (v == null || v === "") return null;
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  const s = String(v).trim();
+  if (s === "") return null;
+  const hasComma = s.includes(",");
+  const hasDot = s.includes(".");
+  let norm: string;
+  if (hasComma && hasDot) {
+    // Der spätere Trenner ist der Dezimaltrenner, der andere Tausender.
+    norm =
+      s.lastIndexOf(",") > s.lastIndexOf(".")
+        ? s.replace(/\./g, "").replace(",", ".") // de: 1.234,56
+        : s.replace(/,/g, ""); // en: 1,234.56
+  } else if (hasComma) {
+    norm = s.replace(",", "."); // nur Komma -> Dezimaltrenner
+  } else {
+    norm = s; // nur Punkt (oder keiner) -> unverändert
+  }
+  const n = Number(norm);
+  return Number.isFinite(n) ? n : null;
+};
+
 export const fmtEur = (n: number | null | undefined): string => {
   if (n == null) return "—";
   return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";

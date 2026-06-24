@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { myRole, ownerOnly } from "@/lib/team";
+import { parseDecimal } from "@/lib/utils";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -18,11 +19,7 @@ const requireAuth = async () => {
 
 type Ctx = { params: { id: string } };
 
-const numOrNull = (v: unknown): number | null => {
-  if (v == null || v === "") return null;
-  const n = Number(typeof v === "string" ? v.replace(",", ".") : v);
-  return Number.isFinite(n) ? n : null;
-};
+const numOrNull = (v: unknown): number | null => parseDecimal(v);
 
 export const GET = async (_req: Request, { params }: Ctx) => {
   const auth = await requireAuth();

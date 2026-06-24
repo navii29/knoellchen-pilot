@@ -143,7 +143,14 @@ export const POST = async (req: Request) => {
     // Statement -> Postgres "cannot affect row a second time" -> ganzer Batch
     // schlägt fehl, obwohl die Per-Zeilen-Ergebnisse ok meldeten.
     const dedupByPlate = new Map<string, Record<string, unknown>>();
-    for (const row of insertRows) dedupByPlate.set(String(row.plate), row);
+    for (const row of insertRows) {
+      const key = String(row.plate);
+      // Felder zusammenführen statt die ganze Zeile zu ersetzen: applyMapping
+      // liefert nur Nicht-Null-Felder, daher gewinnt pro Feld der spätere
+      // Nicht-Null-Wert, während frühere Felder erhalten bleiben.
+      const prev = dedupByPlate.get(key);
+      dedupByPlate.set(key, prev ? { ...prev, ...row } : row);
+    }
     const uniqueRows = [...dedupByPlate.values()];
 
     // Upsert per (org_id, plate) — Duplikate werden überschrieben. Bei einem
