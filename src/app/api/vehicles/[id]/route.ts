@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { VEHICLE_STATUSES } from "@/lib/vehicle";
 import { normalizePlate } from "@/lib/plate";
-import { myRole } from "@/lib/team";
+import { myRole, requirePermission } from "@/lib/team";
 import { redactVehicleCost } from "@/lib/redact";
+import { parseDecimal } from "@/lib/utils";
 import { syncVehicleToLexoffice } from "@/lib/lexoffice-vehicle-sync";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
 
@@ -39,10 +40,9 @@ const trimOrNull = (v: unknown) => {
 };
 
 const numOrNull = (v: unknown) => {
+  // undefined-Passthrough beibehalten (Feld nicht im Body -> nicht patchen).
   if (v === undefined) return undefined;
-  if (v == null || v === "") return null;
-  const n = typeof v === "number" ? v : Number(String(v).replace(",", "."));
-  return Number.isFinite(n) ? n : null;
+  return parseDecimal(v);
 };
 
 const intOrNull = (v: unknown) => {
@@ -131,6 +131,10 @@ type RouteCtx = { params: { id: string } };
 export const PATCH = async (req: Request, { params }: RouteCtx) => {
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  // Berechtigungs-Gate wie im POST: nur Rollen mit Stammdaten-Recht dürfen
+  // Fahrzeuge ändern (zuvor reichte hier reine Authentifizierung).
+  const gate = await requirePermission("create_master_data");
+  if (!gate.ok) return gate.res;
 
   const body = (await req.json()) as Record<string, unknown>;
   const patch: Record<string, unknown> = {};

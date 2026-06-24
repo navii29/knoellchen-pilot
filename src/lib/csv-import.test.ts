@@ -28,6 +28,11 @@ describe("normalizeValue — Zahlen (Dezimal/Tausender-Heuristik)", () => {
     expect(n("2.000")).toBe(2000);
   });
 
+  it("führende Null => Dezimalpunkt, nie Tausender (vorher 0.350 -> 350)", () => {
+    expect(n("0.350")).toBe(0.35);
+    expect(n("0.500")).toBe(0.5);
+  });
+
   it("Währungssymbole/Leerzeichen werden ignoriert", () => {
     expect(n("25,00 €")).toBe(25);
     expect(n("€ 1.299,00")).toBe(1299);

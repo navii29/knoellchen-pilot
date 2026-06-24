@@ -4,6 +4,7 @@ import { normalizePlate } from "@/lib/plate";
 import { VEHICLE_STATUSES, buildVehicleType } from "@/lib/vehicle";
 import { myRole, requirePermission } from "@/lib/team";
 import { redactVehicleCost } from "@/lib/redact";
+import { parseDecimal } from "@/lib/utils";
 import { logActivity } from "@/lib/activity";
 import { syncVehicleToLexoffice } from "@/lib/lexoffice-vehicle-sync";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
@@ -14,11 +15,7 @@ const trimOrNull = (v: unknown): string | null => {
   return t === "" ? null : t;
 };
 
-const numOrNull = (v: unknown): number | null => {
-  if (v == null || v === "") return null;
-  const n = typeof v === "number" ? v : Number(String(v).replace(",", "."));
-  return Number.isFinite(n) ? n : null;
-};
+const numOrNull = (v: unknown): number | null => parseDecimal(v);
 
 const intOrNull = (v: unknown): number | null => {
   const n = numOrNull(v);
@@ -153,12 +150,24 @@ export const POST = async (req: Request) => {
   }
 
   const admin = createAdminClient();
+  // INSERT (kein Upsert): ein blindes upsert auf (org_id, plate) würde ein
+  // bereits bestehendes Fahrzeug mit den (ggf. leeren) Werten dieses Requests
+  // überschreiben. Der legitime Entwurf→Final-Pfad nutzt PATCH per id, und der
+  // Auto-Entwurf POSTet nur bei NEUEM Kennzeichen — ein Overwrite-Upsert ist
+  // hier nicht nötig. Unique-Verletzung -> klare 409 (wie im PATCH-Handler).
   const { data, error } = await admin
     .from("vehicles")
-    .upsert(row, { onConflict: "org_id,plate" })
+    .insert(row)
     .select("*")
     .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    if (error.code === "23505")
+      return NextResponse.json(
+        { error: "Kennzeichen ist bereits an einem Fahrzeug vergeben." },
+        { status: 409 }
+      );
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   // LexOffice-Sync ist best-effort — Fehler werden geloggt aber blockieren
   // den Vehicle-Save nicht.

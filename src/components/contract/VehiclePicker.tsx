@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { Plate } from "@/components/ui/Plate";
+import { platesEqual } from "@/lib/plate";
 
 /**
  * Kennzeichen-Combobox fuer die Vertragsanlage.
@@ -33,6 +34,7 @@ type AvailabilityVehicle = {
   category: string | null;
   status: string | null;
   daily_rate: number | null;
+  deposit: number | null;
   pickup_location: string | null;
   available: boolean;
   conflicts: AvailabilityConflict[];
@@ -48,6 +50,8 @@ export type PickedVehicle = {
   first_registration: string | null;
   fuel_type: string | null;
   fin_number: string | null;
+  daily_rate: number | null;
+  deposit: number | null;
 };
 
 const fmtDate = (iso: string) => {
@@ -157,9 +161,7 @@ export const VehiclePicker = ({
         const res = await fetch(buildUrl(q, pickupDate, returnDate));
         const j = (await res.json().catch(() => ({}))) as { vehicles?: AvailabilityVehicle[] };
         if (cancelled) return;
-        const match = (j.vehicles ?? []).find(
-          (v) => v.plate.toLowerCase() === q.toLowerCase()
-        );
+        const match = (j.vehicles ?? []).find((v) => platesEqual(v.plate, q));
         setGuardConflict(match && !match.available ? match.conflicts[0] ?? null : null);
       } catch {
         if (!cancelled) setGuardConflict(null);
@@ -190,6 +192,8 @@ export const VehiclePicker = ({
       first_registration: v.first_registration,
       fuel_type: v.fuel_type,
       fin_number: v.fin_number,
+      daily_rate: v.daily_rate,
+      deposit: v.deposit,
     });
     setOpen(false);
   };

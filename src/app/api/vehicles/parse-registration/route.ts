@@ -96,11 +96,12 @@ export const POST = async (req: Request) => {
 
   const d = parsed.data;
   // kW -> PS (1 kW ≈ 1,35962 PS), gerundet. Plausibilitäts-Prüfung: ein PKW hat
-  // grob 15–1000 kW. Liegt der Wert daneben (häufig, weil die KI die kW mit der
-  // Nenndrehzahl verschmolzen hat → "1103000"), lieber leer lassen als falsch.
+  // grob 15–700 kW (kleiner Puffer über den 600 kW des Prompts). Liegt der Wert
+  // daneben (häufig, weil die KI die kW mit der Nenndrehzahl verschmolzen hat →
+  // "1103000"), lieber leer lassen als als riesige PS-Zahl schreiben.
   const kw =
     typeof d.power_kw === "number" && Number.isFinite(d.power_kw) ? d.power_kw : null;
-  const powerPs = kw != null && kw >= 15 && kw <= 1000 ? String(Math.round(kw * 1.35962)) : "";
+  const powerPs = kw != null && kw >= 15 && kw <= 700 ? String(Math.round(kw * 1.35962)) : "";
 
   // Formularfertige Felder (alles als String — der Form-State ist string-basiert).
   // Schlüssel entsprechen den VehicleFormState-Keys.
