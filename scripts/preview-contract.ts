@@ -68,6 +68,8 @@ const customer: Customer = {
   id_card_nr: "L7MJ90G0K",
   license_photo_path: null,
   id_card_photo_path: null,
+  license_photo_back_path: null,
+  id_card_photo_back_path: null,
   marketing_opt_in: false,
   consent_at: null,
   consent_source: null,

@@ -52,10 +52,12 @@ export const POST = async (req: Request) => {
 
   let parsed;
   try {
-    parsed = await parseCustomerDocument(
-      buf.toString("base64"),
-      mediaType as "image/jpeg" | "image/png" | "image/webp" | "application/pdf"
-    );
+    parsed = await parseCustomerDocument([
+      {
+        base64: buf.toString("base64"),
+        mediaType: mediaType as "image/jpeg" | "image/png" | "image/webp" | "application/pdf",
+      },
+    ]);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: `Claude Vision fehlgeschlagen: ${msg}` }, { status: 500 });

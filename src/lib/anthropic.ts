@@ -158,29 +158,29 @@ Antworte AUSSCHLIESSLICH mit gültigem JSON (keine Erklärungen, kein Markdown):
 }
 
 Wenn ein Feld nicht erkennbar ist, setze null. Datumsformat strikt YYYY-MM-DD.
-Beachte: Auf einem deutschen Führerschein steht KEINE Adresse — nur auf dem Personalausweis.`;
+Beachte: Auf einem deutschen Führerschein steht KEINE Adresse — nur auf dem Personalausweis.
+Es können mehrere Bilder übergeben werden (z. B. Vorder- UND Rückseite desselben Dokuments) — kombiniere alle erkennbaren Daten zu EINEM Datensatz. Adresse/Ausweisnummer stehen beim Personalausweis meist auf der Rückseite, Führerschein-Klassen/Gültigkeit ebenfalls hinten.`;
 
 export const parseCustomerDocument = async (
-  imageBase64: string,
-  mediaType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf"
+  images: Array<{
+    base64: string;
+    mediaType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf";
+  }>
 ): Promise<{ data: ParsedCustomerData; raw: unknown }> => {
-  const isPdf = mediaType === "application/pdf";
+  if (images.length === 0) throw new Error("parseCustomerDocument: keine Bilder übergeben");
+  // Ein Bild-/Dokument-Block pro übergebenem Bild (in Reihenfolge), danach die
+  // Text-Anweisung — so liest die KI Vorder- und Rückseite zusammen aus.
+  const content: Anthropic.Messages.ContentBlockParam[] = images.map((img) => ({
+    type: img.mediaType === "application/pdf" ? "document" : "image",
+    source: { type: "base64", media_type: img.mediaType, data: img.base64 },
+  })) as Anthropic.Messages.ContentBlockParam[];
+  content.push({ type: "text", text: "Extrahiere alle Personendaten." });
+
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 1500,
     system: CUSTOMER_PROMPT,
-    messages: [
-      {
-        role: "user",
-        content: [
-          {
-            type: isPdf ? "document" : "image",
-            source: { type: "base64", media_type: mediaType, data: imageBase64 },
-          } as Anthropic.Messages.ContentBlockParam,
-          { type: "text", text: "Extrahiere alle Personendaten." },
-        ],
-      },
-    ],
+    messages: [{ role: "user", content }],
   });
   const text = response.content
     .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
