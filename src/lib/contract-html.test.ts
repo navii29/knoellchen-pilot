@@ -59,10 +59,9 @@ const vehicle = {
 describe("buildContractHtml — eazycar 6-Seiten-Design", () => {
   const html = buildContractHtml({ org, contract, customer, vehicle });
 
-  it("rendert genau 6 Seiten-Footer", () => {
-    for (let n = 1; n <= 6; n++) {
-      expect(html).toContain(`Seite ${n} von 6`);
-    }
+  it("rendert genau 6 logische Seiten", () => {
+    const pages = html.match(/class="page"/g) ?? [];
+    expect(pages).toHaveLength(6);
   });
 
   it("zeigt Fahrzeug, Mieter und Kennzeichen", () => {
