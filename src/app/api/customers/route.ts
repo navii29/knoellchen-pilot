@@ -23,6 +23,24 @@ const trimOrNull = (v: unknown) => {
   return t === "" ? null : t;
 };
 
+// DATE-Spalten (birthday/license_expiry) dürfen NUR ein gültiges ISO-Datum oder
+// null erhalten. OCR/manuelle Eingaben wie "30.05.1990", "1990" oder "unbekannt"
+// würden sonst beim INSERT einen Postgres-"invalid input syntax for type date"
+// auslösen und die KOMPLETTE Kundenanlage mit 500 abbrechen. Deutsches
+// DD.MM.YYYY wird konvertiert; alles andere -> null (Feld bleibt leer).
+const toIsoDateOrNull = (v: unknown): string | null => {
+  if (typeof v !== "string") return null;
+  const t = v.trim();
+  if (t === "") return null;
+  const de = t.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  const iso = de ? `${de[3]}-${de[2]}-${de[1]}` : t;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  // Round-trip-Check: fängt unmögliche Daten wie 2024-02-31 ab.
+  const d = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString().slice(0, 10) === iso ? iso : null;
+};
+
 export const GET = async () => {
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -59,7 +77,7 @@ export const POST = async (req: Request) => {
     // bei Firmen ohnehin den Firmennamen, nicht den Vornamen.
     first_name: trimOrNull(body.first_name),
     last_name: naming.last_name,
-    birthday: trimOrNull(body.birthday),
+    birthday: toIsoDateOrNull(body.birthday),
     street: trimOrNull(body.street),
     house_nr: trimOrNull(body.house_nr),
     zip: trimOrNull(body.zip),
@@ -69,7 +87,7 @@ export const POST = async (req: Request) => {
     phone: trimOrNull(body.phone),
     license_nr: trimOrNull(body.license_nr),
     license_class: trimOrNull(body.license_class),
-    license_expiry: trimOrNull(body.license_expiry),
+    license_expiry: toIsoDateOrNull(body.license_expiry),
     id_card_nr: trimOrNull(body.id_card_nr),
     license_photo_path: trimOrNull(body.license_photo_path),
     license_photo_back_path: trimOrNull(body.license_photo_back_path),
@@ -84,6 +102,11 @@ export const POST = async (req: Request) => {
     .insert(insertRow)
     .select("*")
     .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    // Rohfehler nur serverseitig loggen — nie an den Client leaken (kann
+    // Spaltennamen/Constraints preisgeben).
+    console.error("customers POST insert failed:", error);
+    return NextResponse.json({ error: "Kunde konnte nicht angelegt werden" }, { status: 500 });
+  }
   return NextResponse.json({ ok: true, customer: data });
 };
