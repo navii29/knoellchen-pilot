@@ -191,16 +191,20 @@ type VehicleBackfillInput = {
   vehicle_type?: string | null;
   daily_rate?: number | null;
   deposit?: number | null;
+  km_at_intake?: number | null;
 };
 
 // Verträge tragen NUR diese Fahrzeug-/Preisfelder (kein separates
 // manufacturer/model — die Spalten existieren auf contracts nicht). Hersteller/
-// Modell werden daher unten aus dem vehicle_type abgeleitet.
+// Modell werden daher unten aus dem vehicle_type abgeleitet. km_pickup/km_return
+// liefern die Übergabe-km für km_at_intake (KM bei Einsteuerung).
 type ContractBackfillInput = {
   pickup_date?: string | null;
   vehicle_type?: string | null;
   daily_rate?: number | null;
   deposit?: number | null;
+  km_pickup?: number | null;
+  km_return?: number | null;
 };
 
 // Gängige Hersteller-Aliase (Kürzel/Umgangsformen) → kanonischer Name. Wird in
@@ -282,6 +286,24 @@ export function buildVehicleBackfillFromContracts(
     for (const c of contracts) {
       if (c.deposit != null && c.deposit > 0) {
         patch.deposit = c.deposit;
+        break;
+      }
+    }
+  }
+
+  // KM bei Einsteuerung (km_at_intake) = Übergabe-km der ÄLTESTEN Vermietung.
+  // Bevorzugt km_pickup (Übergabe an den Mieter), sonst km_return. Verträge
+  // kommen neueste-zuerst → für die älteste von hinten iterieren.
+  if (!vehicle.km_at_intake || vehicle.km_at_intake <= 0) {
+    for (const c of [...contracts].reverse()) {
+      const km =
+        c.km_pickup != null && c.km_pickup > 0
+          ? c.km_pickup
+          : c.km_return != null && c.km_return > 0
+          ? c.km_return
+          : null;
+      if (km != null) {
+        patch.km_at_intake = km;
         break;
       }
     }

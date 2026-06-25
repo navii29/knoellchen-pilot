@@ -27,7 +27,7 @@ export const POST = async (_req: Request, { params }: Ctx) => {
 
   const { data: vehicle } = await admin
     .from("vehicles")
-    .select("id, org_id, plate, manufacturer, model, vehicle_type, daily_rate, deposit")
+    .select("id, org_id, plate, manufacturer, model, vehicle_type, daily_rate, deposit, km_at_intake")
     .eq("id", params.id)
     .eq("org_id", org_id)
     .maybeSingle();
@@ -37,7 +37,7 @@ export const POST = async (_req: Request, { params }: Ctx) => {
   // Hersteller/Modell leitet der Helper aus dem vehicle_type ab.
   const { data: contractRows } = await admin
     .from("contracts")
-    .select("vehicle_type, daily_rate, deposit, pickup_date")
+    .select("vehicle_type, daily_rate, deposit, pickup_date, km_pickup, km_return")
     .eq("org_id", org_id)
     .eq("plate", vehicle.plate)
     .order("pickup_date", { ascending: false });

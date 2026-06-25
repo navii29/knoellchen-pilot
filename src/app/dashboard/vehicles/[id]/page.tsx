@@ -34,7 +34,12 @@ import { PartnerPricingSection } from "@/components/vehicle/PartnerPricingSectio
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeDecommission } from "@/lib/decommission";
 import { redactVehicleCost } from "@/lib/redact";
-import { VEHICLE_STATUS_META, buildVehicleType, isDecommissioned } from "@/lib/vehicle";
+import {
+  VEHICLE_STATUS_META,
+  buildVehicleType,
+  buildVehicleBackfillFromContracts,
+  isDecommissioned,
+} from "@/lib/vehicle";
 import type { Contract, Vehicle } from "@/lib/types";
 import type { VehicleEvent } from "@/lib/vehicle-events";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
@@ -103,9 +108,23 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
       .eq("vehicle_id", v.id),
   ]);
   const linkedContracts = (contracts || []) as Contract[];
+
+  // Auto-Backfill: leere Stammdaten/Preise + Übergabe-km (km_at_intake) direkt
+  // aus den Verträgen befüllen — fill-if-empty & idempotent (füllt nur leere
+  // Felder, schreibt nichts, wenn nichts fehlt). So "kommt man gleich auf Spur",
+  // ohne erst einen Button drücken zu müssen. RLS-Update ist org-scoped.
+  const autoPatch = buildVehicleBackfillFromContracts(v, linkedContracts);
+  if (Object.keys(autoPatch).length > 0) {
+    await supabase.from("vehicles").update(autoPatch).eq("id", v.id);
+    Object.assign(v, autoPatch);
+  }
+
   const needsBackfill =
     linkedContracts.length > 0 &&
-    (!v.vehicle_type || !v.daily_rate || !v.deposit);
+    (!v.vehicle_type ||
+      !v.daily_rate ||
+      !v.deposit ||
+      v.km_at_intake == null);
   const vehicleEvents = (events || []) as VehicleEvent[];
   const echoesEnabled = !!(orgRow as { echoes_enabled?: boolean } | null)
     ?.echoes_enabled;
