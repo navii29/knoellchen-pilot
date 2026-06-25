@@ -71,7 +71,7 @@ export async function applyTakeover(
           name: (c.renter_name as string) ?? null,
           birthday: (c.renter_birthday as string) ?? null,
         },
-        pool as { id: string; license_nr: string | null; first_name: string | null; last_name: string | null; birthday: string | null }[]
+        pool as { id: string; license_nr: string | null; first_name: string | null; last_name: string | null; birthday: string | null; company_name: string | null }[]
       );
     }
 

@@ -5,12 +5,23 @@
 // contract-takeover-service.ts.
 import { normalizeDate } from "./csv-import";
 
-// Rechtsform-/Branchen-Marker, an denen wir einen Firmenmieter erkennen.
+// Rechtsform-Marker, an denen wir einen Firmenmieter erkennen. BEWUSST nur
+// echte Rechtsformen — generische Branchenwörter (service/bau/handel/…) wurden
+// entfernt, weil sie private Namen ("Mike Service", "Ek Wong") fälschlich als
+// Firma klassifiziert haben. e.K./e.V. verlangen die Punkte, damit "Ek"/"Ev"
+// als Vorname nicht greift.
+// Zwei Teile: wort-begrenzte Rechtsformen (\b…\b) + punktierte Abkürzungen
+// (e.K./e.V./Co. KG), bei denen ein abschließendes \b nach dem Punkt nicht
+// greifen würde.
 const COMPANY_MARKERS =
-  /\b(gmbh|ug|ag|kg|ohg|mbh|e\.?\s?k\.?|e\.?\s?v\.?|gbr|ltd|inc|service|logistik|transport|bau|handel)\b/i;
+  /\b(gmbh|ug|mbh|ohg|kg|gbr|ag|ltd|inc)\b|\b(e\.\s?k\.|e\.\s?v\.|co\.\s?kg)/i;
 
 export const isCompanyName = (name: string | null | undefined): boolean =>
   COMPANY_MARKERS.test((name || "").trim());
+
+// Normalisierter Firmen-Schlüssel für den Firmen-Dublettenabgleich.
+const companyKey = (s: string | null | undefined): string =>
+  (s || "").trim().toLowerCase().replace(/\s+/g, " ");
 
 export const splitName = (full: string | null | undefined): { first: string; last: string } => {
   const parts = (full || "").trim().split(/\s+/).filter(Boolean);
@@ -87,13 +98,19 @@ export type ExistingCustomerKey = {
   first_name: string | null;
   last_name: string | null;
   birthday: string | null;
+  company_name: string | null;
 };
 
 const nameKey = (first: string | null, last: string | null) =>
   `${(first || "").trim().toLowerCase()} ${(last || "").trim().toLowerCase()}`.trim();
 
-// Duplikatprüfung: ① Führerschein-Nr (normalisiert) → ② Name + Geburtsdatum
-// (Format-tolerant via normalizeDate) → sonst null (kein Raten über Name allein).
+// Duplikatprüfung:
+//   ① Führerschein-Nr (normalisiert)
+//   ② Firma: gleicher (normalisierter) Firmenname — Firmen haben weder FS-Nr
+//      noch Geburtsdatum, würden sonst pro Vertrag dupliziert.
+//   ③ Name + Geburtsdatum (Format-tolerant); eine ABWEICHENDE, vorhandene FS-Nr
+//      schließt den Treffer aus (keine Falschverschmelzung zweier Personen).
+//   sonst null (kein Raten über Name allein bei Privatpersonen).
 export const matchCustomerId = (
   q: { license_nr: string | null; name: string | null; birthday: string | null },
   existing: ExistingCustomerKey[]
@@ -103,12 +120,27 @@ export const matchCustomerId = (
     const hit = existing.find((e) => normalizeLicenseNr(e.license_nr) === lic);
     if (hit) return hit.id;
   }
+
+  // ② Firmen über den Firmennamen abgleichen (gegen company_name, ersatzweise
+  //    last_name, das bei Firmen den vollen Namen spiegelt).
+  if (isCompanyName(q.name)) {
+    const ck = companyKey(q.name);
+    if (ck) {
+      const hit = existing.find((e) => companyKey(e.company_name || e.last_name) === ck);
+      if (hit) return hit.id;
+    }
+  }
+
   const bday = normalizeDate(q.birthday || "");
   const { first, last } = splitName(q.name || "");
   const key = nameKey(first, last);
   if (bday && key) {
     const hit = existing.find(
-      (e) => normalizeDate(e.birthday || "") === bday && nameKey(e.first_name, e.last_name) === key
+      (e) =>
+        normalizeDate(e.birthday || "") === bday &&
+        nameKey(e.first_name, e.last_name) === key &&
+        // abweichende, vorhandene FS-Nr → kein Match (verschiedene Personen).
+        (!lic || !e.license_nr || normalizeLicenseNr(e.license_nr) === lic)
     );
     if (hit) return hit.id;
   }

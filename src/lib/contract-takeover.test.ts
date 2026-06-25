@@ -20,10 +20,17 @@ describe("splitName", () => {
 });
 
 describe("isCompanyName", () => {
-  it("erkennt Firmen", () => {
+  it("erkennt echte Rechtsformen", () => {
     expect(isCompanyName("LEVRA SERVICE GmbH")).toBe(true);
     expect(isCompanyName("Krause Bau e.K.")).toBe(true);
+    expect(isCompanyName("Müller Transporte UG")).toBe(true);
     expect(isCompanyName("Max Mustermann")).toBe(false);
+  });
+  it("keine False-Positives bei privaten Namen", () => {
+    // generische Branchenwörter dürfen NICHT als Firma greifen
+    expect(isCompanyName("Mike Service")).toBe(false);
+    expect(isCompanyName("Ek Wong")).toBe(false);
+    expect(isCompanyName("Peter Bau")).toBe(false);
   });
 });
 
@@ -81,18 +88,27 @@ describe("buildCustomerFromContract", () => {
   });
 });
 
-describe("matchCustomerId — FS → Name+Geburtstag → null", () => {
+describe("matchCustomerId — FS → Firma → Name+Geburtstag → null", () => {
   const existing = [
-    { id: "c1", license_nr: "B072RRE2I55", first_name: "Max", last_name: "Mustermann", birthday: "1988-05-14" },
-    { id: "c2", license_nr: null, first_name: "Erika", last_name: "Beispiel", birthday: "1979-11-02" },
+    { id: "c1", license_nr: "B072RRE2I55", first_name: "Max", last_name: "Mustermann", birthday: "1988-05-14", company_name: null },
+    { id: "c2", license_nr: null, first_name: "Erika", last_name: "Beispiel", birthday: "1979-11-02", company_name: null },
+    { id: "c3", license_nr: null, first_name: null, last_name: "LEVRA SERVICE GmbH", birthday: null, company_name: "LEVRA SERVICE GmbH" },
   ];
   it("Stufe 1: FS-Nr (normalisiert)", () => {
     expect(matchCustomerId({ license_nr: "b072 rre2 i55", name: "X Y", birthday: null }, existing)).toBe("c1");
   });
-  it("Stufe 2: Name + Geburtstag (Format-tolerant)", () => {
+  it("Stufe 2: Firma über Firmennamen (kein FS/Geburtstag)", () => {
+    expect(matchCustomerId({ license_nr: null, name: "LEVRA SERVICE GmbH", birthday: null }, existing)).toBe("c3");
+  });
+  it("Stufe 3: Name + Geburtstag (Format-tolerant)", () => {
     expect(matchCustomerId({ license_nr: null, name: "Erika Beispiel", birthday: "02.11.1979" }, existing)).toBe("c2");
   });
-  it("Stufe 3: nichts eindeutig → null", () => {
+  it("FS-Konflikt verhindert Falschverschmelzung (gleicher Name+Geb, andere FS-Nr)", () => {
+    expect(
+      matchCustomerId({ license_nr: "FS-ANDERS-999", name: "Max Mustermann", birthday: "1988-05-14" }, existing)
+    ).toBe(null);
+  });
+  it("nichts eindeutig → null", () => {
     expect(matchCustomerId({ license_nr: null, name: "Erika Beispiel", birthday: null }, existing)).toBe(null);
     expect(matchCustomerId({ license_nr: "UNBEKANNT", name: "Wer Auch", birthday: "01.01.2000" }, existing)).toBe(null);
   });

@@ -55,7 +55,7 @@ export const POST = async (_req: Request, { params }: Ctx) => {
   // ①/② FS-Nr bzw. Name+Geburtstag gegen bestehende Kunden der Org matchen.
   const { data: existing } = await admin
     .from("customers")
-    .select("id, license_nr, first_name, last_name, birthday")
+    .select("id, license_nr, first_name, last_name, birthday, company_name")
     .eq("org_id", auth.org_id);
   const pool = (existing ?? []) as {
     id: string;
@@ -63,6 +63,7 @@ export const POST = async (_req: Request, { params }: Ctx) => {
     first_name: string | null;
     last_name: string | null;
     birthday: string | null;
+    company_name: string | null;
   }[];
 
   let customerId = matchCustomerId(
