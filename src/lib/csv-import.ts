@@ -169,7 +169,7 @@ export const normalizeDate = (v: string): string | null => {
 // Zahl robust parsen — erkennt Punkt- UND Komma-Dezimaltrenner. Das blinde
 // Entfernen ALLER Punkte (Annahme: Tausender) verfälschte Punkt-Dezimalwerte
 // ("0.35" -> 35) und zerstörte u. a. Mehr-km-Preis/EK-Kosten beim Export->Import.
-const normalizeNumber = (v: string): number | null => {
+export const normalizeNumber = (v: string): number | null => {
   let t = v.trim().replace(/[^0-9.,-]/g, "");
   if (!t) return null;
   const neg = t.startsWith("-");
