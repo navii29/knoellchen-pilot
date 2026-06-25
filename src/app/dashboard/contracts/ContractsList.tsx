@@ -142,7 +142,7 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
             </Button>
             <Button variant="ghost" size="sm" onClick={backfillTakeover} disabled={backfilling}>
               {backfilling ? <Loader2 size={14} className="animate-spin" /> : <Users size={14} />}
-              Kunden & Fahrzeuge aus Verträgen
+              Kunden & Fahrzeuge aus Verträgen anlegen
             </Button>
             <ButtonLink href="/dashboard/contracts/new" variant="signal" size="sm">
               <Plus size={14} /> Neuer Vertrag
