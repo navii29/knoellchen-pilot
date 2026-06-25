@@ -187,6 +187,24 @@ describe("buildVehicleBackfillFromContracts", () => {
     expect(patch.model).toBeUndefined();
   });
 
+  it("übernimmt km_at_intake (Übergabe-km) aus dem ÄLTESTEN Vertrag", () => {
+    // Verträge neueste zuerst; ältester hat km_pickup 50 → km_at_intake = 50.
+    const contracts = [
+      { pickup_date: "2025-06-01", vehicle_type: "BMW 320i", daily_rate: 55, deposit: null, km_pickup: null, km_return: 12459 },
+      { pickup_date: "2025-01-01", vehicle_type: "BMW 320i", daily_rate: 50, deposit: null, km_pickup: 50, km_return: 80 },
+    ];
+    const patch = buildVehicleBackfillFromContracts(emptyVehicle, contracts);
+    expect(patch.km_at_intake).toBe(50);
+  });
+
+  it("nutzt km_return, wenn kein km_pickup vorhanden ist (nur ein Vertrag)", () => {
+    const contracts = [
+      { pickup_date: "2026-04-22", vehicle_type: "BMW 320i", daily_rate: 55, deposit: null, km_pickup: null, km_return: 12459 },
+    ];
+    const patch = buildVehicleBackfillFromContracts(emptyVehicle, contracts);
+    expect(patch.km_at_intake).toBe(12459);
+  });
+
   it("gibt {} zurück, wenn keine Verträge und vehicle_type leer", () => {
     expect(buildVehicleBackfillFromContracts(emptyVehicle, [])).toEqual({});
   });
