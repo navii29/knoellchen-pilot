@@ -216,6 +216,7 @@ export const POST = async (req: Request) => {
         total_amount: m.total_amount ?? null,
         deposit: m.deposit ?? null,
         km_pickup: m.km_pickup ?? null,
+        km_return: m.km_return ?? null,
         km_limit: m.km_limit ?? null,
         status: typeof m.status === "string" && m.status.trim() ? m.status : "aktiv",
         notes: m.notes ?? null,

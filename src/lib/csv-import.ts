@@ -115,6 +115,7 @@ export const CONTRACT_FIELDS: FieldDef[] = [
   { key: "total_amount", label: "Gesamtbetrag (€)" },
   { key: "deposit", label: "Kaution (€)" },
   { key: "km_pickup", label: "Km bei Abholung" },
+  { key: "km_return", label: "Km bei Rückgabe" },
   { key: "km_limit", label: "Km-Limit" },
   { key: "status", label: "Status", hint: "aktiv, abgeschlossen, storniert" },
   { key: "notes", label: "Notizen" },
@@ -241,6 +242,7 @@ const INT_KEYS = new Set([
   "inclusive_km_month",
   // Vertrags-Import
   "km_pickup",
+  "km_return",
   "km_limit",
 ]);
 const DATE_KEYS = new Set([

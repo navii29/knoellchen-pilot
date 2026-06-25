@@ -75,6 +75,7 @@ describe("normalizeValue — Vertrags-Felder (Schlüssel-Sets)", () => {
   it("Gesamtbetrag als Zahl, Km als Ganzzahl", () => {
     expect(normalizeValue("total_amount", "1.299,90")).toBe(1299.9);
     expect(normalizeValue("km_pickup", "12.345")).toBe(12345);
+    expect(normalizeValue("km_return", "13.020")).toBe(13020);
     expect(normalizeValue("km_limit", "2000")).toBe(2000);
   });
 });
