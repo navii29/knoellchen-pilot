@@ -145,11 +145,33 @@ export async function applyTakeover(
       (vContracts ?? []) as Parameters<typeof buildVehicleBackfillFromContracts>[1]
     );
     if (Object.keys(patch).length > 0) {
+      const vid = (vehicle as { id: string }).id;
       await admin
         .from("vehicles")
         .update({ ...patch, updated_at: new Date().toISOString() })
-        .eq("id", (vehicle as { id: string }).id)
+        .eq("id", vid)
         .eq("org_id", orgId);
+
+      // Der DB-Trigger sync_vehicle_type baut vehicle_type aus manufacturer||model
+      // NEU, sobald eine dieser Spalten im UPDATE steht. Hatte das Fahrzeug schon
+      // einen vehicle_type (z. B. "VW Golf VIII") und wir ergänzen nur die
+      // abgeleiteten manufacturer/model, würde der Trigger den bestehenden Wert
+      // still alias-normalisieren ("Volkswagen Golf VIII"). Wenn wir vehicle_type
+      // selbst NICHT ändern wollten, den Originalwert wiederherstellen — ein
+      // vehicle_type-only-UPDATE feuert den Trigger nicht (Review #5).
+      const p = patch as Record<string, unknown>;
+      const originalType = (vehicle as { vehicle_type: string | null }).vehicle_type;
+      if (
+        originalType &&
+        p.vehicle_type === undefined &&
+        (p.manufacturer !== undefined || p.model !== undefined)
+      ) {
+        await admin
+          .from("vehicles")
+          .update({ vehicle_type: originalType })
+          .eq("id", vid)
+          .eq("org_id", orgId);
+      }
     }
   }
 }
