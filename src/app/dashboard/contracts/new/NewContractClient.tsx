@@ -42,11 +42,19 @@ type FormState = {
   renter_license_nr: string;
   renter_license_class: string;
   renter_license_expiry: string;
+  renter_license_issued: string;
+  renter_birthplace: string;
+  renter_id_card_nr: string;
+  renter_id_card_authority: string;
+  renter_iban: string;
+  renter_bank_holder: string;
   pickup_date: string;
   pickup_time: string;
   return_date: string;
   return_time: string;
   daily_rate: string;
+  weekly_rate: string;
+  monthly_rate: string;
   total_amount: string;
   deposit: string;
   km_pickup: string;
@@ -87,11 +95,19 @@ const empty: FormState = {
   renter_license_nr: "",
   renter_license_class: "",
   renter_license_expiry: "",
+  renter_license_issued: "",
+  renter_birthplace: "",
+  renter_id_card_nr: "",
+  renter_id_card_authority: "",
+  renter_iban: "",
+  renter_bank_holder: "",
   pickup_date: "",
   pickup_time: "",
   return_date: "",
   return_time: "",
   daily_rate: "",
+  weekly_rate: "",
+  monthly_rate: "",
   total_amount: "",
   deposit: "",
   km_pickup: "",
@@ -138,6 +154,12 @@ const fillFromCustomer = (prev: FormState, c: Customer): FormState => {
     renter_license_nr: c.license_nr || "",
     renter_license_class: c.license_class || "",
     renter_license_expiry: c.license_expiry || "",
+    renter_license_issued: c.license_issued || "",
+    renter_birthplace: c.birth_place || "",
+    renter_id_card_nr: c.id_card_nr || "",
+    renter_id_card_authority: c.id_card_authority || "",
+    renter_iban: c.iban || "",
+    renter_bank_holder: c.bank_holder || "",
   } as FormState;
 };
 
@@ -264,13 +286,21 @@ export const NewContractClient = ({
       renter_address: d.renter_address || "",
       renter_birthday: d.renter_birthday || "",
       renter_license_nr: d.renter_license_nr || "",
-      renter_license_class: "",
+      renter_license_class: d.renter_license_class || "",
       renter_license_expiry: "",
+      renter_license_issued: d.renter_license_issued || "",
+      renter_birthplace: d.renter_birthplace || "",
+      renter_id_card_nr: d.renter_id_card_nr || "",
+      renter_id_card_authority: d.renter_id_card_authority || "",
+      renter_iban: d.renter_iban || "",
+      renter_bank_holder: d.renter_bank_holder || "",
       pickup_date: d.pickup_date || "",
       pickup_time: d.pickup_time || "",
       return_date: d.return_date || "",
       return_time: d.return_time || "",
       daily_rate: d.daily_rate ? String(d.daily_rate) : "",
+      weekly_rate: d.weekly_rate ? String(d.weekly_rate) : "",
+      monthly_rate: d.monthly_rate ? String(d.monthly_rate) : "",
       total_amount: d.total_amount ? String(d.total_amount) : "",
       deposit: d.deposit ? String(d.deposit) : "",
       km_pickup: "",
@@ -329,7 +359,12 @@ export const NewContractClient = ({
       first_registration: data.first_registration.trim() || null,
       fuel_type: data.fuel_type.trim() || null,
       vin: data.vin.trim() || null,
+      // Fahrzeug-Stammdaten fürs Backfill (Vertragsspalten vehicle_color/_fin).
+      vehicle_color: data.color.trim() || null,
+      vehicle_fin: data.vin.trim() || null,
       daily_rate: numeric(data.daily_rate),
+      weekly_rate: numeric(data.weekly_rate),
+      monthly_rate: numeric(data.monthly_rate),
       total_amount: numeric(data.total_amount),
       deposit: numeric(data.deposit),
       km_pickup: numeric(data.km_pickup),
@@ -603,17 +638,38 @@ export const NewContractClient = ({
             <Field label="Geburtsdatum">
               <input value={data.renter_birthday} onChange={set("renter_birthday")} placeholder="YYYY-MM-DD" className="field font-mono tnum" />
             </Field>
+            <Field label="Geburtsort">
+              <input value={data.renter_birthplace} onChange={set("renter_birthplace")} className="field" />
+            </Field>
             <Field label="Adresse">
               <input value={data.renter_address} onChange={set("renter_address")} className="field" />
             </Field>
             <Field label="Führerschein-Nr.">
               <input value={data.renter_license_nr} onChange={set("renter_license_nr")} className="field font-mono tnum" />
             </Field>
+            <Field label="FS-Klasse">
+              <input value={data.renter_license_class} onChange={set("renter_license_class")} className="field font-mono tnum" />
+            </Field>
+            <Field label="FS-Ausstellungsdatum">
+              <input value={data.renter_license_issued} onChange={set("renter_license_issued")} placeholder="YYYY-MM-DD" className="field font-mono tnum" />
+            </Field>
+            <Field label="Ausweisnummer">
+              <input value={data.renter_id_card_nr} onChange={set("renter_id_card_nr")} className="field font-mono tnum" />
+            </Field>
+            <Field label="Ausweis-Behörde">
+              <input value={data.renter_id_card_authority} onChange={set("renter_id_card_authority")} className="field" />
+            </Field>
             <Field label="E-Mail">
               <input type="email" value={data.renter_email} onChange={set("renter_email")} className="field" />
             </Field>
             <Field label="Telefon">
               <input value={data.renter_phone} onChange={set("renter_phone")} className="field font-mono tnum" />
+            </Field>
+            <Field label="IBAN">
+              <input value={data.renter_iban} onChange={set("renter_iban")} className="field font-mono tnum" />
+            </Field>
+            <Field label="Kontoinhaber">
+              <input value={data.renter_bank_holder} onChange={set("renter_bank_holder")} className="field" />
             </Field>
           </FormSection>
 
@@ -683,6 +739,12 @@ export const NewContractClient = ({
             </div>
             <Field label="Tagespreis (€)">
               <input value={data.daily_rate} onChange={set("daily_rate")} className="field font-mono tnum" />
+            </Field>
+            <Field label="Wochenmiete (€)">
+              <input value={data.weekly_rate} onChange={set("weekly_rate")} className="field font-mono tnum" />
+            </Field>
+            <Field label="Monatsmiete (€)">
+              <input value={data.monthly_rate} onChange={set("monthly_rate")} className="field font-mono tnum" />
             </Field>
             <Field label="Gesamtbetrag (€)">
               <input value={data.total_amount} onChange={set("total_amount")} className="field font-mono tnum" />
