@@ -135,7 +135,7 @@ const isRealIsoDate = (iso: string): boolean => {
   );
 };
 
-const normalizeDate = (v: string): string | null => {
+export const normalizeDate = (v: string): string | null => {
   const t = v.trim();
   if (!t) return null;
   let iso: string | null = null;
