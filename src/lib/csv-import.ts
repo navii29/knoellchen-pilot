@@ -117,6 +117,18 @@ export const CONTRACT_FIELDS: FieldDef[] = [
   { key: "km_pickup", label: "Km bei Abholung" },
   { key: "km_return", label: "Km bei Rückgabe" },
   { key: "km_limit", label: "Km-Limit" },
+  // Erweiterte Mieter-Stammdaten (Migration 065) — fließen in die Kunden-Übernahme.
+  { key: "renter_birthplace", label: "Geburtsort" },
+  { key: "renter_id_card_nr", label: "Ausweisnummer" },
+  { key: "renter_id_card_authority", label: "Ausweis ausstellende Behörde" },
+  { key: "renter_license_issued", label: "Führerschein Ausstellungsdatum", hint: "YYYY-MM-DD" },
+  { key: "renter_iban", label: "IBAN" },
+  { key: "renter_bank_holder", label: "Kontoinhaber" },
+  // Fahrzeug-Stammdaten (fürs Fahrzeug-Backfill).
+  { key: "vehicle_color", label: "Fahrzeugfarbe" },
+  { key: "vehicle_fin", label: "FIN" },
+  { key: "weekly_rate", label: "Wochenmiete (€)" },
+  { key: "monthly_rate", label: "Monatsmiete (€)" },
   { key: "status", label: "Status", hint: "aktiv, abgeschlossen, storniert" },
   { key: "notes", label: "Notizen" },
 ];
@@ -255,6 +267,7 @@ const DATE_KEYS = new Set([
   "return_date",
   "renter_birthday",
   "renter_license_expiry",
+  "renter_license_issued",
 ]);
 
 export const normalizeValue = (key: string, raw: string): unknown => {
