@@ -96,12 +96,16 @@ export async function applyTakeover(
         ...cand,
         last_name: cand.last_name || "Mieter",
       };
-      const { data: ins } = await admin
+      const { data: ins, error: insErr } = await admin
         .from("customers")
         .insert(insertRow)
         .select("id")
         .single();
-      if (ins) {
+      if (insErr) {
+        // Insert-Fehler nicht verschlucken: loggen und diesen Vertrag
+        // überspringen (customer_id bleibt null) — kippt nicht den Batch.
+        console.error("applyTakeover: customers.insert fehlgeschlagen:", insErr.message);
+      } else if (ins) {
         customerId = (ins as { id: string }).id;
         // In den Pool aufnehmen → Within-Batch-Dedup für Folge-Verträge.
         pool.push({ ...(cand as Record<string, unknown>), id: customerId });

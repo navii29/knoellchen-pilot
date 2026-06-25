@@ -33,6 +33,7 @@ export const POST = async () => {
 
   const admin = createAdminClient();
   let processed = 0;
+  let prevFirstId: string | null = null;
 
   // Verträge ohne Kundenverknüpfung seitenweise verarbeiten. Da applyTakeover
   // customer_id setzt, schrumpft die Restmenge — daher immer die ERSTE Seite
@@ -48,6 +49,11 @@ export const POST = async () => {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     const ids = ((data ?? []) as { id: string }[]).map((r) => r.id);
     if (ids.length === 0) break;
+
+    // No-Progress-Guard: bleibt dieselbe Seite stehen (z. B. weil ihre Kunden-
+    // Inserts dauerhaft fehlschlagen), nicht 34× neu verarbeiten + überzählen.
+    if (ids[0] === prevFirstId) break;
+    prevFirstId = ids[0];
 
     await applyTakeover(admin, auth.org_id, ids);
     processed += ids.length;
