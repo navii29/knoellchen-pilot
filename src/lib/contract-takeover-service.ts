@@ -43,21 +43,28 @@ export async function applyTakeover(
   if (ids.length === 0) return;
 
   // 1. Verträge laden (neueste zuerst → "jüngster gewinnt" beim fill-if-empty).
-  const { data: contractsData } = await admin
+  const { data: contractsData, error: cErr } = await admin
     .from("contracts")
     .select(CONTRACT_FIELDS)
     .eq("org_id", orgId)
     .in("id", ids)
     .order("pickup_date", { ascending: false });
+  if (cErr) console.error("[takeover] contracts.select fehlgeschlagen:", cErr.message, cErr.details ?? "");
   const contracts = (contractsData ?? []) as unknown as Record<string, unknown>[];
-  if (contracts.length === 0) return;
+  if (contracts.length === 0) {
+    console.warn(`[takeover] keine Verträge geladen (ids=${ids.length}, org=${orgId})`);
+    return;
+  }
 
   // 2. Bestehende Kunden der Org einmal laden.
-  const { data: existingData } = await admin
+  const { data: existingData, error: exErr } = await admin
     .from("customers")
     .select(CUSTOMER_FIELDS)
     .eq("org_id", orgId);
+  if (exErr)
+    console.error("[takeover] customers.select fehlgeschlagen:", exErr.message, exErr.details ?? "", exErr.hint ?? "");
   const pool = ((existingData ?? []) as unknown as PoolCustomer[]).slice();
+  let createdCount = 0;
 
   // 3. Kunden matchen/anlegen/verknüpfen.
   for (const c of contracts) {
@@ -102,11 +109,19 @@ export async function applyTakeover(
         .select("id")
         .single();
       if (insErr) {
-        // Insert-Fehler nicht verschlucken: loggen und diesen Vertrag
-        // überspringen (customer_id bleibt null) — kippt nicht den Batch.
-        console.error("applyTakeover: customers.insert fehlgeschlagen:", insErr.message);
+        // Insert-Fehler nicht verschlucken: VOLL loggen (Code/Details/Hint) und
+        // diesen Vertrag überspringen (customer_id bleibt null) — kippt nicht
+        // den Batch.
+        console.error(
+          "[takeover] customers.insert fehlgeschlagen:",
+          insErr.code ?? "",
+          insErr.message,
+          "| details:", insErr.details ?? "",
+          "| hint:", insErr.hint ?? ""
+        );
       } else if (ins) {
         customerId = (ins as { id: string }).id;
+        createdCount++;
         // In den Pool aufnehmen → Within-Batch-Dedup für Folge-Verträge.
         pool.push({ ...(cand as Record<string, unknown>), id: customerId });
       }
@@ -121,6 +136,10 @@ export async function applyTakeover(
         .eq("org_id", orgId);
     }
   }
+
+  console.info(
+    `[takeover] org=${orgId}: ${contracts.length} Verträge verarbeitet, ${createdCount} Kunden neu angelegt, Pool=${pool.length}`
+  );
 
   // 4. Fahrzeuge der betroffenen Kennzeichen backfillen (leere Felder ergänzen).
   const plates = [...new Set(contracts.map((c) => c.plate as string).filter(Boolean))];
