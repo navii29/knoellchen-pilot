@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, FileSignature, FileSpreadsheet, Loader2, Plus, Trash2 } from "lucide-react";
+import { ChevronRight, FileSignature, FileSpreadsheet, Loader2, Plus, Trash2, Users } from "lucide-react";
 import { fmtDate } from "@/lib/utils";
 import { isContractOverdue, localTodayIso } from "@/lib/contract-utils";
 import type { Contract, ContractStatus } from "@/lib/types";
@@ -61,7 +61,9 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
   const [filter, setFilter] = useState<ContractFilter>("alle");
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const today = useMemo(() => localTodayIso(), []);
 
@@ -104,6 +106,22 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
     router.refresh();
   };
 
+  const backfillTakeover = async () => {
+    setBackfilling(true);
+    setError(null);
+    setNotice(null);
+    const res = await fetch("/api/contracts/backfill-takeover", { method: "POST" });
+    setBackfilling(false);
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      setError(j.error || "Backfill fehlgeschlagen");
+      return;
+    }
+    const j = await res.json().catch(() => ({ processed: 0 }));
+    setNotice(`${j.processed ?? 0} Verträge verarbeitet — Kunden & Fahrzeuge aus Verträgen übernommen.`);
+    router.refresh();
+  };
+
   const counts = (v: ContractFilter) =>
     v === "alle"
       ? initial.length
@@ -121,6 +139,10 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
           <>
             <Button variant="ghost" size="sm" onClick={() => setImportOpen(true)}>
               <FileSpreadsheet size={14} /> CSV importieren
+            </Button>
+            <Button variant="ghost" size="sm" onClick={backfillTakeover} disabled={backfilling}>
+              {backfilling ? <Loader2 size={14} className="animate-spin" /> : <Users size={14} />}
+              Kunden & Fahrzeuge aus Verträgen
             </Button>
             <ButtonLink href="/dashboard/contracts/new" variant="signal" size="sm">
               <Plus size={14} /> Neuer Vertrag
@@ -161,6 +183,12 @@ export const ContractsList = ({ initial }: { initial: Contract[] }) => {
       {error && (
         <div className="mt-3 text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-panel px-3 py-2">
           {error}
+        </div>
+      )}
+
+      {notice && (
+        <div className="mt-3 text-[13px] text-teal-800 bg-teal-50 border border-teal-200 rounded-panel px-3 py-2">
+          {notice}
         </div>
       )}
 

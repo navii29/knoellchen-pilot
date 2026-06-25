@@ -192,6 +192,10 @@ type VehicleBackfillInput = {
   daily_rate?: number | null;
   deposit?: number | null;
   km_at_intake?: number | null;
+  color?: string | null;
+  fin_number?: string | null;
+  weekly_rate?: number | null;
+  monthly_rate?: number | null;
 };
 
 // Verträge tragen NUR diese Fahrzeug-/Preisfelder (kein separates
@@ -205,6 +209,10 @@ type ContractBackfillInput = {
   deposit?: number | null;
   km_pickup?: number | null;
   km_return?: number | null;
+  vehicle_color?: string | null;
+  vehicle_fin?: string | null;
+  weekly_rate?: number | null;
+  monthly_rate?: number | null;
 };
 
 // Gängige Hersteller-Aliase (Kürzel/Umgangsformen) → kanonischer Name. Wird in
@@ -286,6 +294,41 @@ export function buildVehicleBackfillFromContracts(
     for (const c of contracts) {
       if (c.deposit != null && c.deposit > 0) {
         patch.deposit = c.deposit;
+        break;
+      }
+    }
+  }
+
+  // Farbe / FIN aus dem JÜNGSTEN Vertrag mit Wert (fill-if-empty, first wins —
+  // Verträge kommen neueste-zuerst).
+  if (!vehicle.color) {
+    for (const c of contracts) {
+      if (c.vehicle_color && c.vehicle_color.trim() !== "") {
+        patch.color = c.vehicle_color;
+        break;
+      }
+    }
+  }
+  if (!vehicle.fin_number) {
+    for (const c of contracts) {
+      if (c.vehicle_fin && c.vehicle_fin.trim() !== "") {
+        patch.fin_number = c.vehicle_fin;
+        break;
+      }
+    }
+  }
+  if (!vehicle.weekly_rate || vehicle.weekly_rate <= 0) {
+    for (const c of contracts) {
+      if (c.weekly_rate != null && c.weekly_rate > 0) {
+        patch.weekly_rate = c.weekly_rate;
+        break;
+      }
+    }
+  }
+  if (!vehicle.monthly_rate || vehicle.monthly_rate <= 0) {
+    for (const c of contracts) {
+      if (c.monthly_rate != null && c.monthly_rate > 0) {
+        patch.monthly_rate = c.monthly_rate;
         break;
       }
     }

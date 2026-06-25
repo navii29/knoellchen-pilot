@@ -3,6 +3,8 @@ import Papa from "papaparse";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { nextContractNr } from "@/lib/contract-utils";
 import { normalizePlate } from "@/lib/plate";
+import { applyTakeover } from "@/lib/contract-takeover-service";
+import { normalizeDate, normalizeNumber } from "@/lib/csv-import";
 
 const COL_ALIASES: Record<string, string[]> = {
   contract_nr: ["vertragsnr", "vertrags_nr", "vertragsnummer", "contract_nr"],
@@ -32,28 +34,12 @@ const matchKey = (header: string): string | null => {
   return null;
 };
 
-const parseDate = (s: string | undefined): string | null => {
-  if (!s) return null;
-  const trimmed = s.trim();
-  if (!trimmed) return null;
-  const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
-  const deMatch = trimmed.match(/^(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})/);
-  if (deMatch) {
-    const [, d, m, y] = deMatch;
-    const year = y.length === 2 ? "20" + y : y;
-    return `${year}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-  }
-  return null;
-};
-
-const numeric = (s: string | undefined): number | null => {
-  if (!s) return null;
-  const cleaned = s.replace(/[^\d,.\-]/g, "").replace(/\./g, "").replace(",", ".");
-  if (!cleaned) return null;
-  const n = Number(cleaned);
-  return Number.isFinite(n) ? n : null;
-};
+// Robuste, kalender-validierende Parser aus dem KI-Importer wiederverwenden
+// (DRY): normalizeDate verwirft ungültige Daten als null (statt 2020-02-31 an
+// die DB zu geben und den Batch zu kippen), normalizeNumber erkennt Punkt- UND
+// Komma-Dezimaltrenner (statt 45.50 -> 4550 zu zerstören).
+const parseDate = (s: string | undefined): string | null => normalizeDate(s ?? "");
+const numeric = (s: string | undefined): number | null => normalizeNumber(s ?? "");
 
 export const POST = async (req: Request) => {
   const supabase = createClient();
@@ -150,9 +136,19 @@ export const POST = async (req: Request) => {
 
   let inserted = 0;
   if (rows.length > 0) {
-    const { error, count } = await admin.from("contracts").insert(rows, { count: "exact" });
+    const { data, error } = await admin
+      .from("contracts")
+      .insert(rows)
+      .select("id");
     if (error) return NextResponse.json({ error: error.message, errors }, { status: 500 });
-    inserted = count ?? rows.length;
+    const insertedIds = ((data ?? []) as { id: string }[]).map((r) => r.id);
+    inserted = insertedIds.length || rows.length;
+    // Kunden & Fahrzeuge aus den importierten Verträgen anlegen/abgleichen.
+    try {
+      await applyTakeover(admin, profile.org_id, insertedIds);
+    } catch (e) {
+      console.error("applyTakeover (import) fehlgeschlagen:", e);
+    }
   }
 
   return NextResponse.json({

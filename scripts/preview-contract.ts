@@ -46,6 +46,12 @@ const org: Organization = {
 
 const customer: Customer = {
   id: "cust-1",
+  license_issued: null,
+  id_card_authority: null,
+  birth_place: null,
+  iban: null,
+  bank_holder: null,
+  bic: null,
   org_id: org.id,
   customer_type: "privat",
   company_name: null,
@@ -161,6 +167,16 @@ const vehicle: Vehicle = {
 
 const contract: Contract = {
   id: "c-1",
+  renter_birthplace: null,
+  renter_id_card_nr: null,
+  renter_id_card_authority: null,
+  renter_license_issued: null,
+  renter_iban: null,
+  renter_bank_holder: null,
+  vehicle_color: null,
+  vehicle_fin: null,
+  weekly_rate: null,
+  monthly_rate: null,
   org_id: org.id,
   contract_nr: "EU-ML",
   vehicle_id: vehicle.id,

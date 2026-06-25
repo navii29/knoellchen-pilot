@@ -10,15 +10,28 @@ export const dynamic = "force-dynamic";
 export default async function ContractsPage() {
   const supabase = createClient();
   const isOwner = (await myRole()) === "owner";
-  const { data } = await supabase
-    .from("contracts")
-    .select("*")
-    .order("pickup_date", { ascending: false })
-    .limit(500);
+
+  // ALLE Verträge laden — nicht nur die ersten 500. PostgREST cappt einen
+  // einzelnen Request bei 1.000 Zeilen, daher blockweise per range() nachladen,
+  // bis nichts mehr kommt. Safety-Cap (MAX) schützt vor Riesen-Orgs; reicht für
+  // mehrere tausend Verträge. So stimmen client-seitige Zähler/Suche/Filter
+  // über den GESAMTEN Bestand (vorher: stilles 500er-Limit → Importe wirkten
+  // "nicht hochgeladen", Badges zeigten nur die geladenen 500).
+  const PAGE = 1000;
+  const MAX = 10000;
+  const rows: Contract[] = [];
+  for (let from = 0; from < MAX; from += PAGE) {
+    const { data, error } = await supabase
+      .from("contracts")
+      .select("*")
+      .order("pickup_date", { ascending: false })
+      .range(from, from + PAGE - 1);
+    if (error || !data || data.length === 0) break;
+    rows.push(...(data as Contract[]));
+    if (data.length < PAGE) break;
+  }
   // Partner-Verrechnung für Mitarbeiter aus dem Client-Payload entfernen.
-  const contracts = ((data || []) as Contract[]).map((c) =>
-    redactContractPartner(c, isOwner)
-  );
+  const contracts = rows.map((c) => redactContractPartner(c, isOwner));
   return (
     <>
       <Topbar section="Verträge" />

@@ -213,6 +213,19 @@ export interface Contract {
   renter_license_nr: string | null;
   renter_license_class: string | null;
   renter_license_expiry: string | null;
+  // Erweiterte Mieter-Stammdaten (Migration 065) — Vertrag trägt den vollen
+  // Kundendatensatz für die Auto-Übernahme in `customers`.
+  renter_birthplace: string | null;
+  renter_id_card_nr: string | null;
+  renter_id_card_authority: string | null;
+  renter_license_issued: string | null;
+  renter_iban: string | null;
+  renter_bank_holder: string | null;
+  // Fahrzeug-Stammdaten fürs Auto-Backfill (Migration 065)
+  vehicle_color: string | null;
+  vehicle_fin: string | null;
+  weekly_rate: number | null;
+  monthly_rate: number | null;
   pickup_date: string;
   pickup_time: string | null;
   return_date: string;
@@ -344,12 +357,21 @@ export interface ParsedContractData {
   renter_phone?: string | null;
   renter_address?: string | null;
   renter_birthday?: string | null;
+  renter_birthplace?: string | null;
   renter_license_nr?: string | null;
+  renter_license_class?: string | null;
+  renter_license_issued?: string | null;
+  renter_id_card_nr?: string | null;
+  renter_id_card_authority?: string | null;
+  renter_iban?: string | null;
+  renter_bank_holder?: string | null;
   pickup_date?: string | null;
   pickup_time?: string | null;
   return_date?: string | null;
   return_time?: string | null;
   daily_rate?: number | null;
+  weekly_rate?: number | null;
+  monthly_rate?: number | null;
   total_amount?: number | null;
   deposit?: number | null;
   confidence?: number;
@@ -378,7 +400,13 @@ export interface Customer {
   license_nr: string | null;
   license_class: string | null;
   license_expiry: string | null;
+  license_issued: string | null;
   id_card_nr: string | null;
+  id_card_authority: string | null;
+  birth_place: string | null;
+  iban: string | null;
+  bank_holder: string | null;
+  bic: string | null;
   license_photo_path: string | null;
   id_card_photo_path: string | null;
   license_photo_back_path: string | null;

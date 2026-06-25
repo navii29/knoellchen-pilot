@@ -11,6 +11,7 @@ import { mapCsvColumns } from "@/lib/anthropic";
 import { normalizePlate } from "@/lib/plate";
 import { nextContractNr } from "@/lib/contract-utils";
 import { requirePermission } from "@/lib/team";
+import { applyTakeover } from "@/lib/contract-takeover-service";
 
 export const maxDuration = 60;
 
@@ -192,6 +193,7 @@ export const POST = async (req: Request) => {
     }
 
     let inserted = 0;
+    const insertedIds: string[] = [];
     for (const c of candidates) {
       const m = c.mapped;
       const providedNr = String(m.contract_nr ?? "").trim();
@@ -216,7 +218,18 @@ export const POST = async (req: Request) => {
         total_amount: m.total_amount ?? null,
         deposit: m.deposit ?? null,
         km_pickup: m.km_pickup ?? null,
+        km_return: m.km_return ?? null,
         km_limit: m.km_limit ?? null,
+        renter_birthplace: m.renter_birthplace ?? null,
+        renter_id_card_nr: m.renter_id_card_nr ?? null,
+        renter_id_card_authority: m.renter_id_card_authority ?? null,
+        renter_license_issued: m.renter_license_issued ?? null,
+        renter_iban: m.renter_iban ?? null,
+        renter_bank_holder: m.renter_bank_holder ?? null,
+        vehicle_color: m.vehicle_color ?? null,
+        vehicle_fin: m.vehicle_fin ?? null,
+        weekly_rate: m.weekly_rate ?? null,
+        monthly_rate: m.monthly_rate ?? null,
         status: typeof m.status === "string" && m.status.trim() ? m.status : "aktiv",
         notes: m.notes ?? null,
       };
@@ -225,11 +238,13 @@ export const POST = async (req: Request) => {
       // ziehen, falls UNIQUE(org_id, contract_nr) kollidiert.
       let ok = false;
       let lastErr = "";
+      let newId: string | null = null;
       for (let attempt = 0; attempt < 5; attempt++) {
         const row = { ...baseRow, contract_nr: providedNr || nextContractNr() };
         const res = await admin.from("contracts").insert(row).select("id").single();
         if (!res.error) {
           ok = true;
+          newId = (res.data as { id: string } | null)?.id ?? null;
           break;
         }
         lastErr = res.error.message;
@@ -237,6 +252,7 @@ export const POST = async (req: Request) => {
       }
       if (ok) {
         inserted++;
+        if (newId) insertedIds.push(newId);
       } else {
         const r = resultByRow.get(c.rowIndex);
         if (r) {
@@ -244,6 +260,14 @@ export const POST = async (req: Request) => {
           r.error = `DB: ${lastErr}`;
         }
       }
+    }
+
+    // Kunden & Fahrzeuge aus den importierten Verträgen anlegen/abgleichen.
+    // Fehler hier dürfen den erfolgreichen Vertrags-Import NICHT kippen.
+    try {
+      await applyTakeover(admin, auth.org_id, insertedIds);
+    } catch (e) {
+      console.error("applyTakeover (import-csv) fehlgeschlagen:", e);
     }
 
     return NextResponse.json({

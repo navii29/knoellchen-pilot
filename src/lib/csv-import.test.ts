@@ -75,6 +75,14 @@ describe("normalizeValue — Vertrags-Felder (Schlüssel-Sets)", () => {
   it("Gesamtbetrag als Zahl, Km als Ganzzahl", () => {
     expect(normalizeValue("total_amount", "1.299,90")).toBe(1299.9);
     expect(normalizeValue("km_pickup", "12.345")).toBe(12345);
+    expect(normalizeValue("km_return", "13.020")).toBe(13020);
     expect(normalizeValue("km_limit", "2000")).toBe(2000);
+  });
+
+  it("neue Übernahme-Felder: Wochen-/Monatsmiete als Zahl, FS-Ausstellung als Datum", () => {
+    expect(normalizeValue("weekly_rate", "299,90")).toBe(299.9);
+    expect(normalizeValue("monthly_rate", "1.099,00")).toBe(1099);
+    expect(normalizeValue("renter_license_issued", "01.03.2018")).toBe("2018-03-01");
+    expect(normalizeValue("renter_iban", "DE12 3456")).toBe("DE12 3456");
   });
 });

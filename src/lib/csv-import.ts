@@ -115,7 +115,20 @@ export const CONTRACT_FIELDS: FieldDef[] = [
   { key: "total_amount", label: "Gesamtbetrag (€)" },
   { key: "deposit", label: "Kaution (€)" },
   { key: "km_pickup", label: "Km bei Abholung" },
+  { key: "km_return", label: "Km bei Rückgabe" },
   { key: "km_limit", label: "Km-Limit" },
+  // Erweiterte Mieter-Stammdaten (Migration 065) — fließen in die Kunden-Übernahme.
+  { key: "renter_birthplace", label: "Geburtsort" },
+  { key: "renter_id_card_nr", label: "Ausweisnummer" },
+  { key: "renter_id_card_authority", label: "Ausweis ausstellende Behörde" },
+  { key: "renter_license_issued", label: "Führerschein Ausstellungsdatum", hint: "YYYY-MM-DD" },
+  { key: "renter_iban", label: "IBAN" },
+  { key: "renter_bank_holder", label: "Kontoinhaber" },
+  // Fahrzeug-Stammdaten (fürs Fahrzeug-Backfill).
+  { key: "vehicle_color", label: "Fahrzeugfarbe" },
+  { key: "vehicle_fin", label: "FIN" },
+  { key: "weekly_rate", label: "Wochenmiete (€)" },
+  { key: "monthly_rate", label: "Monatsmiete (€)" },
   { key: "status", label: "Status", hint: "aktiv, abgeschlossen, storniert" },
   { key: "notes", label: "Notizen" },
 ];
@@ -134,7 +147,7 @@ const isRealIsoDate = (iso: string): boolean => {
   );
 };
 
-const normalizeDate = (v: string): string | null => {
+export const normalizeDate = (v: string): string | null => {
   const t = v.trim();
   if (!t) return null;
   let iso: string | null = null;
@@ -156,7 +169,7 @@ const normalizeDate = (v: string): string | null => {
 // Zahl robust parsen — erkennt Punkt- UND Komma-Dezimaltrenner. Das blinde
 // Entfernen ALLER Punkte (Annahme: Tausender) verfälschte Punkt-Dezimalwerte
 // ("0.35" -> 35) und zerstörte u. a. Mehr-km-Preis/EK-Kosten beim Export->Import.
-const normalizeNumber = (v: string): number | null => {
+export const normalizeNumber = (v: string): number | null => {
   let t = v.trim().replace(/[^0-9.,-]/g, "");
   if (!t) return null;
   const neg = t.startsWith("-");
@@ -241,6 +254,7 @@ const INT_KEYS = new Set([
   "inclusive_km_month",
   // Vertrags-Import
   "km_pickup",
+  "km_return",
   "km_limit",
 ]);
 const DATE_KEYS = new Set([
@@ -253,6 +267,7 @@ const DATE_KEYS = new Set([
   "return_date",
   "renter_birthday",
   "renter_license_expiry",
+  "renter_license_issued",
 ]);
 
 export const normalizeValue = (key: string, raw: string): unknown => {

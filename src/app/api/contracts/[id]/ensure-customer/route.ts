@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { buildCustomerFromContract, matchCustomerId } from "@/lib/contract-takeover";
 
 // Stellt sicher, dass ein Vertrag einen verknüpften Kundendatensatz hat —
 // legt bei Bedarf aus den Mieter-Snapshot-Daten einen Kunden an und verknüpft
 // ihn (customer_id). Voraussetzung für Portal-Zugang / Self-Check-in.
+//
+// Matching-Reihenfolge: ① Führerschein-Nr → ② Name+Geburtstag → ③ E-Mail
+// (historischer Fallback) → ④ neu anlegen.
 const requireAuth = async () => {
   const supabase = createClient();
   const {
@@ -18,12 +22,6 @@ const requireAuth = async () => {
   return profile ? { user, org_id: profile.org_id as string } : null;
 };
 
-const splitName = (full: string): { first: string; last: string } => {
-  const parts = full.trim().split(/\s+/).filter(Boolean);
-  if (parts.length <= 1) return { first: "", last: parts[0] ?? "" };
-  return { first: parts.slice(0, -1).join(" "), last: parts[parts.length - 1] };
-};
-
 type Ctx = { params: { id: string } };
 
 export const POST = async (_req: Request, { params }: Ctx) => {
@@ -34,7 +32,7 @@ export const POST = async (_req: Request, { params }: Ctx) => {
   const { data: contract } = await admin
     .from("contracts")
     .select(
-      "id, customer_id, renter_name, renter_email, renter_phone, renter_address, renter_birthday, renter_license_nr"
+      "id, customer_id, renter_name, renter_email, renter_phone, renter_address, renter_birthday, renter_birthplace, renter_license_nr, renter_license_class, renter_license_expiry, renter_license_issued, renter_id_card_nr, renter_id_card_authority, renter_iban, renter_bank_holder"
     )
     .eq("id", params.id)
     .eq("org_id", auth.org_id)
@@ -42,6 +40,7 @@ export const POST = async (_req: Request, { params }: Ctx) => {
   if (!contract)
     return NextResponse.json({ error: "Vertrag nicht gefunden" }, { status: 404 });
 
+  // Idempotenz: bereits verknüpft → nichts tun.
   if (contract.customer_id)
     return NextResponse.json({ ok: true, customer_id: contract.customer_id, created: false });
 
@@ -53,9 +52,27 @@ export const POST = async (_req: Request, { params }: Ctx) => {
       { status: 400 }
     );
 
-  // 1) bestehenden Kunden per E-Mail finden
-  let customerId: string | null = null;
-  if (email) {
+  // ①/② FS-Nr bzw. Name+Geburtstag gegen bestehende Kunden der Org matchen.
+  const { data: existing } = await admin
+    .from("customers")
+    .select("id, license_nr, first_name, last_name, birthday, company_name")
+    .eq("org_id", auth.org_id);
+  const pool = (existing ?? []) as {
+    id: string;
+    license_nr: string | null;
+    first_name: string | null;
+    last_name: string | null;
+    birthday: string | null;
+    company_name: string | null;
+  }[];
+
+  let customerId = matchCustomerId(
+    { license_nr: contract.renter_license_nr, name, birthday: contract.renter_birthday },
+    pool
+  );
+
+  // ③ Historischer E-Mail-Fallback (nicht regressiv entfernen).
+  if (!customerId && email) {
     const escaped = email.replace(/[\\%_]/g, "\\$&");
     const { data } = await admin
       .from("customers")
@@ -66,22 +83,13 @@ export const POST = async (_req: Request, { params }: Ctx) => {
     customerId = data?.id ?? null;
   }
 
-  // 2) sonst neu anlegen
+  // ④ Sonst neu anlegen (normalisierte Felder, last_name Pflicht → Fallback).
   let created = false;
   if (!customerId) {
-    const { first, last } = splitName(name || "Mieter");
+    const cand = buildCustomerFromContract(contract);
     const { data: ins, error } = await admin
       .from("customers")
-      .insert({
-        org_id: auth.org_id,
-        first_name: first || null,
-        last_name: last || name || "Mieter",
-        email,
-        phone: contract.renter_phone ?? null,
-        street: contract.renter_address ?? null,
-        birthday: contract.renter_birthday ?? null,
-        license_nr: contract.renter_license_nr ?? null,
-      })
+      .insert({ org_id: auth.org_id, ...cand, last_name: cand.last_name || name || "Mieter" })
       .select("id")
       .single();
     if (error || !ins)
