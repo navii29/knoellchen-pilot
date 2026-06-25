@@ -34,14 +34,36 @@ export const normalizeLicenseNr = (s: string | null | undefined): string | null 
   return t || null;
 };
 
+// Bekannte Länder am Ende der Anschrift erkennen → canonischer Name.
+const COUNTRY_CANON: Record<string, string> = {
+  deutschland: "Deutschland", germany: "Deutschland", de: "Deutschland",
+  österreich: "Österreich", oesterreich: "Österreich", austria: "Österreich", at: "Österreich",
+  schweiz: "Schweiz", switzerland: "Schweiz", ch: "Schweiz",
+  luxemburg: "Luxemburg", niederlande: "Niederlande", belgien: "Belgien",
+  frankreich: "Frankreich", italien: "Italien", polen: "Polen", tschechien: "Tschechien",
+};
+const COUNTRY_RE = new RegExp(
+  `[,\\s]+(${Object.keys(COUNTRY_CANON).join("|")})\\s*$`,
+  "i"
+);
+
 export const parseAddress = (
   addr: string | null | undefined
-): { street: string | null; house_nr: string | null; zip: string | null; city: string | null } => {
-  if (!addr || !addr.trim()) return { street: null, house_nr: null, zip: null, city: null };
+): { street: string | null; house_nr: string | null; zip: string | null; city: string | null; country: string | null } => {
+  const empty = { street: null, house_nr: null, zip: null, city: null, country: null };
+  if (!addr || !addr.trim()) return empty;
+  let s = addr.trim();
+  // Land am Ende abtrennen (z. B. "…, Österreich"), damit es nicht im Ort landet.
+  let country: string | null = null;
+  const cm = s.match(COUNTRY_RE);
+  if (cm) {
+    country = COUNTRY_CANON[cm[1].toLowerCase()] ?? null;
+    s = s.slice(0, s.length - cm[0].length).replace(/[,\s]+$/, "").trim();
+  }
   // "Straße Hausnr, PLZ Ort" — sonst alles in street (kein Datenverlust).
-  const m = addr.match(/^(.*?)\s+(\d+\s*[a-zA-Z]?)\s*,\s*(\d{4,5})\s+(.+)$/);
-  if (!m) return { street: addr.trim(), house_nr: null, zip: null, city: null };
-  return { street: m[1].trim(), house_nr: m[2].trim(), zip: m[3].trim(), city: m[4].trim() };
+  const m = s.match(/^(.*?)\s+(\d+\s*[a-zA-Z]?)\s*,\s*(\d{4,5})\s+(.+)$/);
+  if (!m) return { street: s || null, house_nr: null, zip: null, city: null, country };
+  return { street: m[1].trim(), house_nr: m[2].trim(), zip: m[3].trim(), city: m[4].trim(), country };
 };
 
 export type ContractTakeoverRow = {
@@ -79,6 +101,8 @@ export const buildCustomerFromContract = (c: ContractTakeoverRow) => {
     house_nr: addr.house_nr,
     zip: addr.zip,
     city: addr.city,
+    // Land nur setzen, wenn erkannt — sonst weglassen (DB-Default "Deutschland").
+    country: addr.country || undefined,
     birthday: normalizeDate(c.renter_birthday || ""),
     birth_place: c.renter_birthplace?.trim() || null,
     license_nr: normalizeLicenseNr(c.renter_license_nr),

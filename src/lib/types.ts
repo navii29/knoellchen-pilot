@@ -369,6 +369,8 @@ export interface ParsedContractData {
   pickup_time?: string | null;
   return_date?: string | null;
   return_time?: string | null;
+  km_pickup?: number | null;
+  km_limit?: number | null;
   daily_rate?: number | null;
   weekly_rate?: number | null;
   monthly_rate?: number | null;

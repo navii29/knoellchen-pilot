@@ -49,6 +49,16 @@ describe("parseAddress", () => {
       house_nr: "12",
       zip: "80331",
       city: "München",
+      country: null,
+    });
+  });
+  it("trennt Land am Ende ab (Österreich landet nicht im Ort)", () => {
+    expect(parseAddress("Oberst-Perleß-Straße 2, 8472 Straß in Steiermark, Österreich")).toEqual({
+      street: "Oberst-Perleß-Straße",
+      house_nr: "2",
+      zip: "8472",
+      city: "Straß in Steiermark",
+      country: "Österreich",
     });
   });
   it("Fallback: alles in street", () => {
@@ -57,10 +67,11 @@ describe("parseAddress", () => {
       house_nr: null,
       zip: null,
       city: null,
+      country: null,
     });
   });
   it("leer → alles null", () => {
-    expect(parseAddress(null)).toEqual({ street: null, house_nr: null, zip: null, city: null });
+    expect(parseAddress(null)).toEqual({ street: null, house_nr: null, zip: null, city: null, country: null });
   });
 });
 

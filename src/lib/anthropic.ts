@@ -102,6 +102,8 @@ Antworte AUSSCHLIESSLICH mit gültigem JSON (keine Erklärungen, kein Markdown):
   "pickup_time": "HH:MM oder null",
   "return_date": "YYYY-MM-DD",
   "return_time": "HH:MM oder null",
+  "km_pickup": KM-Stand bei Übergabe/Abholung als Zahl oder null,
+  "km_limit": vereinbarte Laufleistung / Freikilometer in km als Zahl oder null,
   "daily_rate": Tagespreis in Euro (Zahl, ohne Währung) oder null,
   "weekly_rate": Wochenmiete in Euro oder null,
   "monthly_rate": Monatsmiete in Euro oder null,
