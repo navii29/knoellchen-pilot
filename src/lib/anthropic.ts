@@ -84,6 +84,8 @@ Antworte AUSSCHLIESSLICH mit gültigem JSON (keine Erklärungen, kein Markdown):
   "color": "Farbe (deutscher Farbname, z.B. Schwarz) oder null",
   "first_registration": "Erstzulassung YYYY-MM-DD oder null",
   "fuel_type": "Kraftstoff (z.B. Benzin/Diesel/Elektro) oder null",
+  "power_ps": Leistung in PS als Zahl (z.B. 136) oder null,
+  "extra_km_price": Preis pro Mehrkilometer in Euro als Zahl oder null,
   "vin": "FIN/Fahrgestellnummer (17 Zeichen) oder null",
   "renter_name": "Vollständiger Name des Mieters",
   "renter_address": "Vollständige Anschrift des Mieters",

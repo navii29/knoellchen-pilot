@@ -351,6 +351,8 @@ export interface ParsedContractData {
   color?: string | null;
   first_registration?: string | null;
   fuel_type?: string | null;
+  power_ps?: number | null;
+  extra_km_price?: number | null;
   vin?: string | null;
   renter_name?: string | null;
   renter_email?: string | null;

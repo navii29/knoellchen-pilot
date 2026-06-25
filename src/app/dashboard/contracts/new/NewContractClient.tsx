@@ -33,6 +33,8 @@ type FormState = {
   color: string;
   first_registration: string;
   fuel_type: string;
+  power_ps: string;
+  extra_km_price: string;
   vin: string;
   customer_id: string;
   renter_name: string;
@@ -86,6 +88,8 @@ const empty: FormState = {
   color: "",
   first_registration: "",
   fuel_type: "",
+  power_ps: "",
+  extra_km_price: "",
   vin: "",
   customer_id: "",
   renter_name: "",
@@ -279,6 +283,8 @@ export const NewContractClient = ({
       color: d.color || "",
       first_registration: d.first_registration || "",
       fuel_type: d.fuel_type || "",
+      power_ps: d.power_ps != null ? String(d.power_ps) : "",
+      extra_km_price: d.extra_km_price != null ? String(d.extra_km_price) : "",
       vin: d.vin || "",
       customer_id: "",
       renter_name: d.renter_name || "",
@@ -361,6 +367,8 @@ export const NewContractClient = ({
       color: data.color.trim() || null,
       first_registration: data.first_registration.trim() || null,
       fuel_type: data.fuel_type.trim() || null,
+      power_ps: numeric(data.power_ps),
+      extra_km_price: numeric(data.extra_km_price),
       vin: data.vin.trim() || null,
       // Fahrzeug-Stammdaten fürs Backfill (Vertragsspalten vehicle_color/_fin).
       vehicle_color: data.color.trim() || null,
@@ -628,6 +636,12 @@ export const NewContractClient = ({
             </Field>
             <Field label="Kraftstoff">
               <input value={data.fuel_type} onChange={set("fuel_type")} placeholder="Benzin" className="field" />
+            </Field>
+            <Field label="Leistung (PS)">
+              <input value={data.power_ps} onChange={set("power_ps")} placeholder="136" className="field font-mono tnum" />
+            </Field>
+            <Field label="Mehr-km-Preis (€/km)">
+              <input value={data.extra_km_price} onChange={set("extra_km_price")} placeholder="0,49" className="field font-mono tnum" />
             </Field>
             <Field label="FIN">
               <input value={data.vin} onChange={set("vin")} placeholder="17-stellig" className="field font-mono tnum" />

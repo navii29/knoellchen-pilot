@@ -60,7 +60,7 @@ export const POST = async (req: Request) => {
   // automatisch ausgeflottet werden und aus der Verfügbarkeit verschwinden.
   // first_registration bleibt nur über die explizite Fahrzeug-Bearbeitung/
   // -Backfill setzbar.
-  const vehiclePatch: Record<string, string> = {};
+  const vehiclePatch: Record<string, string | number> = {};
   for (const [key, raw] of [
     ["manufacturer", body.manufacturer],
     ["model", body.model],
@@ -71,6 +71,11 @@ export const POST = async (req: Request) => {
     const val = trimStr(raw);
     if (val !== null) vehiclePatch[key] = val;
   }
+  // Numerische Fahrzeug-Stammdaten aus dem Vertrag (Leistung in PS, Mehr-km-Preis).
+  const powerPs = normalizeNumber(String(body.power_ps ?? ""));
+  if (powerPs != null) vehiclePatch.power_ps = Math.round(powerPs);
+  const extraKmPrice = normalizeNumber(String(body.extra_km_price ?? ""));
+  if (extraKmPrice != null) vehiclePatch.extra_km_price = extraKmPrice;
 
   await admin
     .from("vehicles")
@@ -82,7 +87,7 @@ export const POST = async (req: Request) => {
     );
   const { data: vehicle } = await admin
     .from("vehicles")
-    .select("id, vehicle_type, manufacturer, model, color, first_registration, fuel_type, fin_number")
+    .select("id, vehicle_type, manufacturer, model, color, first_registration, fuel_type, fin_number, power_ps, extra_km_price")
     .eq("org_id", auth.org_id)
     .eq("plate", plate)
     .maybeSingle();
@@ -96,18 +101,22 @@ export const POST = async (req: Request) => {
   let effectiveVehicleType: string | null =
     (vehicle?.vehicle_type as string | null) ?? null;
   if (vehicle) {
-    const fillPatch: Record<string, string> = {};
+    const fillPatch: Record<string, string | number> = {};
     for (const key of [
       "manufacturer",
       "model",
       "color",
       "fuel_type",
       "fin_number",
+      "power_ps",
+      "extra_km_price",
     ] as const) {
       const ocrVal = vehiclePatch[key];
       const current = (vehicle as Record<string, unknown>)[key];
       const currentEmpty =
-        current == null || (typeof current === "string" && current.trim() === "");
+        current == null ||
+        (typeof current === "string" && current.trim() === "") ||
+        (typeof current === "number" && current === 0);
       if (ocrVal != null && currentEmpty) fillPatch[key] = ocrVal;
     }
     if (Object.keys(fillPatch).length > 0) {
