@@ -80,12 +80,15 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
     { data: tireRows },
     { data: partnerPricing },
   ] = await Promise.all([
+    // Vertrags-Archiv des Fahrzeugs: ALLE Verträge dieses Kennzeichens, neueste
+    // zuerst. Limit 1000 = PostgREST-Maximum und für ein einzelnes Fahrzeug
+    // praktisch unbegrenzt (vorher hart auf 50 gekappt → Archiv unvollständig).
     supabase
       .from("contracts")
       .select("*")
       .eq("plate", v.plate)
       .order("pickup_date", { ascending: false })
-      .limit(50),
+      .limit(1000),
     supabase
       .from("vehicle_events")
       .select("*")
