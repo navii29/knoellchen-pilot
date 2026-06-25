@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { nextContractNr } from "@/lib/contract-utils";
 import { logActivity } from "@/lib/activity";
+import { applyTakeover } from "@/lib/contract-takeover-service";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -218,6 +219,13 @@ export const POST = async (req: Request, { params }: Ctx) => {
     .eq("id", params.id)
     .eq("org_id", auth.org_id);
   if (vErr) return NextResponse.json({ error: vErr.message }, { status: 500 });
+
+  // Kunde & Fahrzeug aus dem Anschlussvertrag anlegen/abgleichen.
+  try {
+    await applyTakeover(admin, auth.org_id, [newC.id]);
+  } catch (e) {
+    console.error("applyTakeover (successor) fehlgeschlagen:", e);
+  }
 
   await logActivity(admin, auth.user.id, auth.org_id, "contract.create", newC.contract_nr);
 

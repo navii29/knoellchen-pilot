@@ -6,6 +6,7 @@ import { normalizePlate } from "@/lib/plate";
 import { myRole, requirePermission } from "@/lib/team";
 import { redactContractPartner } from "@/lib/redact";
 import { logActivity } from "@/lib/activity";
+import { applyTakeover } from "@/lib/contract-takeover-service";
 import type { Contract } from "@/lib/types";
 
 const requireAuth = async () => {
@@ -190,6 +191,18 @@ export const POST = async (req: Request) => {
     renter_license_nr: (body.renter_license_nr as string)?.trim() || null,
     renter_license_class: (body.renter_license_class as string)?.trim() || null,
     renter_license_expiry: (body.renter_license_expiry as string)?.trim() || null,
+    // Erweiterte Stammdaten (Migration 065) — fließen in die Kunden-/Fahrzeug-
+    // Übernahme (applyTakeover) ein.
+    renter_birthplace: (body.renter_birthplace as string)?.trim() || null,
+    renter_id_card_nr: (body.renter_id_card_nr as string)?.trim() || null,
+    renter_id_card_authority: (body.renter_id_card_authority as string)?.trim() || null,
+    renter_license_issued: (body.renter_license_issued as string)?.trim() || null,
+    renter_iban: (body.renter_iban as string)?.trim() || null,
+    renter_bank_holder: (body.renter_bank_holder as string)?.trim() || null,
+    vehicle_color: (body.vehicle_color as string)?.trim() || null,
+    vehicle_fin: (body.vehicle_fin as string)?.trim() || null,
+    weekly_rate: numeric(body.weekly_rate),
+    monthly_rate: numeric(body.monthly_rate),
     pickup_date: body.pickup_date as string,
     pickup_time: (body.pickup_time as string) ?? null,
     return_date: body.return_date as string,
@@ -265,6 +278,14 @@ export const POST = async (req: Request) => {
     insertRow.contract_nr = nextContractNr();
   }
   if (error || !data) return NextResponse.json({ error: error?.message ?? "Insert fehlgeschlagen" }, { status: 500 });
+  // Kunde & Fahrzeug aus dem Vertrag anlegen/abgleichen (fill-if-empty). Fehler
+  // hier dürfen den erfolgreichen Vertrags-Insert NICHT zurückrollen.
+  try {
+    const newId = (data as { id?: string })?.id;
+    if (newId) await applyTakeover(admin, auth.org_id, [newId]);
+  } catch (e) {
+    console.error("applyTakeover (contract create) fehlgeschlagen:", e);
+  }
   await logActivity(
     admin,
     auth.user.id,

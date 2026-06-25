@@ -3,6 +3,7 @@ import Papa from "papaparse";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { nextContractNr } from "@/lib/contract-utils";
 import { normalizePlate } from "@/lib/plate";
+import { applyTakeover } from "@/lib/contract-takeover-service";
 
 const COL_ALIASES: Record<string, string[]> = {
   contract_nr: ["vertragsnr", "vertrags_nr", "vertragsnummer", "contract_nr"],
@@ -150,9 +151,19 @@ export const POST = async (req: Request) => {
 
   let inserted = 0;
   if (rows.length > 0) {
-    const { error, count } = await admin.from("contracts").insert(rows, { count: "exact" });
+    const { data, error } = await admin
+      .from("contracts")
+      .insert(rows)
+      .select("id");
     if (error) return NextResponse.json({ error: error.message, errors }, { status: 500 });
-    inserted = count ?? rows.length;
+    const insertedIds = ((data ?? []) as { id: string }[]).map((r) => r.id);
+    inserted = insertedIds.length || rows.length;
+    // Kunden & Fahrzeuge aus den importierten Verträgen anlegen/abgleichen.
+    try {
+      await applyTakeover(admin, profile.org_id, insertedIds);
+    } catch (e) {
+      console.error("applyTakeover (import) fehlgeschlagen:", e);
+    }
   }
 
   return NextResponse.json({
