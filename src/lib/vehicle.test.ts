@@ -205,6 +205,38 @@ describe("buildVehicleBackfillFromContracts", () => {
     expect(patch.km_at_intake).toBe(12459);
   });
 
+  it("übernimmt color/fin/weekly/monthly aus dem JÜNGSTEN Vertrag mit Wert", () => {
+    // Verträge neueste zuerst. color steht nur im älteren → wird trotzdem (fill-
+    // if-empty) übernommen; weekly_rate steht in beiden → jüngster (90) gewinnt.
+    const contracts = [
+      { pickup_date: "2025-06-01", vehicle_type: "BMW 320i", vehicle_color: null, vehicle_fin: "WBA999", weekly_rate: 90, monthly_rate: null },
+      { pickup_date: "2025-01-01", vehicle_type: "BMW 320i", vehicle_color: "Schwarz", vehicle_fin: "WBA111", weekly_rate: 80, monthly_rate: 300 },
+    ];
+    const patch = buildVehicleBackfillFromContracts(emptyVehicle, contracts);
+    expect(patch.color).toBe("Schwarz");
+    expect(patch.fin_number).toBe("WBA999"); // jüngster gewinnt
+    expect(patch.weekly_rate).toBe(90); // jüngster gewinnt
+    expect(patch.monthly_rate).toBe(300);
+  });
+
+  it("REGRESSION: km_at_intake bleibt ältester, neue Felder jüngster", () => {
+    const contracts = [
+      { pickup_date: "2025-06-01", vehicle_type: "BMW 320i", km_pickup: 9000, weekly_rate: 90 },
+      { pickup_date: "2025-01-01", vehicle_type: "BMW 320i", km_pickup: 100, weekly_rate: 80 },
+    ];
+    const patch = buildVehicleBackfillFromContracts(emptyVehicle, contracts);
+    expect(patch.km_at_intake).toBe(100); // ältester
+    expect(patch.weekly_rate).toBe(90); // jüngster
+  });
+
+  it("respektiert fill-if-empty: vorhandene Fahrzeug-Farbe wird nicht überschrieben", () => {
+    const contracts = [
+      { pickup_date: "2025-06-01", vehicle_type: "BMW 320i", vehicle_color: "Blau" },
+    ];
+    const patch = buildVehicleBackfillFromContracts({ ...emptyVehicle, color: "Rot" }, contracts);
+    expect(patch.color).toBeUndefined();
+  });
+
   it("gibt {} zurück, wenn keine Verträge und vehicle_type leer", () => {
     expect(buildVehicleBackfillFromContracts(emptyVehicle, [])).toEqual({});
   });
