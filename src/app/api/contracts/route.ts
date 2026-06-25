@@ -7,6 +7,7 @@ import { myRole, requirePermission } from "@/lib/team";
 import { redactContractPartner } from "@/lib/redact";
 import { logActivity } from "@/lib/activity";
 import { applyTakeover } from "@/lib/contract-takeover-service";
+import { normalizeNumber } from "@/lib/csv-import";
 import type { Contract } from "@/lib/types";
 
 const requireAuth = async () => {
@@ -124,8 +125,13 @@ export const POST = async (req: Request) => {
     }
   }
 
-  const numeric = (v: unknown) =>
-    v == null || v === "" ? null : Number(v);
+  // Deutsch-toleranter Geldparser: Zahlen direkt, Strings (z. B. "1.099,00")
+  // über normalizeNumber statt rohem Number() (das NaN→null verwarf).
+  const numeric = (v: unknown) => {
+    if (v == null || v === "") return null;
+    if (typeof v === "number") return Number.isFinite(v) ? v : null;
+    return normalizeNumber(String(v));
+  };
 
   const customerIdRaw = (body.customer_id as string)?.trim();
   const customerIdInput = customerIdRaw && customerIdRaw.length > 0 ? customerIdRaw : null;

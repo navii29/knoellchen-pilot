@@ -18,6 +18,7 @@ import {
   type SalesPartner,
 } from "@/lib/partners";
 import { fmtEur } from "@/lib/utils";
+import { normalizeNumber } from "@/lib/csv-import";
 import { customerDisplayName } from "@/lib/customer";
 import { Button } from "@/components/ui/Button";
 import { VehiclePicker } from "@/components/contract/VehiclePicker";
@@ -330,7 +331,9 @@ export const NewContractClient = ({
     e.preventDefault();
     setError(null);
     setSaving(true);
-    const numeric = (v: string) => (v.trim() === "" ? null : Number(v));
+    // Deutsch-toleranter Parser (1.099,00 / 99,50) statt rohem Number(), das
+    // deutsche Beträge still zu NaN→null verwarf (Review #3).
+    const numeric = (v: string) => normalizeNumber(v);
     const partner = partners.find((p) => p.id === data.partner_id) ?? null;
     const purchasePerDay = numeric(data.partner_purchase_price);
     const sellingPerDay = numeric(data.partner_selling_price);
