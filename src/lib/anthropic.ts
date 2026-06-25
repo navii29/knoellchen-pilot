@@ -107,12 +107,28 @@ Antworte AUSSCHLIESSLICH mit gültigem JSON (keine Erklärungen, kein Markdown):
   "daily_rate": Tagespreis in Euro (Zahl, ohne Währung) oder null,
   "weekly_rate": Wochenmiete in Euro oder null,
   "monthly_rate": Monatsmiete in Euro oder null,
-  "total_amount": Gesamtbetrag in Euro oder null,
+  "total_amount": Gesamtbetrag/Einzelmietpreis brutto in Euro oder null,
   "deposit": Kaution in Euro oder null,
+  "delivery_cost": Lieferkosten in Euro oder null,
+  "pickup_cost": Abholkosten in Euro oder null,
+  "payment_method": Zahlungsart normalisiert auf "bank_transfer" (Überweisung/Vorabüberweisung), "cash" (Bar), "credit_card" (Kreditkarte), "paypal", "invoice" (Rechnung), sonst null,
+  "insurance_type": "full" wenn Vollkasko/VK enthalten, "basic" wenn nur Teilkasko/TK, "none" wenn nur Haftpflicht, sonst null,
+  "insurance_deductible": Selbstbeteiligung/SB in Euro als Zahl oder null,
+  "keys_count": Anzahl übergebener Fahrzeugschlüssel als Zahl oder null,
+  "damages_at_handover": Schäden bei Übergabe als Freitext (z.B. "kein Schäden/Neuwagen") oder null,
+  "special_terms": Sondervereinbarungen als zusammenhängender Text (alle Punkte) oder null,
   "confidence": Zahl 0.0 bis 1.0
 }
 
-Wenn ein Feld nicht erkennbar ist, setze null. Datumsformat strikt YYYY-MM-DD.`;
+Wenn ein Feld nicht erkennbar ist, setze null. Datumsformat strikt YYYY-MM-DD.
+Beträge als Zahl ohne Währungssymbol. Bei diesem Vertragstyp (Eazycar) findest du
+die Mieter-Firma bei "Mieter - Name,Vorname" (ggf. mit nachgestelltem Komma — gib
+den sauberen Firmennamen zurück, z.B. "Smooth Move Global GmbH"), den km-Stand bei
+"KM-Stand bei Übergabe", die Laufleistung bei "Vereinbarte Laufleistung / KM", und
+die Sondervereinbarungen als nummerierte Liste auf einer Folgeseite.
+WICHTIG: Falls das Dokument mehrere Seiten/Protokolle enthält, nutze AUSSCHLIESSLICH
+die Daten der Mietvertrags-Seite (Mietvertrag-Nr. oben) — ignoriere abweichende
+Fahrzeuge/Kennzeichen aus angehängten Übergabe-/Musterprotokollen.`;
 
 export const parseContractImage = async (
   imageBase64: string,
