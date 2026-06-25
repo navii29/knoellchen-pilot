@@ -376,6 +376,14 @@ export interface ParsedContractData {
   monthly_rate?: number | null;
   total_amount?: number | null;
   deposit?: number | null;
+  delivery_cost?: number | null;
+  pickup_cost?: number | null;
+  payment_method?: string | null;
+  insurance_type?: string | null;
+  insurance_deductible?: number | null;
+  keys_count?: number | null;
+  damages_at_handover?: string | null;
+  special_terms?: string | null;
   confidence?: number;
 }
 
