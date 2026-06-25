@@ -49,7 +49,9 @@ export async function applyTakeover(
     .eq("org_id", orgId)
     .in("id", ids)
     .order("pickup_date", { ascending: false });
-  if (cErr) console.error("[takeover] contracts.select fehlgeschlagen:", cErr.message, cErr.details ?? "");
+  // NUR code+message loggen — niemals details/hint, da diese Zeilen-/Feldwerte
+  // (Kunden-PII: Name, IBAN, FS-Nr) in die Logs spiegeln können (DSGVO).
+  if (cErr) console.error("[takeover] contracts.select fehlgeschlagen:", cErr.code ?? "", cErr.message);
   const contracts = (contractsData ?? []) as unknown as Record<string, unknown>[];
   if (contracts.length === 0) {
     console.warn(`[takeover] keine Verträge geladen (ids=${ids.length}, org=${orgId})`);
@@ -62,7 +64,7 @@ export async function applyTakeover(
     .select(CUSTOMER_FIELDS)
     .eq("org_id", orgId);
   if (exErr)
-    console.error("[takeover] customers.select fehlgeschlagen:", exErr.message, exErr.details ?? "", exErr.hint ?? "");
+    console.error("[takeover] customers.select fehlgeschlagen:", exErr.code ?? "", exErr.message);
   const pool = ((existingData ?? []) as unknown as PoolCustomer[]).slice();
   let createdCount = 0;
 
@@ -112,12 +114,12 @@ export async function applyTakeover(
         // Insert-Fehler nicht verschlucken: VOLL loggen (Code/Details/Hint) und
         // diesen Vertrag überspringen (customer_id bleibt null) — kippt nicht
         // den Batch.
+        // Nur code+message (z. B. PGRST204 + Spaltenname) — keine details/hint,
+        // die Zeilenwerte (PII) enthalten könnten (DSGVO).
         console.error(
           "[takeover] customers.insert fehlgeschlagen:",
           insErr.code ?? "",
-          insErr.message,
-          "| details:", insErr.details ?? "",
-          "| hint:", insErr.hint ?? ""
+          insErr.message
         );
       } else if (ins) {
         customerId = (ins as { id: string }).id;
