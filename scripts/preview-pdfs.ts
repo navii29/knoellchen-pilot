@@ -101,6 +101,16 @@ const ticket: Ticket = {
 
 const contract: Contract = {
   id: "c1",
+  renter_birthplace: null,
+  renter_id_card_nr: null,
+  renter_id_card_authority: null,
+  renter_license_issued: null,
+  renter_iban: null,
+  renter_bank_holder: null,
+  vehicle_color: null,
+  vehicle_fin: null,
+  weekly_rate: null,
+  monthly_rate: null,
   org_id: "00000000",
   contract_nr: "MV-2026-0042",
   vehicle_id: null,
