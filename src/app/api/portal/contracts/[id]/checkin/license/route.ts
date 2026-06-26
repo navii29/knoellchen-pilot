@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { loadPortalContract } from "@/lib/portal-contract-guard";
 import { parseCustomerDocument } from "@/lib/anthropic";
+import { mergeCustomerDocFields } from "@/lib/customer-docs";
 import { UploadGuardError, validateUpload } from "@/lib/upload-guard";
 
 export const maxDuration = 60;
@@ -73,26 +74,15 @@ export const POST = async (req: Request, { params }: Ctx) => {
     .eq("org_id", ctx.session.org_id)
     .single();
 
-  const fillIfEmpty = (key: keyof typeof parsed.data, current: unknown) => {
-    const v = parsed.data[key];
-    if (typeof v !== "string" || !v.trim()) return null;
-    return current == null || current === "" ? v : null;
-  };
-
-  const updates: Record<string, unknown> = {
-    license_photo_path: path,
-  };
-  for (const k of [
-    "first_name",
-    "last_name",
-    "birthday",
-    "license_nr",
-    "license_class",
-    "license_expiry",
-  ] as const) {
-    const v = fillIfEmpty(k, customer?.[k]);
-    if (v != null) updates[k] = v;
-  }
+  // Zentrale, datums-normalisierende Fill-if-empty-Logik (deutsches Datum →
+  // ISO), damit FS-Nr/Klassen/Gültigkeit zuverlässig übernommen werden und ein
+  // Datumsformat nie das atomare UPDATE kippt.
+  const { patch } = mergeCustomerDocFields(
+    customer as Record<string, unknown> | null,
+    parsed.data,
+    "license"
+  );
+  const updates: Record<string, unknown> = { license_photo_path: path, ...patch };
 
   await ctx.admin
     .from("customers")

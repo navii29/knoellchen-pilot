@@ -179,16 +179,21 @@ Antworte AUSSCHLIESSLICH mit gültigem JSON (keine Erklärungen, kein Markdown):
   "house_nr": "Hausnummer",
   "zip": "PLZ",
   "city": "Ort",
-  "license_nr": "Führerscheinnummer (nur Führerschein, Feld 5)",
-  "license_class": "Klassen z.B. B, BE, A1 — kommagetrennt (Feld 9)",
-  "license_expiry": "YYYY-MM-DD (Ablaufdatum, Feld 4b)",
-  "id_card_nr": "Ausweisnummer (nur Personalausweis/Reisepass)",
+  "license_nr": "Führerscheinnummer = Feld 5 auf der VORDERSEITE des Führerscheins (alphanumerisch, direkt unter dem Geburtsort). Lies sie zeichengenau ab.",
+  "license_class": "Führerschein-Klassen = Feld 9 (z. B. AM, A1, B, BE, C1, L) — auf der VORDERSEITE als Liste und/oder auf der RÜCKSEITE in der Spalten-Tabelle (Spalte 9). Kommagetrennt zusammenfassen.",
+  "license_expiry": "Ablaufdatum = Feld 4b auf der VORDERSEITE (vorzugsweise YYYY-MM-DD, sonst wie abgedruckt, z. B. 01.03.2031).",
+  "id_card_nr": "Dokumenten-/Ausweisnummer (Personalausweis/Reisepass): vorne oben rechts UND in der MRZ (maschinenlesbare Zone, die <<< -Zeilen). Die ersten 9–10 Zeichen der ersten MRZ-Zeile nach dem Ländercode sind die Dokumentennummer.",
   "confidence": Zahl 0.0 bis 1.0
 }
 
-Wenn ein Feld nicht erkennbar ist, setze null. Datumsformat strikt YYYY-MM-DD.
-Beachte: Auf einem deutschen Führerschein steht KEINE Adresse — nur auf dem Personalausweis.
-Es können mehrere Bilder übergeben werden (z. B. Vorder- UND Rückseite desselben Dokuments) — kombiniere alle erkennbaren Daten zu EINEM Datensatz. Adresse/Ausweisnummer stehen beim Personalausweis meist auf der Rückseite, Führerschein-Klassen/Gültigkeit ebenfalls hinten.`;
+Wenn ein Feld nicht erkennbar ist, setze null. Geburtsdatum vorzugsweise YYYY-MM-DD.
+
+WICHTIG zur Genauigkeit:
+- Das Dokument kann GEDREHT (90°/180°), schief, gespiegelt oder unscharf/blass fotografiert sein. Drehe es gedanklich in Leserichtung und lies es TROTZDEM vollständig — gib bei Nummern/Klassen nicht zu früh null zurück.
+- Lass die Dokumenten-/Führerschein-NUMMER und die Führerschein-KLASSEN nicht leer, wenn sie irgendwo (auch auf der Rückseite oder in der MRZ) erkennbar sind.
+- Personalausweis/Reisepass: die MRZ (untere zwei/drei Zeilen mit <<<) enthält Name, Geburtsdatum UND Dokumentennummer — nutze sie, wenn die Klarschrift unleserlich ist.
+- Auf einem deutschen Führerschein steht KEINE Adresse — nur auf dem Personalausweis (Adresse meist auf der RÜCKSEITE).
+- Es können mehrere Bilder übergeben werden (Vorder- UND Rückseite) — kombiniere ALLE erkennbaren Daten zu EINEM Datensatz; Klassen/Gültigkeit/Adresse/Nummer stehen je nach Dokument vorne oder hinten.`;
 
 export const parseCustomerDocument = async (
   images: Array<{
