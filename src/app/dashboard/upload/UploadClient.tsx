@@ -20,7 +20,7 @@ type Phase = "idle" | "uploading" | "ocr" | "matching" | "done" | "error";
 
 const PHASES: Array<{ key: Exclude<Phase, "idle" | "done" | "error">; label: string; Icon: typeof Upload }> = [
   { key: "uploading", label: "Datei wird hochgeladen", Icon: Upload },
-  { key: "ocr", label: "KI liest Daten aus", Icon: ScanText },
+  { key: "ocr", label: "Software liest Daten aus", Icon: ScanText },
   { key: "matching", label: "Fahrer wird zugeordnet", Icon: UserCheck },
 ];
 
@@ -94,7 +94,7 @@ export const UploadClient = () => {
           <div className="kicker text-ink-muted mb-2">Leitstelle · Eingang</div>
           <h1 className="font-display font-extrabold text-ink text-[28px] leading-[1.05] tracking-tightest">Strafzettel hochladen</h1>
           <p className="text-[14px] text-ink-muted mt-1.5">
-            PDF, JPG oder PNG. KI liest die Daten aus und ordnet automatisch dem richtigen Mieter zu.
+            PDF, JPG oder PNG. Software liest die Daten aus und ordnet automatisch dem richtigen Mieter zu.
           </p>
 
           <div className="mt-8 panel p-6 md:p-8">

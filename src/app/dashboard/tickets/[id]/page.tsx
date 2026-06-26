@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 const TIMELINE_ICONS = {
   upload: { Icon: Mail, label: "Strafzettel hochgeladen" },
-  parsed: { Icon: ScanText, label: "KI-Auslesung abgeschlossen" },
+  parsed: { Icon: ScanText, label: "Software-Auslesung abgeschlossen" },
   matched: { Icon: UserCheck, label: "Fahrer zugeordnet" },
   documents: { Icon: Send, label: "Dokumente generiert" },
   paid: { Icon: Wallet, label: "Zahlung eingegangen" },
@@ -217,7 +217,7 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
                   <div className="text-[12px] text-amber-800/80 mt-0.5">
                     {t.plate && t.offense_date
                       ? "Kein passender Mietvertrag gefunden — bitte manuell prüfen oder Vertrag anlegen."
-                      : "Kennzeichen oder Tatdatum fehlt — KI-Auslesung wiederholen."}
+                      : "Kennzeichen oder Tatdatum fehlt — Software-Auslesung wiederholen."}
                   </div>
                 </div>
                 <Link

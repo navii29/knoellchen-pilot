@@ -98,7 +98,7 @@ export const POST = async (req: Request) => {
     parsed = await parseCustomerDocument(images);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ error: `Claude Vision fehlgeschlagen: ${msg}` }, { status: 500 });
+    return NextResponse.json({ error: `Software-Auslesen fehlgeschlagen: ${msg}` }, { status: 500 });
   }
 
   const documentType =

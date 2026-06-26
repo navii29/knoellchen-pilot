@@ -7,7 +7,7 @@ import { Reveal } from "./Reveal";
 const DWELL = 3200; // ms per stage
 
 const STEPS = [
-  { Icon: Inbox, label: "Eingang & KI-Auslese", desc: "Bescheid kommt per Upload oder E-Mail. Die KI liest alles aus." },
+  { Icon: Inbox, label: "Eingang & Software-Auslese", desc: "Bescheid kommt per Upload oder E-Mail. Die Software liest alles aus." },
   { Icon: UserCheck, label: "Fahrer zuordnen", desc: "Tatzeit trifft auf Mietvertrag — der richtige Mieter steht fest." },
   { Icon: BadgeEuro, label: "Weiterbelastung", desc: "Anschreiben, Rechnung und Ihre Gebühr entstehen automatisch." },
   { Icon: Check, label: "Bezahlt & erledigt", desc: "Zahlungseingang wird erfasst — der Fall schließt sich." },
@@ -137,11 +137,11 @@ export const HowItWorks = () => {
 function Stage({ active }: { active: number }) {
   return (
     <div className="relative h-[224px]">
-      {/* Stage 0 — Eingang & KI-Auslese */}
+      {/* Stage 0 — Eingang & Software-Auslese */}
       <Pane on={active === 0}>
         <div className="flex items-center justify-between mb-3">
           <span className="text-[12px] text-white/45">Eingang · Bußgeldbescheid</span>
-          <span className="text-[11px] px-2 py-0.5 rounded-full bg-azure/20 text-azure-sky font-medium">KI liest aus · 98%</span>
+          <span className="text-[11px] px-2 py-0.5 rounded-full bg-azure/20 text-azure-sky font-medium">Software liest aus · 98%</span>
         </div>
         <div className="relative rounded-2xl border border-white/10 bg-white/[0.03] p-4 overflow-hidden">
           {/* scan sweep */}

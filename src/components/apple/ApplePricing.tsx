@@ -20,7 +20,7 @@ const PLANS: Plan[] = [
     tagline: "Für kleine Flotten, die einfach starten wollen.",
     features: [
       "Bis zu 20 Fahrzeuge",
-      "KI-Strafzettel-Erkennung",
+      "Software-Strafzettel-Erkennung",
       "Automatische Fahrerzuordnung",
       "Digitale Mietverträge",
       "Kunden-Portal",

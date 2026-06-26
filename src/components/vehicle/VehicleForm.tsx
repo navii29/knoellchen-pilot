@@ -532,11 +532,11 @@ export const VehicleForm = ({
 
       <form onSubmit={submit} className="mt-6 space-y-6">
         <Panel flush>
-          <PanelHeader title="Fahrzeugschein auslesen (KI)" />
+          <PanelHeader title="Fahrzeugschein auslesen (Software)" />
           <div className="p-5 space-y-3">
             <p className="text-[13px] text-ink-soft">
               Lade die <strong>Zulassungsbescheinigung Teil I</strong> (Fahrzeugschein) als PDF
-              oder Foto hoch. Die KI liest Marke, Modell, FIN, Erstzulassung, Leistung,
+              oder Foto hoch. Die Software liest Marke, Modell, FIN, Erstzulassung, Leistung,
               HSN/TSN u. v. m. automatisch aus und füllt die Felder unten. Die{" "}
               <strong>Erstzulassung</strong> steuert zugleich die 180-Tage-Aussteuerung.
             </p>
@@ -991,7 +991,7 @@ export const VehicleForm = ({
               onFiles={(files) => files[0] && runLeasingParse(files[0])}
               accept="application/pdf,image/jpeg,image/png,image/webp"
               disabled={leasingParsing}
-              label="Leasingvertrag hierher ziehen — KI füllt Monatsrate + Einmalkosten"
+              label="Leasingvertrag hierher ziehen — Software füllt Monatsrate + Einmalkosten"
               hint="PDF, JPG, PNG, WebP · max 12 MB"
             >
               {leasingParsing ? (

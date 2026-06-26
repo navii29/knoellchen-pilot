@@ -42,7 +42,7 @@ const TICKET_LABELS: Record<string, (l: TicketLog) => string> = {
     `Strafzettel per E-Mail empfangen${
       (l.details as { subject?: string })?.subject ? ` — „${(l.details as { subject?: string }).subject}"` : ""
     }`,
-  parsed: () => "KI-Auslesung abgeschlossen",
+  parsed: () => "Software-Auslesung abgeschlossen",
   matched: (l) => `Fahrer zugeordnet: ${(l.details as { renter_name?: string })?.renter_name ?? "—"}`,
   documents: () => "Dokumente generiert",
   sent_renter: (l) => `E-Mail an Mieter gesendet (${(l.details as { to?: string })?.to ?? "—"})`,

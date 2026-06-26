@@ -206,7 +206,7 @@ export const HandoverClient = ({
             Übergabe-Fotos
           </h1>
           <p className="text-[14px] text-ink-muted mt-1.5">
-            10 Positionen pro Übergabe und Rücknahme. Vergleich erkennt neue Schäden via Claude Vision.
+            10 Positionen pro Übergabe und Rücknahme. Vergleich erkennt neue Schäden via Software.
           </p>
         </div>
         <div className="text-right font-mono text-[12px] text-ink-muted">

@@ -87,7 +87,7 @@ export default function RegisterPage() {
             </h2>
             <ul className="space-y-2.5 text-[15px] text-white/70">
               {[
-                "Strafzettel automatisch auslesen (KI)",
+                "Strafzettel automatisch auslesen (Software)",
                 "Fahrer in Sekunden zuordnen",
                 "Verträge, Übergaben, Schäden — alles digital",
                 "Keine Kreditkarte erforderlich",

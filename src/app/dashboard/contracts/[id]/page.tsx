@@ -782,12 +782,12 @@ const DamageComparisonRow = ({
   const style = SEVERITY_STYLE[sevKey];
   const label =
     hasNewDamage === false
-      ? "KI-Vergleich: kein neuer Schaden"
+      ? "Software-Vergleich: kein neuer Schaden"
       : sevKey === "major"
-      ? "KI-Vergleich: schwerer Schaden erkannt"
+      ? "Software-Vergleich: schwerer Schaden erkannt"
       : sevKey === "minor"
-      ? "KI-Vergleich: leichter Schaden erkannt"
-      : "KI-Vergleich: kein neuer Schaden";
+      ? "Software-Vergleich: leichter Schaden erkannt"
+      : "Software-Vergleich: kein neuer Schaden";
 
   return (
     <div className="mb-3">

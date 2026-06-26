@@ -63,7 +63,7 @@ export const Step5Done = ({
         <div className="relative">
           <div className="kicker text-signal mb-3">Tipp</div>
           <h3 className="font-display font-extrabold text-white text-[20px] sm:text-[24px] leading-[1.12] tracking-tightest">
-            Laden Sie jetzt einen Strafzettel hoch — und sehen Sie die KI in Aktion.
+            Laden Sie jetzt einen Strafzettel hoch — und sehen Sie die Software in Aktion.
           </h3>
           <p className="mt-3 text-[14px] leading-[1.55] text-white/60">
             Knöllchen-Pilot liest Aktenzeichen, Tatort, Bußgeld und Frist

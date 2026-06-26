@@ -54,7 +54,7 @@ export const POST = async (req: Request) => {
     parsed = await parseContractImage(buf.toString("base64"), mediaType as "image/jpeg" | "image/png" | "image/webp" | "application/pdf");
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ error: `Claude Vision fehlgeschlagen: ${msg}` }, { status: 500 });
+    return NextResponse.json({ error: `Software-Auslesen fehlgeschlagen: ${msg}` }, { status: 500 });
   }
 
   return NextResponse.json({

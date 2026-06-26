@@ -18,7 +18,7 @@ const TIERS = [
       "Bis zu 3 Fahrzeuge",
       "Verträge & E-Signatur",
       "Übergabeprotokoll mit Fotos",
-      "KI-Strafzettel-Auslesen (20 / Monat)",
+      "Software-Strafzettel-Auslesen (20 / Monat)",
       "Kunden-CRM",
       "E-Mail-Support",
     ],
@@ -37,7 +37,7 @@ const TIERS = [
     features: [
       "Unbegrenzte Fahrzeuge",
       "Alles aus Starter",
-      "KI-Strafzettel unbegrenzt",
+      "Software-Strafzettel unbegrenzt",
       "Dynamic Pricing",
       "Auswertung & Margin-Reports",
       "Mieterportal (White-Label)",

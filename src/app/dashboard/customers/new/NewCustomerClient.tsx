@@ -226,7 +226,7 @@ export const NewCustomerClient = () => {
       <PageHeader
         kicker="Neuer Kunde"
         title="Kunde anlegen"
-        description="Foto vom Führerschein oder Personalausweis hochladen — Claude füllt das Formular automatisch — oder manuell anlegen."
+        description="Foto vom Führerschein oder Personalausweis hochladen — Software füllt das Formular automatisch — oder manuell anlegen."
       />
 
       {mode === "choose" && (
@@ -255,7 +255,7 @@ export const NewCustomerClient = () => {
             </div>
             <div className="font-display font-semibold text-[16px] text-ink">Führerschein scannen</div>
             <div className="text-[13px] text-ink-muted mt-1">
-              Foto oder Scan — Claude liest Name, Geburtsdatum, FS-Nummer und Klassen aus.
+              Foto oder Scan — Software liest Name, Geburtsdatum, FS-Nummer und Klassen aus.
             </div>
             <div className="text-[12px] text-ink-muted mt-2">oder Datei hierher ziehen</div>
           </button>
@@ -324,7 +324,7 @@ export const NewCustomerClient = () => {
             <ScanText size={22} className="animate-pulse" />
           </div>
           <div>
-            <div className="font-display font-semibold text-ink">Claude liest das Dokument aus…</div>
+            <div className="font-display font-semibold text-ink">Software liest das Dokument aus…</div>
             <div className="text-[12px] text-ink-muted mt-1">Das dauert meist 5–15 Sekunden.</div>
           </div>
         </Panel>
@@ -366,7 +366,7 @@ export const NewCustomerClient = () => {
               <Sparkles size={18} className="text-signal shrink-0" />
               <div className="flex-1 text-[13px] text-ink">
                 <span className="font-medium">
-                  Vorgefüllt von KI ({docType === "license" ? "Führerschein" : docType === "id_card" ? "Ausweis" : "Dokument"})
+                  Vorgefüllt von Software ({docType === "license" ? "Führerschein" : docType === "id_card" ? "Ausweis" : "Dokument"})
                 </span>
                 {aiConfidence != null && (
                   <span className="text-[12px] ml-2 text-ink-muted">

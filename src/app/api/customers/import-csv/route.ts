@@ -67,7 +67,7 @@ export const POST = async (req: Request) => {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       return NextResponse.json(
-        { error: `KI-Mapping fehlgeschlagen: ${msg}` },
+        { error: `Software-Mapping fehlgeschlagen: ${msg}` },
         { status: 500 }
       );
     }

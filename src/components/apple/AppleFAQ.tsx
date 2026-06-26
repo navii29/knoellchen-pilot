@@ -9,11 +9,11 @@ type FAQItem = { q: string; a: string };
 const ITEMS: FAQItem[] = [
   {
     q: "Wo werden meine Daten gespeichert? Ist das DSGVO-konform?",
-    a: "Alle Daten werden ausschließlich auf EU-Servern (Supabase Frankfurt) gespeichert und verlassen die EU zu keinem Zeitpunkt. Die KI-Analyse erfolgt über die Anthropic API, die keine Daten für Trainingszwecke verwendet. Wir unterhalten einen Auftragsverarbeitungsvertrag (AVV), den Sie auf Anfrage erhalten.",
+    a: "Alle Daten werden ausschließlich auf EU-Servern (Supabase Frankfurt) gespeichert und verlassen die EU zu keinem Zeitpunkt. Die Software-Analyse erfolgt über die Anthropic API, die keine Daten für Trainingszwecke verwendet. Wir unterhalten einen Auftragsverarbeitungsvertrag (AVV), den Sie auf Anfrage erhalten.",
   },
   {
-    q: "Wie liest die KI die Strafzettel aus?",
-    a: "Knöllchen-Pilot nutzt Claude Vision (Anthropic) um hochgeladene Fotos oder PDFs von Bußgeldbescheiden und Anhörungsbögen vollständig zu analysieren. Kennzeichen, Tatzeit, Verstoßkategorie, Betrag und Behörden-Aktenzeichen werden automatisch erkannt und dem passenden Mietvertrag zugeordnet.",
+    q: "Wie liest die Software die Strafzettel aus?",
+    a: "Knöllchen-Pilot nutzt Software (Anthropic) um hochgeladene Fotos oder PDFs von Bußgeldbescheiden und Anhörungsbögen vollständig zu analysieren. Kennzeichen, Tatzeit, Verstoßkategorie, Betrag und Behörden-Aktenzeichen werden automatisch erkannt und dem passenden Mietvertrag zugeordnet.",
   },
   {
     q: "Darf ich das Bußgeld überhaupt an den Mieter weiterbelasten?",

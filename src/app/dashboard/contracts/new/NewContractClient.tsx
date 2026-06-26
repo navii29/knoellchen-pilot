@@ -440,7 +440,7 @@ export const NewContractClient = ({
         Neuer Vertrag
       </div>
       <p className="text-[13px] text-ink-muted mt-1">
-        Vertrag-PDF hochladen — KI füllt das Formular automatisch — oder manuell anlegen.
+        Vertrag-PDF hochladen — Software füllt das Formular automatisch — oder manuell anlegen.
       </p>
 
       {mode === "choose" && (
@@ -466,7 +466,7 @@ export const NewContractClient = ({
             </div>
             <div className="font-display font-bold text-[17px] tracking-tight text-ink mt-4">PDF hochladen</div>
             <div className="text-[13px] text-ink-muted mt-1">
-              Unterschriebenen Mietvertrag als PDF — Claude liest die Daten aus.
+              Unterschriebenen Mietvertrag als PDF — Software liest die Daten aus.
             </div>
             <div className="text-[12px] text-ink-muted mt-2">oder Datei hierher ziehen</div>
           </button>
@@ -500,7 +500,7 @@ export const NewContractClient = ({
             <ScanText size={22} className="animate-pulse" />
           </div>
           <div>
-            <div className="font-display font-bold text-[15px] text-ink">Claude liest den Vertrag aus…</div>
+            <div className="font-display font-bold text-[15px] text-ink">Software liest den Vertrag aus…</div>
             <div className="text-[12px] text-ink-muted mt-1">Das dauert meist 5–15 Sekunden.</div>
           </div>
         </div>
@@ -519,7 +519,7 @@ export const NewContractClient = ({
             <div className="flex items-center gap-3 p-3 rounded-panel border border-[#FF5A1F]/20 bg-[#FFEDE4]">
               <Sparkles size={16} className="text-signal shrink-0" />
               <div className="flex-1 text-[13px] text-ink">
-                <span className="font-medium">Vorgefüllt von KI</span>
+                <span className="font-medium">Vorgefüllt von Software</span>
                 {aiConfidence != null && (
                   <span className="text-[12px] text-ink-muted ml-2">
                     Confidence {Math.round(aiConfidence * 100)} % — bitte prüfen
@@ -1075,7 +1075,7 @@ const PriceRecommendation = ({
         <div className="flex items-center gap-2.5 min-w-0">
           <TrendingUp size={14} className="text-ink shrink-0" />
           <div className="min-w-0">
-            <div className="data-label text-ink-muted">KI-Empfehlung</div>
+            <div className="data-label text-ink-muted">Software-Empfehlung</div>
             <div className="font-display font-bold text-[18px] tracking-tight text-ink leading-tight">
               {price.toLocaleString("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 })}
               <span className="font-mono text-[12px] text-ink-muted ml-1">/ Tag</span>
