@@ -1,4 +1,5 @@
 import type { ParsedCustomerData } from "./types";
+import { normalizeDate } from "./csv-import";
 
 // Welche Customer-Felder je Dokumenttyp aus dem OCR-Ergebnis übernommen werden.
 // Identisch zu den Check-in-Routen (license/id-card) — die Logik lebt hier an
@@ -19,14 +20,11 @@ export const CUSTOMER_DOC_FILL_KEYS = {
 
 export type CustomerDocType = keyof typeof CUSTOMER_DOC_FILL_KEYS;
 
-// DATE-Spalten: ein OCR-Datum, das KEIN gültiges ISO ist (z. B. deutsches
-// "01.03.2031"), würde das atomare UPDATE mit einem Postgres-Date-Fehler kippen
-// und damit den GANZEN Merge als ocr_error markieren — auch die guten Textfelder
-// gingen verloren. Solche Felder daher überspringen (nicht in patch, nicht in
-// filled), statt den gesamten Merge zu opfern.
+// DATE-Spalten: die OCR liefert das Datum oft im deutschen Format ("01.03.2031").
+// Das wird zu ISO normalisiert (wie beim Vertrags-/CSV-Import), damit es nicht
+// verloren geht. Erst wenn es WIRKLICH kein gültiges Kalenderdatum ist, wird das
+// Feld übersprungen — so kippt ein Datums-Fehler nie das atomare UPDATE.
 const DATE_KEYS = new Set<string>(["birthday", "license_expiry"]);
-const isStrictIsoDate = (v: string): boolean =>
-  /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v));
 
 /**
  * Fill-if-empty-Merge: liefert ein `patch` nur mit den Feldern, die laut OCR
@@ -48,11 +46,17 @@ export const mergeCustomerDocFields = (
   for (const key of CUSTOMER_DOC_FILL_KEYS[docType]) {
     const v = parsed[key];
     if (typeof v !== "string" || !v.trim()) continue;
-    // Nicht-ISO-Datum überspringen, damit es das atomare UPDATE nicht killt.
-    if (DATE_KEYS.has(key) && !isStrictIsoDate(v)) continue;
+    // Datumsfelder zu ISO normalisieren (deutsches Format → YYYY-MM-DD); nur ein
+    // wirklich ungültiges Datum überspringen, sonst landet es verworfen im Nichts.
+    let value = v.trim();
+    if (DATE_KEYS.has(key)) {
+      const iso = normalizeDate(value);
+      if (!iso) continue;
+      value = iso;
+    }
     const current = existing[key];
     if (current == null || current === "") {
-      patch[key] = v;
+      patch[key] = value;
       filled.push(key);
     }
   }

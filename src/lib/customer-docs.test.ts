@@ -120,7 +120,7 @@ describe("mergeCustomerDocFields", () => {
     ]);
   });
 
-  it("überspringt ein nicht-ISO OCR-Datum, behält aber die Textfelder", () => {
+  it("normalisiert ein deutsches OCR-Datum zu ISO (statt es zu verwerfen)", () => {
     const existing = {
       first_name: null,
       last_name: null,
@@ -132,15 +132,26 @@ describe("mergeCustomerDocFields", () => {
     const parsed: ParsedCustomerData = {
       license_nr: "B072RRE2I55",
       license_class: "B, BE",
-      // Deutsches Format — würde als DATE einen Postgres-Fehler werfen.
+      // Deutsches Format — wird jetzt normalisiert, nicht verworfen.
       license_expiry: "01.03.2031",
     };
     const { patch, filled } = mergeCustomerDocFields(existing, parsed, "license");
     expect(patch.license_nr).toBe("B072RRE2I55");
     expect(patch.license_class).toBe("B, BE");
-    // Das ungültige Datum darf NICHT im Patch landen und nicht als filled zählen.
+    expect(patch.license_expiry).toBe("2031-03-01");
+    expect(filled).toEqual(["license_nr", "license_class", "license_expiry"]);
+  });
+
+  it("verwirft nur ein WIRKLICH ungültiges Datum (kein Kalendertag)", () => {
+    const existing = { license_nr: null, license_expiry: null };
+    const parsed: ParsedCustomerData = {
+      license_nr: "B072RRE2I55",
+      license_expiry: "31.02.2031", // gibt es nicht
+    };
+    const { patch, filled } = mergeCustomerDocFields(existing, parsed, "license");
+    expect(patch.license_nr).toBe("B072RRE2I55");
     expect(patch).not.toHaveProperty("license_expiry");
-    expect(filled).toEqual(["license_nr", "license_class"]);
+    expect(filled).toEqual(["license_nr"]);
   });
 
   it("übernimmt ein gültiges ISO-Datum unverändert", () => {
