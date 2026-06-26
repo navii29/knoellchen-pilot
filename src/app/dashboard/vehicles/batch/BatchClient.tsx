@@ -150,7 +150,7 @@ export const BatchClient = () => {
         Mehrere Fahrzeugscheine einlesen
       </div>
       <p className="text-sm text-ink-soft mt-1">
-        Lade mehrere Dateien oder ein mehrseitiges PDF (je Seite ein Auto) hoch. Die KI liest
+        Lade mehrere Dateien oder ein mehrseitiges PDF (je Seite ein Auto) hoch. Die Software liest
         jeden Schein einzeln aus; du prüfst und legst alle auf einmal an.
       </p>
 

@@ -4,7 +4,7 @@ import { Reveal } from "./Reveal";
 const CARDS = [
   {
     Icon: ScanLine,
-    title: "KI liest jeden Bescheid",
+    title: "Software liest jeden Bescheid",
     body: "Kennzeichen, Tatzeit, Verstoß und Betrag — in Sekunden ausgelesen und dem richtigen Mieter zugeordnet.",
   },
   {

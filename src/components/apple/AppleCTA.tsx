@@ -34,7 +34,7 @@ export const AppleCTA = () => {
 
           {/* sub-copy */}
           <p className="mt-6 text-[18px] sm:text-[20px] leading-[1.45] text-white/60 max-w-[42ch] mx-auto">
-            Von der KI-Auslese bis zur Weiterbelastung übernimmt Knöllchen-Pilot jeden
+            Von der Software-Auslese bis zur Weiterbelastung übernimmt Knöllchen-Pilot jeden
             Schritt. Sie reichen nur den Bescheid ein.
           </p>
 

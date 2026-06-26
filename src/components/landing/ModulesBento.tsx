@@ -58,11 +58,11 @@ const StrafzettelCard = () => (
             <ScanLine size={18} className="text-ink-soft" strokeWidth={1.75} />
           </span>
           <div>
-            <span className="kicker text-ink-muted">KI-Auslesen</span>
+            <span className="kicker text-ink-muted">Software-Auslesen</span>
           </div>
         </div>
         <span className="font-mono text-[10.5px] px-2 py-0.5 rounded bg-signal-soft text-signal-ink border border-signal/20">
-          Claude Vision
+          Software
         </span>
       </div>
 
@@ -75,7 +75,7 @@ const StrafzettelCard = () => (
       </h3>
 
       <p className="mt-3 text-[13.5px] leading-relaxed text-ink-soft max-w-xs">
-        KI liest Kennzeichen, Tatzeit, Behörde und Betrag aus dem Scan aus.
+        Software liest Kennzeichen, Tatzeit, Behörde und Betrag aus dem Scan aus.
         Die Leitstelle gleicht gegen den Mietvertrag ab — vollautomatisch, revisionssicher.
       </p>
 

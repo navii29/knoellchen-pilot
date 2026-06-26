@@ -7,7 +7,7 @@ export const maxDuration = 60;
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
-const systemPrompt = (orgName: string, today: string) => `Du bist der KI-Assistent von Knöllchen-Pilot, einer SaaS-App für Autovermietungen, die Strafzettel automatisch verarbeitet.
+const systemPrompt = (orgName: string, today: string) => `Du bist der Software-Assistent von Knöllchen-Pilot, einer SaaS-App für Autovermietungen, die Strafzettel automatisch verarbeitet.
 
 Der angemeldete Nutzer arbeitet für: ${orgName}.
 Heutiges Datum: ${today}.
@@ -93,7 +93,7 @@ export const POST = async (req: Request) => {
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      return NextResponse.json({ error: `Claude API: ${msg}` }, { status: 500 });
+      return NextResponse.json({ error: `Software: ${msg}` }, { status: 500 });
     }
 
     if (response.stop_reason === "end_turn" || !response.content.some((b) => b.type === "tool_use")) {

@@ -18,7 +18,7 @@ export const ConfidenceBanner = ({
       </div>
       <div className="flex-1 text-[13.5px]">
         <div className="font-medium text-ink">
-          KI-Auslesung: {pct ? `${pct} %` : "—"} Confidence
+          Software-Auslesung: {pct ? `${pct} %` : "—"} Confidence
         </div>
         <div className="text-[12px] text-ink-muted">
           {pct >= 95

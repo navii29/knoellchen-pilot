@@ -144,7 +144,7 @@ export const CsvImportModal = ({
             CSV-Datei auswählen oder hierher ziehen
           </div>
           <p className="text-[12.5px] text-ink-muted mt-1.5 max-w-sm mx-auto leading-snug">
-            Beliebige Spaltenbenennung — die KI ordnet die Spalten automatisch
+            Beliebige Spaltenbenennung — die Software ordnet die Spalten automatisch
             den richtigen Feldern zu. Trennzeichen (Komma, Semikolon, Tab) werden
             erkannt.
           </p>
@@ -182,7 +182,7 @@ export const CsvImportModal = ({
       <div className="px-6 py-5 space-y-4">
         <div className="rounded-panel border border-hairline bg-canvas px-4 py-3">
           <div className="flex items-center gap-2 text-[13.5px] font-medium text-ink">
-            <Sparkles size={14} className="text-signal" /> KI-Mapping erstellt
+            <Sparkles size={14} className="text-signal" /> Software-Mapping erstellt
           </div>
           {analysis.reasoning && (
             <div className="text-[12px] text-ink-soft mt-1 leading-snug">

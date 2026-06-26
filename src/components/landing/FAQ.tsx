@@ -6,11 +6,11 @@ import { Plus, Minus } from "lucide-react";
 const FAQS = [
   {
     q: "Wo liegen meine Daten — ist das DSGVO-konform?",
-    a: "Alle Daten liegen verschlüsselt auf Servern in der EU (Supabase EU-Region, Deutschland). Wir arbeiten mit AV-Vertrag, Auskunfts- und Löschrechten nach DSGVO. Ihre Kunden- und Buchungsdaten werden niemals zum Training von KI-Modellen verwendet.",
+    a: "Alle Daten liegen verschlüsselt auf Servern in der EU (Supabase EU-Region, Deutschland). Wir arbeiten mit AV-Vertrag, Auskunfts- und Löschrechten nach DSGVO. Ihre Kunden- und Buchungsdaten werden niemals zum Training von Software-Modellen verwendet.",
   },
   {
-    q: "Wie funktioniert die KI-Auslesung von Strafzetteln genau?",
-    a: "Knöllchen-Pilot nutzt Claude Vision (Anthropic) um Bußgeldbescheide und Anhörungsbögen als Bild oder PDF auszulesen. Die KI extrahiert Kennzeichen, Tatzeit, Tatort, Behörde und Betrag — und gibt einen Confidence-Wert zurück. Unter 80 % markiert die Leitstelle den Fall zur manuellen Prüfung. Der Mensch entscheidet, bevor irgendetwas rausgeht.",
+    q: "Wie funktioniert die Software-Auslesung von Strafzetteln genau?",
+    a: "Knöllchen-Pilot nutzt Software (Anthropic) um Bußgeldbescheide und Anhörungsbögen als Bild oder PDF auszulesen. Die Software extrahiert Kennzeichen, Tatzeit, Tatort, Behörde und Betrag — und gibt einen Confidence-Wert zurück. Unter 80 % markiert die Leitstelle den Fall zur manuellen Prüfung. Der Mensch entscheidet, bevor irgendetwas rausgeht.",
   },
   {
     q: "Sind Stripe-Zahlung und E-Mail-Inbound schon live?",
@@ -29,7 +29,7 @@ const FAQS = [
     a: "Multi-Mandanten-Fähigkeit ist ab dem Enterprise-Plan verfügbar. Jeder Standort hat dann seine eigene Organisation, eigene Nutzer, Preise und Dokumente — vollständig getrennt. Für einzelne Vermietungen mit einem Standort reicht Starter oder Pro.",
   },
   {
-    q: "Was passiert, wenn die KI einen Strafzettel falsch ausliest?",
+    q: "Was passiert, wenn die Software einen Strafzettel falsch ausliest?",
     a: "Vor jedem Versand sehen Sie die ausgelesenen Daten im Überblick — Felder mit niedrigem Confidence-Wert sind hervorgehoben. Sie korrigieren, was nötig ist, und geben dann frei. Die Leitstelle schickt niemals automatisch etwas raus, ohne Ihre Freigabe.",
   },
 ];

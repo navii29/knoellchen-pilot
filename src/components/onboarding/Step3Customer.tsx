@@ -199,7 +199,7 @@ export const Step3Customer = ({
                     mode === "scan" ? "text-white/55" : "text-ink-muted"
                   }`}
                 >
-                  {scanning ? "Wird ausgelesen…" : "Foto hochladen oder hierher ziehen — KI füllt vor"}
+                  {scanning ? "Wird ausgelesen…" : "Foto hochladen oder hierher ziehen — Software füllt vor"}
                 </div>
               </div>
             </div>

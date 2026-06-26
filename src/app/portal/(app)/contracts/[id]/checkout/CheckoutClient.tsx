@@ -363,7 +363,7 @@ export const CheckoutClient = ({
               Vielen Dank!
             </h2>
             <p className="text-[13px] text-ink-muted mt-2 leading-relaxed">
-              Deine Rückgabe wurde erfasst. Die KI prüft im Hintergrund, ob es
+              Deine Rückgabe wurde erfasst. Die Software prüft im Hintergrund, ob es
               neue Schäden gibt — bei Auffälligkeiten meldet sich die Vermietung.
             </p>
             <Button

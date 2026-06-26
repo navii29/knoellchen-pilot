@@ -7,7 +7,7 @@ const STATIONS = [
     Icon: Inbox,
     dot: "#B45309",
     title: "Eingang & Auslesen",
-    body: "Bescheid landet per Upload oder E-Mail in der Leitstelle. Die KI liest Kennzeichen, Tatzeit, Verstoß und Betrag aus — kein Abtippen.",
+    body: "Bescheid landet per Upload oder E-Mail in der Leitstelle. Die Software liest Kennzeichen, Tatzeit, Verstoß und Betrag aus — kein Abtippen.",
   },
   {
     no: "02",

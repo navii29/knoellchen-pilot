@@ -67,7 +67,7 @@ export const Hero = () => {
                 <div className="flex items-center justify-between">
                   <span className="kicker text-white/45">Eingang · Bußgeldbescheid</span>
                   <span className="font-mono text-[10.5px] px-1.5 py-0.5 rounded bg-signal-soft text-signal-ink">
-                    KI 98% ausgelesen
+                    Software 98% ausgelesen
                   </span>
                 </div>
 

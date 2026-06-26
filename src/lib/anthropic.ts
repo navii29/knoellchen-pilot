@@ -66,7 +66,7 @@ export const parseTicketImage = async (
     .join("");
 
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
+  if (!jsonMatch) throw new Error("Software did not return JSON: " + text.slice(0, 200));
   const data = JSON.parse(jsonMatch[0]) as ParsedTicketData;
   return { data, raw: response };
 };
@@ -159,7 +159,7 @@ export const parseContractImage = async (
     .map((b) => b.text)
     .join("");
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
+  if (!jsonMatch) throw new Error("Software did not return JSON: " + text.slice(0, 200));
   const data = JSON.parse(jsonMatch[0]) as ParsedContractData;
   return { data, raw: response };
 };
@@ -216,7 +216,7 @@ export const parseCustomerDocument = async (
     .map((b) => b.text)
     .join("");
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
+  if (!jsonMatch) throw new Error("Software did not return JSON: " + text.slice(0, 200));
   const data = JSON.parse(jsonMatch[0]) as ParsedCustomerData;
   return { data, raw: response };
 };
@@ -325,7 +325,7 @@ export const parseVehicleRegistration = async (
     .map((b) => b.text)
     .join("");
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
+  if (!jsonMatch) throw new Error("Software did not return JSON: " + text.slice(0, 200));
   const data = JSON.parse(jsonMatch[0]) as ParsedVehicleRegistration;
   return { data, raw: response };
 };
@@ -368,7 +368,7 @@ export const parseVehicleRegistrationsBatch = async (
     .map((b) => b.text)
     .join("");
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
+  if (!jsonMatch) throw new Error("Software did not return JSON: " + text.slice(0, 200));
   const parsed = JSON.parse(jsonMatch[0]) as { vehicles?: ParsedVehicleRegistration[] };
   // Elemente filtern: liefert die KI ein null/Nicht-Objekt im Array (z. B.
   // unleserlicher zweiter Schein), würde der nachgelagerte Feld-Zugriff (d.power_kw)
@@ -423,7 +423,7 @@ export const parseLeasingContract = async (
     .map((b) => b.text)
     .join("");
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
+  if (!jsonMatch) throw new Error("Software did not return JSON: " + text.slice(0, 200));
   const data = JSON.parse(jsonMatch[0]) as ParsedLeasingContract;
   return { data, raw: response };
 };
@@ -489,7 +489,7 @@ export const compareHandoverPhotos = async (
     .map((b) => b.text)
     .join("");
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Claude did not return JSON: " + text.slice(0, 200));
+  if (!jsonMatch) throw new Error("Software did not return JSON: " + text.slice(0, 200));
   const data = JSON.parse(jsonMatch[0]) as DamageComparisonResult;
   return { data, raw: response };
 };
@@ -610,7 +610,7 @@ Erstelle das Mapping.`;
     .join("");
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch)
-    throw new Error("Claude did not return JSON: " + text.slice(0, 200));
+    throw new Error("Software did not return JSON: " + text.slice(0, 200));
   const parsed = JSON.parse(jsonMatch[0]) as {
     mapping: Record<string, string | null>;
     reasoning?: string;
