@@ -186,7 +186,14 @@ export const POST = async (req: Request, { params }: Ctx) => {
           .update(patch)
           .eq("id", params.id)
           .eq("org_id", auth.org_id);
-        if (patchErr) ocrError = true;
+        if (patchErr) {
+          ocrError = true;
+          console.error(
+            "[customer-doc] customers.update fehlgeschlagen (customer_id=" + params.id + "):",
+            patchErr.code ?? "",
+            patchErr.message
+          );
+        }
       }
     } catch {
       ocrError = true;
