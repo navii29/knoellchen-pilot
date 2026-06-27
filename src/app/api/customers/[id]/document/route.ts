@@ -188,10 +188,17 @@ export const POST = async (req: Request, { params }: Ctx) => {
           .eq("org_id", auth.org_id);
         if (patchErr) {
           ocrError = true;
+          // NUR Fehler-Code + betroffene Spalten-NAMEN loggen — niemals
+          // patchErr.message, da diese den Feldwert (z. B. ein Datum) und damit
+          // Ausweis-/FS-PII spiegeln kann (DSGVO). Code (SQLSTATE) + Felder
+          // reichen zur Diagnose.
           console.error(
-            "[customer-doc] customers.update fehlgeschlagen (customer_id=" + params.id + "):",
-            patchErr.code ?? "",
-            patchErr.message
+            "[customer-doc] customers.update fehlgeschlagen (customer_id=" +
+              params.id +
+              ", felder=" +
+              Object.keys(patch).join(",") +
+              "):",
+            patchErr.code ?? ""
           );
         }
       }
