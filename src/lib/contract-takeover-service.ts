@@ -90,11 +90,17 @@ export async function applyTakeover(
       if (target) {
         const patch = fillEmpty(target, cand as Record<string, unknown>);
         if (Object.keys(patch).length > 0) {
-          await admin
+          const { error: updErr } = await admin
             .from("customers")
             .update(patch)
             .eq("id", customerId)
             .eq("org_id", orgId);
+          if (updErr)
+            console.error(
+              "[takeover] customers.update fehlgeschlagen (customer_id=" + customerId + "):",
+              updErr.code ?? "",
+              updErr.message
+            );
           Object.assign(target, patch); // Pool aktuell halten
         }
       }
@@ -131,11 +137,17 @@ export async function applyTakeover(
 
     // Verknüpfung setzen, falls noch nicht/anders gesetzt.
     if (customerId && customerId !== (c.customer_id as string | null)) {
-      await admin
+      const { error: linkErr } = await admin
         .from("contracts")
         .update({ customer_id: customerId })
         .eq("id", c.id as string)
         .eq("org_id", orgId);
+      if (linkErr)
+        console.error(
+          "[takeover] contracts.update(customer_id) fehlgeschlagen (contract_id=" + (c.id as string) + "):",
+          linkErr.code ?? "",
+          linkErr.message
+        );
     }
   }
 
@@ -146,7 +158,7 @@ export async function applyTakeover(
   // 4. Fahrzeuge der betroffenen Kennzeichen backfillen (leere Felder ergänzen).
   const plates = [...new Set(contracts.map((c) => c.plate as string).filter(Boolean))];
   for (const plate of plates) {
-    const { data: vehicle } = await admin
+    const { data: vehicle, error: vSelErr } = await admin
       .from("vehicles")
       .select(
         "id, vehicle_type, manufacturer, model, daily_rate, deposit, km_at_intake, color, fin_number, weekly_rate, monthly_rate"
@@ -154,9 +166,15 @@ export async function applyTakeover(
       .eq("org_id", orgId)
       .eq("plate", plate)
       .maybeSingle();
+    if (vSelErr)
+      console.error(
+        "[takeover] vehicles.select (backfill) fehlgeschlagen (plate=" + plate + "):",
+        vSelErr.code ?? "",
+        vSelErr.message
+      );
     if (!vehicle) continue;
 
-    const { data: vContracts } = await admin
+    const { data: vContracts, error: vcSelErr } = await admin
       .from("contracts")
       .select(
         "vehicle_type, daily_rate, deposit, pickup_date, km_pickup, km_return, vehicle_color, vehicle_fin, weekly_rate, monthly_rate"
@@ -164,6 +182,12 @@ export async function applyTakeover(
       .eq("org_id", orgId)
       .eq("plate", plate)
       .order("pickup_date", { ascending: false });
+    if (vcSelErr)
+      console.error(
+        "[takeover] contracts.select (backfill) fehlgeschlagen (plate=" + plate + "):",
+        vcSelErr.code ?? "",
+        vcSelErr.message
+      );
 
     const patch = buildVehicleBackfillFromContracts(
       vehicle as Parameters<typeof buildVehicleBackfillFromContracts>[0],
@@ -171,11 +195,17 @@ export async function applyTakeover(
     );
     if (Object.keys(patch).length > 0) {
       const vid = (vehicle as { id: string }).id;
-      await admin
+      const { error: vBackfillErr } = await admin
         .from("vehicles")
         .update({ ...patch, updated_at: new Date().toISOString() })
         .eq("id", vid)
         .eq("org_id", orgId);
+      if (vBackfillErr)
+        console.error(
+          "[takeover] vehicles.update (backfill) fehlgeschlagen (plate=" + plate + "):",
+          vBackfillErr.code ?? "",
+          vBackfillErr.message
+        );
 
       // Der DB-Trigger sync_vehicle_type baut vehicle_type aus manufacturer||model
       // NEU, sobald eine dieser Spalten im UPDATE steht. Hatte das Fahrzeug schon
@@ -191,11 +221,17 @@ export async function applyTakeover(
         p.vehicle_type === undefined &&
         (p.manufacturer !== undefined || p.model !== undefined)
       ) {
-        await admin
+        const { error: vTypeErr } = await admin
           .from("vehicles")
           .update({ vehicle_type: originalType })
           .eq("id", vid)
           .eq("org_id", orgId);
+        if (vTypeErr)
+          console.error(
+            "[takeover] vehicles.update(vehicle_type restore) fehlgeschlagen (plate=" + plate + "):",
+            vTypeErr.code ?? "",
+            vTypeErr.message
+          );
       }
     }
   }

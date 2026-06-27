@@ -129,9 +129,15 @@ export const POST = async (req: Request) => {
       org_id: profile.org_id,
       plate: p,
     }));
-    await admin
+    const { error: vUpsertErr } = await admin
       .from("vehicles")
       .upsert(vehicleRows, { onConflict: "org_id,plate", ignoreDuplicates: true });
+    if (vUpsertErr)
+      console.error(
+        "[import] vehicles.upsert fehlgeschlagen (" + vehicleRows.length + " Kennzeichen):",
+        vUpsertErr.code ?? "",
+        vUpsertErr.message
+      );
   }
 
   let inserted = 0;
