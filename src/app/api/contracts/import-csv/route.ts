@@ -178,10 +178,16 @@ export const POST = async (req: Request) => {
     // Fahrzeuge der referenzierten Kennzeichen sicherstellen (org-scoped), damit
     // die Verträge eine vehicle_id bekommen — ohne Vorhandenes zu überschreiben.
     const uniquePlates = [...new Set(candidates.map((c) => c.plate))];
-    await admin.from("vehicles").upsert(
+    const { error: vUpsertErr } = await admin.from("vehicles").upsert(
       uniquePlates.map((plate) => ({ org_id: auth.org_id, plate })),
       { onConflict: "org_id,plate", ignoreDuplicates: true }
     );
+    if (vUpsertErr)
+      console.error(
+        "[import-csv] vehicles.upsert fehlgeschlagen (" + uniquePlates.length + " Kennzeichen):",
+        vUpsertErr.code ?? "",
+        vUpsertErr.message
+      );
     const { data: vehicleRows } = await admin
       .from("vehicles")
       .select("id, plate")

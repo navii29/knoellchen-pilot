@@ -77,13 +77,19 @@ export const POST = async (req: Request) => {
   const extraKmPrice = normalizeNumber(String(body.extra_km_price ?? ""));
   if (extraKmPrice != null) vehiclePatch.extra_km_price = extraKmPrice;
 
-  await admin
+  const { error: vUpsertErr } = await admin
     .from("vehicles")
     .upsert(
       // Nur Nicht-Null-Felder mitschreiben, damit bei einem frisch angelegten
       // Fahrzeug keine NULLs ueber die Spalten-Defaults geschrieben werden.
       { org_id: auth.org_id, plate, vehicle_type: body.vehicle_type ?? null, ...vehiclePatch },
       { onConflict: "org_id,plate", ignoreDuplicates: true }
+    );
+  if (vUpsertErr)
+    console.error(
+      "[contract.create] vehicles.upsert fehlgeschlagen (plate=" + plate + "):",
+      vUpsertErr.code ?? "",
+      vUpsertErr.message
     );
   const { data: vehicle } = await admin
     .from("vehicles")
