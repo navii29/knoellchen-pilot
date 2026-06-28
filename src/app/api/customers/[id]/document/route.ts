@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { parseCustomerDocument } from "@/lib/anthropic";
 import { mergeCustomerDocFields } from "@/lib/customer-docs";
+import { summarizeDocOcr } from "@/lib/customer-doc-result";
 
 // Upload/Ersetzen/Entfernen der Kunden-Dokumentfotos (Führerschein, Ausweis).
 // Je Dokument werden Vorder- UND Rückseite gespeichert; beide Seiten werden
@@ -152,8 +153,11 @@ export const POST = async (req: Request, { params }: Ctx) => {
 
   // OCR: Vorder- (+Rück-)seite ZUSAMMEN auslesen. Best-effort — schlägt es fehl,
   // bleiben die Fotos gespeichert und wir geben ok mit filled:[] + ocr_error.
-  let filled: string[] = [];
-  let ocrError = false;
+  // plannedFilled = was der Merge füllen WOLLTE; als Erfolg gemeldet wird davon
+  // nur, was nach erfolgreichem Update tatsächlich persistiert ist (summarizeDocOcr).
+  let plannedFilled: string[] = [];
+  let parseFailed = false;
+  let updateFailed = false;
   const images: Array<{
     base64: string;
     mediaType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf";
@@ -179,7 +183,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
         parsed.data,
         type
       );
-      filled = f;
+      plannedFilled = f;
       if (Object.keys(patch).length > 0) {
         const { error: patchErr } = await admin
           .from("customers")
@@ -187,7 +191,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
           .eq("id", params.id)
           .eq("org_id", auth.org_id);
         if (patchErr) {
-          ocrError = true;
+          updateFailed = true;
           // NUR Fehler-Code + betroffene Spalten-NAMEN loggen — niemals
           // patchErr.message, da diese den Feldwert (z. B. ein Datum) und damit
           // Ausweis-/FS-PII spiegeln kann (DSGVO). Code (SQLSTATE) + Felder
@@ -203,7 +207,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
         }
       }
     } catch {
-      ocrError = true;
+      parseFailed = true;
     }
   }
 
@@ -216,7 +220,14 @@ export const POST = async (req: Request, { params }: Ctx) => {
     .eq("org_id", auth.org_id);
   if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });
 
-  return NextResponse.json({ ok: true, filled, ocr_error: ocrError });
+  // Ehrliche Rückmeldung: filled = nur tatsächlich Persistiertes; save_failed
+  // unterscheidet „ausgelesen, aber nicht gespeichert" von „nicht lesbar".
+  const { filled, ocr_error, save_failed } = summarizeDocOcr({
+    plannedFilled,
+    parseFailed,
+    updateFailed,
+  });
+  return NextResponse.json({ ok: true, filled, ocr_error, save_failed });
 };
 
 export const DELETE = async (req: Request, { params }: Ctx) => {
