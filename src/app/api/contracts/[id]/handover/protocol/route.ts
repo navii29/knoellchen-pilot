@@ -10,7 +10,7 @@ import {
 } from "@/lib/contract-loaders";
 import { customerDisplayName } from "@/lib/customer";
 import { emailConfigured, sendDocumentEmail } from "@/lib/email";
-import { isPngDataUrl } from "@/lib/utils";
+import { hasInk, isPngDataUrl } from "@/lib/utils";
 import type {
   Contract,
   HandoverPhoto,
@@ -46,14 +46,6 @@ const mimeFromPath = (path: string): string => {
 
 const labelForPosition = (position: string): string =>
   POSITIONS.find((p) => p.key === position)?.label ?? position;
-
-// Eine leere/blanke Canvas erzeugt zwar eine gültige PNG-Data-URL (isPngDataUrl
-// passt), enthält aber kaum Daten. Mindestgröße der dekodierten Bytes erzwingen,
-// damit eine echte Unterschrift vorliegt.
-const hasInk = (dataUrl: string): boolean => {
-  const b64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
-  return Buffer.from(b64, "base64").length > 1024;
-};
 
 // km robust parsen — leerer/ungültiger Wert ⇒ null (kein Überschreiben).
 const parseKm = (v: number | string | undefined): number | null => {
