@@ -28,6 +28,8 @@ export type NachtragInput = {
   extraCost: number | null;
   city: string | null;
   dateStr: string; // bereits formatiert (Ort/Datum-Zeile im Fuß)
+  signatureDataUri?: string | null; // Mieter-Unterschrift (PNG-Data-URL), optional
+  landlordSignatureDataUri?: string | null; // Vermieter (org.landlord_signature_data), optional
 };
 
 const CSS = `
@@ -84,8 +86,13 @@ const CSS = `
   /* Fuß: Unterschriften */
   .sigs { margin-top: auto; padding-top: 6mm; }
   .sigs .ort { font-size: 9.5pt; margin-bottom: 8mm; }
-  .sigs .row { display: flex; justify-content: space-between; gap: 14mm; }
+  /* flex-end: bei nur EINER gestempelten Unterschrift bleiben beide Linien auf
+     gleicher Höhe — das Bild wächst nach oben über die Linie. Ohne Bild
+     (beide Spalten gleich hoch) unverändert zum Leer-Zustand. */
+  .sigs .row { display: flex; justify-content: space-between; gap: 14mm; align-items: flex-end; }
   .sig { flex: 1; }
+  .sig .ink { margin-bottom: 0.5mm; }
+  .sig .ink img { max-height: 13mm; max-width: 100%; object-fit: contain; display: block; }
   .sig .line { border-top: 0.5pt solid #888; margin-bottom: 1.5mm; }
   .sig .name { font-size: 8.5pt; color: #444; }
 `;
@@ -94,6 +101,12 @@ const logoMarkup = (logoDataUri: string | null, orgName: string): string =>
   logoDataUri
     ? `<div class="logo"><img src="${esc(logoDataUri)}" alt="${esc(orgName)}" /></div>`
     : `<div class="logo"><div class="logo-fallback">${esc(orgName)}</div></div>`;
+
+// Optionales Unterschrifts-Bild über der Linie. Null/undefined → "" → leere
+// Linie wie heute (manueller Unterschrifts-Fallback). Bild bleibt inert im
+// <img src="data:…">, esc auf die Data-URI (wie Logo).
+const sigInk = (dataUri: string | null | undefined): string =>
+  dataUri ? `<div class="ink"><img src="${esc(dataUri)}" alt="Unterschrift" /></div>` : "";
 
 export const buildNachtragHtml = (input: NachtragInput): string => {
   const brandVar = esc(input.brandColor || "#0d9488");
@@ -171,8 +184,8 @@ export const buildNachtragHtml = (input: NachtragInput): string => {
     <div class="sigs">
       <div class="ort">${ortDatum}</div>
       <div class="row">
-        <div class="sig"><div class="line"></div><div class="name">${esc(input.renterName)} (Mieter)</div></div>
-        <div class="sig"><div class="line"></div><div class="name">Vermieter — ${esc(input.orgName)}</div></div>
+        <div class="sig">${sigInk(input.signatureDataUri)}<div class="line"></div><div class="name">${esc(input.renterName)} (Mieter)</div></div>
+        <div class="sig">${sigInk(input.landlordSignatureDataUri)}<div class="line"></div><div class="name">Vermieter — ${esc(input.orgName)}</div></div>
       </div>
     </div>
   </div>
