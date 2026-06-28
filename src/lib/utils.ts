@@ -5,6 +5,15 @@
 export const isPngDataUrl = (v: unknown): v is string =>
   typeof v === "string" && /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(v);
 
+// Eine leere/blanke Canvas erzeugt zwar eine gültige PNG-Data-URL, enthält aber
+// kaum Daten. Mindestgröße der dekodierten Bytes erzwingen ("Unterschrift
+// fehlt"). Nur serverseitig genutzt (Sign-/Übergabe-Routen). Identische Logik
+// wie zuvor lokal in den Routen.
+export const hasInk = (dataUrl: string): boolean => {
+  const b64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+  return Buffer.from(b64, "base64").length > 1024;
+};
+
 // Robustes Parsen von Dezimalzahlen mit deutscher ODER englischer Notation.
 // Wichtig: das frühere `String(v).replace(",", ".")` zerstörte Werte mit
 // Tausenderpunkt ("1.234,56" -> "1.234.56" -> NaN -> null). Hier wird der

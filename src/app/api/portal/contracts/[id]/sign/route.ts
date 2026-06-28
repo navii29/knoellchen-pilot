@@ -3,7 +3,7 @@ import { getPortalSession, ipFromHeaders } from "@/lib/portal-auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { generateContractPdf } from "@/lib/contract-pdf";
 import type { Contract, Organization } from "@/lib/types";
-import { isPngDataUrl } from "@/lib/utils";
+import { hasInk, isPngDataUrl } from "@/lib/utils";
 import {
   loadCurrentTireForVehicle,
   loadCustomerForContract,
@@ -16,13 +16,6 @@ import { runRiskCheck } from "@/lib/risk-check.server";
 export const maxDuration = 30;
 
 type Ctx = { params: { id: string } };
-
-// Eine leere/blanke Canvas erzeugt zwar eine gültige PNG-Data-URL, enthält aber
-// kaum Daten. Mindestgröße der dekodierten Bytes erzwingen.
-const hasInk = (dataUrl: string): boolean => {
-  const b64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
-  return Buffer.from(b64, "base64").length > 1024;
-};
 
 export const POST = async (req: Request, { params }: Ctx) => {
   const session = await getPortalSession();

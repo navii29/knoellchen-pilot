@@ -3,12 +3,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notify";
 import { buildExtensionNotification } from "@/lib/extension-notify";
-import {
-  loadVehicleForContract,
-  loadCustomerForContract,
-  loadLogoBase64,
-} from "@/lib/contract-loaders";
-import { resolveEffectiveDailyRate, estimateExtensionCost } from "@/lib/daily-rate";
+import { buildNachtragInput } from "@/lib/nachtrag-input";
 import { generateNachtragPdf } from "@/lib/nachtrag-pdf";
 import { fmtDate } from "@/lib/utils";
 
@@ -232,51 +227,34 @@ export const POST = async (req: Request, { params }: Ctx) => {
             ")"
         );
       } else {
-        const vehicle = await loadVehicleForContract(
-          admin,
-          auth.org_id,
-          (full.vehicle_id as string | null) ?? null,
-          (full.plate as string | null) ?? null
-        );
-        const customer = await loadCustomerForContract(
-          admin,
-          auth.org_id,
-          (extension.customer_id as string | null) ?? null
-        );
-        const logoDataUri = await loadLogoBase64(admin, (org.logo_path as string | null) ?? null);
-        // Kosten neu rechnen (gleiche geteilte Funktionen wie die Schätzung) →
-        // Tagespreis × Tage = Kosten exakt im unterschriebenen Dokument.
-        const dailyRate = resolveEffectiveDailyRate({
-          contractRate: full.daily_rate as number | null,
-          vehicleRate: (vehicle?.daily_rate as number | null) ?? null,
-        });
-        const extraDays = Number(extension.extra_days ?? 0);
-        const extraCost = estimateExtensionCost({ extraDays, rate: dailyRate });
-        const renterName =
-          [customer?.first_name, customer?.last_name].filter(Boolean).join(" ") ||
-          (full.renter_name as string) ||
-          "";
-        const vehicleModel =
-          [vehicle?.manufacturer, vehicle?.model].filter(Boolean).join(" ") ||
-          (full.vehicle_type as string | null) ||
-          "";
-        const pdfBuf = await generateNachtragPdf({
-          orgName: (org.name as string) || "",
-          logoDataUri,
-          brandColor: (org.brand_color as string | null) ?? null,
-          contractNr: (full.contract_nr as string) || "",
-          renterName,
-          vehicleModel,
-          plate: (full.plate as string) || "",
-          fin: (vehicle?.fin_number as string | null) ?? null,
-          originalReturnDate: extension.current_return_date as string,
-          newReturnDate: extension.requested_return_date as string,
-          extraDays,
-          dailyRate,
-          extraCost,
-          city: (org.city as string | null) ?? null,
+        // Geteilter Assembler — identische Logik wie zuvor inline (verhaltens-
+        // neutral, bewiesen in nachtrag-input.test.ts). Unsigniert: keine
+        // Signaturen → leere Unterschriftslinien wie bisher.
+        const input = await buildNachtragInput(admin, {
+          orgId: auth.org_id,
+          org: org as {
+            name: string | null;
+            city: string | null;
+            logo_path: string | null;
+            brand_color: string | null;
+          },
+          contract: full as {
+            contract_nr: string | null;
+            renter_name: string | null;
+            plate: string | null;
+            vehicle_id: string | null;
+            vehicle_type: string | null;
+            daily_rate: number | null;
+          },
+          extension: extension as {
+            customer_id: string | null;
+            current_return_date: string | null;
+            requested_return_date: string | null;
+            extra_days: number | null;
+          },
           dateStr: fmtDate(new Date().toISOString()),
         });
+        const pdfBuf = await generateNachtragPdf(input);
         const stamp = Date.now().toString(36);
         const path = `${auth.org_id}/${params.id}/nachtrag-${stamp}.pdf`;
         const { error: upErr } = await admin.storage
