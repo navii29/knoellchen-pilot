@@ -9,17 +9,20 @@ import type { VehicleTire } from "./tires";
 import type { SpecialTermsTemplate } from "./types";
 
 // Lädt ein Org-Logo aus dem "brand"-Bucket als Data-URI (für PDF-Header).
-// SVG wird übersprungen (→ Namen-Fallback) — konsistent zum Vertrags-PDF.
+// PNG/JPG/SVG. SVG wird als <img src="data:image/svg+xml…"> eingebettet — im
+// Render (headless Chrome) inert: keine Scripts/externen Refs. Größen-Absicherung
+// für SVG ohne viewBox via SVG-only-CSS in den Templates.
 export const loadLogoBase64 = async (
   admin: SupabaseClient,
   logoPath: string | null | undefined
 ): Promise<string | null> => {
   if (!logoPath) return null;
-  if (logoPath.toLowerCase().endsWith(".svg")) return null;
   const { data, error } = await admin.storage.from("brand").download(logoPath);
   if (error || !data) return null;
-  const mime =
-    logoPath.toLowerCase().endsWith(".jpg") || logoPath.toLowerCase().endsWith(".jpeg")
+  const lc = logoPath.toLowerCase();
+  const mime = lc.endsWith(".svg")
+    ? "image/svg+xml"
+    : lc.endsWith(".jpg") || lc.endsWith(".jpeg")
       ? "image/jpeg"
       : "image/png";
   const buf = Buffer.from(await data.arrayBuffer());

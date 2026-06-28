@@ -47,6 +47,8 @@ const CSS = `
   /* Kopf */
   .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 10mm; }
   .logo img { max-height: 22mm; max-width: 75mm; object-fit: contain; display: block; }
+  /* SVG-only: definite Höhe gegen Kollaps ohne viewBox. PNG/JPG unberührt. */
+  .logo img[src^="data:image/svg+xml"] { height: 22mm; }
   .logo-fallback { color: var(--brand-color); font-size: 20pt; font-weight: 600; letter-spacing: -0.01em; }
   .doc-title { text-align: right; }
   .doc-title .t { font-size: 17pt; font-weight: 800; color: #1a1a1a; letter-spacing: -0.01em; }

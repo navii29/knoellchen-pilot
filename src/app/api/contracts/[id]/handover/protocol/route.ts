@@ -5,6 +5,7 @@ import type { ProtocolPhoto } from "@/lib/handover-protocol-html";
 import { POSITIONS } from "@/lib/handover";
 import {
   loadCustomerForContract,
+  loadLogoBase64,
   loadVehicleForContract,
 } from "@/lib/contract-loaders";
 import { customerDisplayName } from "@/lib/customer";
@@ -18,24 +19,6 @@ import type {
 } from "@/lib/types";
 
 export const maxDuration = 30;
-
-// Logo aus dem brand-Bucket als Data-URI laden (mirror sign/route).
-const loadLogoBase64 = async (
-  admin: ReturnType<typeof createAdminClient>,
-  logoPath: string | null | undefined
-): Promise<string | null> => {
-  if (!logoPath) return null;
-  if (logoPath.toLowerCase().endsWith(".svg")) return null;
-  const { data, error } = await admin.storage.from("brand").download(logoPath);
-  if (error || !data) return null;
-  const mime =
-    logoPath.toLowerCase().endsWith(".jpg") ||
-    logoPath.toLowerCase().endsWith(".jpeg")
-      ? "image/jpeg"
-      : "image/png";
-  const buf = Buffer.from(await data.arrayBuffer());
-  return `data:${mime};base64,${buf.toString("base64")}`;
-};
 
 const requireAuth = async () => {
   const supabase = createClient();
