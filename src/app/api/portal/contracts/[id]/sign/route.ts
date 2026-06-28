@@ -116,6 +116,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
     logoPngBase64,
     signaturePngBase64: sig,
     specialTerms,
+    brandColor: orgRow.brand_color,
   });
 
   const stamp = Date.now().toString(36);

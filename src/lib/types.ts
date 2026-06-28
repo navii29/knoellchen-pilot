@@ -44,6 +44,8 @@ export interface Organization {
   // echoes_api_key absichtlich NICHT im Type — darf nie ans Frontend gelangen.
   rental_terms: string | null;
   logo_path: string | null;
+  // Markenfarbe fürs Vertrags-PDF-Branding (Hex, z. B. "#0d9488"); null = neutral.
+  brand_color: string | null;
   // Wiederverwendbare Vermieter-Unterschrift (PNG-Data-URL) + Name in
   // Druckschrift. Wird automatisch auf jeden Mietvertrag gesetzt.
   landlord_signature_data: string | null;
