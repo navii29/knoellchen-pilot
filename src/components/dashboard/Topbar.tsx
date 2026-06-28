@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Bell, Menu, Search, Upload, X } from "lucide-react";
+import { Menu, Search, Upload, X } from "lucide-react";
 import { SIDEBAR_OPEN_EVENT } from "./Sidebar";
+import { NotificationBell } from "./NotificationBell";
 
 export const Topbar = ({ section }: { section?: string }) => {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -51,12 +52,7 @@ export const Topbar = ({ section }: { section?: string }) => {
           <Search size={18} />
         </button>
 
-        <button
-          className="touch-target hidden md:flex items-center justify-center w-9 h-9 rounded-full text-ink-muted hover:text-ink hover:bg-black/[0.04] transition-colors"
-          aria-label="Benachrichtigungen"
-        >
-          <Bell size={16} />
-        </button>
+        <NotificationBell />
 
         <Link
           href="/dashboard/upload"
