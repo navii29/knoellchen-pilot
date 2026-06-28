@@ -3,6 +3,7 @@ import { randomBytes } from "crypto";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getMembership } from "@/lib/team";
 import { isPngDataUrl } from "@/lib/utils";
+import { normalizeHexColor } from "@/lib/brand-color";
 
 /** Rekursiv alle Storage-Objekte unter `${orgId}/` eines Buckets löschen. */
 const removeOrgFolder = async (
@@ -39,7 +40,7 @@ const ALL_BUCKETS = [
 ];
 
 const SAFE_COLUMNS =
-  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, echoes_account_id, echoes_enabled, credit_provider, credit_api_url, email_provider, email_domain, email_domain_id, email_domain_status, email_dns_records, contract_email_subject, contract_email_body, rental_terms, onboarding_completed, onboarding_step, shopify_shop_domain, shopify_webhook_token, landlord_signature_name, created_at";
+  "id, name, street, zip, city, phone, email, tax_number, processing_fee, slug, inbound_email, sender_name, sender_email, email_automation_enabled, lexoffice_enabled, echoes_account_id, echoes_enabled, credit_provider, credit_api_url, email_provider, email_domain, email_domain_id, email_domain_status, email_dns_records, contract_email_subject, contract_email_body, rental_terms, onboarding_completed, onboarding_step, shopify_shop_domain, shopify_webhook_token, landlord_signature_name, brand_color, created_at";
 
 const stripSecrets = <T extends Record<string, unknown>>(row: T) => {
   const copy = { ...row } as T & {
@@ -134,9 +135,12 @@ export const PATCH = async (req: Request) => {
     "shopify_admin_token",
     "landlord_signature_data",
     "landlord_signature_name",
+    "brand_color",
   ];
   const update: Record<string, unknown> = {};
   for (const k of allowed) if (k in body) update[k] = body[k];
+  // Markenfarbe: nur gültiges Hex (#rgb/#rrggbb) oder null — nie roh speichern.
+  if ("brand_color" in update) update.brand_color = normalizeHexColor(update.brand_color);
   if ("processing_fee" in update) update.processing_fee = Number(update.processing_fee);
   if ("kleinunternehmer" in update)
     update.kleinunternehmer = Boolean(update.kleinunternehmer);

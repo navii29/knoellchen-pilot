@@ -861,6 +861,7 @@ export const buildContractHtml = (args: {
   logoDataUri?: string | null;
   signaturePngBase64?: string | null;
   specialTerms?: SpecialTermsTemplate[];
+  brandColor?: string | null;
 }): string => {
   const {
     org,
@@ -870,13 +871,20 @@ export const buildContractHtml = (args: {
     logoDataUri = null,
     signaturePngBase64 = null,
     specialTerms = [],
+    brandColor = null,
   } = args;
   // `tires` aktuell nicht mehr verwendet (Seite 6 ist ein Blanko-Protokoll),
   // bleibt aber im API-Parameter für künftige Erweiterungen.
   void args.tires;
 
+  // Markenfarbe NUR als CSS-Variable am Root bereitstellen — noch keine Regel
+  // nutzt sie (das ist der nächste, eigene Design-Schritt). Default = bisheriges
+  // Teal, damit null/leer das heutige Aussehen exakt erhält. brandColor ist
+  // bereits als Hex validiert (org-PATCH), esc als zusätzliche Absicherung.
+  const brandVar = esc(brandColor || "#0d9488");
+
   return `<!DOCTYPE html>
-<html lang="de">
+<html lang="de" style="--brand-color: ${brandVar}">
 <head>
 <meta charset="UTF-8" />
 <title>Mietvertrag ${esc(contract.contract_nr)}</title>

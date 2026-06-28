@@ -81,6 +81,7 @@ export const GET = async (_req: Request, { params }: Ctx) => {
     tires,
     logoPngBase64,
     specialTerms,
+    brandColor: orgRow.brand_color,
   });
 
   return new NextResponse(new Uint8Array(buf), {

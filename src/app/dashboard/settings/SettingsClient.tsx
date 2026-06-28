@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { DEFAULT_RENTAL_TERMS } from "@/lib/rental-terms";
 import { CREDIT_PROVIDERS } from "@/lib/credit-bureau";
+import { normalizeHexColor } from "@/lib/brand-color";
 import type { Organization } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
@@ -101,7 +102,7 @@ export const SettingsClient = ({
 
       <form onSubmit={submit} className="space-y-6">
         <Section title="Branding" subtitle="Logo für PDFs, Briefkopf und Kundenportal">
-          <BrandingCard initialLogoPath={org.logo_path} />
+          <BrandingCard initialLogoPath={org.logo_path} initialBrandColor={org.brand_color} />
         </Section>
 
         <Section title="Stammdaten" subtitle="Briefkopf für PDFs und E-Mails">
@@ -1850,13 +1851,46 @@ const publicLogoUrl = (path: string | null): string | null => {
 
 const ACCEPTED_LOGO = "image/png,image/jpeg,image/svg+xml";
 
-const BrandingCard = ({ initialLogoPath }: { initialLogoPath: string | null }) => {
+const BrandingCard = ({
+  initialLogoPath,
+  initialBrandColor,
+}: {
+  initialLogoPath: string | null;
+  initialBrandColor: string | null;
+}) => {
   const [logoPath, setLogoPath] = useState<string | null>(initialLogoPath);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   // Cache-Buster: nach Upload neue URL trotz unveränderlichem Pfad-Format
   const [bust, setBust] = useState(0);
+
+  // Markenfarbe (Hex). Leer = neutrales Design. Speichert über den org-PATCH,
+  // der den Wert serverseitig erneut als Hex validiert.
+  const [brandColor, setBrandColor] = useState<string>(initialBrandColor || "");
+  const [colorBusy, setColorBusy] = useState(false);
+
+  const saveColor = async (value: string) => {
+    const normalized = value.trim() === "" ? null : normalizeHexColor(value);
+    if (value.trim() !== "" && !normalized) {
+      setErr("Bitte eine gültige Hex-Farbe angeben (z. B. #0d9488).");
+      return;
+    }
+    setColorBusy(true);
+    setErr(null);
+    const res = await fetch("/api/org", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ brand_color: normalized }),
+    });
+    setColorBusy(false);
+    if (!res.ok) {
+      const j = (await res.json().catch(() => ({}))) as { error?: string };
+      setErr(j.error || "Speichern fehlgeschlagen.");
+      return;
+    }
+    setBrandColor(normalized || "");
+  };
 
   const url = logoPath
     ? `${publicLogoUrl(logoPath)}?v=${bust || initialLogoPath?.length || 0}`
@@ -1993,6 +2027,42 @@ const BrandingCard = ({ initialLogoPath }: { initialLogoPath: string | null }) =
           </div>
         </label>
       )}
+
+      <div className="mt-4 flex items-center gap-4 p-4 rounded-panel border border-hairline bg-canvas">
+        <input
+          type="color"
+          value={brandColor || "#0d9488"}
+          onChange={(e) => setBrandColor(e.target.value)}
+          onBlur={(e) => void saveColor(e.target.value)}
+          aria-label="Markenfarbe"
+          disabled={colorBusy}
+          className="w-10 h-10 rounded-btn border border-hairline cursor-pointer bg-paper p-0.5 disabled:opacity-50"
+        />
+        <div className="flex-1 min-w-0">
+          <div className="font-medium text-[13.5px] text-ink">Markenfarbe</div>
+          <div className="text-[12px] text-ink-muted mt-0.5">
+            Für künftiges PDF-Branding. Leer = neutrales Design.
+          </div>
+        </div>
+        <input
+          value={brandColor}
+          onChange={(e) => setBrandColor(e.target.value)}
+          onBlur={(e) => void saveColor(e.target.value)}
+          placeholder="#0d9488"
+          disabled={colorBusy}
+          className="w-28 px-2 py-1 rounded-btn border border-hairline bg-paper text-ink font-mono text-[13px] tnum outline-none focus:border-signal/40 disabled:opacity-50"
+        />
+        {brandColor && (
+          <button
+            type="button"
+            onClick={() => void saveColor("")}
+            disabled={colorBusy}
+            className="text-[12px] text-ink-muted hover:text-ink underline disabled:opacity-50"
+          >
+            zurücksetzen
+          </button>
+        )}
+      </div>
 
       {err && (
         <div className="mt-3 text-[12px] text-rose-700 bg-rose-50 border border-rose-200 rounded-panel px-3 py-2">
