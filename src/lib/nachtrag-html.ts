@@ -75,12 +75,9 @@ const CSS = `
   .cost-line .total { font-weight: 700; color: #1a1a1a; }
   .muted { color: #6a6a6a; }
 
-  /* Platzhalter Rechtstext */
-  .placeholder {
-    border: 0.8pt dashed #b0b0b0; border-radius: 2mm; background: #fafafa;
-    padding: 4mm; font-size: 9pt; color: #555; font-style: italic; margin: 1mm 0 5mm 0;
-  }
-  .note { font-size: 9.5pt; color: #1a1a1a; margin-bottom: 10mm; }
+  /* Verbindlicher Klauseltext (Fließtext) */
+  .clause { font-size: 9.5pt; line-height: 1.5; color: #1a1a1a; margin: 0 0 3mm 0; text-align: justify; }
+  .clause:last-child { margin-bottom: 0; }
 
   /* Fuß: Unterschriften */
   .sigs { margin-top: auto; padding-top: 6mm; }
@@ -105,6 +102,17 @@ export const buildNachtragHtml = (input: NachtragInput): string => {
   const rateStr = input.dailyRate != null ? fmtEur(input.dailyRate) : "—";
   const costStr = input.extraCost != null ? fmtEur(input.extraCost) : "—";
   const ortDatum = input.city ? `${esc(input.city)}, ${esc(input.dateStr)}` : esc(input.dateStr);
+
+  // Klauseltext-Felder: Daten via fmtDate, Beträge via fmtEur (→ "69,00 €")
+  // plus "brutto". Absatz 2 hat zwei Varianten — fehlt der Tagespreis (→ keine
+  // Zusatzkosten), bleibt der Satz ohne dangling Betrag/"brutto" lesbar.
+  const origStr = esc(fmtDate(input.originalReturnDate));
+  const newStr = esc(fmtDate(input.newReturnDate));
+  const dayWordClause = input.extraDays === 1 ? "Miettag" : "Miettage";
+  const priced = input.dailyRate != null && input.extraCost != null;
+  const clauseP2 = priced
+    ? `Die ursprünglich bis zum ${origStr} vereinbarte Mietzeit wird bis zum ${newStr} verlängert. Für die zusätzlichen ${input.extraDays} ${dayWordClause} gilt der im Hauptvertrag vereinbarte Tagespreis von ${esc(fmtEur(input.dailyRate))} brutto je Miettag. Bei Rückgabe der Mietsache am ${newStr} ergeben sich hieraus voraussichtliche Zusatzkosten in Höhe von ${esc(fmtEur(input.extraCost))} brutto.`
+    : `Die ursprünglich bis zum ${origStr} vereinbarte Mietzeit wird bis zum ${newStr} verlängert. Für die zusätzlichen ${input.extraDays} ${dayWordClause} gilt der im Hauptvertrag vereinbarte Tagespreis. Die hieraus resultierenden Zusatzkosten werden bei Rückgabe der Mietsache am ${newStr} abgerechnet.`;
 
   return `<!DOCTYPE html>
 <html lang="de" style="--brand-color: ${brandVar}">
@@ -151,8 +159,11 @@ export const buildNachtragHtml = (input: NachtragInput): string => {
 
     <div class="section">
       <div class="section-title">Vereinbarung</div>
-      <div class="placeholder">[Klauseltext Verlängerung — wird durch den Vermieter/Anwalt ergänzt]</div>
-      <div class="note">Alle übrigen Bestimmungen des Mietvertrags bleiben unberührt.</div>
+      <p class="clause">Die Parteien des im Kopf bezeichneten Mietvertrags (Mietvertrag-Nr. ${esc(input.contractNr)}) vereinbaren einvernehmlich folgende Verlängerung der Mietzeit:</p>
+      <p class="clause">${clauseP2}</p>
+      <p class="clause">Die Zusatzkosten für die verlängerte Mietzeit werden bei Rückgabe der Mietsache abgerechnet und sind mit Zugang der Abrechnung/Rechnung zur Zahlung fällig, sofern im Hauptvertrag keine für den Mieter günstigere Zahlungsfrist vereinbart ist.</p>
+      <p class="clause">Alle übrigen Bestimmungen des Hauptvertrags, insbesondere die Allgemeinen Vermietbedingungen, Versicherungs- und Haftungsregelungen sowie Kautions- und Rückgabevereinbarungen, gelten unverändert fort, soweit sie durch diesen Nachtrag nicht ausdrücklich geändert werden.</p>
+      <p class="clause">Änderungen und Ergänzungen dieses Nachtrags bedürfen der Textform.</p>
     </div>
 
     <div class="sigs">

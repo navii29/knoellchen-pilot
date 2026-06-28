@@ -31,10 +31,26 @@ describe("buildNachtragHtml", () => {
     expect(html).toContain("483"); // fmtEur(483)
   });
 
-  it("enthält den Platzhalter-Rechtstext und die neutrale Hinweiszeile", () => {
+  it("enthält den finalen Klauseltext mit eingesetzten Feldern (kein Platzhalter)", () => {
     const html = buildNachtragHtml(base);
-    expect(html).toContain("[Klauseltext Verlängerung — wird durch den Vermieter/Anwalt ergänzt]");
-    expect(html).toContain("Alle übrigen Bestimmungen des Mietvertrags bleiben unberührt.");
+    expect(html).not.toContain("[Klauseltext");
+    expect(html).not.toContain("Alle übrigen Bestimmungen des Mietvertrags bleiben unberührt.");
+    expect(html).toContain(
+      "(Mietvertrag-Nr. KP-2026-0042) vereinbaren einvernehmlich folgende Verlängerung der Mietzeit"
+    );
+    expect(html).toContain("Alle übrigen Bestimmungen des Hauptvertrags");
+    expect(html).toContain("bedürfen der Textform");
+    // Beträge via fmtEur (€) + "brutto" — kein wörtliches "EUR"
+    expect(html).toContain("Tagespreis von 69,00 € brutto je Miettag");
+    expect(html).toContain("Zusatzkosten in Höhe von 483,00 € brutto");
+    expect(html).not.toContain("EUR brutto");
+  });
+
+  it("null-Tagespreis → Fließtext bleibt sauber, kein dangling Betrag/'brutto'", () => {
+    const html = buildNachtragHtml({ ...base, dailyRate: null, extraCost: null });
+    expect(html).not.toContain("brutto");
+    expect(html).toContain("gilt der im Hauptvertrag vereinbarte Tagespreis.");
+    expect(html).toContain("werden bei Rückgabe der Mietsache am 15.07.2026 abgerechnet");
   });
 
   it("setzt die Markenfarbe als CSS-Variable am Root", () => {
