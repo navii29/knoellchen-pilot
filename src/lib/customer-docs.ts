@@ -11,11 +11,23 @@ export const CUSTOMER_DOC_FILL_KEYS = {
     "first_name",
     "last_name",
     "birthday",
+    "birth_place",
     "license_nr",
     "license_class",
     "license_expiry",
+    "license_issued",
   ],
-  id_card: ["first_name", "last_name", "id_card_nr", "street", "house_nr", "zip", "city"],
+  id_card: [
+    "first_name",
+    "last_name",
+    "birth_place",
+    "id_card_nr",
+    "id_card_authority",
+    "street",
+    "house_nr",
+    "zip",
+    "city",
+  ],
 } as const;
 
 export type CustomerDocType = keyof typeof CUSTOMER_DOC_FILL_KEYS;
@@ -24,7 +36,7 @@ export type CustomerDocType = keyof typeof CUSTOMER_DOC_FILL_KEYS;
 // Das wird zu ISO normalisiert (wie beim Vertrags-/CSV-Import), damit es nicht
 // verloren geht. Erst wenn es WIRKLICH kein gültiges Kalenderdatum ist, wird das
 // Feld übersprungen — so kippt ein Datums-Fehler nie das atomare UPDATE.
-const DATE_KEYS = new Set<string>(["birthday", "license_expiry"]);
+const DATE_KEYS = new Set<string>(["birthday", "license_expiry", "license_issued"]);
 
 /**
  * Fill-if-empty-Merge: liefert ein `patch` nur mit den Feldern, die laut OCR

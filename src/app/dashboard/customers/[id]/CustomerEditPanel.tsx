@@ -20,6 +20,7 @@ type FormState = {
   first_name: string;
   last_name: string;
   birthday: string;
+  birth_place: string;
   street: string;
   house_nr: string;
   zip: string;
@@ -30,7 +31,9 @@ type FormState = {
   license_nr: string;
   license_class: string;
   license_expiry: string;
+  license_issued: string;
   id_card_nr: string;
+  id_card_authority: string;
   notes: string;
   marketing_opt_in: boolean;
 };
@@ -44,6 +47,7 @@ const fromCustomer = (c: Customer): FormState => ({
   first_name: c.first_name ?? "",
   last_name: c.last_name ?? "",
   birthday: (c.birthday ?? "").slice(0, 10),
+  birth_place: c.birth_place ?? "",
   street: c.street ?? "",
   house_nr: c.house_nr ?? "",
   zip: c.zip ?? "",
@@ -54,7 +58,9 @@ const fromCustomer = (c: Customer): FormState => ({
   license_nr: c.license_nr ?? "",
   license_class: c.license_class ?? "",
   license_expiry: (c.license_expiry ?? "").slice(0, 10),
+  license_issued: (c.license_issued ?? "").slice(0, 10),
   id_card_nr: c.id_card_nr ?? "",
+  id_card_authority: c.id_card_authority ?? "",
   notes: c.notes ?? "",
   marketing_opt_in: c.marketing_opt_in ?? false,
 });
@@ -209,6 +215,9 @@ const CustomerEditForm = ({
             <Field label="Geburtsdatum">
               <input type="date" value={data.birthday} onChange={set("birthday")} className="field font-mono tnum" />
             </Field>
+            <Field label="Geburtsort">
+              <input value={data.birth_place} onChange={set("birth_place")} className="field" />
+            </Field>
           </Section>
         )}
       </Panel>
@@ -261,8 +270,14 @@ const CustomerEditForm = ({
           <Field label="FS gültig bis">
             <input type="date" value={data.license_expiry} onChange={set("license_expiry")} className="field font-mono tnum" />
           </Field>
+          <Field label="FS ausgestellt am">
+            <input type="date" value={data.license_issued} onChange={set("license_issued")} className="field font-mono tnum" />
+          </Field>
           <Field label="Ausweis-Nr.">
             <input value={data.id_card_nr} onChange={set("id_card_nr")} className="field font-mono tnum" />
+          </Field>
+          <Field label="Ausweis-Behörde">
+            <input value={data.id_card_authority} onChange={set("id_card_authority")} className="field" />
           </Field>
         </Section>
       </Panel>

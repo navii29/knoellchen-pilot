@@ -454,7 +454,10 @@ export interface ParsedCustomerData {
   license_nr?: string | null;
   license_class?: string | null;
   license_expiry?: string | null;
+  license_issued?: string | null;
   id_card_nr?: string | null;
+  id_card_authority?: string | null;
+  birth_place?: string | null;
   document_type?: CustomerDocumentType | null;
   confidence?: number;
 }

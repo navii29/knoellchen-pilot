@@ -29,7 +29,7 @@ const trimOrNull = (v: unknown) => {
 // "30.05.1990"/"1990"/"unbekannt" würden sonst beim UPDATE einen Postgres-Date-
 // Fehler (500) werfen. Undefined-Passthrough bleibt erhalten: fehlt der Key,
 // wird das Feld nicht angefasst (return undefined -> Loop überspringt es).
-const DATE_KEYS = new Set(["birthday", "license_expiry"]);
+const DATE_KEYS = new Set(["birthday", "license_expiry", "license_issued"]);
 const toIsoDateOrNull = (v: unknown): string | null | undefined => {
   if (v === undefined) return undefined;
   if (typeof v !== "string") return null;
@@ -59,7 +59,10 @@ const FIELDS = [
   "license_nr",
   "license_class",
   "license_expiry",
+  "license_issued",
   "id_card_nr",
+  "id_card_authority",
+  "birth_place",
   "notes",
 ] as const;
 // license_photo_path / id_card_photo_path sind BEWUSST nicht in FIELDS: sie
