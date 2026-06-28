@@ -85,6 +85,8 @@ const CSS = `
   .head .org-name { font-weight: 700; font-size: 11pt; }
   .head .org-addr { font-size: 8pt; color: #555; margin-top: 0.6mm; line-height: 1.4; }
   .head .logo img { max-height: 18mm; max-width: 60mm; object-fit: contain; }
+  /* SVG-only: definite Höhe gegen Kollaps ohne viewBox. PNG/JPG unberührt. */
+  .head .logo img[src^="data:image/svg+xml"] { height: 18mm; }
   .head .logo-fallback {
     color: #0d9488;
     font-size: 16pt;

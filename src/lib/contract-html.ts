@@ -146,10 +146,15 @@ const CSS = `
   .logo { text-align: center; padding-top: 1mm; padding-bottom: 3mm; }
   .logo.left { text-align: left; padding-top: 0; padding-bottom: 4mm; }
   .logo img { max-height: 20mm; max-width: 90mm; object-fit: contain; }
+  /* SVG ohne intrinsische Größe (viewBox) nicht kollabieren lassen: definite
+     Höhe (= max-height), object-fit:contain + max-width bleiben. Trifft NUR
+     SVG-Data-URIs → PNG/JPG byte-identisch. */
+  .logo img[src^="data:image/svg+xml"] { height: 20mm; }
   /* Prominentes Firmenlogo oben links (Seiten 1/3/5), wie in der Vorlage.
      Gedeckelt: breite Wortmarke füllt nicht die halbe Seite, quadratisches
      Logo sprengt nicht den Kopf (object-fit: contain via .logo img greift). */
   .logo.left img { max-height: 22mm; max-width: 75mm; }
+  .logo.left img[src^="data:image/svg+xml"] { height: 22mm; }
   .logo-fallback {
     color: var(--brand-color);
     font-size: 22pt;

@@ -7,27 +7,11 @@ import { isPngDataUrl } from "@/lib/utils";
 import {
   loadCurrentTireForVehicle,
   loadCustomerForContract,
+  loadLogoBase64,
   loadSpecialTermsForContract,
   loadVehicleForContract,
 } from "@/lib/contract-loaders";
 import { runRiskCheck } from "@/lib/risk-check.server";
-
-const loadLogoBase64 = async (
-  admin: ReturnType<typeof createAdminClient>,
-  logoPath: string | null | undefined
-): Promise<string | null> => {
-  if (!logoPath) return null;
-  if (logoPath.toLowerCase().endsWith(".svg")) return null;
-  const { data, error } = await admin.storage.from("brand").download(logoPath);
-  if (error || !data) return null;
-  const mime =
-    logoPath.toLowerCase().endsWith(".jpg") ||
-    logoPath.toLowerCase().endsWith(".jpeg")
-      ? "image/jpeg"
-      : "image/png";
-  const buf = Buffer.from(await data.arrayBuffer());
-  return `data:${mime};base64,${buf.toString("base64")}`;
-};
 
 export const maxDuration = 30;
 

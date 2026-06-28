@@ -5,29 +5,12 @@ import type { Contract, Organization } from "@/lib/types";
 import {
   loadCurrentTireForVehicle,
   loadCustomerForContract,
+  loadLogoBase64,
   loadSpecialTermsForContract,
   loadVehicleForContract,
 } from "@/lib/contract-loaders";
 
 export const maxDuration = 30;
-
-const loadLogoBase64 = async (
-  admin: ReturnType<typeof createAdminClient>,
-  logoPath: string | null | undefined
-): Promise<string | null> => {
-  if (!logoPath) return null;
-  // SVG kann jsPDF nicht rendern — gleich überspringen.
-  if (logoPath.toLowerCase().endsWith(".svg")) return null;
-  const { data, error } = await admin.storage.from("brand").download(logoPath);
-  if (error || !data) return null;
-  const mime =
-    logoPath.toLowerCase().endsWith(".jpg") ||
-    logoPath.toLowerCase().endsWith(".jpeg")
-      ? "image/jpeg"
-      : "image/png";
-  const buf = Buffer.from(await data.arrayBuffer());
-  return `data:${mime};base64,${buf.toString("base64")}`;
-};
 
 const requireAuth = async () => {
   const supabase = createClient();
