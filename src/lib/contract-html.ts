@@ -144,28 +144,38 @@ const CSS = `
   .ho-overlay b { color: #8a5a00; margin-right: 0.5mm; }
 
   .logo { text-align: center; padding-top: 1mm; padding-bottom: 3mm; }
-  .logo.left { text-align: left; }
+  .logo.left { text-align: left; padding-top: 0; padding-bottom: 4mm; }
   .logo img { max-height: 20mm; max-width: 90mm; object-fit: contain; }
-  .logo.left img { max-height: 18mm; max-width: 70mm; }
+  /* Prominentes Firmenlogo oben links (Seiten 1/3/5), wie in der Vorlage.
+     Gedeckelt: breite Wortmarke füllt nicht die halbe Seite, quadratisches
+     Logo sprengt nicht den Kopf (object-fit: contain via .logo img greift). */
+  .logo.left img { max-height: 22mm; max-width: 75mm; }
   .logo-fallback {
-    color: #0d9488;
+    color: var(--brand-color);
     font-size: 22pt;
     font-weight: 600;
     letter-spacing: -0.01em;
   }
-  .logo.left .logo-fallback { font-size: 18pt; }
+  .logo.left .logo-fallback { font-size: 20pt; }
 
   /* ---------- Seite 1 ---------- */
   .contract-meta { margin-top: 1mm; font-size: 9.5pt; }
   .contract-meta b { font-weight: 700; margin-right: 10mm; }
-  .subtitle { margin-top: 0.5mm; font-size: 8.5pt; color: #1e1e1e; }
+  .subtitle {
+    margin-top: 0.5mm;
+    font-size: 8.5pt;
+    color: #555;
+    letter-spacing: 0.02em;
+    padding-bottom: 2mm;
+    border-bottom: 1.8pt solid var(--brand-color);
+  }
 
-  .form { width: 100%; border-collapse: collapse; margin-top: 3mm; }
-  .form tr td { padding: 0.55mm 0; vertical-align: top; font-size: 8.5pt; line-height: 1.25; }
-  .form td.label { width: 55mm; color: #1e1e1e; }
-  .form td.value { color: #1e1e1e; }
+  .form { width: 100%; border-collapse: collapse; margin-top: 4mm; }
+  .form tr td { padding: 0.6mm 0; vertical-align: top; font-size: 8.5pt; line-height: 1.3; }
+  .form td.label { width: 55mm; color: #6a6a6a; font-size: 8pt; letter-spacing: 0.01em; }
+  .form td.value { color: #1a1a1a; font-weight: 500; }
   .form td.right { text-align: right; padding-left: 4mm; white-space: nowrap; }
-  .form .gap td { padding-top: 1.8mm; padding-bottom: 0; }
+  .form .gap td { padding-top: 2.4mm; padding-bottom: 0; }
 
   .sigs { margin-top: auto; padding-top: 4mm; }
   .sigs .row { display: flex; justify-content: space-between; gap: 10mm; }
@@ -183,6 +193,9 @@ const CSS = `
     font-size: 13pt;
     text-align: center;
     margin: 0 0 4mm 0;
+    color: #1a1a1a;
+    padding-bottom: 2mm;
+    border-bottom: 1pt solid var(--brand-color);
   }
   .agb-cols {
     column-count: 2;
@@ -205,7 +218,7 @@ const CSS = `
   }
   .special-box .cell { padding: 3mm 4mm; }
   .special-box .cell + .cell { border-left: 0.5pt solid #333; }
-  .special-box .heading { font-weight: 700; margin-bottom: 2mm; }
+  .special-box .heading { font-weight: 700; margin-bottom: 2mm; color: #1a1a1a; }
   .special-list { margin: 0; padding-left: 5mm; }
   .special-list li { margin-bottom: 1.5mm; }
 
@@ -221,6 +234,9 @@ const CSS = `
     font-weight: 700;
     margin-bottom: 2mm;
     column-span: all;
+    color: #1a1a1a;
+    padding-bottom: 1.5mm;
+    border-bottom: 0.8pt solid var(--brand-color);
   }
   .special-single .special-list { padding-left: 5mm; }
   .special-single .special-list li { break-inside: avoid; margin-bottom: 1.5mm; }
@@ -237,6 +253,9 @@ const CSS = `
     font-size: 14pt;
     text-align: center;
     margin: 4mm 0 6mm 0;
+    color: #1a1a1a;
+    padding-bottom: 2mm;
+    border-bottom: 1pt solid var(--brand-color);
   }
   .privacy-intro { font-size: 9pt; margin-bottom: 6mm; }
   .privacy-grid {
@@ -259,7 +278,14 @@ const CSS = `
   .privacy-bullets li { margin-bottom: 0.6mm; }
 
   /* ---------- Seite 5 AGB-Bestätigung ---------- */
-  .conf-title { font-weight: 700; font-size: 11.5pt; margin: 12mm 0 8mm 0; }
+  .conf-title {
+    font-weight: 700;
+    font-size: 11.5pt;
+    margin: 12mm 0 8mm 0;
+    color: #1a1a1a;
+    padding-bottom: 1.5mm;
+    border-bottom: 1pt solid var(--brand-color);
+  }
   .conf-body { font-size: 10pt; margin-bottom: 35mm; }
   .conf-field { display: flex; flex-direction: column; max-width: 90mm; margin-bottom: 18mm; }
   .conf-field .val { min-height: 5mm; padding-bottom: 1mm; border-bottom: 0.5pt solid #888; font-size: 10pt; }
@@ -521,7 +547,7 @@ const renderPage1 = (
 
   return `
     <div class="page">
-      ${logoBlock(logoDataUri, org.name)}
+      ${logoBlock(logoDataUri, org.name, "left")}
       <div class="contract-meta">
         <b>Mietvertrag-Nr.:</b>${esc(contract.contract_nr)} / ${esc(dateStr)}
       </div>
