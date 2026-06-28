@@ -183,3 +183,86 @@ describe("mergeCustomerDocFields", () => {
     expect(filled).toEqual([]);
   });
 });
+
+// ────────────────────────────────────────────────────────────────────────────
+// Regression #116 / Audit-Fund E11 — der OCR→Kunde-Datums-Bruch.
+//
+// Vor #116 prüfte der Merge das Datum mit
+//   isStrictIsoDate = /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v))
+// und schrieb bei Treffer den ROHEN Wert ins Patch. Das hatte zwei Löcher:
+//   1. Ein deutsches OCR-Datum ("01.03.2031") fiel beim Regex-Test durch und wurde
+//      KOMPLETT verworfen — die Gültigkeit ging still verloren.
+//   2. Ein ISO-FÖRMIGES, aber unmögliches Datum ("2031-02-31" — den 31. Februar
+//      gibt es nicht) bestand isStrictIsoDate, weil Date.parse() es still überrollt
+//      (kein NaN). Der rohe Wert landete im Patch → das atomare customers.update
+//      scheiterte am DATE-Constraint → ALLE Patch-Felder (auch FS-Nr/Klasse) gingen
+//      verloren.
+// normalizeDate() schließt beide Löcher: deutsches Format → ISO, und eine echte
+// Kalenderprüfung verwirft unmögliche Tage, BEVOR sie die DB erreichen.
+//
+// Hinweis zur Probe: Der im Audit genannte Beispielwert "1985-13-45" eignet sich
+// NICHT — Monat 13 lässt Date.parse() schon vor #116 als NaN scheitern, der Wert
+// wurde also auch alt verworfen (beide grün). Den Bruch deckt nur ein Datum auf,
+// das Date.parse() überrollt: "2031-02-31".
+describe("mergeCustomerDocFields — Regression #116 / E11 (OCR-Datums-Bruch)", () => {
+  const emptyLicense = {
+    first_name: null,
+    last_name: null,
+    birthday: null,
+    license_nr: null,
+    license_class: null,
+    license_expiry: null,
+  };
+
+  // Fall A: ein GÜLTIGES (hier deutsches) Datum muss normalisiert im Patch landen —
+  // gemeinsam mit den Textfeldern. Vor #116 fiel das deutsche Datum durch den
+  // Regex-Test und wurde verworfen → license_expiry fehlte (rot).
+  it("A) gültiges Datum landet normalisiert im Patch — zusammen mit den Textfeldern", () => {
+    const parsed: ParsedCustomerData = {
+      license_nr: "B072RRE2I55",
+      license_class: "B, BE",
+      license_expiry: "01.03.2031", // realistisches OCR-Format
+    };
+    const { patch, filled } = mergeCustomerDocFields(emptyLicense, parsed, "license");
+    expect(patch.license_expiry).toBe("2031-03-01"); // normalisiert übernommen
+    expect(patch.license_nr).toBe("B072RRE2I55"); // Textfeld dabei
+    expect(patch.license_class).toBe("B, BE"); // Textfeld dabei
+    expect(filled).toEqual(["license_nr", "license_class", "license_expiry"]);
+  });
+
+  // Fall B: ein UNMÖGLICHES Kalenderdatum darf das Ergebnis NICHT kippen. Das Datum
+  // wird weggelassen, die Textfelder bleiben. Vor #116 wanderte der rohe Wert
+  // "2031-02-31" ins Patch (Date.parse überrollt ihn) → DB-UPDATE wäre am DATE-
+  // Constraint gescheitert und hätte FS-Nr + Klasse mitgerissen (rot).
+  it("B) unmögliches Datum kippt den Patch NICHT — Datum fällt weg, Textfelder bleiben", () => {
+    const parsed: ParsedCustomerData = {
+      license_nr: "B072RRE2I55",
+      license_class: "B, BE",
+      license_expiry: "2031-02-31", // den 31. Februar gibt es nicht
+    };
+    const { patch, filled } = mergeCustomerDocFields(emptyLicense, parsed, "license");
+    // Das kaputte Datum darf NICHT (auch nicht roh) ins Patch — sonst kippt es das
+    // atomare DB-UPDATE und reißt die Textfelder mit.
+    expect(patch).not.toHaveProperty("license_expiry");
+    expect(patch.license_nr).toBe("B072RRE2I55"); // Textfeld überlebt
+    expect(patch.license_class).toBe("B, BE"); // Textfeld überlebt
+    expect(filled).toEqual(["license_nr", "license_class"]);
+  });
+
+  // Fall B deckt beide DATE-Spalten ab: auch ein kaputtes Geburtsdatum darf die
+  // übrigen Felder nicht mitreißen.
+  it("B2) auch ein kaputtes Geburtsdatum reißt die übrigen Felder nicht mit", () => {
+    const parsed: ParsedCustomerData = {
+      first_name: "Max",
+      last_name: "Mustermann",
+      birthday: "1985-02-31", // unmöglich
+      license_nr: "B072RRE2I55",
+    };
+    const { patch, filled } = mergeCustomerDocFields(emptyLicense, parsed, "license");
+    expect(patch).not.toHaveProperty("birthday");
+    expect(patch.first_name).toBe("Max"); // Textfeld überlebt
+    expect(patch.last_name).toBe("Mustermann"); // Textfeld überlebt
+    expect(patch.license_nr).toBe("B072RRE2I55"); // Textfeld überlebt
+    expect(filled).toEqual(["first_name", "last_name", "license_nr"]);
+  });
+});
