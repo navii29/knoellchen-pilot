@@ -8,6 +8,7 @@ import { redactContractPartner } from "@/lib/redact";
 import { logActivity } from "@/lib/activity";
 import { applyTakeover } from "@/lib/contract-takeover-service";
 import { normalizeNumber } from "@/lib/csv-import";
+import { resolveEffectiveDailyRate } from "@/lib/daily-rate";
 import type { Contract } from "@/lib/types";
 
 const requireAuth = async () => {
@@ -93,7 +94,7 @@ export const POST = async (req: Request) => {
     );
   const { data: vehicle } = await admin
     .from("vehicles")
-    .select("id, vehicle_type, manufacturer, model, color, first_registration, fuel_type, fin_number, power_ps, extra_km_price")
+    .select("id, vehicle_type, manufacturer, model, color, first_registration, fuel_type, fin_number, power_ps, extra_km_price, daily_rate")
     .eq("org_id", auth.org_id)
     .eq("plate", plate)
     .maybeSingle();
@@ -228,7 +229,12 @@ export const POST = async (req: Request) => {
     pickup_time: (body.pickup_time as string) ?? null,
     return_date: body.return_date as string,
     return_time: (body.return_time as string) ?? null,
-    daily_rate: numeric(body.daily_rate),
+    // Effektiver Tagespreis: expliziter Preis gewinnt; nur bei leer/0 den
+    // Fahrzeugpreis vorbefüllen (nie einen angegebenen Preis überschreiben).
+    daily_rate: resolveEffectiveDailyRate({
+      contractRate: numeric(body.daily_rate),
+      vehicleRate: (vehicle?.daily_rate as number | null | undefined) ?? null,
+    }),
     total_amount: numeric(body.total_amount),
     deposit: numeric(body.deposit),
     km_pickup: kmPickup,
