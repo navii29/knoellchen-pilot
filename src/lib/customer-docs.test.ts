@@ -209,9 +209,11 @@ describe("mergeCustomerDocFields — Regression #116 / E11 (OCR-Datums-Bruch)", 
     first_name: null,
     last_name: null,
     birthday: null,
+    birth_place: null,
     license_nr: null,
     license_class: null,
     license_expiry: null,
+    license_issued: null,
   };
 
   // Fall A: ein GÜLTIGES (hier deutsches) Datum muss normalisiert im Patch landen —
@@ -264,5 +266,62 @@ describe("mergeCustomerDocFields — Regression #116 / E11 (OCR-Datums-Bruch)", 
     expect(patch.last_name).toBe("Mustermann"); // Textfeld überlebt
     expect(patch.license_nr).toBe("B072RRE2I55"); // Textfeld überlebt
     expect(filled).toEqual(["first_name", "last_name", "license_nr"]);
+  });
+
+  // license_issued (FS-Ausstellungsdatum, Feld 4a) ist ebenfalls DATE — es MUSS
+  // durch dieselbe #116-Normalisierung laufen wie license_expiry/birthday.
+  // Fall A für license_issued: gültiges deutsches Datum → normalisiert im Patch.
+  it("A2) gültiges license_issued landet normalisiert im Patch — mit den Textfeldern", () => {
+    const parsed: ParsedCustomerData = {
+      license_nr: "B072RRE2I55",
+      license_class: "B, BE",
+      license_issued: "01.03.2021", // deutsches OCR-Format
+    };
+    const { patch, filled } = mergeCustomerDocFields(emptyLicense, parsed, "license");
+    expect(patch.license_issued).toBe("2021-03-01"); // normalisiert übernommen
+    expect(patch.license_nr).toBe("B072RRE2I55"); // Textfeld dabei
+    expect(patch.license_class).toBe("B, BE"); // Textfeld dabei
+    expect(filled).toEqual(["license_nr", "license_class", "license_issued"]);
+  });
+
+  // Fall B für license_issued: ein unmögliches Ausstellungsdatum darf die
+  // Textfelder NICHT mitreißen (gleiche Beweisführung wie license_expiry).
+  it("B3) unmögliches license_issued kippt den Patch NICHT — Datum fällt weg, Textfelder bleiben", () => {
+    const parsed: ParsedCustomerData = {
+      license_nr: "B072RRE2I55",
+      license_class: "B, BE",
+      license_issued: "2031-02-31", // den 31. Februar gibt es nicht
+    };
+    const { patch, filled } = mergeCustomerDocFields(emptyLicense, parsed, "license");
+    expect(patch).not.toHaveProperty("license_issued");
+    expect(patch.license_nr).toBe("B072RRE2I55"); // Textfeld überlebt
+    expect(patch.license_class).toBe("B, BE"); // Textfeld überlebt
+    expect(filled).toEqual(["license_nr", "license_class"]);
+  });
+
+  // id_card-Merge übernimmt die neuen Textfelder (Behörde, Geburtsort) per
+  // fill-if-empty — id_card trägt kein DATE-Feld, kann also nicht datums-kippen.
+  it("id_card füllt Behörde + Geburtsort (fill-if-empty), reißt nichts mit", () => {
+    const emptyIdCard = {
+      first_name: null,
+      last_name: null,
+      birth_place: null,
+      id_card_nr: null,
+      id_card_authority: null,
+      street: null,
+      house_nr: null,
+      zip: null,
+      city: null,
+    };
+    const parsed: ParsedCustomerData = {
+      id_card_nr: "T22000129",
+      id_card_authority: "Stadt München",
+      birth_place: "München",
+    };
+    const { patch, filled } = mergeCustomerDocFields(emptyIdCard, parsed, "id_card");
+    expect(patch.id_card_nr).toBe("T22000129");
+    expect(patch.id_card_authority).toBe("Stadt München");
+    expect(patch.birth_place).toBe("München");
+    expect(filled).toEqual(["birth_place", "id_card_nr", "id_card_authority"]);
   });
 });

@@ -182,7 +182,10 @@ Antworte AUSSCHLIESSLICH mit gültigem JSON (keine Erklärungen, kein Markdown):
   "license_nr": "Führerscheinnummer = Feld 5 auf der VORDERSEITE des Führerscheins (alphanumerisch, direkt unter dem Geburtsort). Lies sie zeichengenau ab.",
   "license_class": "Führerschein-Klassen = Feld 9 (z. B. AM, A1, B, BE, C1, L) — auf der VORDERSEITE als Liste und/oder auf der RÜCKSEITE in der Spalten-Tabelle (Spalte 9). Kommagetrennt zusammenfassen.",
   "license_expiry": "Ablaufdatum = Feld 4b auf der VORDERSEITE (vorzugsweise YYYY-MM-DD, sonst wie abgedruckt, z. B. 01.03.2031).",
+  "license_issued": "Ausstellungsdatum des Führerscheins = Feld 4a auf der VORDERSEITE (vorzugsweise YYYY-MM-DD, sonst wie abgedruckt, z. B. 01.03.2021).",
   "id_card_nr": "Dokumenten-/Ausweisnummer (Personalausweis/Reisepass): vorne oben rechts UND in der MRZ (maschinenlesbare Zone, die <<< -Zeilen). Die ersten 9–10 Zeichen der ersten MRZ-Zeile nach dem Ländercode sind die Dokumentennummer.",
+  "id_card_authority": "Ausstellende Behörde des Personalausweises (z. B. 'Stadt München') — steht meist auf der RÜCKSEITE.",
+  "birth_place": "Geburtsort der Person — steht beim Geburtsdatum (Personalausweis/Reisepass; beim Führerschein Feld 3).",
   "confidence": Zahl 0.0 bis 1.0
 }
 
@@ -193,6 +196,7 @@ WICHTIG zur Genauigkeit:
 - Lass die Dokumenten-/Führerschein-NUMMER und die Führerschein-KLASSEN nicht leer, wenn sie irgendwo (auch auf der Rückseite oder in der MRZ) erkennbar sind.
 - Personalausweis/Reisepass: die MRZ (untere zwei/drei Zeilen mit <<<) enthält Name, Geburtsdatum UND Dokumentennummer — nutze sie, wenn die Klarschrift unleserlich ist.
 - Auf einem deutschen Führerschein steht KEINE Adresse — nur auf dem Personalausweis (Adresse meist auf der RÜCKSEITE).
+- Ausstellende Behörde (Personalausweis) und Ausstellungsdatum (Führerschein Feld 4a) bei Bedarf von Vorder- UND Rückseite ablesen.
 - Es können mehrere Bilder übergeben werden (Vorder- UND Rückseite) — kombiniere ALLE erkennbaren Daten zu EINEM Datensatz; Klassen/Gültigkeit/Adresse/Nummer stehen je nach Dokument vorne oder hinten.`;
 
 export const parseCustomerDocument = async (

@@ -121,8 +121,10 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
               isCompany(c)
                 ? c.legal_form || "Firma"
                 : c.birthday
-                  ? `geb. ${fmtDate(c.birthday)}`
-                  : undefined
+                  ? `geb. ${fmtDate(c.birthday)}${c.birth_place ? ` in ${c.birth_place}` : ""}`
+                  : c.birth_place
+                    ? `geb. in ${c.birth_place}`
+                    : undefined
             }
             actions={<CustomerActions customerId={c.id} customerEmail={c.email} />}
           />
@@ -145,6 +147,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
               <Row label="Nummer" value={c.license_nr ? <span className="font-mono tnum">{c.license_nr}</span> : "—"} />
               <Row label="Klassen" value={c.license_class || "—"} />
               <Row label="Gültig bis" value={c.license_expiry ? fmtDate(c.license_expiry) : "—"} mono />
+              <Row label="Ausgestellt am" value={c.license_issued ? fmtDate(c.license_issued) : "—"} mono />
               {licenseUrl && (
                 <a
                   href={licenseUrl}
@@ -159,6 +162,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
 
             <InfoCard Icon={IdCard} title="Personalausweis">
               <Row label="Nummer" value={c.id_card_nr ? <span className="font-mono tnum">{c.id_card_nr}</span> : "—"} />
+              <Row label="Behörde" value={c.id_card_authority || "—"} />
               {idCardUrl && (
                 <a
                   href={idCardUrl}
