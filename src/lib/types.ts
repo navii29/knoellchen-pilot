@@ -232,6 +232,8 @@ export interface Contract {
   pickup_time: string | null;
   return_date: string;
   return_time: string | null;
+  // Bei Anlage = return_date, danach fix (Basis für Zusatztage bei Rückgabe).
+  original_return_date: string | null;
   actual_return_date: string | null;
   daily_rate: number | null;
   total_amount: number | null;
@@ -240,6 +242,7 @@ export interface Contract {
   km_return: number | null;
   km_limit: number | null;
   extra_km_cost: number | null;
+  extra_days_cost: number | null;
   actual_days: number | null;
   actual_km_allowed: number | null;
   km_driven: number | null;
