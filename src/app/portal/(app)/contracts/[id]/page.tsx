@@ -47,7 +47,9 @@ export default async function PortalContractDetail({
   // gesetztem addendum_pdf_path → Download-Link.
   const { data: addendumRows } = await ctx.supa
     .from("contract_extensions")
-    .select("id, requested_return_date, addendum_pdf_path, created_at")
+    .select(
+      "id, requested_return_date, addendum_pdf_path, addendum_signed_at, addendum_signed_path, created_at"
+    )
     .eq("contract_id", c.id)
     .eq("status", "bestaetigt")
     .not("addendum_pdf_path", "is", null)
@@ -56,6 +58,8 @@ export default async function PortalContractDetail({
     id: string;
     requested_return_date: string;
     addendum_pdf_path: string | null;
+    addendum_signed_at: string | null;
+    addendum_signed_path: string | null;
     created_at: string;
   }[];
 
@@ -131,27 +135,47 @@ export default async function PortalContractDetail({
         </Surface>
       )}
 
-      {addendumExtensions.map((ext) => (
-        <Surface key={ext.id} className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-signal-soft text-signal-ink flex items-center justify-center shrink-0">
-            <FileText size={18} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="kicker text-ink-muted mb-0.5">Nachtrag zur Verlängerung</div>
-            <div className="text-[14px] text-ink font-semibold leading-tight">
-              Neues Rückgabedatum: {fmtDate(ext.requested_return_date)}
+      {addendumExtensions.map((ext) => {
+        const addendumSigned = ext.addendum_signed_at != null;
+        return (
+          <Surface key={ext.id} className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-signal-soft text-signal-ink flex items-center justify-center shrink-0">
+                {addendumSigned ? <Check size={18} /> : <FileText size={18} />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="kicker text-ink-muted mb-0.5">Nachtrag zur Verlängerung</div>
+                <div className="text-[14px] text-ink font-semibold leading-tight">
+                  {addendumSigned
+                    ? `Signiert am ${fmtDate(ext.addendum_signed_at)}`
+                    : `Neues Rückgabedatum: ${fmtDate(ext.requested_return_date)}`}
+                </div>
+              </div>
+              <a
+                href={`/api/portal/contracts/${c.id}/extension/${ext.id}/addendum`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[12px] font-medium px-3 py-2 rounded-btn bg-paper border border-hairline text-ink-soft hover:text-ink transition-colors shrink-0"
+              >
+                PDF ↗
+              </a>
             </div>
-          </div>
-          <a
-            href={`/api/portal/contracts/${c.id}/extension/${ext.id}/addendum`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[12px] font-medium px-3 py-2 rounded-btn bg-paper border border-hairline text-ink-soft hover:text-ink transition-colors shrink-0"
-          >
-            PDF ↗
-          </a>
-        </Surface>
-      ))}
+            {/* Sign-Button NUR wenn unsigniert (status=bestaetigt + addendum_pdf_path
+                via Query bereits sichergestellt). */}
+            {!addendumSigned && (
+              <ButtonLink
+                href={`/portal/contracts/${c.id}/extension/${ext.id}/sign`}
+                variant="signal"
+                size="lg"
+                className="w-full"
+              >
+                <FileSignature size={16} />
+                Nachtrag unterschreiben
+              </ButtonLink>
+            )}
+          </Surface>
+        );
+      })}
 
       {showCheckin && (
         <ActionDark
