@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { AlertOctagon, ArrowLeft, Calendar, Camera, ChevronRight, Coins, Plus, ScanSearch, ScrollText, User } from "lucide-react";
+import { AlertOctagon, ArrowLeft, Calendar, Camera, CheckCircle2, ChevronRight, Coins, Plus, ScanSearch, ScrollText, User } from "lucide-react";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
@@ -211,7 +211,9 @@ export default async function ContractDetailPage({ params }: { params: { id: str
   // Erzeugung bleibt es NULL → keine Zeile). RLS-scoped über den Operator.
   const { data: addendumRows } = await supabase
     .from("contract_extensions")
-    .select("id, requested_return_date, addendum_pdf_path, created_at")
+    .select(
+      "id, requested_return_date, addendum_pdf_path, addendum_signed_at, addendum_signed_path, created_at"
+    )
     .eq("contract_id", c.id)
     .eq("status", "bestaetigt")
     .not("addendum_pdf_path", "is", null)
@@ -220,6 +222,8 @@ export default async function ContractDetailPage({ params }: { params: { id: str
     id: string;
     requested_return_date: string;
     addendum_pdf_path: string | null;
+    addendum_signed_at: string | null;
+    addendum_signed_path: string | null;
     created_at: string;
   }[];
 
@@ -321,29 +325,43 @@ export default async function ContractDetailPage({ params }: { params: { id: str
             effectiveDailyRate={effectiveDailyRate}
           />
 
-          {/* Bestätigte Verlängerungen — Nachtrag-Download (nur wenn PDF da) */}
+          {/* Bestätigte Verlängerungen — Nachtrag-Download + Signatur-Status */}
           {addendumExtensions.length > 0 && (
             <div className="mt-6 space-y-2">
-              {addendumExtensions.map((ext) => (
-                <a
-                  key={ext.id}
-                  href={`/api/contracts/${c.id}/extension/${ext.id}/addendum`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="panel px-4 py-3 flex items-center gap-3 hover:bg-canvas/60 transition-colors"
-                >
-                  <div className="w-9 h-9 rounded-panel border border-hairline bg-paper flex items-center justify-center shrink-0">
-                    <ScrollText size={16} className="text-ink-muted" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="data-label text-ink-muted mb-0.5">Nachtrag zur Verlängerung</div>
-                    <div className="font-display font-bold text-ink text-[14px] leading-tight">
-                      Neues Rückgabedatum: {fmtDate(ext.requested_return_date)}
+              {addendumExtensions.map((ext) => {
+                const addendumSigned = ext.addendum_signed_at != null;
+                return (
+                  <a
+                    key={ext.id}
+                    href={`/api/contracts/${c.id}/extension/${ext.id}/addendum`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="panel px-4 py-3 flex items-center gap-3 hover:bg-canvas/60 transition-colors"
+                  >
+                    <div className="w-9 h-9 rounded-panel border border-hairline bg-paper flex items-center justify-center shrink-0">
+                      {addendumSigned ? (
+                        <CheckCircle2 size={16} className="text-emerald-600" />
+                      ) : (
+                        <ScrollText size={16} className="text-ink-muted" />
+                      )}
                     </div>
-                  </div>
-                  <span className="text-[13px] text-ink-muted shrink-0">PDF ↗</span>
-                </a>
-              ))}
+                    <div className="flex-1 min-w-0">
+                      <div className="data-label text-ink-muted mb-0.5">Nachtrag zur Verlängerung</div>
+                      <div className="font-display font-bold text-ink text-[14px] leading-tight">
+                        {addendumSigned
+                          ? `Signiert am ${fmtDate(ext.addendum_signed_at)}`
+                          : `Neues Rückgabedatum: ${fmtDate(ext.requested_return_date)}`}
+                      </div>
+                      {!addendumSigned && (
+                        <div className="text-[12px] text-amber-600 mt-0.5">
+                          Wartet auf Mieter-Unterschrift
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-[13px] text-ink-muted shrink-0">PDF ↗</span>
+                  </a>
+                );
+              })}
             </div>
           )}
 
