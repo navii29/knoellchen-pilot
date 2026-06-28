@@ -18,14 +18,19 @@ export const GET = async (_req: Request, { params }: Ctx) => {
   const admin = createAdminClient();
   const { data: ext } = await admin
     .from("contract_extensions")
-    .select("addendum_pdf_path")
+    .select("addendum_pdf_path, addendum_signed_path")
     .eq("id", params.extId)
     .eq("contract_id", params.id)
     .eq("org_id", session.org_id) // SECURITY: multi-tenant isolation
     .eq("customer_id", session.customer_id) // SECURITY: nur eigene Verlängerung
     .maybeSingle();
 
-  const path = (ext?.addendum_pdf_path as string | null) ?? null;
+  // Signierten Beleg bevorzugen (nach dem Unterschreiben), sonst den
+  // unsignierten Nachtrag (Vorschau vor dem Signieren). Scope unverändert.
+  const path =
+    (ext?.addendum_signed_path as string | null) ??
+    (ext?.addendum_pdf_path as string | null) ??
+    null;
   if (!path) return NextResponse.json({ error: "Kein Nachtrag vorhanden" }, { status: 404 });
 
   const { data: signed } = await admin.storage
