@@ -8,7 +8,6 @@ import {
   loadCustomerForContract,
   loadSpecialTermsForContract,
   loadVehicleForContract,
-  loadVehiclePhotoDataUri,
 } from "@/lib/contract-loaders";
 
 export const maxDuration = 30;
@@ -73,11 +72,6 @@ export const GET = async (_req: Request, { params }: Ctx) => {
     loadLogoBase64(admin, orgRow.logo_path),
   ]);
   const tires = await loadCurrentTireForVehicle(admin, vehicle?.id ?? null);
-  const vehicleImageDataUri = await loadVehiclePhotoDataUri(
-    admin,
-    session.org_id,
-    vehicle?.id ?? null
-  );
 
   const buf = await generateContractPdf({
     org: orgRow,
@@ -87,7 +81,6 @@ export const GET = async (_req: Request, { params }: Ctx) => {
     tires,
     logoPngBase64,
     specialTerms,
-    vehicleImageDataUri,
   });
 
   return new NextResponse(new Uint8Array(buf), {
