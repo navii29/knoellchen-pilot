@@ -76,4 +76,20 @@ describe("buildNachtragHtml", () => {
   it("Einzahl bei genau einem Zusatztag", () => {
     expect(buildNachtragHtml({ ...base, extraDays: 1 })).toContain("1 Tag");
   });
+
+  it("signatureDataUri → Mieter-Unterschrift als <img> über der Linie", () => {
+    const html = buildNachtragHtml({ ...base, signatureDataUri: "data:image/png;base64,AAA" });
+    expect(html).toContain('<div class="ink"><img src="data:image/png;base64,AAA"');
+  });
+
+  it("landlordSignatureDataUri → Vermieter-Unterschrift als <img>", () => {
+    const html = buildNachtragHtml({ ...base, landlordSignatureDataUri: "data:image/png;base64,BBB" });
+    expect(html).toContain('<div class="ink"><img src="data:image/png;base64,BBB"');
+  });
+
+  it("ohne Unterschriften → leere Linien bleiben (kein ink-Slot)", () => {
+    const html = buildNachtragHtml(base);
+    expect(html).not.toContain('class="ink"');
+    expect(html).toContain('<div class="sig"><div class="line"></div>');
+  });
 });
