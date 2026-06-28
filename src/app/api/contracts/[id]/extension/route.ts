@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/activity";
+import { notify } from "@/lib/notify";
+import { buildExtensionNotification } from "@/lib/extension-notify";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -71,6 +73,35 @@ export const POST = async (req: Request, { params }: Ctx) => {
     );
   }
 
+  // Mieter-Benachrichtigung (best-effort): NUR nach persistierter Entscheidung
+  // aufrufen. Fehlt der Empfänger (customer_id null) → überspringen. notify-
+  // Fehler werden PII-frei geloggt und kippen die Entscheidung NICHT.
+  const sendExtensionNotice = async (
+    notifyAction: "approve" | "decline",
+    customerId: string | null | undefined,
+    requestedReturnDate: string
+  ) => {
+    const n = buildExtensionNotification({
+      action: notifyAction,
+      customerId,
+      orgId: auth.org_id,
+      contractId: params.id,
+      requestedReturnDate,
+    });
+    if (!n) return;
+    try {
+      await notify(n);
+    } catch {
+      console.error(
+        "[extension] notify fehlgeschlagen (contract_id=" +
+          params.id +
+          ", action=" +
+          notifyAction +
+          ")"
+      );
+    }
+  };
+
   if (action === "approve") {
     // Aktuellen Vertrag laden (org-scoped) — VOR dem Überschreiben validieren.
     const { data: contract } = await admin
@@ -138,14 +169,16 @@ export const POST = async (req: Request, { params }: Ctx) => {
     }
 
     // Andere noch offene Anfragen desselben Vertrags sind jetzt veraltet —
-    // als abgelehnt markieren (best-effort, org-scoped).
-    await admin
+    // als abgelehnt markieren (best-effort, org-scoped). Die verdrängten Zeilen
+    // zurückgeben, um ihre Mieter einzeln zu benachrichtigen.
+    const { data: displaced } = await admin
       .from("contract_extensions")
       .update({ status: "abgelehnt" })
       .eq("contract_id", params.id)
       .eq("org_id", auth.org_id)
       .eq("status", "angefragt")
-      .neq("id", extension_id);
+      .neq("id", extension_id)
+      .select("customer_id, requested_return_date");
 
     await logActivity(
       admin,
@@ -154,6 +187,20 @@ export const POST = async (req: Request, { params }: Ctx) => {
       "contract.extension_approved",
       (contract as { contract_nr?: string } | null)?.contract_nr ?? null
     );
+
+    // Entscheidung ist persistiert → jetzt benachrichtigen (best-effort):
+    // genehmigter Mieter „bestätigt", verdrängte Anfragen je „abgelehnt".
+    await sendExtensionNotice(
+      "approve",
+      extension.customer_id,
+      extension.requested_return_date
+    );
+    for (const d of (displaced ?? []) as {
+      customer_id: string | null;
+      requested_return_date: string;
+    }[]) {
+      await sendExtensionNotice("decline", d.customer_id, d.requested_return_date);
+    }
 
     return NextResponse.json({ ok: true, status: "bestaetigt" });
   }
@@ -168,6 +215,9 @@ export const POST = async (req: Request, { params }: Ctx) => {
   if (extErr) {
     return NextResponse.json({ error: extErr.message }, { status: 500 });
   }
+
+  // Ablehnung ist persistiert → Mieter benachrichtigen (best-effort).
+  await sendExtensionNotice("decline", extension.customer_id, extension.requested_return_date);
 
   return NextResponse.json({ ok: true, status: "abgelehnt" });
 };
