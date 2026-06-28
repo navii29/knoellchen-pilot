@@ -3,6 +3,14 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/activity";
 import { notify } from "@/lib/notify";
 import { buildExtensionNotification } from "@/lib/extension-notify";
+import {
+  loadVehicleForContract,
+  loadCustomerForContract,
+  loadLogoBase64,
+} from "@/lib/contract-loaders";
+import { resolveEffectiveDailyRate, estimateExtensionCost } from "@/lib/daily-rate";
+import { generateNachtragPdf } from "@/lib/nachtrag-pdf";
+import { fmtDate } from "@/lib/utils";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -200,6 +208,104 @@ export const POST = async (req: Request, { params }: Ctx) => {
       requested_return_date: string;
     }[]) {
       await sendExtensionNotice("decline", d.customer_id, d.requested_return_date);
+    }
+
+    // Nachtrag-zum-Mietvertrag-PDF best-effort NACH persistierter Entscheidung
+    // erzeugen + speichern. Fehler werden PII-frei geloggt (nur contract_id +
+    // error.code), kippen die Genehmigung NIE. Geteilte Loader/Funktionen.
+    try {
+      const { data: full } = await admin
+        .from("contracts")
+        .select("contract_nr, renter_name, plate, vehicle_id, vehicle_type, daily_rate")
+        .eq("id", params.id)
+        .eq("org_id", auth.org_id)
+        .maybeSingle();
+      const { data: org } = await admin
+        .from("organizations")
+        .select("name, city, logo_path, brand_color")
+        .eq("id", auth.org_id)
+        .maybeSingle();
+      if (!full || !org) {
+        console.error(
+          "[extension] nachtrag übersprungen — contract/org nicht ladbar (contract_id=" +
+            params.id +
+            ")"
+        );
+      } else {
+        const vehicle = await loadVehicleForContract(
+          admin,
+          auth.org_id,
+          (full.vehicle_id as string | null) ?? null,
+          (full.plate as string | null) ?? null
+        );
+        const customer = await loadCustomerForContract(
+          admin,
+          auth.org_id,
+          (extension.customer_id as string | null) ?? null
+        );
+        const logoDataUri = await loadLogoBase64(admin, (org.logo_path as string | null) ?? null);
+        // Kosten neu rechnen (gleiche geteilte Funktionen wie die Schätzung) →
+        // Tagespreis × Tage = Kosten exakt im unterschriebenen Dokument.
+        const dailyRate = resolveEffectiveDailyRate({
+          contractRate: full.daily_rate as number | null,
+          vehicleRate: (vehicle?.daily_rate as number | null) ?? null,
+        });
+        const extraDays = Number(extension.extra_days ?? 0);
+        const extraCost = estimateExtensionCost({ extraDays, rate: dailyRate });
+        const renterName =
+          [customer?.first_name, customer?.last_name].filter(Boolean).join(" ") ||
+          (full.renter_name as string) ||
+          "";
+        const vehicleModel =
+          [vehicle?.manufacturer, vehicle?.model].filter(Boolean).join(" ") ||
+          (full.vehicle_type as string | null) ||
+          "";
+        const pdfBuf = await generateNachtragPdf({
+          orgName: (org.name as string) || "",
+          logoDataUri,
+          brandColor: (org.brand_color as string | null) ?? null,
+          contractNr: (full.contract_nr as string) || "",
+          renterName,
+          vehicleModel,
+          plate: (full.plate as string) || "",
+          fin: (vehicle?.fin_number as string | null) ?? null,
+          originalReturnDate: extension.current_return_date as string,
+          newReturnDate: extension.requested_return_date as string,
+          extraDays,
+          dailyRate,
+          extraCost,
+          city: (org.city as string | null) ?? null,
+          dateStr: fmtDate(new Date().toISOString()),
+        });
+        const stamp = Date.now().toString(36);
+        const path = `${auth.org_id}/${params.id}/nachtrag-${stamp}.pdf`;
+        const { error: upErr } = await admin.storage
+          .from("generated-docs")
+          .upload(path, pdfBuf, { contentType: "application/pdf", upsert: true });
+        if (upErr) {
+          // Storage-Fehler generisch loggen (message kann den Pfad spiegeln).
+          console.error(
+            "[extension] nachtrag upload fehlgeschlagen (contract_id=" + params.id + ")"
+          );
+        } else {
+          const { error: pErr } = await admin
+            .from("contract_extensions")
+            .update({ addendum_pdf_path: path })
+            .eq("id", extension_id)
+            .eq("org_id", auth.org_id);
+          if (pErr)
+            console.error(
+              "[extension] nachtrag addendum_pdf_path update fehlgeschlagen (contract_id=" +
+                params.id +
+                "):",
+              pErr.code ?? ""
+            );
+        }
+      }
+    } catch {
+      console.error(
+        "[extension] nachtrag generierung fehlgeschlagen (contract_id=" + params.id + ")"
+      );
     }
 
     return NextResponse.json({ ok: true, status: "bestaetigt" });

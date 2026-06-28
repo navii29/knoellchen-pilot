@@ -8,6 +8,24 @@ import type { Customer, Vehicle } from "./types";
 import type { VehicleTire } from "./tires";
 import type { SpecialTermsTemplate } from "./types";
 
+// Lädt ein Org-Logo aus dem "brand"-Bucket als Data-URI (für PDF-Header).
+// SVG wird übersprungen (→ Namen-Fallback) — konsistent zum Vertrags-PDF.
+export const loadLogoBase64 = async (
+  admin: SupabaseClient,
+  logoPath: string | null | undefined
+): Promise<string | null> => {
+  if (!logoPath) return null;
+  if (logoPath.toLowerCase().endsWith(".svg")) return null;
+  const { data, error } = await admin.storage.from("brand").download(logoPath);
+  if (error || !data) return null;
+  const mime =
+    logoPath.toLowerCase().endsWith(".jpg") || logoPath.toLowerCase().endsWith(".jpeg")
+      ? "image/jpeg"
+      : "image/png";
+  const buf = Buffer.from(await data.arrayBuffer());
+  return `data:${mime};base64,${buf.toString("base64")}`;
+};
+
 export const loadVehicleForContract = async (
   admin: SupabaseClient,
   orgId: string,
