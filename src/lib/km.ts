@@ -78,6 +78,10 @@ export type ReturnSummaryInput = {
   inclusiveKmMonth: number | null | undefined;
   kmLimitOverride: number | null | undefined; // optional: festes Limit am Vertrag
   pricePerKm: number | null | undefined;
+  // Zusatztage: alles ÜBER das URSPRÜNGLICHE Rückgabedatum hinaus (Verlängerung
+  // + Überziehung), × effektivem Tagespreis. Beide optional → NULL ergibt 0.
+  originalReturnDate?: string | null;
+  dailyRate?: number | null;
 };
 
 export type ReturnSummary = {
@@ -100,6 +104,13 @@ export type ReturnSummary = {
   excessKm: number;             // 0 wenn allowedKm null oder driven <= allowedKm
   pricePerKm: number;
   cost: number;                 // round2(excessKm * pricePerKm)
+
+  // Zusatztage (über das ursprüngliche Rückgabedatum hinaus)
+  extraDays: number;            // max(0, actualReturn - originalReturn), 0 ohne Originaldatum
+  dailyRate: number;            // effektiver Tagespreis (0 wenn keiner)
+  extraDaysCost: number;        // round2(extraDays * dailyRate)
+
+  totalExtraCost: number;       // round2(cost + extraDaysCost) — Mehr-km + Zusatztage
 };
 
 const computeAllowed = (
@@ -146,6 +157,18 @@ export const computeReturnSummary = (input: ReturnSummaryInput): ReturnSummary =
       : 0;
   const cost = round2(excessKm * price);
 
+  // Zusatztage: ab dem URSPRÜNGLICHEN Rückgabedatum (nicht ab Abholung → der
+  // Originalzeitraum ist über total_amount bezahlt) bis zur tatsächlichen
+  // Rückgabe. Ohne Originaldatum oder ohne Tagespreis → 0.
+  const dailyRate =
+    input.dailyRate != null && Number.isFinite(Number(input.dailyRate)) && Number(input.dailyRate) > 0
+      ? Number(input.dailyRate)
+      : 0;
+  const extraDays = input.originalReturnDate
+    ? Math.max(0, daysBetween(input.originalReturnDate, input.actualReturnDate))
+    : 0;
+  const extraDaysCost = round2(extraDays * dailyRate);
+
   return {
     plannedDays,
     actualDays,
@@ -162,5 +185,9 @@ export const computeReturnSummary = (input: ReturnSummaryInput): ReturnSummary =
     excessKm,
     pricePerKm: price,
     cost,
+    extraDays,
+    dailyRate,
+    extraDaysCost,
+    totalExtraCost: round2(cost + extraDaysCost),
   };
 };

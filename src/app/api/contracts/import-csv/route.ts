@@ -218,6 +218,7 @@ export const POST = async (req: Request) => {
         renter_license_expiry: m.renter_license_expiry ?? null,
         pickup_date: m.pickup_date,
         return_date: m.return_date,
+        original_return_date: m.return_date,
         pickup_time: m.pickup_time ?? null,
         return_time: m.return_time ?? null,
         daily_rate: m.daily_rate ?? null,

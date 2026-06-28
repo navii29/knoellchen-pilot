@@ -175,6 +175,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
     customer_id: oldC.customer_id ?? null,
     pickup_date: start,
     return_date: addYear(start),
+    original_return_date: addYear(start),
     daily_rate: sucV.daily_rate ?? oldC.daily_rate ?? null,
     deposit: sucV.deposit ?? oldC.deposit ?? null,
     status: "aktiv",

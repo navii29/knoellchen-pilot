@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { computeReturnSummary } from "@/lib/km";
+import { resolveEffectiveDailyRate } from "@/lib/daily-rate";
 import { normalizePlate } from "@/lib/plate";
 import { myRole } from "@/lib/team";
 import { redactContractPartner } from "@/lib/redact";
@@ -105,7 +106,7 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
     const { data: current } = await admin
       .from("contracts")
       .select(
-        "km_pickup, km_return, km_limit, plate, org_id, pickup_date, return_date, actual_return_date"
+        "km_pickup, km_return, km_limit, plate, org_id, pickup_date, return_date, actual_return_date, original_return_date, daily_rate"
       )
       .eq("id", params.id)
       .eq("org_id", auth.org_id)
@@ -141,16 +142,24 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
 
       let price: number | null = null;
       let inclusiveKmMonth: number | null = null;
+      let vehicleRate: number | null = null;
       if (plate) {
         const { data: v } = await admin
           .from("vehicles")
-          .select("extra_km_price, inclusive_km_month")
+          .select("extra_km_price, inclusive_km_month, daily_rate")
           .eq("org_id", auth.org_id)
           .eq("plate", plate)
           .maybeSingle();
         if (v?.extra_km_price != null) price = Number(v.extra_km_price);
         if (v?.inclusive_km_month != null) inclusiveKmMonth = Number(v.inclusive_km_month);
+        vehicleRate = (v?.daily_rate as number | null) ?? null;
       }
+      // Effektiver Tagespreis (geteilte Regel) + festgeschriebenes Ursprungsdatum.
+      const dailyRate = resolveEffectiveDailyRate({
+        contractRate: current.daily_rate as number | null,
+        vehicleRate,
+      });
+      const originalReturn = current.original_return_date as string | null;
 
       // Nur volle Aufstellung wenn Rückgabe erfolgt ist (actualReturn + km_return).
       // Sonst nur einfach extra_km_cost zurücksetzen.
@@ -164,12 +173,15 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
           inclusiveKmMonth,
           kmLimitOverride: kmLimit,
           pricePerKm: price,
+          originalReturnDate: originalReturn,
+          dailyRate,
         });
         update.actual_days = summary.actualDays;
         update.actual_km_allowed = summary.allowedKm;
         update.km_driven = summary.drivenKm;
         update.km_excess = summary.excessKm;
         update.extra_km_cost = summary.cost;
+        update.extra_days_cost = summary.extraDaysCost;
       } else {
         // Vor Rückgabe: nur Driven aktualisieren falls beide km bekannt
         if (
@@ -180,6 +192,7 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
           update.km_driven = Number(kmReturn) - Number(kmPickup);
         }
         update.extra_km_cost = null;
+        update.extra_days_cost = null;
       }
     }
   }

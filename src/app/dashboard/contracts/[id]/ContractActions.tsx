@@ -36,6 +36,10 @@ type ReturnSummary = {
   excessKm: number;
   pricePerKm: number;
   cost: number;
+  extraDays: number;
+  dailyRate: number;
+  extraDaysCost: number;
+  totalExtraCost: number;
 };
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -626,6 +630,58 @@ const SummaryPanel = ({
         <div className="text-[12px] text-ink-muted italic">
           Km-Stand bei Übergabe fehlt — Mehrkilometer können nicht berechnet werden.
         </div>
+      )}
+
+      {summary.extraDays > 0 && (
+        <>
+          <div className="border-t border-hairline" />
+          <ModalSection title="Zusatztage (über das ursprüngliche Rückgabedatum hinaus)">
+            <ModalRow
+              label="Zusatztage"
+              value={`${summary.extraDays} ${summary.extraDays === 1 ? "Tag" : "Tage"}`}
+              mono
+              bold
+              highlight="amber"
+            />
+            {summary.dailyRate > 0 ? (
+              <ModalRow
+                label="Kosten"
+                value={
+                  <span className="font-display font-semibold text-[#92400E] text-[15px]">
+                    {summary.extraDays} × {summary.dailyRate.toFixed(2).replace(".", ",")} € ={" "}
+                    {fmtEur(summary.extraDaysCost)}
+                  </span>
+                }
+              />
+            ) : (
+              <ModalRow
+                label="Kosten"
+                value={
+                  <span className="text-[12px] text-ink-muted italic">
+                    Tagespreis fehlt — am Vertrag/Fahrzeug setzen
+                  </span>
+                }
+              />
+            )}
+          </ModalSection>
+        </>
+      )}
+
+      {(summary.cost > 0 || summary.extraDaysCost > 0) && (
+        <>
+          <div className="border-t border-hairline" />
+          <ModalSection title="Summe Zusatzkosten">
+            <ModalRow
+              label="Mehr-km + Zusatztage"
+              value={
+                <span className="font-display font-semibold text-[15px]">
+                  {fmtEur(summary.totalExtraCost)}
+                </span>
+              }
+              bold
+            />
+          </ModalSection>
+        </>
       )}
     </div>
   );

@@ -229,6 +229,8 @@ export const POST = async (req: Request) => {
     pickup_time: (body.pickup_time as string) ?? null,
     return_date: body.return_date as string,
     return_time: (body.return_time as string) ?? null,
+    // Ursprüngliches Rückgabedatum festschreiben (Basis für Zusatztage).
+    original_return_date: body.return_date as string,
     // Effektiver Tagespreis: expliziter Preis gewinnt; nur bei leer/0 den
     // Fahrzeugpreis vorbefüllen (nie einen angegebenen Preis überschreiben).
     daily_rate: resolveEffectiveDailyRate({

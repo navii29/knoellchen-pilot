@@ -117,6 +117,7 @@ export const POST = async (req: Request) => {
       renter_license_nr: obj.renter_license_nr,
       pickup_date: pickup,
       return_date: ret,
+      original_return_date: ret,
       daily_rate: numeric(obj.daily_rate || undefined),
       total_amount: numeric(obj.total_amount || undefined),
       deposit: numeric(obj.deposit || undefined),
