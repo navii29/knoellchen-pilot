@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { loadPortalContract } from "@/lib/portal-contract-guard";
 import { daysBetween } from "@/lib/km";
 import { buildOperatorExtensionNotification } from "@/lib/operator-notify";
+import { resolveEffectiveDailyRate } from "@/lib/daily-rate";
 
 // Verlängerungs-Anfrage: legt einen contract_extensions-Eintrag an (Status
 // 'angefragt'; der Betreiber bestätigt). Mehrkosten = Zusatztage × Tagespreis.
@@ -44,7 +45,22 @@ export const POST = async (req: Request, { params }: { params: { id: string } })
     );
   }
 
-  const daily = Number(ctx.contract.daily_rate ?? 0);
+  // Effektiver Tagespreis: Vertragspreis, sonst Fahrzeugpreis als Fallback. Das
+  // Fahrzeug org-scoped über ctx.admin laden (der Flow nutzt admin durchgängig).
+  const vehKey = ctx.contract.vehicle_id ? "id" : "plate";
+  const vehVal = (ctx.contract.vehicle_id ?? ctx.contract.plate) as string | null;
+  let vehicleRate: number | null = null;
+  if (vehVal) {
+    const { data: veh } = await ctx.admin
+      .from("vehicles")
+      .select("daily_rate")
+      .eq("org_id", ctx.session.org_id)
+      .eq(vehKey, vehVal)
+      .maybeSingle();
+    vehicleRate = (veh?.daily_rate as number | null) ?? null;
+  }
+  const daily =
+    resolveEffectiveDailyRate({ contractRate: ctx.contract.daily_rate, vehicleRate }) ?? 0;
   const estCost = Math.round(extraDays * daily * 100) / 100;
 
   const { data: created, error } = await ctx.admin

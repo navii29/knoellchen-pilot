@@ -5,6 +5,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ContractActions } from "./ContractActions";
+import { DailyRateRow } from "./DailyRateRow";
 import { redactContractPartner } from "@/lib/redact";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeReturnSummary } from "@/lib/km";
@@ -320,7 +321,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
             </InfoCard>
 
             <InfoCard Icon={Coins} title="Kosten">
-              <Row label="Tagespreis" value={fmtEur(c.daily_rate)} mono />
+              <DailyRateRow contractId={c.id} value={c.daily_rate} />
               <Row label="Gesamtbetrag" value={fmtEur(c.total_amount)} mono />
               <Row label="Kaution" value={fmtEur(c.deposit)} mono />
               {isOwner && marginInfo && (
