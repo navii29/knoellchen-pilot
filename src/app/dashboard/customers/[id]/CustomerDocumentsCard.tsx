@@ -79,6 +79,10 @@ const DocCard = ({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  // Amber-Warnung, wenn das Foto zwar gespeichert ist, die OCR-Felder aber NICHT
+  // übernommen wurden (Auslesen oder Speichern fehlgeschlagen) — keine grüne
+  // Erfolgsmeldung trotz Datenverlust.
+  const [warn, setWarn] = useState<string | null>(null);
 
   // Lokal gewählte (noch nicht hochgeladene) Seiten — werden zusammen
   // hochgeladen, damit Vorder- + Rückseite gemeinsam ausgelesen werden.
@@ -92,6 +96,7 @@ const DocCard = ({
     }
     setError(null);
     setNote(null);
+    setWarn(null);
     setBusy(true);
     const fd = new FormData();
     fd.append("type", type);
@@ -107,9 +112,25 @@ const DocCard = ({
       setError(j.error || "Upload fehlgeschlagen");
       return;
     }
-    const j = (await res.json().catch(() => ({}))) as { filled?: string[] };
-    const n = Array.isArray(j.filled) ? j.filled.length : 0;
-    setNote(n > 0 ? `${n} Felder ausgelesen` : "Foto gespeichert");
+    const j = (await res.json().catch(() => ({}))) as {
+      filled?: string[];
+      ocr_error?: boolean;
+      save_failed?: boolean;
+    };
+    // Wahrheit anzeigen: Foto ist gespeichert, aber die ausgelesenen Felder evtl.
+    // nicht — dann amber-Warnung statt grüner Erfolgsmeldung.
+    if (j.save_failed) {
+      setWarn(
+        "Daten erkannt, aber Speichern fehlgeschlagen. Bitte Felder manuell eintragen und prüfen. (Das Foto wurde gespeichert.)"
+      );
+    } else if (j.ocr_error) {
+      setWarn(
+        "Foto gespeichert. Automatisches Auslesen war nicht möglich – bitte Daten manuell eintragen."
+      );
+    } else {
+      const n = Array.isArray(j.filled) ? j.filled.length : 0;
+      setNote(n > 0 ? `${n} Felder übernommen` : "Foto gespeichert");
+    }
     setFront(null);
     setBack(null);
     router.refresh();
@@ -119,6 +140,7 @@ const DocCard = ({
     if (!confirm(`${label}-Fotos wirklich entfernen?`)) return;
     setError(null);
     setNote(null);
+    setWarn(null);
     setBusy(true);
     const res = await fetch(`/api/customers/${customerId}/document?type=${type}`, {
       method: "DELETE",
@@ -193,6 +215,11 @@ const DocCard = ({
       {note && (
         <div className="inline-flex items-center gap-1.5 text-[12.5px] text-emerald-700">
           <CheckCircle2 size={13} /> {note}
+        </div>
+      )}
+      {warn && (
+        <div className="text-[13px] text-amber-800 bg-amber-50 border border-amber-200 rounded-panel px-3 py-2">
+          {warn}
         </div>
       )}
       {error && (
