@@ -9,7 +9,6 @@ import {
   loadCustomerForContract,
   loadSpecialTermsForContract,
   loadVehicleForContract,
-  loadVehiclePhotoDataUri,
 } from "@/lib/contract-loaders";
 import { runRiskCheck } from "@/lib/risk-check.server";
 
@@ -102,11 +101,6 @@ export const POST = async (req: Request, { params }: Ctx) => {
     loadLogoBase64(admin, orgRow.logo_path),
   ]);
   const tires = await loadCurrentTireForVehicle(admin, vehicle?.id ?? null);
-  const vehicleImageDataUri = await loadVehiclePhotoDataUri(
-    admin,
-    session.org_id,
-    vehicle?.id ?? null
-  );
 
   const signedAt = new Date().toISOString();
   const signedIp = ipFromHeaders();
@@ -122,7 +116,6 @@ export const POST = async (req: Request, { params }: Ctx) => {
     logoPngBase64,
     signaturePngBase64: sig,
     specialTerms,
-    vehicleImageDataUri,
   });
 
   const stamp = Date.now().toString(36);

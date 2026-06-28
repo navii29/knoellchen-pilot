@@ -88,7 +88,6 @@ export const generateContractPdf = async (args: {
   logoPngBase64?: string | null; // Param-Name aus Kompat zu alten Aufrufen — akzeptiert auch JPG/SVG-Data-URI
   signaturePngBase64?: string | null;
   specialTerms?: SpecialTermsTemplate[];
-  vehicleImageDataUri?: string | null;
 }): Promise<Buffer> => {
   const html = buildContractHtml({
     org: args.org,
@@ -99,7 +98,6 @@ export const generateContractPdf = async (args: {
     logoDataUri: args.logoPngBase64 ?? null,
     signaturePngBase64: args.signaturePngBase64 ?? null,
     specialTerms: args.specialTerms ?? [],
-    vehicleImageDataUri: args.vehicleImageDataUri ?? null,
   });
 
   return renderHtmlToPdf(html);
