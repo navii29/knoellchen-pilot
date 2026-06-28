@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { loadPortalContract } from "@/lib/portal-contract-guard";
 import { daysBetween } from "@/lib/km";
 import { buildOperatorExtensionNotification } from "@/lib/operator-notify";
-import { resolveEffectiveDailyRate } from "@/lib/daily-rate";
+import { resolveEffectiveDailyRate, estimateExtensionCost } from "@/lib/daily-rate";
 
 // Verlängerungs-Anfrage: legt einen contract_extensions-Eintrag an (Status
 // 'angefragt'; der Betreiber bestätigt). Mehrkosten = Zusatztage × Tagespreis.
@@ -59,9 +59,9 @@ export const POST = async (req: Request, { params }: { params: { id: string } })
       .maybeSingle();
     vehicleRate = (veh?.daily_rate as number | null) ?? null;
   }
-  const daily =
-    resolveEffectiveDailyRate({ contractRate: ctx.contract.daily_rate, vehicleRate }) ?? 0;
-  const estCost = Math.round(extraDays * daily * 100) / 100;
+  const daily = resolveEffectiveDailyRate({ contractRate: ctx.contract.daily_rate, vehicleRate });
+  // Gespeicherter Schätzwert über dieselbe geteilte Funktion wie die Anzeige.
+  const estCost = estimateExtensionCost({ extraDays, rate: daily }) ?? 0;
 
   const { data: created, error } = await ctx.admin
     .from("contract_extensions")

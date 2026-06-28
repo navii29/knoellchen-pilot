@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CalendarClock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { fmtDate, fmtEur } from "@/lib/utils";
+import { estimateExtensionCost } from "@/lib/daily-rate";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -28,6 +29,8 @@ type Props = {
   extensions: ContractExtension[];
   /** Geplantes Rückgabedatum des Vertrags als Fallback */
   contractReturnDate: string;
+  /** Effektiver Tagespreis (Vertrag → sonst Fahrzeug) für die Live-Schätzung */
+  effectiveDailyRate: number | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -58,11 +61,13 @@ function ExtensionCard({
   ext,
   contractId,
   contractReturnDate,
+  effectiveDailyRate,
   onDone,
 }: {
   ext: ContractExtension;
   contractId: string;
   contractReturnDate: string;
+  effectiveDailyRate: number | null;
   onDone: () => void;
 }) {
   const [busy, setBusy] = useState<"approve" | "decline" | null>(null);
@@ -136,12 +141,24 @@ function ExtensionCard({
             {ext.extra_days === 1 ? "Tag" : "Tage"} extra
           </span>
         )}
-        {ext.est_cost != null && (
-          <span>
-            Geschätzte Zusatzkosten:{" "}
-            <span className="font-mono tnum font-semibold">{fmtEur(ext.est_cost)}</span>
-          </span>
-        )}
+        {(() => {
+          // LIVE aus extra_days × effektivem Tagespreis (nicht aus dem
+          // gespeicherten est_cost). So sind auch alte 0,00-Anfragen korrekt.
+          const liveCost = estimateExtensionCost({
+            extraDays: ext.extra_days,
+            rate: effectiveDailyRate,
+          });
+          return liveCost != null ? (
+            <span>
+              Geschätzte Zusatzkosten:{" "}
+              <span className="font-mono tnum font-semibold">{fmtEur(liveCost)}</span>
+            </span>
+          ) : (
+            <span className="text-amber-700/80">
+              Geschätzte Zusatzkosten: Tagespreis fehlt
+            </span>
+          );
+        })()}
       </div>
 
       {/* Action buttons */}
@@ -187,7 +204,12 @@ function ExtensionCard({
 // ExtensionRequests — renders nothing when no pending requests
 // ---------------------------------------------------------------------------
 
-export function ExtensionRequests({ contractId, extensions, contractReturnDate }: Props) {
+export function ExtensionRequests({
+  contractId,
+  extensions,
+  contractReturnDate,
+  effectiveDailyRate,
+}: Props) {
   const router = useRouter();
 
   if (extensions.length === 0) return null;
@@ -200,6 +222,7 @@ export function ExtensionRequests({ contractId, extensions, contractReturnDate }
           ext={ext}
           contractId={contractId}
           contractReturnDate={contractReturnDate}
+          effectiveDailyRate={effectiveDailyRate}
           onDone={() => router.refresh()}
         />
       ))}

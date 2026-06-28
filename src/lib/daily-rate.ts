@@ -15,3 +15,16 @@ export const resolveEffectiveDailyRate = (input: {
 }): number | null => {
   return positiveOrNull(input.contractRate) ?? positiveOrNull(input.vehicleRate) ?? null;
 };
+
+// Geschätzte Zusatzkosten einer Verlängerung: extra_days × effektiver Tagespreis,
+// auf Cent gerundet. null, wenn Tage oder Preis fehlen (z. B. kein Tagespreis
+// hinterlegt) — der Aufrufer zeigt dann einen Hinweis statt 0,00 €.
+export const estimateExtensionCost = (input: {
+  extraDays: number | null | undefined;
+  rate: number | null | undefined;
+}): number | null => {
+  const { extraDays, rate } = input;
+  if (extraDays == null || rate == null) return null;
+  if (!Number.isFinite(extraDays) || !Number.isFinite(rate)) return null;
+  return Math.round(extraDays * rate * 100) / 100;
+};

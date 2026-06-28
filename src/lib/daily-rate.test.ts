@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveEffectiveDailyRate } from "./daily-rate";
+import { resolveEffectiveDailyRate, estimateExtensionCost } from "./daily-rate";
 
 describe("resolveEffectiveDailyRate", () => {
   it("Vertragspreis gesetzt → der Vertragspreis (auch wenn Fahrzeugpreis existiert)", () => {
@@ -29,5 +29,26 @@ describe("resolveEffectiveDailyRate", () => {
   it("negativ oder Müll gilt als leer", () => {
     expect(resolveEffectiveDailyRate({ contractRate: -5, vehicleRate: 40 })).toBe(40);
     expect(resolveEffectiveDailyRate({ contractRate: "abc", vehicleRate: "xyz" })).toBeNull();
+  });
+});
+
+describe("estimateExtensionCost", () => {
+  it("Tage × Preis, auf Cent gerundet", () => {
+    expect(estimateExtensionCost({ extraDays: 5, rate: 69 })).toBe(345);
+    expect(estimateExtensionCost({ extraDays: 3, rate: 49.99 })).toBe(149.97);
+  });
+
+  it("fehlender Preis → null (Aufrufer zeigt Hinweis statt 0,00)", () => {
+    expect(estimateExtensionCost({ extraDays: 5, rate: null })).toBeNull();
+    expect(estimateExtensionCost({ extraDays: 5, rate: undefined })).toBeNull();
+  });
+
+  it("fehlende/ungültige Tage → null", () => {
+    expect(estimateExtensionCost({ extraDays: null, rate: 69 })).toBeNull();
+    expect(estimateExtensionCost({ extraDays: Number.NaN, rate: 69 })).toBeNull();
+  });
+
+  it("rate 0 → 0 (gültig: Preis ausdrücklich 0)", () => {
+    expect(estimateExtensionCost({ extraDays: 5, rate: 0 })).toBe(0);
   });
 });
