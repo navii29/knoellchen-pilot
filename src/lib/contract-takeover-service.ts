@@ -34,28 +34,62 @@ const CONTRACT_FIELDS =
   "renter_license_issued, renter_id_card_nr, renter_id_card_authority, " +
   "renter_iban, renter_bank_holder";
 
+// Die Vertrags-Ladeabfrage MUSS gechunkt werden: .in("id", [viele]) erzeugt
+// sonst eine zu lange GET-URL → der Server lehnt mit "Bad Request" ab, der Select
+// schlägt fehl und der GANZE Kunden-Schritt wird übersprungen (genau der
+// 700-Verträge-0-Kunden-Bug). CHUNK bewusst klein (URL-Grenze umgebungsabhängig;
+// Tempo bei Import/Reparatur egal).
+const CHUNK = 100;
+
+export type TakeoverResult = {
+  contractsRequested: number; // eindeutige IDs
+  contractsLoaded: number; // tatsächlich geladen (Summe der Chunks)
+  customersCreated: number; // neu angelegte Kunden
+  loadFailed: boolean; // mind. ein Chunk-Select-Fehler → Kunden-Schritt unvollständig
+};
+
 export async function applyTakeover(
   admin: Admin,
   orgId: string,
   contractIds: string[]
-): Promise<void> {
+): Promise<TakeoverResult> {
   const ids = [...new Set(contractIds.filter(Boolean))];
-  if (ids.length === 0) return;
+  const result: TakeoverResult = {
+    contractsRequested: ids.length,
+    contractsLoaded: 0,
+    customersCreated: 0,
+    loadFailed: false,
+  };
+  if (ids.length === 0) return result;
 
-  // 1. Verträge laden (neueste zuerst → "jüngster gewinnt" beim fill-if-empty).
-  const { data: contractsData, error: cErr } = await admin
-    .from("contracts")
-    .select(CONTRACT_FIELDS)
-    .eq("org_id", orgId)
-    .in("id", ids)
-    .order("pickup_date", { ascending: false });
-  // NUR code+message loggen — niemals details/hint, da diese Zeilen-/Feldwerte
-  // (Kunden-PII: Name, IBAN, FS-Nr) in die Logs spiegeln können (DSGVO).
-  if (cErr) console.error("[takeover] contracts.select fehlgeschlagen:", cErr.code ?? "", cErr.message);
-  const contracts = (contractsData ?? []) as unknown as Record<string, unknown>[];
+  // 1. Verträge GECHUNKT laden (sonst Bad Request bei langer .in()-URL). Über
+  //    alle Chunks akkumulieren; ein Chunk-Fehler kippt die anderen nicht, wird
+  //    aber als loadFailed sichtbar — kein stilles Überspringen mehr.
+  const loaded: Record<string, unknown>[] = [];
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const { data, error } = await admin
+      .from("contracts")
+      .select(CONTRACT_FIELDS)
+      .eq("org_id", orgId)
+      .in("id", ids.slice(i, i + CHUNK));
+    // NUR code+message loggen — niemals details/hint (Kunden-PII, DSGVO).
+    if (error) {
+      result.loadFailed = true;
+      console.error("[takeover] contracts.select fehlgeschlagen:", error.code ?? "", error.message);
+      continue;
+    }
+    loaded.push(...((data ?? []) as unknown as Record<string, unknown>[]));
+  }
+  // "Jüngster gewinnt" beim fill-if-empty: global nach pickup_date desc sortieren
+  // (Per-Chunk-Order ergäbe keine globale Reihenfolge).
+  loaded.sort((a, b) => String(b.pickup_date ?? "").localeCompare(String(a.pickup_date ?? "")));
+  result.contractsLoaded = loaded.length;
+  const contracts = loaded;
   if (contracts.length === 0) {
-    console.warn(`[takeover] keine Verträge geladen (ids=${ids.length}, org=${orgId})`);
-    return;
+    console.warn(
+      `[takeover] keine Verträge geladen (ids=${ids.length}, org=${orgId}, loadFailed=${result.loadFailed})`
+    );
+    return result;
   }
 
   // 2. Bestehende Kunden der Org einmal laden.
@@ -151,8 +185,9 @@ export async function applyTakeover(
     }
   }
 
+  result.customersCreated = createdCount;
   console.info(
-    `[takeover] org=${orgId}: ${contracts.length} Verträge verarbeitet, ${createdCount} Kunden neu angelegt, Pool=${pool.length}`
+    `[takeover] org=${orgId}: ${contracts.length} Verträge verarbeitet, ${createdCount} Kunden neu angelegt, Pool=${pool.length}, loadFailed=${result.loadFailed}`
   );
 
   // 4. Fahrzeuge der betroffenen Kennzeichen backfillen (leere Felder ergänzen).
@@ -235,4 +270,6 @@ export async function applyTakeover(
       }
     }
   }
+
+  return result;
 }

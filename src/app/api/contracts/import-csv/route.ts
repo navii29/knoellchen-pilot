@@ -270,16 +270,24 @@ export const POST = async (req: Request) => {
     }
 
     // Kunden & Fahrzeuge aus den importierten Verträgen anlegen/abgleichen.
-    // Fehler hier dürfen den erfolgreichen Vertrags-Import NICHT kippen.
+    // Fehler hier kippen den erfolgreichen Vertrags-Import NICHT — werden aber
+    // jetzt sichtbar (customers_step_ok), statt still zu verschwinden.
+    let customersCreated = 0;
+    let customersStepOk = true;
     try {
-      await applyTakeover(admin, auth.org_id, insertedIds);
+      const tk = await applyTakeover(admin, auth.org_id, insertedIds);
+      customersCreated = tk.customersCreated;
+      customersStepOk = !tk.loadFailed;
     } catch (e) {
       console.error("applyTakeover (import-csv) fehlgeschlagen:", e);
+      customersStepOk = false;
     }
 
     return NextResponse.json({
       ok: true,
       inserted,
+      customers_created: customersCreated,
+      customers_step_ok: customersStepOk,
       skipped: results.filter((x) => !x.ok).length,
       results,
     });
