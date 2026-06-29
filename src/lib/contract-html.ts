@@ -292,7 +292,10 @@ const CSS = `
     padding-bottom: 1.5mm;
     border-bottom: 1pt solid var(--brand-color);
   }
-  .conf-body { font-size: 10pt; margin-bottom: 35mm; }
+  .conf-body { font-size: 10pt; margin-bottom: 8mm; }
+  .conf-countries { font-size: 10pt; line-height: 1.5; margin-bottom: 30mm; }
+  .conf-countries .hd { font-weight: 700; margin-bottom: 2mm; padding-bottom: 1.5mm; border-bottom: 1pt solid var(--brand-color); }
+  .conf-countries .row { margin-bottom: 1mm; }
   .conf-field { display: flex; flex-direction: column; max-width: 90mm; margin-bottom: 18mm; }
   .conf-field .val { min-height: 5mm; padding-bottom: 1mm; border-bottom: 0.5pt solid #888; font-size: 10pt; }
   .conf-field .lbl { font-size: 8pt; color: #666; margin-top: 1mm; }
@@ -793,6 +796,12 @@ const renderPage5 = (
       </div>
       <div class="conf-body">
         Hiermit bestätige ich, dass ich die allgemeinen Vermietbedingungen sowie die Einreisebeschränkungen der ${esc(org.name)} vollständig erhalten und gelesen habe und diese vollumfänglich akzeptiere.
+      </div>
+
+      <div class="conf-countries">
+        <div class="hd">Länder / Einreisebeschränkungen</div>
+        <div class="row"><strong>Erlaubt:</strong> Deutschland, Österreich, Schweiz.</div>
+        <div class="row"><strong>Ausgeschlossen:</strong> Fahrten in alle übrigen Länder.</div>
       </div>
 
       <div class="conf-field">
