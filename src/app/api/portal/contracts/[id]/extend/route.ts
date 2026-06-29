@@ -50,16 +50,24 @@ export const POST = async (req: Request, { params }: { params: { id: string } })
   const vehKey = ctx.contract.vehicle_id ? "id" : "plate";
   const vehVal = (ctx.contract.vehicle_id ?? ctx.contract.plate) as string | null;
   let vehicleRate: number | null = null;
+  let vehicleMonthlyRate: number | null = null;
   if (vehVal) {
     const { data: veh } = await ctx.admin
       .from("vehicles")
-      .select("daily_rate")
+      .select("daily_rate, monthly_rate")
       .eq("org_id", ctx.session.org_id)
       .eq(vehKey, vehVal)
       .maybeSingle();
     vehicleRate = (veh?.daily_rate as number | null) ?? null;
+    vehicleMonthlyRate = (veh?.monthly_rate as number | null) ?? null;
   }
-  const daily = resolveEffectiveDailyRate({ contractRate: ctx.contract.daily_rate, vehicleRate });
+  // Monatspreis ÷ 29 (Vertrag, sonst Fahrzeug) hat Vorrang, sonst Tagespreis.
+  const daily = resolveEffectiveDailyRate({
+    contractRate: ctx.contract.daily_rate,
+    vehicleRate,
+    contractMonthlyRate: ctx.contract.monthly_rate,
+    vehicleMonthlyRate,
+  });
   // Gespeicherter Schätzwert über dieselbe geteilte Funktion wie die Anzeige.
   const estCost = estimateExtensionCost({ extraDays, rate: daily }) ?? 0;
 

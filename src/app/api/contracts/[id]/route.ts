@@ -106,7 +106,7 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
     const { data: current } = await admin
       .from("contracts")
       .select(
-        "km_pickup, km_return, km_limit, plate, org_id, pickup_date, return_date, actual_return_date, original_return_date, daily_rate"
+        "km_pickup, km_return, km_limit, plate, org_id, pickup_date, return_date, actual_return_date, original_return_date, daily_rate, monthly_rate"
       )
       .eq("id", params.id)
       .eq("org_id", auth.org_id)
@@ -143,21 +143,26 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
       let price: number | null = null;
       let inclusiveKmMonth: number | null = null;
       let vehicleRate: number | null = null;
+      let vehicleMonthlyRate: number | null = null;
       if (plate) {
         const { data: v } = await admin
           .from("vehicles")
-          .select("extra_km_price, inclusive_km_month, daily_rate")
+          .select("extra_km_price, inclusive_km_month, daily_rate, monthly_rate")
           .eq("org_id", auth.org_id)
           .eq("plate", plate)
           .maybeSingle();
         if (v?.extra_km_price != null) price = Number(v.extra_km_price);
         if (v?.inclusive_km_month != null) inclusiveKmMonth = Number(v.inclusive_km_month);
         vehicleRate = (v?.daily_rate as number | null) ?? null;
+        vehicleMonthlyRate = (v?.monthly_rate as number | null) ?? null;
       }
-      // Effektiver Tagespreis (geteilte Regel) + festgeschriebenes Ursprungsdatum.
+      // Effektiver Tagespreis (geteilte Regel: Monatspreis ÷ 29 hat Vorrang) +
+      // festgeschriebenes Ursprungsdatum.
       const dailyRate = resolveEffectiveDailyRate({
         contractRate: current.daily_rate as number | null,
         vehicleRate,
+        contractMonthlyRate: current.monthly_rate as number | null,
+        vehicleMonthlyRate,
       });
       const originalReturn = current.original_return_date as string | null;
 

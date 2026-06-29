@@ -98,7 +98,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
   const { data: vehicleRow } = await supabase
     .from("vehicles")
     .select(
-      "extra_km_price, inclusive_km_month, cost_daily, cost_monthly, target_daily_rate, daily_rate"
+      "extra_km_price, inclusive_km_month, cost_daily, cost_monthly, target_daily_rate, daily_rate, monthly_rate"
     )
     .eq("plate", c.plate)
     .maybeSingle();
@@ -110,13 +110,16 @@ export default async function ContractDetailPage({ params }: { params: { id: str
     | "cost_monthly"
     | "target_daily_rate"
     | "daily_rate"
+    | "monthly_rate"
   > | null;
   // Effektiver Tagespreis für die LIVE-Schätzung der Verlängerungs-Anfragen:
-  // Vertragspreis, sonst Fahrzeugpreis (geteilte Regel). So sind auch alte
-  // 0,00-Anfragen sofort korrekt, ohne den gespeicherten est_cost zu lesen.
+  // Monatspreis ÷ 29 (Vertrag, sonst Fahrzeug) hat Vorrang, sonst Tagespreis
+  // (geteilte Regel). So sind auch alte 0,00-Anfragen sofort korrekt.
   const effectiveDailyRate = resolveEffectiveDailyRate({
     contractRate: c.daily_rate,
     vehicleRate: vRow?.daily_rate,
+    contractMonthlyRate: c.monthly_rate,
+    vehicleMonthlyRate: vRow?.monthly_rate,
   });
   const pricePerKm = vRow?.extra_km_price ?? null;
   const inclusiveKmMonth = vRow?.inclusive_km_month ?? null;

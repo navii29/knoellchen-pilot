@@ -42,6 +42,8 @@ const assembleInlineReference = async (admin: SupabaseClient, s: NachtragInputSo
   const dailyRate = resolveEffectiveDailyRate({
     contractRate: s.contract.daily_rate ?? null,
     vehicleRate: (vehicle?.daily_rate as number | null) ?? null,
+    contractMonthlyRate: s.contract.monthly_rate ?? null,
+    vehicleMonthlyRate: (vehicle?.monthly_rate as number | null) ?? null,
   });
   const extraDays = Number(s.extension.extra_days ?? 0);
   const extraCost = estimateExtensionCost({ extraDays, rate: dailyRate });
@@ -82,6 +84,7 @@ const sources = (over: Partial<NachtragInputSources> = {}): NachtragInputSources
     vehicle_id: "veh-1",
     vehicle_type: "Fallback Modell",
     daily_rate: 69,
+    monthly_rate: null,
   },
   extension: {
     customer_id: "cust-1",
@@ -136,5 +139,15 @@ describe("buildNachtragInput — verhaltensneutral zur alten Inline-Assembly", (
     const html = buildNachtragHtml(helper);
     expect(html).toContain('<div class="ink"><img src="data:image/png;base64,AAA"');
     expect(html).toContain('<div class="ink"><img src="data:image/png;base64,BBB"');
+  });
+
+  it("Monatspreis ÷ 29 hat Vorrang im Nachtrag (contract.monthly_rate gesetzt)", async () => {
+    const admin = makeAdmin({ id: "veh-1", manufacturer: "VW", model: "Polo", daily_rate: 80 }, null);
+    const helper = await buildNachtragInput(admin, {
+      ...sources(),
+      contract: { ...sources().contract, daily_rate: 50, monthly_rate: 2000 },
+    });
+    expect(helper.dailyRate).toBe(68.97); // 2000/29, nicht 50 (daily) / 80 (vehicle)
+    expect(helper.extraCost).toBe(482.79); // 7 Tage × 68,97
   });
 });
