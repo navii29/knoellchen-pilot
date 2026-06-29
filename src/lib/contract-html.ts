@@ -777,7 +777,8 @@ const renderPage5 = (
   org: Organization,
   contract: Contract,
   customer: Customer | null,
-  logoDataUri: string | null
+  logoDataUri: string | null,
+  signaturePngBase64: string | null
 ): string => {
   const dateStr = fmtDate(today());
   const cityLabel = org.city?.trim() ?? "";
@@ -805,7 +806,7 @@ const renderPage5 = (
           <div class="lbl">Ort/Datum</div>
         </div>
         <div class="field">
-          <div class="val">&nbsp;</div>
+          <div class="val">${signaturePngBase64 ? `<img src="${esc(signaturePngBase64)}" alt="Unterschrift" style="max-height:9mm;max-width:55mm" />` : "&nbsp;"}</div>
           <div class="lbl">Unterschrift</div>
         </div>
       </div>
@@ -937,7 +938,7 @@ ${renderPage1(org, contract, customer, vehicle, logoDataUri, signaturePngBase64)
 ${renderPage2(org)}
 ${renderPage3(org, contract, logoDataUri, specialTerms, signaturePngBase64)}
 ${renderPage4(org, contract, customer, signaturePngBase64)}
-${renderPage5(org, contract, customer, logoDataUri)}
+${renderPage5(org, contract, customer, logoDataUri, signaturePngBase64)}
 ${renderPage6(org, contract, customer, signaturePngBase64)}
 </body>
 </html>`;
