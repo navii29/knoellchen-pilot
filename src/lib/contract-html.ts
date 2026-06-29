@@ -16,6 +16,7 @@ import type {
 import { INSURANCE_TYPE_LABEL, PAYMENT_METHOD_LABEL } from "./types";
 import type { VehicleTire } from "./tires";
 import { fmtDate, fmtEur } from "./utils";
+import { resolveEffectiveDailyRate } from "./daily-rate";
 import { DEFAULT_RENTAL_TERMS } from "./rental-terms";
 
 // =====================================================
@@ -188,7 +189,7 @@ const CSS = `
   .sig-block .date { font-size: 9pt; padding-bottom: 1mm; min-height: 5mm; text-align: center; }
   .sig-block .line { border-top: 0.5pt solid #888; height: 0; margin-bottom: 1.5mm; }
   .sig-block .name { font-size: 8.5pt; }
-  .sig-block .signature-img { height: 13mm; display: flex; align-items: flex-end; justify-content: center; }
+  .sig-block .signature-img { height: 13mm; display: flex; align-items: flex-end; justify-content: flex-start; margin-bottom: -2mm; }
   .sig-block .signature-img img { max-height: 13mm; max-width: 60mm; }
 
   /* ---------- Seite 2/3 AGB ---------- */
@@ -247,7 +248,7 @@ const CSS = `
   .special-single .special-list li { break-inside: avoid; margin-bottom: 1.5mm; }
 
   /* Schlichtere Sigs für Seite 3 — wie Ollies Original */
-  .agb-sigs { margin-top: auto; padding-top: 8mm; display: flex; gap: 12mm; }
+  .agb-sigs { margin-top: 8mm; padding-top: 0; display: flex; gap: 12mm; }
   .agb-sigs .col { flex: 1; }
   .agb-sigs .date { font-size: 9pt; margin-bottom: 1mm; }
   .agb-sigs .line { border-top: 0.5pt solid #888; padding-top: 1mm; font-size: 8.5pt; min-height: 5mm; }
@@ -495,8 +496,8 @@ const sigBlock = (
   signatureImg: string | null
 ): string => `
   <div class="sig-block">
-    ${signatureImg ? `<div class="signature-img"><img src="${esc(signatureImg)}" alt="Signatur" /></div>` : ""}
     <div class="date">${esc(date)}</div>
+    ${signatureImg ? `<div class="signature-img"><img src="${esc(signatureImg)}" alt="Signatur" /></div>` : ""}
     <div class="line"></div>
     <div class="name">${esc(name)}</div>
   </div>
@@ -527,11 +528,21 @@ const renderPage1 = (
       .filter(Boolean)
       .join(", ") || "";
 
+  // Effektiver Tagespreis wie an den Geld-Stellen (Verlängerung/Nachtrag/
+  // Rückgabe): monthly_rate ÷ 29 hat Vorrang, sonst daily_rate — damit der im
+  // PDF gezeigte Gesamtpreis dieselbe Tagesbasis nutzt. total_amount gewinnt.
+  // Rein lokale Anzeige-Berechnung, kein DB-Write.
+  const effDaily = resolveEffectiveDailyRate({
+    contractRate: contract.daily_rate,
+    vehicleRate: null,
+    contractMonthlyRate: contract.monthly_rate,
+    vehicleMonthlyRate: null,
+  });
   const gross =
     contract.total_amount != null
       ? Number(contract.total_amount)
-      : contract.daily_rate != null
-      ? Number(contract.daily_rate) * days
+      : effDaily != null
+      ? Math.round(effDaily * days * 100) / 100
       : 0;
   const { net: priceNet, vat: priceVat } = grossToNet(gross);
   const paymentLabel =
