@@ -9,10 +9,24 @@ const positiveOrNull = (v: number | string | null | undefined): number | null =>
   return Number.isFinite(n) && n > 0 ? n : null;
 };
 
+// Fest verdrahteter Monats-Teiler für den Verlängerungs-/Rückgabe-Tagespreis.
+// Bewusst 29 (nicht 30/30.44) — vereinbarte Konvention für Monatsmieten.
+const MONTHLY_RATE_DIVISOR = 29;
+const round2 = (n: number): number => Math.round(n * 100) / 100;
+
+// Effektiver Tagespreis. Reihenfolge: Monatspreis (Vertrag, sonst Fahrzeug) ÷ 29
+// — falls gesetzt, hat er VORRANG — sonst Tagespreis (Vertrag, sonst Fahrzeug).
+// Die monthly-Felder sind OPTIONAL: Aufrufer, die sie NICHT übergeben (z. B. der
+// Anlage-Flow, der den daily_rate speichert), behalten das reine Tages-Verhalten.
 export const resolveEffectiveDailyRate = (input: {
   contractRate: number | string | null | undefined;
   vehicleRate: number | string | null | undefined;
+  contractMonthlyRate?: number | string | null | undefined;
+  vehicleMonthlyRate?: number | string | null | undefined;
 }): number | null => {
+  const monthly =
+    positiveOrNull(input.contractMonthlyRate) ?? positiveOrNull(input.vehicleMonthlyRate);
+  if (monthly != null) return round2(monthly / MONTHLY_RATE_DIVISOR);
   return positiveOrNull(input.contractRate) ?? positiveOrNull(input.vehicleRate) ?? null;
 };
 
