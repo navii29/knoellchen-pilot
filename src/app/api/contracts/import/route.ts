@@ -142,6 +142,8 @@ export const POST = async (req: Request) => {
   }
 
   let inserted = 0;
+  let customersCreated = 0;
+  let customersStepOk = true;
   if (rows.length > 0) {
     const { data, error } = await admin
       .from("contracts")
@@ -151,16 +153,23 @@ export const POST = async (req: Request) => {
     const insertedIds = ((data ?? []) as { id: string }[]).map((r) => r.id);
     inserted = insertedIds.length || rows.length;
     // Kunden & Fahrzeuge aus den importierten Verträgen anlegen/abgleichen.
+    // Fehler hier kippen den Vertrags-Import NICHT — werden aber jetzt sichtbar
+    // (customers_step_ok), statt still zu verschwinden.
     try {
-      await applyTakeover(admin, profile.org_id, insertedIds);
+      const tk = await applyTakeover(admin, profile.org_id, insertedIds);
+      customersCreated = tk.customersCreated;
+      customersStepOk = !tk.loadFailed;
     } catch (e) {
       console.error("applyTakeover (import) fehlgeschlagen:", e);
+      customersStepOk = false;
     }
   }
 
   return NextResponse.json({
     ok: true,
     inserted,
+    customers_created: customersCreated,
+    customers_step_ok: customersStepOk,
     skipped: errors.length,
     errors: errors.slice(0, 20),
   });
