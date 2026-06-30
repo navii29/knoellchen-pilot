@@ -4,6 +4,7 @@
 //
 // generateContractPdf ist async — alle Callers awaiten.
 
+import { existsSync } from "node:fs";
 import puppeteer, { type LaunchOptions } from "puppeteer-core";
 import chromium from "@sparticuz/chromium";
 import type {
@@ -37,7 +38,9 @@ export const launchOptions = async (): Promise<LaunchOptions> => {
       headless: true,
     };
   }
-  const path = LOCAL_CHROME_PATHS.find((p) => !!p);
+  // Ersten Pfad nehmen, der gesetzt ist UND existiert — sonst klare Meldung
+  // (statt puppeteers generischem „Browser was not found").
+  const path = LOCAL_CHROME_PATHS.find((p) => !!p && existsSync(p));
   if (!path) {
     throw new Error(
       "Kein lokaler Chrome gefunden — CHROME_PATH env var setzen oder Chrome installieren."

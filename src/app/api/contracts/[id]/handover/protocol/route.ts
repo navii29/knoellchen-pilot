@@ -3,6 +3,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { generateHandoverProtocolPdf } from "@/lib/handover-protocol-pdf";
 import type { ProtocolPhoto } from "@/lib/handover-protocol-html";
 import { POSITIONS } from "@/lib/handover";
+import { isFuelLevel } from "@/lib/fuel";
 import {
   loadCustomerForContract,
   loadLogoBase64,
@@ -149,8 +150,9 @@ export const POST = async (req: Request, { params }: Ctx) => {
 
   // --- Erfasste Werte am Vertrag persistieren — nur gesetzte Felder, org-scoped ---
   const km = parseKm(body.km);
-  const fuel =
-    typeof body.fuel_level === "string" ? body.fuel_level.trim() : undefined;
+  // Leer/ungültig → null (CHECK erlaubt null); gültiger Key → der Key. Behebt
+  // sowohl den leeren String als auch die früheren deutschen Labels.
+  const fuel: string | null = isFuelLevel(body.fuel_level) ? body.fuel_level : null;
   const condition =
     typeof body.condition_notes === "string"
       ? body.condition_notes.trim()
@@ -159,13 +161,13 @@ export const POST = async (req: Request, { params }: Ctx) => {
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (handoverType === "pickup") {
     if (km != null) update.km_pickup = km;
-    if (fuel !== undefined) update.fuel_level_pickup = fuel;
+    update.fuel_level_pickup = fuel; // null (nicht gewählt) oder gültiger Key
     if (condition !== undefined) update.damages_at_handover = condition;
     update.handover_sig_lessor_pickup = sigLessor;
     update.handover_sig_renter_pickup = sigRenter;
   } else {
     if (km != null) update.km_return = km;
-    if (fuel !== undefined) update.fuel_level_return = fuel;
+    update.fuel_level_return = fuel; // null (nicht gewählt) oder gültiger Key
     if (condition !== undefined) update.condition_at_return = condition;
     update.handover_sig_lessor_return = sigLessor;
     update.handover_sig_renter_return = sigRenter;
@@ -184,12 +186,12 @@ export const POST = async (req: Request, { params }: Ctx) => {
     ...(handoverType === "pickup"
       ? {
           km_pickup: km ?? contract.km_pickup,
-          fuel_level_pickup: fuel ?? contract.fuel_level_pickup,
+          fuel_level_pickup: fuel,
           damages_at_handover: condition ?? contract.damages_at_handover,
         }
       : {
           km_return: km ?? contract.km_return,
-          fuel_level_return: fuel ?? contract.fuel_level_return,
+          fuel_level_return: fuel,
           condition_at_return: condition ?? contract.condition_at_return,
         }),
   };

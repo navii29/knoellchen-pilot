@@ -16,14 +16,13 @@ import {
   type SignatureCanvasHandle,
 } from "@/components/ui/SignatureCanvas";
 import type { HandoverPhotoType } from "@/lib/types";
+import { FUEL_LEVELS } from "@/lib/fuel";
 
 export type ProtocolPrefill = {
   km: number | null;
   fuel: string | null;
   condition: string | null;
 };
-
-const FUEL_OPTIONS = ["Voll", "¾", "½", "¼", "Reserve"] as const;
 
 // Eine Eingabemaske für genau einen Vorgang (Übergabe/Rückgabe). Erfasst
 // km-Stand, Tankstand, Zustand + zwei Unterschriften und erzeugt das
@@ -139,9 +138,9 @@ export const ProtocolPanel = ({
             className="w-full h-9 px-3 rounded-input border border-hairline bg-canvas text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-signal/30"
           >
             <option value="">– bitte wählen –</option>
-            {FUEL_OPTIONS.map((f) => (
-              <option key={f} value={f}>
-                {f}
+            {FUEL_LEVELS.map((f) => (
+              <option key={f.value} value={f.value}>
+                {f.label}
               </option>
             ))}
           </select>

@@ -8,6 +8,7 @@
 import type { Contract, Customer, Organization, Vehicle } from "./types";
 import { esc } from "./contract-html";
 import { fmtDate } from "./utils";
+import { fuelLabel } from "./fuel";
 
 export type HandoverProtocolType = "pickup" | "return";
 
@@ -285,7 +286,7 @@ export const buildHandoverProtocolHtml = (args: {
     <div class="section-title">Zustand bei ${esc(eventLabel)}</div>
     <table class="data-grid">
       ${dataRow("km-Stand:", km != null ? `${fmtNum(km)} km` : "")}
-      ${dataRow("Tankstand:", fuel ?? "")}
+      ${dataRow("Tankstand:", fuelLabel(fuel))}
       ${dataRow("Zustand / Schäden:", condition ?? "", true)}
     </table>
 
