@@ -7,7 +7,13 @@ import type { HandoverMarker } from "./HandoverClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function HandoverPage({ params }: { params: { id: string } }) {
+export default async function HandoverPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { tab?: string };
+}) {
   const supabase = createClient();
   const {
     data: { user },
@@ -77,9 +83,15 @@ export default async function HandoverPage({ params }: { params: { id: string } 
     severity: r.severity as DamageSeverity | null,
   }));
 
+  // Einstieg über „Rückgabe erfassen" (?tab=return) → Rücknahme-Tab aktiv + klarer
+  // Kontext (Topbar/Heading „Rückgabe"), damit der Operator nicht im falschen
+  // Vorgang denkt.
+  const initialTab: HandoverPhotoType = searchParams?.tab === "return" ? "return" : "pickup";
+  const sectionLabel = initialTab === "return" ? "Rückgabe" : "Übergabe";
+
   return (
     <>
-      <Topbar section={`Übergabe · ${c.contract_nr}`} />
+      <Topbar section={`${sectionLabel} · ${c.contract_nr}`} />
       <div className="flex-1 overflow-auto scroll-thin bg-canvas">
         <div className="max-w-5xl mx-auto p-4 md:p-10">
           <HandoverClient
@@ -87,6 +99,7 @@ export default async function HandoverPage({ params }: { params: { id: string } 
             contractNr={c.contract_nr}
             plate={c.plate}
             renterName={c.renter_name}
+            initialTab={initialTab}
             initialPhotos={photosWithUrl}
             initialMarkers={initialMarkers}
             initialComparison={c.damage_comparison}

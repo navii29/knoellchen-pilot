@@ -84,6 +84,7 @@ export const HandoverClient = ({
   contractNr,
   plate,
   renterName,
+  initialTab,
   initialPhotos,
   initialMarkers,
   initialComparison,
@@ -95,6 +96,7 @@ export const HandoverClient = ({
   contractNr: string;
   plate: string;
   renterName: string;
+  initialTab: HandoverPhotoType;
   initialPhotos: PhotoWithUrl[];
   initialMarkers: HandoverMarker[];
   initialComparison: unknown;
@@ -103,7 +105,7 @@ export const HandoverClient = ({
   protocolPrefill: ProtocolPrefillByType;
 }) => {
   const router = useRouter();
-  const [tab, setTab] = useState<HandoverPhotoType>("pickup");
+  const [tab, setTab] = useState<HandoverPhotoType>(initialTab);
   const [photos, setPhotos] = useState<PhotoWithUrl[]>(initialPhotos);
   const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -310,10 +312,11 @@ export const HandoverClient = ({
             {contractNr} · {plate}
           </div>
           <h1 className="font-display font-extrabold text-ink text-[26px] sm:text-[30px] leading-[1.05] tracking-tightest">
-            Übergabe-Fotos
+            {tab === "return" ? "Rückgabe" : "Übergabe"}
           </h1>
           <p className="text-[14px] text-ink-muted mt-1.5">
-            10 Positionen pro Übergabe und Rücknahme. Vergleich erkennt neue Schäden via Software.
+            Fotos (10 Positionen), Protokoll &amp; Schäden je Übergabe und Rücknahme. Vergleich
+            erkennt neue Schäden via Software.
           </p>
         </div>
         <div className="text-right font-mono text-[12px] text-ink-muted">
