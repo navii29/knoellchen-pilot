@@ -1,19 +1,16 @@
 "use client";
 
-// 3D-Viewer Schritt 2a+2b: GLB laden + drehen, DOPPEL-Tap setzt einen Marker an
-// der Trefferstelle und erkennt die Karosserie-Zone aus der Position. ALLES
-// In-Memory — keine DB, kein Speichern, kein Typ/Schweregrad, kein Foto (2c/2d).
+// 3D-Viewer Schritt 2a+2b (+ Weg A): GLB laden + drehen, DOPPEL-Tap setzt einen
+// Marker und schlägt ein BENANNTES Bauteil vor (Scheinwerfer, Tür …), das der
+// Operator per Dropdown bestätigen/korrigieren kann. ALLES In-Memory — keine DB,
+// kein Speichern, kein Typ/Schweregrad, kein Foto (2c/2d).
 //
-// Wichtig (Performance): Das Mesh hat ~304k Dreiecke. Würde ein r3f-Event-Handler
-// (onClick/onDoubleClick) am Mesh hängen, läge es im Interaction-Set und r3f würde
-// es bei JEDEM pointerdown brute-force raycasten → Stall beim Anfassen → Drehen
-// fühlt sich eingefroren an. Darum: KEIN Handler am Mesh (es bleibt nicht-
-// interaktiv → OrbitControls flüssig) und der Marker-Raycast läuft MANUELL nur
-// beim Doppel-Tap (einmal statt bei jedem Druck).
+// Performance: Das Mesh hat ~304k Dreiecke. Kein r3f-Handler am Mesh (sonst
+// pointerdown-Raycast → Drehen friert ein); Marker-Raycast läuft manuell beim
+// Doppel-Tap, beschleunigt per BVH (three-mesh-bvh) → <1 ms.
 //
-// Das GLB ist EIN Mesh ohne benannte Teile (Tripo-generiert), darum kommt der
-// Teil-Name nicht aus dem Mesh, sondern aus der Treffer-Position → Bounding-Box-
-// Zonen, deckungsgleich zu handover.ts POSITIONS.
+// Das GLB ist EIN Mesh ohne benannte Teile → Bauteil/Zone kommen aus der
+// Trefferposition relativ zur Bounding-Box.
 import {
   Component,
   type ReactNode,
@@ -30,13 +27,11 @@ import * as THREE from "three";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "three-mesh-bvh";
 import { POSITIONS } from "@/lib/handover";
 import type { HandoverPosition } from "@/lib/types";
+import { resolvePart, PART_OPTIONS, partLabelById } from "@/lib/vehicle-parts";
 
-// BVH für schnelle Raycasts. Das Mesh hat ~304k Dreiecke; ein Standard-three.js-
-// Raycast testet jedes Dreieck einzeln → ~1,5 s pro Klick (DAS war die spürbare
-// Verzögerung, KEIN Timer). three-mesh-bvh (schon via @react-three/drei
-// installiert) baut einmalig einen Suchbaum → Raycasts in <1 ms. Der Prototype-
-// Patch ist der dokumentierte Standard und unkritisch: acceleratedRaycast fällt
-// für Geometrien OHNE boundsTree automatisch auf den normalen Raycast zurück.
+// BVH für schnelle Raycasts (siehe oben). Prototype-Patch ist der dokumentierte
+// Standard; acceleratedRaycast fällt für Geometrien ohne boundsTree automatisch
+// auf den normalen Raycast zurück.
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -44,21 +39,16 @@ THREE.Mesh.prototype.raycast = acceleratedRaycast;
 const MODEL_URL = "/vehicle-base.glb";
 
 // ── KALIBRIERUNG ──────────────────────────────────────────────────────────
-// Die Zone kommt aus der Trefferposition relativ zur Bounding-Box. Welche
-// ACHSE Länge bzw. Breite ist, wird automatisch aus den bbox-Ausdehnungen
-// erkannt (längste = Länge = vorne/hinten, mittlere = Breite = links/rechts,
-// kürzeste = Höhe → ignoriert). Nur die RICHTUNG pro Achse ist mehrdeutig —
-// dafür diese zwei Vorzeichen:
-//   FRONT_AT_MAX = true  → "vorne" liegt am MAX-Ende der Längsachse
-//   LEFT_AT_MAX  = true  → "links" liegt am MAX-Ende der Querachse
-//
-// LIVE VERIFIZIEREN (zwingend — sonst gespiegelte Zonen → falsche PDF-Sätze):
-//   1. Marker sichtbar auf die FRONT setzen (Scheinwerfer/Windschutzscheibe).
-//      Label muss "Vorne" zeigen. Zeigt es "Hinten" → FRONT_AT_MAX umdrehen.
-//   2. Marker auf die LINKE Seite setzen. Label muss "Links" zeigen.
-//      Zeigt es "Rechts" → LEFT_AT_MAX umdrehen.
+// Achsen werden automatisch aus den bbox-Ausdehnungen erkannt (längste = Länge
+// = vorne/hinten, mittlere = Breite = links/rechts, kürzeste = Höhe). Nur die
+// RICHTUNG pro Achse ist mehrdeutig → drei Vorzeichen.
+//   FRONT_AT_MAX / LEFT_AT_MAX  → ABGENOMMEN (vorne/hinten/links/rechts korrekt) — NICHT ändern.
+//   TOP_AT_MAX                  → NEU (für die Höhe/Bauteile). Live verifizieren:
+//      Dach doppeltippen → vert hoch (~>0.8); Rad → vert niedrig (~<0.2).
+//      Stimmt es nicht (Dach unten / Rad oben) → TOP_AT_MAX umdrehen.
 const FRONT_AT_MAX = true;
 const LEFT_AT_MAX = true;
+const TOP_AT_MAX = true;
 
 // Doppel-Tap-/Drag-Schwellen.
 const DRAG_PX = 6; // mehr Bewegung zwischen down/up → Drag, kein Tap
@@ -70,8 +60,11 @@ type Marker = {
   x: number;
   y: number;
   z: number; // lokale (Geometrie-)Koordinaten → kleben am Auto bei Re-Center/Skalierung
-  key: HandoverPosition;
-  label: string;
+  lon: number;
+  lat: number;
+  vert: number; // normalisiert [0,1] → Diagnose + Bauteil-Auflösung
+  partId: string | null; // vorgeschlagenes/gewähltes Bauteil (null → grobe Zone)
+  zoneLabel: string; // grober Zonen-Fallback (immer gesetzt)
 };
 
 const labelFor = (key: HandoverPosition): string =>
@@ -83,11 +76,35 @@ const third = (t: number): 0 | 1 | 2 => (t < 1 / 3 ? 0 : t < 2 / 3 ? 1 : 2);
 const axisComp = (v: THREE.Vector3, ax: number) => (ax === 0 ? v.x : ax === 1 ? v.y : v.z);
 const axisMin = (b: THREE.Box3, ax: number) => (ax === 0 ? b.min.x : ax === 1 ? b.min.y : b.min.z);
 
+// Lokaler Trefferpunkt → kanonische Koordinate {lon,lat,vert} ∈ [0,1].
+// lon 1=vorne, lat 1=links, vert 1=oben. Achsen aus den bbox-Ausdehnungen
+// (längste/mittlere/kürzeste), Richtung über die Kalibrier-Vorzeichen.
+function toCanonical(p: THREE.Vector3, bbox: THREE.Box3): { lon: number; lat: number; vert: number } {
+  const size = new THREE.Vector3();
+  bbox.getSize(size);
+  const ranked = [
+    [0, size.x],
+    [1, size.y],
+    [2, size.z],
+  ].sort((a, b) => b[1] - a[1]);
+  const longAxis = ranked[0][0]; // Länge
+  const latAxis = ranked[1][0]; // Breite
+  const vertAxis = ranked[2][0]; // Höhe
+  const norm = (ax: number, ext: number) => (axisComp(p, ax) - axisMin(bbox, ax)) / (ext || 1);
+  const tLong = norm(longAxis, ranked[0][1]);
+  const tLat = norm(latAxis, ranked[1][1]);
+  const tVert = norm(vertAxis, ranked[2][1]);
+  return {
+    lon: FRONT_AT_MAX ? tLong : 1 - tLong,
+    lat: LEFT_AT_MAX ? tLat : 1 - tLat,
+    vert: TOP_AT_MAX ? tVert : 1 - tVert,
+  };
+}
+
 /**
- * Lokaler Trefferpunkt → handover-Zone (einer der 8 Karosserie-Keys).
- * Erkennt Längs-/Querachse aus den bbox-Ausdehnungen (größte = Länge, mittlere
- * = Breite), bildet je in Drittel ab und wendet die Richtungs-Kalibrierung an.
- * Dach-Mitte (mittel/mittel) → auf die dominante Kante snappen.
+ * Grobe handover-Zone (Fallback, falls kein Bauteil trifft). UNVERÄNDERT seit der
+ * abgenommenen Kalibrierung — eigene Achsen-Erkennung, damit das Zonen-Ergebnis
+ * garantiert identisch bleibt. Dach-Mitte → nächste Kante.
  */
 function pointToZone(p: THREE.Vector3, bbox: THREE.Box3): HandoverPosition {
   const size = new THREE.Vector3();
@@ -96,9 +113,9 @@ function pointToZone(p: THREE.Vector3, bbox: THREE.Box3): HandoverPosition {
     [0, size.x],
     [1, size.y],
     [2, size.z],
-  ].sort((a, b) => b[1] - a[1]); // größte Ausdehnung zuerst
-  const longAxis = ranked[0][0]; // Länge  → vorne/hinten
-  const latAxis = ranked[1][0]; // Breite → links/rechts
+  ].sort((a, b) => b[1] - a[1]);
+  const longAxis = ranked[0][0];
+  const latAxis = ranked[1][0];
 
   const tLong = (axisComp(p, longAxis) - axisMin(bbox, longAxis)) / (ranked[0][1] || 1);
   const tLat = (axisComp(p, latAxis) - axisMin(bbox, latAxis)) / (ranked[1][1] || 1);
@@ -111,7 +128,6 @@ function pointToZone(p: THREE.Vector3, bbox: THREE.Box3): HandoverPosition {
   let fr = toFR(third(tLong));
   let lr = toLR(third(tLat));
 
-  // Dach-Mitte: nächste Kante. Achse mit größerer Abweichung von 0.5 gewinnt.
   if (fr === "mid" && lr === "mid") {
     if (Math.abs(tLong - 0.5) >= Math.abs(tLat - 0.5)) {
       fr = (tLong > 0.5) === FRONT_AT_MAX ? "front" : "rear";
@@ -122,8 +138,11 @@ function pointToZone(p: THREE.Vector3, bbox: THREE.Box3): HandoverPosition {
 
   if (fr === "front") return lr === "left" ? "front_left" : lr === "right" ? "front_right" : "front";
   if (fr === "rear") return lr === "left" ? "rear_left" : lr === "right" ? "rear_right" : "rear";
-  return lr === "left" ? "left" : "right"; // fr === "mid" → reine Seite (mid/mid ist oben gesnappt)
+  return lr === "left" ? "left" : "right";
 }
+
+// Anzeige-Label eines Markers: gewähltes Bauteil oder grober Zonen-Fallback.
+const markerLabel = (m: Marker): string => (m.partId ? partLabelById(m.partId) : m.zoneLabel);
 
 function Model({ markers, onAdd }: { markers: Marker[]; onAdd: (m: Omit<Marker, "id">) => void }) {
   const { scene } = useGLTF(MODEL_URL);
@@ -132,7 +151,7 @@ function Model({ markers, onAdd }: { markers: Marker[]; onAdd: (m: Omit<Marker, 
   const [mesh, setMesh] = useState<THREE.Mesh | null>(null);
   const [bbox, setBbox] = useState<THREE.Box3 | null>(null);
 
-  // Das (eine) Mesh + seine Geometrie-Bounding-Box einmal nach dem Laden holen.
+  // Das (eine) Mesh + Geometrie-Bounding-Box + BVH einmal nach dem Laden holen.
   useEffect(() => {
     let found: THREE.Mesh | null = null;
     scene.traverse((o) => {
@@ -141,8 +160,7 @@ function Model({ markers, onAdd }: { markers: Marker[]; onAdd: (m: Omit<Marker, 
     if (found) {
       const m = found as THREE.Mesh;
       m.geometry.computeBoundingBox();
-      // BVH einmalig bauen (lebt im useGLTF-Cache weiter) → Doppel-Tap-Raycast <1 ms.
-      if (!m.geometry.boundsTree) m.geometry.computeBoundsTree();
+      if (!m.geometry.boundsTree) m.geometry.computeBoundsTree(); // schnelle Raycasts
       setMesh(m);
       setBbox(m.geometry.boundingBox!.clone());
     }
@@ -156,10 +174,9 @@ function Model({ markers, onAdd }: { markers: Marker[]; onAdd: (m: Omit<Marker, 
     return s.length() * 0.012;
   }, [bbox]);
 
-  // Doppel-Tap → manueller Raycast → Marker. Mesh bleibt nicht-interaktiv
-  // (kein r3f-Handler), darum stört das Drehen nicht und es gibt keinen
-  // pointerdown-Raycast des großen Mesh. Listener sind passiv → OrbitControls
-  // läuft normal weiter.
+  // Doppel-Tap → manueller Raycast → Marker (Bauteil-Vorschlag + Zonen-Fallback).
+  // Mesh bleibt nicht-interaktiv (kein r3f-Handler); Listener passiv → OrbitControls
+  // unberührt.
   useEffect(() => {
     if (!mesh || !bbox) return;
     const el = gl.domElement;
@@ -179,8 +196,18 @@ function Model({ markers, onAdd }: { markers: Marker[]; onAdd: (m: Omit<Marker, 
       const hits = raycaster.intersectObject(mesh, false); // nur das Mesh, nicht die Marker
       if (!hits.length) return;
       const local = mesh.worldToLocal(hits[0].point.clone()); // Welt → Geometrie-lokal
-      const key = pointToZone(local, bbox);
-      onAdd({ x: local.x, y: local.y, z: local.z, key, label: labelFor(key) });
+      const canon = toCanonical(local, bbox);
+      const part = resolvePart(canon);
+      onAdd({
+        x: local.x,
+        y: local.y,
+        z: local.z,
+        lon: canon.lon,
+        lat: canon.lat,
+        vert: canon.vert,
+        partId: part?.partId ?? null,
+        zoneLabel: labelFor(pointToZone(local, bbox)),
+      });
     };
 
     const onDown = (e: PointerEvent) => {
@@ -188,17 +215,16 @@ function Model({ markers, onAdd }: { markers: Marker[]; onAdd: (m: Omit<Marker, 
       downY = e.clientY;
     };
     const onUp = (e: PointerEvent) => {
-      // War es ein Drag (Drehen)? Dann kein Tap und Doppel-Tap-Kette zurücksetzen.
       if (Math.hypot(e.clientX - downX, e.clientY - downY) > DRAG_PX) {
-        lastT = 0;
+        lastT = 0; // war ein Drag (Drehen) → kein Tap
         return;
       }
       const near = Math.hypot(e.clientX - lastX, e.clientY - lastY) < DBL_PX;
       if (e.timeStamp - lastT < DBL_MS && near) {
         lastT = 0;
-        place(e.clientX, e.clientY); // zweiter Tap → Marker
+        place(e.clientX, e.clientY); // zweiter Tap → Marker (sofort)
       } else {
-        lastT = e.timeStamp; // erster Tap
+        lastT = e.timeStamp;
         lastX = e.clientX;
         lastY = e.clientY;
       }
@@ -239,7 +265,7 @@ function Model({ markers, onAdd }: { markers: Marker[]; onAdd: (m: Omit<Marker, 
                       fontFamily: "system-ui, sans-serif",
                     }}
                   >
-                    {m.id}. {m.label}
+                    {m.id}. {markerLabel(m)}
                   </span>
                 </Html>
               </group>
@@ -285,10 +311,13 @@ export default function VehicleViewer3D() {
   const [markers, setMarkers] = useState<Marker[]>([]);
   const idRef = useRef(0);
 
-  // Stabil halten, damit der Doppel-Tap-Effect in Model nicht bei jedem Render
-  // neu an-/abgehängt wird.
   const addMarker = useCallback(
     (m: Omit<Marker, "id">) => setMarkers((prev) => [...prev, { ...m, id: (idRef.current += 1) }]),
+    []
+  );
+  const setPartId = useCallback(
+    (id: number, partId: string | null) =>
+      setMarkers((prev) => prev.map((m) => (m.id === id ? { ...m, partId } : m))),
     []
   );
   const clear = () => setMarkers([]);
@@ -328,8 +357,8 @@ export default function VehicleViewer3D() {
 
       <aside
         style={{
-          flex: "0 1 240px",
-          minWidth: 200,
+          flex: "0 1 300px",
+          minWidth: 240,
           display: "flex",
           flexDirection: "column",
           gap: 8,
@@ -355,8 +384,8 @@ export default function VehicleViewer3D() {
           </button>
         </div>
         <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>
-          <strong>Doppel-Klick / Doppel-Tap</strong> aufs Auto setzt einen Marker. Einzelklick +
-          Ziehen = drehen. In-Memory — nichts wird gespeichert.
+          <strong>Doppel-Klick / Doppel-Tap</strong> aufs Auto → Bauteil-Vorschlag. Im Dropdown
+          bestätigen/korrigieren. Einzelklick + Ziehen = drehen. In-Memory — nichts wird gespeichert.
         </p>
         {markers.length === 0 ? (
           <p style={{ fontSize: 13, color: "#9ca3af", marginTop: 4 }}>Noch keine Marker.</p>
@@ -366,21 +395,38 @@ export default function VehicleViewer3D() {
               <li
                 key={m.id}
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 8,
-                  padding: "6px 8px",
+                  padding: "8px",
                   borderRadius: 6,
                   background: "#fafafa",
                   border: "1px solid #f0f0f0",
-                  marginBottom: 4,
+                  marginBottom: 6,
                 }}
               >
-                <span>
-                  <span style={{ color: "#9ca3af" }}>{m.id}.</span> {m.label}
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                  <span style={{ color: "#9ca3af" }}>{m.id}.</span>
+                  <select
+                    value={m.partId ?? ""}
+                    onChange={(e) => setPartId(m.id, e.target.value || null)}
+                    style={{
+                      flex: 1,
+                      fontSize: 13,
+                      padding: "3px 6px",
+                      borderRadius: 6,
+                      border: "1px solid #d4d4d8",
+                      background: "#fff",
+                    }}
+                  >
+                    <option value="">— grobe Zone ({m.zoneLabel}) —</option>
+                    {PART_OPTIONS.map((o) => (
+                      <option key={o.id} value={o.id}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {/* Diagnose für die Box-Justierung */}
                 <code style={{ color: "#a1a1aa", fontSize: 11 }}>
-                  {m.x.toFixed(2)}/{m.y.toFixed(2)}/{m.z.toFixed(2)}
+                  lon {m.lon.toFixed(2)} · lat {m.lat.toFixed(2)} · vert {m.vert.toFixed(2)}
                 </code>
               </li>
             ))}
