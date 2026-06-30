@@ -68,6 +68,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
     signature_lessor?: string;
     signature_renter?: string;
     send_email?: boolean;
+    actual_return_date?: string;
   };
 
   const type = body.type;
@@ -93,6 +94,17 @@ export const POST = async (req: Request, { params }: Ctx) => {
       { status: 400 }
     );
   }
+
+  // Km bei RÜCKGABE Pflicht (Übergabe optional). Früh prüfen — vor dem Laden von
+  // Vertrag/Fotos. actual_return_date kommt (ab Schritt 2) aus dem Rücknahme-Tab.
+  const km = parseKm(body.km);
+  if (handoverType === "return" && km == null) {
+    return NextResponse.json({ error: "Km bei Rückgabe erforderlich." }, { status: 400 });
+  }
+  const actualReturnDate =
+    typeof body.actual_return_date === "string" && body.actual_return_date.trim()
+      ? body.actual_return_date.trim()
+      : null;
 
   const admin = createAdminClient();
 
@@ -149,7 +161,6 @@ export const POST = async (req: Request, { params }: Ctx) => {
   }
 
   // --- Erfasste Werte am Vertrag persistieren — nur gesetzte Felder, org-scoped ---
-  const km = parseKm(body.km);
   // Leer/ungültig → null (CHECK erlaubt null); gültiger Key → der Key. Behebt
   // sowohl den leeren String als auch die früheren deutschen Labels.
   const fuel: string | null = isFuelLevel(body.fuel_level) ? body.fuel_level : null;
@@ -157,6 +168,13 @@ export const POST = async (req: Request, { params }: Ctx) => {
     typeof body.condition_notes === "string"
       ? body.condition_notes.trim()
       : undefined;
+
+  // Bei RÜCKGABE koppelt das Protokoll den Abschluss. Defensiv: war der Vertrag
+  // schon "abgeschlossen" (z. B. Self-Checkout lief zuerst), die GETEILTEN Felder
+  // (status / actual_return_date / km_return / fuel_level_return) NICHT
+  // stillschweigend überschreiben — Protokoll-Artefakte (Signaturen/Zustand/PDF)
+  // trotzdem speichern.
+  const alreadyClosed = handoverType === "return" && contract.status === "abgeschlossen";
 
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (handoverType === "pickup") {
@@ -166,11 +184,18 @@ export const POST = async (req: Request, { params }: Ctx) => {
     update.handover_sig_lessor_pickup = sigLessor;
     update.handover_sig_renter_pickup = sigRenter;
   } else {
-    if (km != null) update.km_return = km;
-    update.fuel_level_return = fuel; // null (nicht gewählt) oder gültiger Key
+    // Protokoll-eigene Felder: immer (Re-Erzeugung aktualisiert sie).
     if (condition !== undefined) update.condition_at_return = condition;
     update.handover_sig_lessor_return = sigLessor;
     update.handover_sig_renter_return = sigRenter;
+    // Abschluss + geteilte Felder: nur, wenn noch NICHT abgeschlossen.
+    if (!alreadyClosed) {
+      update.status = "abgeschlossen";
+      update.km_return = km; // bei Rückgabe Pflicht (oben geprüft)
+      update.fuel_level_return = fuel;
+      update.actual_return_date =
+        actualReturnDate ?? contract.actual_return_date ?? new Date().toISOString().slice(0, 10);
+    }
   }
 
   const { error: updErr } = await admin
@@ -190,8 +215,10 @@ export const POST = async (req: Request, { params }: Ctx) => {
           damages_at_handover: condition ?? contract.damages_at_handover,
         }
       : {
-          km_return: km ?? contract.km_return,
-          fuel_level_return: fuel,
+          // Bei schon-abgeschlossen die gespeicherten (Self-Checkout-)Werte zeigen,
+          // sonst die jetzt erfassten — konsistent zum DB-Update oben.
+          km_return: alreadyClosed ? contract.km_return : km,
+          fuel_level_return: alreadyClosed ? contract.fuel_level_return : fuel,
           condition_at_return: condition ?? contract.condition_at_return,
         }),
   };
@@ -272,5 +299,9 @@ export const POST = async (req: Request, { params }: Ctx) => {
     path,
     url: signed?.signedUrl ?? null,
     emailed,
+    // Für die UI (Schritt 2): wurde der Vertrag mit diesem Rückgabe-Protokoll
+    // abgeschlossen, und war er es vorher schon (dann Werte nicht überschrieben)?
+    closed: handoverType === "return",
+    alreadyClosed,
   });
 };

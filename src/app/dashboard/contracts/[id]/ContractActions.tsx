@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -17,32 +17,11 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { fmtDate, fmtEur } from "@/lib/utils";
+import { fmtDate } from "@/lib/utils";
 import type { Contract } from "@/lib/types";
-import { Button, ButtonLink } from "@/components/ui/Button";
+import { ButtonLink } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { PortalInviteModal } from "@/components/dashboard/PortalInviteModal";
-
-type ReturnSummary = {
-  plannedDays: number;
-  actualDays: number;
-  daysDiff: number;
-  kmPickup: number | null;
-  kmReturn: number | null;
-  drivenKm: number | null;
-  inclusiveKmMonth: number | null;
-  source: "override" | "inclusive_month" | "none";
-  allowedKm: number | null;
-  excessKm: number;
-  pricePerKm: number;
-  cost: number;
-  extraDays: number;
-  dailyRate: number;
-  extraDaysCost: number;
-  totalExtraCost: number;
-};
-
-const todayIso = () => new Date().toISOString().slice(0, 10);
 
 export const ContractActions = ({
   contract,
@@ -56,7 +35,6 @@ export const ContractActions = ({
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [returnOpen, setReturnOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [customerId, setCustomerId] = useState<string | null>(contract.customer_id);
 
@@ -196,13 +174,13 @@ export const ContractActions = ({
         </Link>
 
         {contract.status === "aktiv" && (
-          <Button
+          <ButtonLink
+            href={`/dashboard/contracts/${contract.id}/handover?tab=return`}
             variant="signal"
             size="sm"
-            onClick={() => setReturnOpen(true)}
           >
             <Check size={14} /> Rückgabe erfassen
-          </Button>
+          </ButtonLink>
         )}
 
         {contract.status !== "storniert" && (
@@ -366,17 +344,6 @@ export const ContractActions = ({
         </div>
       )}
 
-      {returnOpen && (
-        <ReturnModal
-          contract={contract}
-          onClose={() => setReturnOpen(false)}
-          onDone={() => {
-            setReturnOpen(false);
-            router.refresh();
-          }}
-        />
-      )}
-
       {inviteOpen && customerId && (
         <PortalInviteModal
           customerId={customerId}
@@ -388,344 +355,3 @@ export const ContractActions = ({
     </Panel>
   );
 };
-
-const ReturnModal = ({
-  contract,
-  onClose,
-  onDone,
-}: {
-  contract: Contract;
-  onClose: () => void;
-  onDone: () => void;
-}) => {
-  const [returnDate, setReturnDate] = useState(todayIso());
-  const [kmReturn, setKmReturn] = useState("");
-  const [summary, setSummary] = useState<ReturnSummary | null>(null);
-  const [previewBusy, setPreviewBusy] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!returnDate || !kmReturn) {
-      setSummary(null);
-      return;
-    }
-    const t = setTimeout(async () => {
-      setPreviewBusy(true);
-      setError(null);
-      const res = await fetch(`/api/contracts/${contract.id}/return-preview`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          actual_return_date: returnDate,
-          km_return: kmReturn.replace(",", "."),
-        }),
-      });
-      setPreviewBusy(false);
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || "Vorschau fehlgeschlagen");
-        setSummary(null);
-        return;
-      }
-      const j = (await res.json()) as { summary: ReturnSummary };
-      setSummary(j.summary);
-    }, 350);
-    return () => clearTimeout(t);
-  }, [returnDate, kmReturn, contract.id]);
-
-  const submit = async () => {
-    setSaving(true);
-    setError(null);
-    const res = await fetch(`/api/contracts/${contract.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        status: "abgeschlossen",
-        actual_return_date: returnDate,
-        km_return: kmReturn ? Number(kmReturn.replace(",", ".")) : null,
-      }),
-    });
-    setSaving(false);
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
-      setError(j.error || "Speichern fehlgeschlagen");
-      return;
-    }
-    onDone();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-paper w-full md:w-[560px] md:rounded-card rounded-t-card border border-hairline shadow-panel max-h-[92vh] overflow-y-auto">
-        <div className="px-5 py-4 border-b border-hairline flex items-center justify-between sticky top-0 bg-paper">
-          <div className="font-display font-bold text-[15px] tracking-tight text-ink">Rückgabe erfassen</div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 inline-flex items-center justify-center rounded-btn text-ink-muted hover:text-ink hover:bg-canvas transition-colors"
-            aria-label="Schließen"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        <div className="p-5 space-y-5">
-          <div className="font-mono tnum text-[12px] text-ink-muted">
-            {contract.contract_nr} · {contract.plate} · {contract.renter_name}
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-3">
-            <ModalField label="Tatsächliches Rückgabedatum">
-              <input
-                type="date"
-                value={returnDate}
-                onChange={(e) => setReturnDate(e.target.value)}
-                className="field font-mono tnum"
-              />
-            </ModalField>
-            <ModalField label="Km bei Rückgabe *">
-              <div className="relative">
-                <input
-                  required
-                  inputMode="numeric"
-                  value={kmReturn}
-                  onChange={(e) => setKmReturn(e.target.value)}
-                  placeholder="z.B. 5890"
-                  className="field font-mono tnum pr-9"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-ink-muted">km</span>
-              </div>
-            </ModalField>
-          </div>
-
-          {summary && (
-            <SummaryPanel
-              summary={summary}
-              plannedReturn={contract.return_date}
-              actualReturn={returnDate}
-            />
-          )}
-          {previewBusy && (
-            <div className="font-mono text-[12px] text-ink-muted inline-flex items-center gap-1.5">
-              <Loader2 size={12} className="animate-spin" /> Berechne…
-            </div>
-          )}
-
-          {error && (
-            <div className="text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-panel px-3 py-2">
-              {error}
-            </div>
-          )}
-
-          <div className="flex items-center justify-end gap-2 pt-2 sticky bottom-0 bg-paper pb-1">
-            <button
-              onClick={onClose}
-              className="text-[13px] px-3 h-9 rounded-btn text-ink-muted hover:text-ink hover:bg-canvas transition-colors"
-            >
-              Abbrechen
-            </button>
-            <Button
-              onClick={submit}
-              disabled={saving || !kmReturn}
-              variant="signal"
-              size="sm"
-            >
-              {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-              Rückgabe abschließen
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const SummaryPanel = ({
-  summary,
-  plannedReturn,
-  actualReturn,
-}: {
-  summary: ReturnSummary;
-  plannedReturn: string;
-  actualReturn: string;
-}) => {
-  const diffLabel =
-    summary.daysDiff === 0
-      ? "(planmäßig)"
-      : summary.daysDiff > 0
-      ? `(${summary.daysDiff} Tage später)`
-      : `(${Math.abs(summary.daysDiff)} Tage früher)`;
-
-  return (
-    <div className="panel bg-canvas p-4 space-y-3">
-      <ModalSection title="Zeitraum">
-        <ModalRow label="Geplante Rückgabe" value={fmtDate(plannedReturn)} mono />
-        <ModalRow label="Tatsächliche Rückgabe" value={`${fmtDate(actualReturn)} ${diffLabel}`} mono />
-        <ModalRow label="Miettage" value={`${summary.actualDays}`} mono bold />
-      </ModalSection>
-
-      {summary.drivenKm != null ? (
-        <>
-          <div className="border-t border-hairline" />
-          <ModalSection title="Kilometer">
-            <ModalRow
-              label="Km bei Übergabe"
-              value={summary.kmPickup != null ? summary.kmPickup.toLocaleString("de-DE") : "—"}
-              mono
-            />
-            <ModalRow
-              label="Km bei Rückgabe"
-              value={summary.kmReturn != null ? summary.kmReturn.toLocaleString("de-DE") : "—"}
-              mono
-            />
-            <ModalRow
-              label="Gefahren"
-              value={`${summary.drivenKm.toLocaleString("de-DE")} km`}
-              mono
-              bold
-            />
-          </ModalSection>
-
-          <div className="border-t border-hairline" />
-          <ModalSection title="Mehrkilometer">
-            {summary.allowedKm != null ? (
-              <>
-                <ModalRow
-                  label="Erlaubt"
-                  value={
-                    summary.source === "inclusive_month" && summary.inclusiveKmMonth
-                      ? `${summary.allowedKm.toLocaleString("de-DE")} km (${summary.actualDays} × ${summary.inclusiveKmMonth.toLocaleString("de-DE")} / 30)`
-                      : `${summary.allowedKm.toLocaleString("de-DE")} km`
-                  }
-                  mono
-                />
-                <ModalRow
-                  label="Mehrkilometer"
-                  value={`${summary.excessKm.toLocaleString("de-DE")} km`}
-                  mono
-                  bold={summary.excessKm > 0}
-                  highlight={summary.excessKm > 0 ? "amber" : undefined}
-                />
-                {summary.excessKm > 0 && (
-                  <ModalRow
-                    label="Mehrkosten"
-                    value={
-                      <span className="font-display font-semibold text-[#92400E] text-[15px]">
-                        {summary.excessKm.toLocaleString("de-DE")} × {summary.pricePerKm.toFixed(2).replace(".", ",")} € ={" "}
-                        {fmtEur(summary.cost)}
-                      </span>
-                    }
-                  />
-                )}
-              </>
-            ) : (
-              <div className="text-[12px] text-ink-muted italic">
-                Kein Inklusiv-km-Limit definiert (am Fahrzeug einstellen oder Vertrags-Freikilometer setzen).
-              </div>
-            )}
-          </ModalSection>
-        </>
-      ) : (
-        <div className="text-[12px] text-ink-muted italic">
-          Km-Stand bei Übergabe fehlt — Mehrkilometer können nicht berechnet werden.
-        </div>
-      )}
-
-      {summary.extraDays > 0 && (
-        <>
-          <div className="border-t border-hairline" />
-          <ModalSection title="Zusatztage (über das ursprüngliche Rückgabedatum hinaus)">
-            <ModalRow
-              label="Zusatztage"
-              value={`${summary.extraDays} ${summary.extraDays === 1 ? "Tag" : "Tage"}`}
-              mono
-              bold
-              highlight="amber"
-            />
-            {summary.dailyRate > 0 ? (
-              <ModalRow
-                label="Kosten"
-                value={
-                  <span className="font-display font-semibold text-[#92400E] text-[15px]">
-                    {summary.extraDays} × {summary.dailyRate.toFixed(2).replace(".", ",")} € ={" "}
-                    {fmtEur(summary.extraDaysCost)}
-                  </span>
-                }
-              />
-            ) : (
-              <ModalRow
-                label="Kosten"
-                value={
-                  <span className="text-[12px] text-ink-muted italic">
-                    Tagespreis fehlt — am Vertrag/Fahrzeug setzen
-                  </span>
-                }
-              />
-            )}
-          </ModalSection>
-        </>
-      )}
-
-      {(summary.cost > 0 || summary.extraDaysCost > 0) && (
-        <>
-          <div className="border-t border-hairline" />
-          <ModalSection title="Summe Zusatzkosten">
-            <ModalRow
-              label="Mehr-km + Zusatztage"
-              value={
-                <span className="font-display font-semibold text-[15px]">
-                  {fmtEur(summary.totalExtraCost)}
-                </span>
-              }
-              bold
-            />
-          </ModalSection>
-        </>
-      )}
-    </div>
-  );
-};
-
-const ModalSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <div>
-    <div className="data-label text-ink-muted mb-2">{title}</div>
-    <div className="space-y-1">{children}</div>
-  </div>
-);
-
-const ModalRow = ({
-  label,
-  value,
-  mono,
-  bold,
-  highlight,
-}: {
-  label: string;
-  value: React.ReactNode;
-  mono?: boolean;
-  bold?: boolean;
-  highlight?: "amber";
-}) => (
-  <div className="grid grid-cols-[140px_1fr] gap-2 text-[13px]">
-    <div className="text-ink-muted text-[12px]">{label}</div>
-    <div
-      className={[
-        mono ? "font-mono tnum" : "",
-        bold ? "font-semibold" : "",
-        highlight === "amber" ? "text-[#92400E]" : "text-ink",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
-      {value}
-    </div>
-  </div>
-);
-
-const ModalField = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <label className="block">
-    <div className="data-label text-ink-muted mb-1">{label}</div>
-    {children}
-  </label>
-);

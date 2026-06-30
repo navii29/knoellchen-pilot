@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/SignatureCanvas";
 import type { HandoverPhotoType } from "@/lib/types";
 import { FUEL_LEVELS } from "@/lib/fuel";
+import type { ReturnSummary } from "@/lib/km";
+import { fmtEur } from "@/lib/utils";
 
 export type ProtocolPrefill = {
   km: number | null;
@@ -52,6 +54,37 @@ export const ProtocolPanel = ({
   const lessorRef = useRef<SignatureCanvasHandle>(null);
   const renterRef = useRef<SignatureCanvasHandle>(null);
 
+  const docLabel = type === "pickup" ? "Übergabeprotokoll" : "Rückgabeprotokoll";
+
+  // Rückgabe: tatsächliches Rückgabedatum + Mehrkosten-Vorschau (wie früher im
+  // Schnell-Modal). Nur im Rücknahme-Tab relevant.
+  const [returnDate, setReturnDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [summary, setSummary] = useState<ReturnSummary | null>(null);
+  const [previewBusy, setPreviewBusy] = useState(false);
+
+  useEffect(() => {
+    if (type !== "return" || !returnDate || !km) {
+      setSummary(null);
+      return;
+    }
+    const t = setTimeout(async () => {
+      setPreviewBusy(true);
+      const res = await fetch(`/api/contracts/${contractId}/return-preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actual_return_date: returnDate, km_return: km.replace(",", ".") }),
+      });
+      setPreviewBusy(false);
+      if (!res.ok) {
+        setSummary(null);
+        return;
+      }
+      const j = (await res.json()) as { summary: ReturnSummary };
+      setSummary(j.summary);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [type, returnDate, km, contractId]);
+
   const post = async (sendEmail: boolean) => {
     setError(null);
     const sigLessor = lessorRef.current?.toPNG() ?? null;
@@ -71,6 +104,7 @@ export const ProtocolPanel = ({
         signature_lessor: sigLessor,
         signature_renter: sigRenter,
         send_email: sendEmail,
+        actual_return_date: type === "return" ? returnDate : undefined,
       }),
     });
     const j = (await res.json().catch(() => ({}))) as {
@@ -104,13 +138,27 @@ export const ProtocolPanel = ({
     <div className="mt-8 panel p-4 sm:p-5">
       <div className="flex items-center gap-2 data-label text-ink-muted mb-4">
         <FileSignature size={13} />
-        Übergabeprotokoll · {eventLabel}
+        {docLabel} · {eventLabel}
       </div>
+
+      {type === "return" && (
+        <div className="mb-4">
+          <label className="block text-[12px] font-medium text-ink-soft mb-1.5">
+            Tatsächliches Rückgabedatum
+          </label>
+          <input
+            type="date"
+            value={returnDate}
+            onChange={(e) => setReturnDate(e.target.value)}
+            className="w-full h-9 px-3 rounded-input border border-hairline bg-canvas text-[14px] text-ink font-mono tnum focus:outline-none focus:ring-2 focus:ring-signal/30"
+          />
+        </div>
+      )}
 
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-[12px] font-medium text-ink-soft mb-1.5">
-            km-Stand
+            km-Stand{type === "return" ? " *" : ""}
           </label>
           <div className="relative">
             <Gauge
@@ -160,6 +208,50 @@ export const ProtocolPanel = ({
         />
       </div>
 
+      {type === "return" && (summary || previewBusy) && (
+        <div className="mt-4 rounded-panel border border-hairline bg-canvas p-3 text-[13px]">
+          <div className="data-label text-ink-muted mb-2">Mehrkosten-Vorschau</div>
+          {previewBusy && !summary ? (
+            <div className="text-ink-muted inline-flex items-center gap-1.5">
+              <Loader2 size={12} className="animate-spin" /> Berechne…
+            </div>
+          ) : summary ? (
+            <div className="space-y-1">
+              <PreviewRow
+                label="Miettage"
+                value={`${summary.actualDays}${
+                  summary.daysDiff !== 0
+                    ? ` (${summary.daysDiff > 0 ? "+" : ""}${summary.daysDiff} ggü. geplant)`
+                    : ""
+                }`}
+              />
+              {summary.drivenKm != null && (
+                <PreviewRow label="Gefahren" value={`${summary.drivenKm.toLocaleString("de-DE")} km`} />
+              )}
+              {summary.excessKm > 0 && (
+                <PreviewRow
+                  label="Mehrkilometer"
+                  value={`${summary.excessKm.toLocaleString("de-DE")} km × ${summary.pricePerKm
+                    .toFixed(2)
+                    .replace(".", ",")} € = ${fmtEur(summary.cost)}`}
+                />
+              )}
+              {summary.extraDays > 0 && (
+                <PreviewRow
+                  label="Zusatztage"
+                  value={`${summary.extraDays} × ${summary.dailyRate
+                    .toFixed(2)
+                    .replace(".", ",")} € = ${fmtEur(summary.extraDaysCost)}`}
+                />
+              )}
+              {(summary.excessKm > 0 || summary.extraDays > 0) && (
+                <PreviewRow label="Mehrkosten gesamt" value={fmtEur(summary.totalExtraCost)} bold />
+              )}
+            </div>
+          ) : null}
+        </div>
+      )}
+
       <div className="mt-5 grid sm:grid-cols-2 gap-4">
         <SignatureField label="Unterschrift Vermieter" canvasRef={lessorRef} />
         <SignatureField label="Unterschrift Mieter" canvasRef={renterRef} />
@@ -183,7 +275,7 @@ export const ProtocolPanel = ({
         <button
           type="button"
           onClick={create}
-          disabled={submitting || emailing}
+          disabled={submitting || emailing || (type === "return" && !km)}
           className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-btn bg-signal text-white text-[13px] font-medium shadow-signal hover:bg-signal-strong disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {submitting ? (
@@ -191,7 +283,7 @@ export const ProtocolPanel = ({
           ) : (
             <FileSignature size={14} />
           )}
-          Übergabeprotokoll erzeugen
+          {docLabel} erzeugen
         </button>
 
         {downloadUrl && (
@@ -227,6 +319,15 @@ export const ProtocolPanel = ({
     </div>
   );
 };
+
+const PreviewRow = ({ label, value, bold }: { label: string; value: string; bold?: boolean }) => (
+  <div className="flex items-center justify-between gap-3">
+    <span className="text-ink-muted">{label}</span>
+    <span className={`font-mono tnum ${bold ? "font-semibold text-ink" : "text-ink-soft"}`}>
+      {value}
+    </span>
+  </div>
+);
 
 const SignatureField = ({
   label,
