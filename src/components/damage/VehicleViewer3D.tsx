@@ -1,9 +1,8 @@
 "use client";
 
-// 3D-Viewer Schritt 2a+2b (+ Weg A): GLB laden + drehen, DOPPEL-Tap setzt einen
-// Marker und schlägt ein BENANNTES Bauteil vor (Scheinwerfer, Tür …), das der
-// Operator per Dropdown bestätigen/korrigieren kann. ALLES In-Memory — keine DB,
-// kein Speichern, kein Typ/Schweregrad, kein Foto (2c/2d).
+// 3D-Viewer Schritt 2a+2b+2c (+ Weg A): GLB laden + drehen, DOPPEL-Tap setzt
+// einen Marker, schlägt ein BENANNTES Bauteil vor und nimmt Schadenstyp +
+// Schweregrad auf. ALLES In-Memory — keine DB, kein Speichern, kein Foto.
 //
 // Performance: Das Mesh hat ~304k Dreiecke. Kein r3f-Handler am Mesh (sonst
 // pointerdown-Raycast → Drehen friert ein); Marker-Raycast läuft manuell beim
@@ -25,27 +24,24 @@ import { Canvas, createPortal, useThree } from "@react-three/fiber";
 import { OrbitControls, Center, Html, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "three-mesh-bvh";
+import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { POSITIONS } from "@/lib/handover";
-import type { HandoverPosition } from "@/lib/types";
+import type { DamageSeverity, HandoverPosition } from "@/lib/types";
 import { resolvePart, PART_OPTIONS, partLabelById } from "@/lib/vehicle-parts";
+import { DAMAGE_TYPES, SEVERITY_OPTIONS, severityColor } from "@/lib/damage-types";
+import { Button } from "@/components/ui/Button";
 
-// BVH für schnelle Raycasts (siehe oben). Prototype-Patch ist der dokumentierte
-// Standard; acceleratedRaycast fällt für Geometrien ohne boundsTree automatisch
-// auf den normalen Raycast zurück.
+// BVH für schnelle Raycasts. Prototype-Patch ist Standard; acceleratedRaycast
+// fällt für Geometrien ohne boundsTree automatisch auf den normalen Raycast zurück.
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
 const MODEL_URL = "/vehicle-base.glb";
 
-// ── KALIBRIERUNG ──────────────────────────────────────────────────────────
-// Achsen werden automatisch aus den bbox-Ausdehnungen erkannt (längste = Länge
-// = vorne/hinten, mittlere = Breite = links/rechts, kürzeste = Höhe). Nur die
-// RICHTUNG pro Achse ist mehrdeutig → drei Vorzeichen.
-//   FRONT_AT_MAX / LEFT_AT_MAX  → ABGENOMMEN (vorne/hinten/links/rechts korrekt) — NICHT ändern.
-//   TOP_AT_MAX                  → NEU (für die Höhe/Bauteile). Live verifizieren:
-//      Dach doppeltippen → vert hoch (~>0.8); Rad → vert niedrig (~<0.2).
-//      Stimmt es nicht (Dach unten / Rad oben) → TOP_AT_MAX umdrehen.
+// ── KALIBRIERUNG (abgenommen — NICHT ändern) ──────────────────────────────
+//   FRONT_AT_MAX / LEFT_AT_MAX → vorne/hinten/links/rechts korrekt.
+//   TOP_AT_MAX                 → Höhe/Bauteile (live verifiziert).
 const FRONT_AT_MAX = true;
 const LEFT_AT_MAX = true;
 const TOP_AT_MAX = true;
@@ -65,6 +61,8 @@ type Marker = {
   vert: number; // normalisiert [0,1] → Diagnose + Bauteil-Auflösung
   partId: string | null; // vorgeschlagenes/gewähltes Bauteil (null → grobe Zone)
   zoneLabel: string; // grober Zonen-Fallback (immer gesetzt)
+  damageType: string | null; // Schadenstyp (Kratzer/Delle/…), null = nicht gewählt
+  severity: DamageSeverity | null; // leicht/schwer, null = nicht eingestuft
 };
 
 const labelFor = (key: HandoverPosition): string =>
@@ -141,8 +139,12 @@ function pointToZone(p: THREE.Vector3, bbox: THREE.Box3): HandoverPosition {
   return lr === "left" ? "left" : "right";
 }
 
-// Anzeige-Label eines Markers: gewähltes Bauteil oder grober Zonen-Fallback.
+// Anzeige-Helfer.
 const markerLabel = (m: Marker): string => (m.partId ? partLabelById(m.partId) : m.zoneLabel);
+const damageTypeLabel = (id: string | null): string =>
+  DAMAGE_TYPES.find((t) => t.id === id)?.label ?? "— Typ wählen";
+const severityLabel = (sev: DamageSeverity | null): string =>
+  SEVERITY_OPTIONS.find((o) => o.value === sev)?.label ?? "— Grad —";
 
 function Model({ markers, onAdd }: { markers: Marker[]; onAdd: (m: Omit<Marker, "id">) => void }) {
   const { scene } = useGLTF(MODEL_URL);
@@ -174,9 +176,8 @@ function Model({ markers, onAdd }: { markers: Marker[]; onAdd: (m: Omit<Marker, 
     return s.length() * 0.012;
   }, [bbox]);
 
-  // Doppel-Tap → manueller Raycast → Marker (Bauteil-Vorschlag + Zonen-Fallback).
-  // Mesh bleibt nicht-interaktiv (kein r3f-Handler); Listener passiv → OrbitControls
-  // unberührt.
+  // Doppel-Tap → manueller Raycast → Marker. Mesh bleibt nicht-interaktiv; Listener
+  // passiv → OrbitControls unberührt.
   useEffect(() => {
     if (!mesh || !bbox) return;
     const el = gl.domElement;
@@ -207,6 +208,8 @@ function Model({ markers, onAdd }: { markers: Marker[]; onAdd: (m: Omit<Marker, 
         vert: canon.vert,
         partId: part?.partId ?? null,
         zoneLabel: labelFor(pointToZone(local, bbox)),
+        damageType: null,
+        severity: null,
       });
     };
 
@@ -250,7 +253,7 @@ function Model({ markers, onAdd }: { markers: Marker[]; onAdd: (m: Omit<Marker, 
               <group key={m.id} position={[m.x, m.y, m.z]}>
                 <mesh>
                   <sphereGeometry args={[radius, 16, 16]} />
-                  <meshBasicMaterial color="#dc2626" />
+                  <meshBasicMaterial color={severityColor(m.severity)} />
                 </mesh>
                 <Html center style={{ pointerEvents: "none" }}>
                   <span
@@ -309,31 +312,42 @@ class ViewerErrorBoundary extends Component<{ children: ReactNode }, { error: bo
 
 export default function VehicleViewer3D() {
   const [markers, setMarkers] = useState<Marker[]>([]);
+  const [openId, setOpenId] = useState<number | null>(null); // nur EINER offen
   const idRef = useRef(0);
 
-  const addMarker = useCallback(
-    (m: Omit<Marker, "id">) => setMarkers((prev) => [...prev, { ...m, id: (idRef.current += 1) }]),
-    []
-  );
+  const addMarker = useCallback((m: Omit<Marker, "id">) => {
+    const id = (idRef.current += 1);
+    setMarkers((prev) => [...prev, { ...m, id }]);
+    setOpenId(id); // neuester Marker automatisch aufgeklappt
+  }, []);
   const setPartId = useCallback(
     (id: number, partId: string | null) =>
       setMarkers((prev) => prev.map((m) => (m.id === id ? { ...m, partId } : m))),
     []
   );
-  const clear = () => setMarkers([]);
+  const setDamageType = useCallback(
+    (id: number, damageType: string | null) =>
+      setMarkers((prev) => prev.map((m) => (m.id === id ? { ...m, damageType } : m))),
+    []
+  );
+  const setSeverity = useCallback(
+    (id: number, severity: DamageSeverity | null) =>
+      setMarkers((prev) => prev.map((m) => (m.id === id ? { ...m, severity } : m))),
+    []
+  );
+  const toggleOpen = useCallback((id: number) => setOpenId((cur) => (cur === id ? null : id)), []);
+  const removeMarker = useCallback((id: number) => {
+    setMarkers((prev) => prev.filter((m) => m.id !== id));
+    setOpenId((cur) => (cur === id ? null : cur));
+  }, []);
+  const clear = () => {
+    setMarkers([]);
+    setOpenId(null);
+  };
 
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "stretch" }}>
-      <div
-        style={{
-          flex: "1 1 460px",
-          height: "70vh",
-          minHeight: 420,
-          background: "#f4f4f5",
-          borderRadius: 12,
-          overflow: "hidden",
-        }}
-      >
+    <div className="flex flex-wrap gap-4 items-stretch">
+      <div className="flex-[1_1_460px] h-[70vh] min-h-[420px] rounded-card border border-hairline bg-canvas overflow-hidden">
         <ViewerErrorBoundary>
           <Canvas camera={{ position: [4, 2.5, 5], fov: 45 }} dpr={[1, 2]}>
             <ambientLight intensity={0.7} />
@@ -355,81 +369,145 @@ export default function VehicleViewer3D() {
         </ViewerErrorBoundary>
       </div>
 
-      <aside
-        style={{
-          flex: "0 1 300px",
-          minWidth: 240,
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-          fontFamily: "system-ui, sans-serif",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <strong style={{ fontSize: 14 }}>Marker ({markers.length})</strong>
-          <button
-            onClick={clear}
-            disabled={markers.length === 0}
-            style={{
-              fontSize: 12,
-              padding: "4px 10px",
-              borderRadius: 6,
-              border: "1px solid #d4d4d8",
-              background: "#fff",
-              color: markers.length ? "#dc2626" : "#a1a1aa",
-              cursor: markers.length ? "pointer" : "default",
-            }}
-          >
+      <aside className="flex-[0_1_320px] min-w-[260px] flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <strong className="text-[14px] text-ink">Marker ({markers.length})</strong>
+          <Button variant="ghost" size="sm" onClick={clear} disabled={markers.length === 0}>
             Zurücksetzen
-          </button>
+          </Button>
         </div>
-        <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>
-          <strong>Doppel-Klick / Doppel-Tap</strong> aufs Auto → Bauteil-Vorschlag. Im Dropdown
-          bestätigen/korrigieren. Einzelklick + Ziehen = drehen. In-Memory — nichts wird gespeichert.
+        <p className="text-[12px] text-ink-muted m-0">
+          <strong>Doppel-Klick / Doppel-Tap</strong> aufs Auto → Bauteil-Vorschlag. Zeile antippen zum
+          Bearbeiten. Einzelklick + Ziehen = drehen. In-Memory — nichts wird gespeichert.
         </p>
+
         {markers.length === 0 ? (
-          <p style={{ fontSize: 13, color: "#9ca3af", marginTop: 4 }}>Noch keine Marker.</p>
+          <p className="text-[13px] text-ink-muted mt-1">Noch keine Marker.</p>
         ) : (
-          <ol style={{ margin: 0, paddingLeft: 0, listStyle: "none", fontSize: 13 }}>
-            {markers.map((m) => (
-              <li
-                key={m.id}
-                style={{
-                  padding: "8px",
-                  borderRadius: 6,
-                  background: "#fafafa",
-                  border: "1px solid #f0f0f0",
-                  marginBottom: 6,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                  <span style={{ color: "#9ca3af" }}>{m.id}.</span>
-                  <select
-                    value={m.partId ?? ""}
-                    onChange={(e) => setPartId(m.id, e.target.value || null)}
-                    style={{
-                      flex: 1,
-                      fontSize: 13,
-                      padding: "3px 6px",
-                      borderRadius: 6,
-                      border: "1px solid #d4d4d8",
-                      background: "#fff",
+          <ol className="m-0 p-0 list-none flex flex-col gap-1.5">
+            {markers.map((m) => {
+              const open = openId === m.id;
+              return (
+                <li
+                  key={m.id}
+                  className="rounded-panel border border-hairline bg-paper overflow-hidden"
+                >
+                  {/* Collapsed-Zeile (klickbar → auf/zu) */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => toggleOpen(m.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        toggleOpen(m.id);
+                      }
                     }}
+                    className="flex items-center gap-2 px-2.5 py-2 cursor-pointer hover:bg-ink/[0.03] text-[13px]"
                   >
-                    <option value="">— grobe Zone ({m.zoneLabel}) —</option>
-                    {PART_OPTIONS.map((o) => (
-                      <option key={o.id} value={o.id}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {/* Diagnose für die Box-Justierung */}
-                <code style={{ color: "#a1a1aa", fontSize: 11 }}>
-                  lon {m.lon.toFixed(2)} · lat {m.lat.toFixed(2)} · vert {m.vert.toFixed(2)}
-                </code>
-              </li>
-            ))}
+                    {open ? (
+                      <ChevronDown size={14} className="shrink-0 text-ink-muted" />
+                    ) : (
+                      <ChevronRight size={14} className="shrink-0 text-ink-muted" />
+                    )}
+                    <span
+                      className="shrink-0 w-2 h-2 rounded-full"
+                      style={{ background: severityColor(m.severity) }}
+                      title={severityLabel(m.severity)}
+                    />
+                    <span className="flex-1 min-w-0 truncate">
+                      <span className="text-ink-muted">{m.id}.</span>{" "}
+                      <span className="text-ink">{markerLabel(m)}</span>
+                      <span className="text-ink-muted">
+                        {" · "}
+                        {damageTypeLabel(m.damageType)}
+                        {" · "}
+                        {severityLabel(m.severity)}
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      title="Marker löschen"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeMarker(m.id);
+                      }}
+                      className="shrink-0 p-1 rounded-btn text-ink-muted hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+
+                  {/* Expanded: Editierfelder + Diagnose */}
+                  {open && (
+                    <div className="px-2.5 pb-2.5 pt-1 flex flex-col gap-2 border-t border-hairline">
+                      <div className="relative">
+                        <select
+                          className="field pr-9"
+                          value={m.partId ?? ""}
+                          onChange={(e) => setPartId(m.id, e.target.value || null)}
+                        >
+                          <option value="">— grobe Zone ({m.zoneLabel}) —</option>
+                          {PART_OPTIONS.map((o) => (
+                            <option key={o.id} value={o.id}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown
+                          size={16}
+                          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted"
+                        />
+                      </div>
+
+                      <div className="relative">
+                        <select
+                          className="field pr-9"
+                          value={m.damageType ?? ""}
+                          onChange={(e) => setDamageType(m.id, e.target.value || null)}
+                        >
+                          <option value="">Schadenstyp wählen</option>
+                          {DAMAGE_TYPES.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.label}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown
+                          size={16}
+                          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted"
+                        />
+                      </div>
+
+                      <div className="flex gap-1.5">
+                        {SEVERITY_OPTIONS.map((o) => {
+                          const active = m.severity === o.value;
+                          return (
+                            <button
+                              key={o.value}
+                              type="button"
+                              onClick={() => setSeverity(m.id, active ? null : o.value)}
+                              className="flex-1 h-9 rounded-btn text-[13px] font-medium transition-colors"
+                              style={{
+                                border: `1px solid ${o.color}`,
+                                background: active ? o.color : "transparent",
+                                color: active ? "#fff" : o.color,
+                              }}
+                            >
+                              {o.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <code className="text-[11px] text-ink-muted">
+                        lon {m.lon.toFixed(2)} · lat {m.lat.toFixed(2)} · vert {m.vert.toFixed(2)}
+                      </code>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ol>
         )}
       </aside>
