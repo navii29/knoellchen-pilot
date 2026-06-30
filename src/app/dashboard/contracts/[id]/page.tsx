@@ -10,6 +10,7 @@ import { redactContractPartner } from "@/lib/redact";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeReturnSummary } from "@/lib/km";
 import { resolveEffectiveDailyRate } from "@/lib/daily-rate";
+import { fuelLabel } from "@/lib/fuel";
 import { isContractOverdue, localTodayIso } from "@/lib/contract-utils";
 import { POSITIONS, SEVERITY_STYLE } from "@/lib/handover";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
@@ -695,13 +696,6 @@ const Row = ({
   </div>
 );
 
-const FUEL_LABEL: Record<string, string> = {
-  full: "Voll",
-  three_quarter: "3/4",
-  half: "1/2",
-  quarter: "1/4",
-  empty: "Leer",
-};
 
 const SelfServiceStatus = ({
   checkinStep,
@@ -789,7 +783,7 @@ const SelfServiceStatus = ({
           extra={
             fuelPickup ? (
               <div className="font-mono text-[11.5px] text-ink-muted mt-1">
-                Tankstand bei Übergabe: {FUEL_LABEL[fuelPickup] ?? fuelPickup}
+                Tankstand bei Übergabe: {fuelLabel(fuelPickup)}
               </div>
             ) : null
           }
@@ -803,7 +797,7 @@ const SelfServiceStatus = ({
           extra={
             fuelReturn ? (
               <div className="font-mono text-[11.5px] text-ink-muted mt-1">
-                Tankstand bei Rückgabe: {FUEL_LABEL[fuelReturn] ?? fuelReturn}
+                Tankstand bei Rückgabe: {fuelLabel(fuelReturn)}
               </div>
             ) : null
           }

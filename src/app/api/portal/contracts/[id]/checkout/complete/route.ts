@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { loadPortalContract } from "@/lib/portal-contract-guard";
+import { isFuelLevel } from "@/lib/fuel";
 
 export const maxDuration = 60;
 
 type Ctx = { params: { id: string } };
-
-const VALID_FUEL = ["full", "three_quarter", "half", "quarter", "empty"];
 
 export const POST = async (req: Request, { params }: Ctx) => {
   const ctx = await loadPortalContract(params.id);
@@ -22,7 +21,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
   const fuel = body.fuel_level_return ?? null;
   if (km == null || km < 0)
     return NextResponse.json({ error: "Kilometerstand fehlt" }, { status: 400 });
-  if (!fuel || !VALID_FUEL.includes(fuel))
+  if (!isFuelLevel(fuel))
     return NextResponse.json({ error: "Tankstand fehlt" }, { status: 400 });
   if (ctx.contract.km_pickup != null && km < Number(ctx.contract.km_pickup))
     return NextResponse.json(

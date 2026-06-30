@@ -16,25 +16,10 @@ import type { HandoverPosition } from "@/lib/types";
 import { WizardProgress } from "@/components/portal/WizardProgress";
 import { PhotoGrid } from "@/components/portal/PhotoGrid";
 import { Button } from "@/components/ui/Button";
+import { FUEL_LEVELS, fuelLabel } from "@/lib/fuel";
 
 const STEP_LABELS = ["Fotos", "Kilometer", "Tankstand", "Fertig"];
 const TOTAL = STEP_LABELS.length;
-
-const FUEL_OPTIONS = [
-  { value: "full", label: "Voll" },
-  { value: "three_quarter", label: "3/4" },
-  { value: "half", label: "1/2" },
-  { value: "quarter", label: "1/4" },
-  { value: "empty", label: "Leer" },
-] as const;
-
-const FUEL_LABEL: Record<string, string> = {
-  full: "Voll",
-  three_quarter: "3/4",
-  half: "1/2",
-  quarter: "1/4",
-  empty: "Leer",
-};
 
 export const CheckoutClient = ({
   contractId,
@@ -262,7 +247,7 @@ export const CheckoutClient = ({
             title="Tankstand"
             subtitle={
               fuelLevelPickup
-                ? `Bei Übergabe: ${FUEL_LABEL[fuelLevelPickup] ?? fuelLevelPickup}. Bitte mit dem gleichen Stand zurückgeben.`
+                ? `Bei Übergabe: ${fuelLabel(fuelLevelPickup)}. Bitte mit dem gleichen Stand zurückgeben.`
                 : "Bitte aktuellen Tankstand auswählen."
             }
             onBack={goBack}
@@ -274,7 +259,7 @@ export const CheckoutClient = ({
               </div>
             </div>
             <div className="grid grid-cols-5 gap-2">
-              {FUEL_OPTIONS.map((opt) => {
+              {FUEL_LEVELS.map((opt) => {
                 const active = fuel === opt.value;
                 return (
                   <button
@@ -317,7 +302,7 @@ export const CheckoutClient = ({
                 value={`${(Number.isFinite(km) ? km : 0).toLocaleString("de-DE")} km`}
                 mono
               />
-              <SummaryRow label="Tankstand" value={FUEL_LABEL[fuel] ?? fuel} />
+              <SummaryRow label="Tankstand" value={fuelLabel(fuel)} />
               {allowed != null && excess > 0 && (
                 <SummaryRow
                   label="Mehrkilometer"
