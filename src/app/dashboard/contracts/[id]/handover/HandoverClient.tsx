@@ -15,8 +15,52 @@ import {
 } from "lucide-react";
 import { POSITIONS, SEVERITY_STYLE } from "@/lib/handover";
 import type { CompareResultMap } from "@/lib/handover";
-import type { HandoverPhoto, HandoverPhotoType, HandoverPosition } from "@/lib/types";
+import type {
+  DamageSeverity,
+  HandoverPhoto,
+  HandoverPhotoType,
+  HandoverPosition,
+} from "@/lib/types";
 import { ProtocolPanel, type ProtocolPrefill } from "./ProtocolPanel";
+import dynamic from "next/dynamic";
+import type { ViewerMarker, NewMarkerInput, MarkerPatch } from "@/components/damage/VehicleViewer3D";
+
+// 3D-Viewer client-only laden (3D-Bundle belastet nur diesen Tab, kein SSR).
+const VehicleViewer3D = dynamic(() => import("@/components/damage/VehicleViewer3D"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[70vh] min-h-[420px] rounded-card border border-hairline bg-canvas flex items-center justify-center text-[13px] text-ink-muted">
+      Lädt 3D-Viewer…
+    </div>
+  ),
+});
+
+// Marker mit Tab-Zuordnung (pickup/return) — wie sie die Seite lädt + der State hält.
+export type HandoverMarker = ViewerMarker & { type: HandoverPhotoType };
+
+// API-Zeile (snake_case) → Viewer-Marker (camelCase) + type.
+type MarkerRow = {
+  id: string;
+  type: string;
+  zone: string;
+  part_id: string | null;
+  x: number;
+  y: number;
+  z: number;
+  damage_type: string | null;
+  severity: string | null;
+};
+const rowToMarker = (r: MarkerRow): HandoverMarker => ({
+  id: r.id,
+  type: r.type as HandoverPhotoType,
+  zone: r.zone,
+  partId: r.part_id,
+  x: r.x,
+  y: r.y,
+  z: r.z,
+  damageType: r.damage_type,
+  severity: r.severity as DamageSeverity | null,
+});
 
 type PhotoWithUrl = HandoverPhoto & { url: string | null };
 
@@ -41,6 +85,7 @@ export const HandoverClient = ({
   plate,
   renterName,
   initialPhotos,
+  initialMarkers,
   initialComparison,
   comparisonAt,
   customerEmail,
@@ -51,6 +96,7 @@ export const HandoverClient = ({
   plate: string;
   renterName: string;
   initialPhotos: PhotoWithUrl[];
+  initialMarkers: HandoverMarker[];
   initialComparison: unknown;
   comparisonAt: string | null;
   customerEmail: string | null;
@@ -71,6 +117,8 @@ export const HandoverClient = ({
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const autoRunRef = useRef(false);
+  const [markers, setMarkers] = useState<HandoverMarker[]>(initialMarkers);
+  const markersForTab = markers.filter((m) => m.type === tab);
 
   const photoFor = (type: HandoverPhotoType, position: HandoverPosition) =>
     photos.find((p) => p.type === type && p.position === position);
@@ -168,6 +216,65 @@ export const HandoverClient = ({
     const j = (await res.json()) as { results: CompareResultMap };
     setResults((prev) => ({ ...prev, ...j.results }));
     setComparedAt(new Date().toISOString());
+  };
+
+  // ── 3D-Schadensmarker (eigene Tabelle, getrennt vom KI-Foto-Vergleich) ──
+  // Create pessimistisch (Server vergibt die UUID), Update optimistisch (snappy
+  // Dropdowns/Buttons, Rollback bei Fehler), Delete pessimistisch.
+  const addMarker = async (input: NewMarkerInput) => {
+    setError(null);
+    const res = await fetch(`/api/contracts/${contractId}/damage-markers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: tab,
+        zone: input.zone,
+        part_id: input.partId,
+        x: input.x,
+        y: input.y,
+        z: input.z,
+      }),
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      setError(j.error || "Marker speichern fehlgeschlagen");
+      return;
+    }
+    const { marker } = (await res.json()) as { marker: MarkerRow };
+    setMarkers((prev) => [...prev, rowToMarker(marker)]);
+  };
+
+  const updateMarker = async (id: string, patch: MarkerPatch) => {
+    setError(null);
+    const before = markers.find((m) => m.id === id);
+    setMarkers((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
+    const body: Record<string, unknown> = {};
+    if ("partId" in patch) body.part_id = patch.partId;
+    if ("damageType" in patch) body.damage_type = patch.damageType;
+    if ("severity" in patch) body.severity = patch.severity;
+    const res = await fetch(`/api/contracts/${contractId}/damage-markers/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      setError(j.error || "Marker aktualisieren fehlgeschlagen");
+      if (before) setMarkers((prev) => prev.map((m) => (m.id === id ? before : m)));
+    }
+  };
+
+  const removeMarker = async (id: string) => {
+    setError(null);
+    const res = await fetch(`/api/contracts/${contractId}/damage-markers/${id}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      setError(j.error || "Marker löschen fehlgeschlagen");
+      return;
+    }
+    setMarkers((prev) => prev.filter((m) => m.id !== id));
   };
 
   const completePairs = POSITIONS.filter(
@@ -385,6 +492,20 @@ export const HandoverClient = ({
       {Object.keys(results).length > 0 && (
         <ResultSummary results={results} comparedAt={comparedAt} />
       )}
+
+      <div className="mt-8">
+        <div className="data-label text-ink-muted mb-3">
+          3D-Schadensmarker · {tab === "pickup" ? "Übergabe" : "Rücknahme"}
+        </div>
+        <VehicleViewer3D
+          key={tab}
+          markers={markersForTab}
+          type={tab}
+          onAdd={addMarker}
+          onUpdate={updateMarker}
+          onRemove={removeMarker}
+        />
+      </div>
 
       <ProtocolPanel
         key={tab}

@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { HandoverClient } from "./HandoverClient";
-import type { Contract, HandoverPhoto } from "@/lib/types";
+import type { Contract, HandoverPhoto, HandoverPhotoType, DamageSeverity } from "@/lib/types";
+import type { HandoverMarker } from "./HandoverClient";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,34 @@ export default async function HandoverPage({ params }: { params: { id: string } 
     if (cust?.email) customerEmail = cust.email;
   }
 
+  // 3D-Schadensmarker (org-scoped via RLS), getrennt nach Übergabe/Rücknahme.
+  const { data: markerRows } = await supabase
+    .from("damage_markers")
+    .select("id, type, zone, part_id, x, y, z, damage_type, severity")
+    .eq("contract_id", c.id);
+  const rows = (markerRows ?? []) as Array<{
+    id: string;
+    type: string;
+    zone: string;
+    part_id: string | null;
+    x: number;
+    y: number;
+    z: number;
+    damage_type: string | null;
+    severity: string | null;
+  }>;
+  const initialMarkers: HandoverMarker[] = rows.map((r) => ({
+    id: r.id,
+    type: r.type as HandoverPhotoType,
+    zone: r.zone,
+    partId: r.part_id,
+    x: r.x,
+    y: r.y,
+    z: r.z,
+    damageType: r.damage_type,
+    severity: r.severity as DamageSeverity | null,
+  }));
+
   return (
     <>
       <Topbar section={`Übergabe · ${c.contract_nr}`} />
@@ -59,6 +88,7 @@ export default async function HandoverPage({ params }: { params: { id: string } 
             plate={c.plate}
             renterName={c.renter_name}
             initialPhotos={photosWithUrl}
+            initialMarkers={initialMarkers}
             initialComparison={c.damage_comparison}
             comparisonAt={c.damage_comparison_at}
             customerEmail={customerEmail}
