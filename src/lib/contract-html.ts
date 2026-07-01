@@ -16,6 +16,7 @@ import type {
 import { INSURANCE_TYPE_LABEL, PAYMENT_METHOD_LABEL } from "./types";
 import type { VehicleTire } from "./tires";
 import { fmtDate, fmtEur } from "./utils";
+import { fuelLabel } from "./fuel";
 import { resolveEffectiveDailyRate } from "./daily-rate";
 import { DEFAULT_RENTAL_TERMS } from "./rental-terms";
 
@@ -599,7 +600,7 @@ const renderPage1 = (
         ${formRow("Fahrzeugschlüssel:", `${contract.keys_count ?? 1} Fahrzeugschlüssel`)}
         ${formRow("Schäden bei Übergabe:", contract.damages_at_handover ?? "Keine")}
         ${formRow("KM-Stand bei Übergabe:", contract.km_pickup != null ? `${fmtNum(contract.km_pickup)} Km` : "")}
-        ${formRow("Tankfüllstand bei Übergabe:", contract.fuel_level_pickup ?? "")}
+        ${formRow("Tankfüllstand bei Übergabe:", fuelLabel(contract.fuel_level_pickup))}
         ${formRow("Übergabe an Mieter:", dateTimeLabel(contract.pickup_date, contract.pickup_time))}
         ${formRow("Mietdauer:", `${days} ${days === 1 ? "Tag" : "Tage"}`)}
         ${formRow("Rückgabe an Vermieter:", dateTimeLabel(contract.return_date, contract.return_time))}
