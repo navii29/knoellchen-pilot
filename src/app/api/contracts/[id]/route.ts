@@ -68,6 +68,16 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
   const update: Record<string, unknown> = {};
   for (const k of allowed) if (k in body) update[k] = body[k];
 
+  // Storage-Pfade sind org-präfixiert — einen fremden Pfad zu akzeptieren hieße,
+  // dass spätere Signier-/Download-Schritte (Admin-Client, kein RLS) Dokumente
+  // anderer Organisationen ausliefern könnten.
+  if (
+    update.contract_pdf_path != null &&
+    !(typeof update.contract_pdf_path === "string" && update.contract_pdf_path.startsWith(`${auth.org_id}/`))
+  ) {
+    return NextResponse.json({ error: "Ungültiger Dokumentpfad." }, { status: 400 });
+  }
+
   // Zahlungsstatus streng validieren; paid_at IMMER server-seitig ableiten
   // (kein Vertrauen auf Client-Zeitstempel in einem Abrechnungs-Datensatz).
   if ("payment_status" in body) {

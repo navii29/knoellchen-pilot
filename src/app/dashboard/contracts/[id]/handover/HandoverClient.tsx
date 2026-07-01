@@ -248,7 +248,15 @@ export const HandoverClient = ({
 
   const updateMarker = async (id: string, patch: MarkerPatch) => {
     setError(null);
-    const before = markers.find((m) => m.id === id);
+    // Rollback NUR für die hier gepatchten Felder — ein Ganz-Marker-Snapshot
+    // würde bei parallelen PATCHes (z. B. Typ + Grad schnell nacheinander) die
+    // erfolgreiche andere Änderung mit zurückrollen.
+    const target = markers.find((m) => m.id === id);
+    const rollback = target
+      ? (Object.fromEntries(
+          (Object.keys(patch) as (keyof MarkerPatch)[]).map((k) => [k, target[k]])
+        ) as MarkerPatch)
+      : null;
     setMarkers((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
     const body: Record<string, unknown> = {};
     if ("partId" in patch) body.part_id = patch.partId;
@@ -262,7 +270,7 @@ export const HandoverClient = ({
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
       setError(j.error || "Marker aktualisieren fehlgeschlagen");
-      if (before) setMarkers((prev) => prev.map((m) => (m.id === id ? before : m)));
+      if (rollback) setMarkers((prev) => prev.map((m) => (m.id === id ? { ...m, ...rollback } : m)));
     }
   };
 

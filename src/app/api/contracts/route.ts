@@ -249,7 +249,14 @@ export const POST = async (req: Request) => {
     km_return: kmReturn,
     km_limit: kmLimit,
     extra_km_cost: extraKmCost,
-    contract_pdf_path: (body.contract_pdf_path as string) ?? null,
+    // Nur org-eigene Storage-Pfade akzeptieren (fremder Pfad → verworfen):
+    // spätere Signier-/Download-Schritte laufen mit dem Admin-Client (kein RLS)
+    // und würden sonst Dokumente anderer Organisationen ausliefern.
+    contract_pdf_path:
+      typeof body.contract_pdf_path === "string" &&
+      body.contract_pdf_path.startsWith(`${auth.org_id}/`)
+        ? body.contract_pdf_path
+        : null,
     notes: (body.notes as string) ?? null,
     status: (body.status as string) ?? "aktiv",
     partner_id: (body.partner_id as string) || null,

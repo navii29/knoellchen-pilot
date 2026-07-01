@@ -43,11 +43,15 @@ export const CheckoutClient = ({
   uploadedPositions: HandoverPosition[];
 }) => {
   const router = useRouter();
-  const [step, setStep] = useState<number>(Math.min(Math.max(initialStep, 1), TOTAL));
+  // Resume maximal bei Schritt 2: km/Tankstand (Schritt 2/3) leben nur im
+  // Browser-State — ein Wiedereinstieg dahinter würde mit leeren Werten in die
+  // Prüfung laufen. Fotos (Schritt 1) sind serverseitig persistiert.
+  const [step, setStep] = useState<number>(Math.min(Math.max(initialStep, 1), 2));
   const [photoCount, setPhotoCount] = useState<number>(uploadedPositions.length);
   const [kmReturn, setKmReturn] = useState<string>("");
   const [fuel, setFuel] = useState<string>("full");
   const [submitting, setSubmitting] = useState(false);
+  const [completed, setCompleted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const persistStep = useCallback(
@@ -68,7 +72,10 @@ export const CheckoutClient = ({
   const goNext = useCallback(async () => {
     const next = Math.min(step + 1, TOTAL);
     setStep(next);
-    if (next !== step) await persistStep(next);
+    // checkout_step=4 bedeutet "Rückgabe erfasst" und wird NUR vom
+    // complete-Endpoint gesetzt — das bloße Betreten der Prüfseite darf den
+    // Vertrag nicht als zurückgegeben markieren.
+    if (next !== step) await persistStep(Math.min(next, 3));
   }, [step, persistStep]);
 
   const goBack = useCallback(() => setStep((s) => Math.max(1, s - 1)), []);
@@ -97,7 +104,10 @@ export const CheckoutClient = ({
         setSubmitting(false);
         return;
       }
-      setStep(TOTAL);
+      // Eigener Erfolgszustand — Prüf- und Dankeskarte teilen sich sonst
+      // denselben step-Wert (beide bei 4) und erschienen gleichzeitig.
+      setCompleted(true);
+      setSubmitting(false);
     } catch {
       setError("Netzwerkfehler");
       setSubmitting(false);
@@ -285,7 +295,7 @@ export const CheckoutClient = ({
           </StepCard>
         )}
 
-        {step === 4 && (
+        {step === 4 && !completed && (
           <StepCard
             title="Rückgabe abschließen"
             subtitle="Letzte Prüfung vor dem Absenden."
@@ -326,7 +336,12 @@ export const CheckoutClient = ({
               variant="signal"
               size="lg"
               onClick={submitCheckout}
-              disabled={submitting}
+              disabled={
+                submitting ||
+                !Number.isFinite(km) ||
+                km <= 0 ||
+                (kmPickup != null && km < Number(kmPickup))
+              }
               className="mt-5 w-full"
             >
               {submitting ? (
@@ -339,7 +354,7 @@ export const CheckoutClient = ({
           </StepCard>
         )}
 
-        {step === TOTAL && !submitting && error == null && (
+        {completed && (
           <div className="bg-paper border border-hairline rounded-card shadow-panel p-7 text-center">
             <div className="inline-flex w-14 h-14 rounded-full bg-canvas border border-hairline items-center justify-center text-ink-soft mb-3">
               <PartyPopper size={26} />
