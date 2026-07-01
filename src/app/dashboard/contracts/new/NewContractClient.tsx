@@ -333,6 +333,13 @@ export const NewContractClient = ({
     setMode("manual");
   };
 
+  // Merkt sich, welche Preis-/Leistungswerte die LETZTE Fahrzeug-Auswahl
+  // automatisch gesetzt hat. Beim Fahrzeug-WECHSEL werden diese Felder nur
+  // überschrieben, wenn sie leer sind oder noch dem Auto-Wert des vorherigen
+  // Fahrzeugs entsprechen — manuelle/Partner-/KI-Eingaben bleiben erhalten,
+  // aber es bleibt kein veralteter Preis des zuvor gewählten Fahrzeugs stehen.
+  const vehicleAutoFillRef = useRef<Record<string, string>>({});
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -594,11 +601,38 @@ export const NewContractClient = ({
                 pickupDate={data.pickup_date}
                 returnDate={data.return_date}
                 required
-                onSelect={(v) =>
-                  setData((d) => ({
-                    ...d,
+                onSelect={(v) => {
+                  // Auto-Übernahme mit Wechsel-Semantik: überschreiben, wenn das
+                  // Feld leer ist ODER noch den Auto-Wert der VORHERIGEN Auswahl
+                  // trägt (dann war es nicht manuell editiert). So bleibt beim
+                  // Fahrzeug-Wechsel kein veralteter Preis stehen, aber eine
+                  // manuell gesetzte Partner-/KI-Rate wird nicht überschrieben.
+                  const prevAuto = vehicleAutoFillRef.current;
+                  const nextAuto: Record<string, string> = {};
+                  const fill = (
+                    key:
+                      | "daily_rate"
+                      | "weekly_rate"
+                      | "monthly_rate"
+                      | "deposit"
+                      | "power_ps"
+                      | "extra_km_price",
+                    raw: number | null
+                  ) => {
+                    const vStr = raw != null ? String(raw) : "";
+                    const cur = data[key];
+                    const applied = cur === "" || cur === prevAuto[key];
+                    // Nur als Auto-Wert merken, wenn er WIRKLICH angewendet wurde —
+                    // sonst würde ein manuell eingegebener Preis, der zufällig dem
+                    // Listenpreis eines zwischendurch gewählten Fahrzeugs gleicht,
+                    // beim nächsten Wechsel fälschlich als "auto" überschrieben.
+                    if (applied) nextAuto[key] = vStr;
+                    return applied ? vStr : cur;
+                  };
+                  const next = {
+                    ...data,
                     plate: v.plate,
-                    vehicle_type: v.vehicle_type || d.vehicle_type,
+                    vehicle_type: v.vehicle_type || data.vehicle_type,
                     // Echte Stammdaten des gewählten Fahrzeugs übernehmen — sonst
                     // bleiben Hersteller/Modell/Farbe/Kraftstoff/FIN leer und die
                     // Platzhalter wirken wie (falsche) Daten.
@@ -610,12 +644,16 @@ export const NewContractClient = ({
                     // FIN landet im vin-Feld (FormState hat kein fin_number) —
                     // das sichtbare FIN-Input und das Submit-Payload lesen data.vin.
                     vin: v.fin_number ?? "",
-                    // Preise nur befüllen, wenn noch leer (eine bereits gesetzte
-                    // Partner-/KI-Rate bzw. Kaution nicht überschreiben).
-                    daily_rate: d.daily_rate || (v.daily_rate != null ? String(v.daily_rate) : ""),
-                    deposit: d.deposit || (v.deposit != null ? String(v.deposit) : ""),
-                  }))
-                }
+                    daily_rate: fill("daily_rate", v.daily_rate),
+                    weekly_rate: fill("weekly_rate", v.weekly_rate),
+                    monthly_rate: fill("monthly_rate", v.monthly_rate),
+                    deposit: fill("deposit", v.deposit),
+                    power_ps: fill("power_ps", v.power_ps),
+                    extra_km_price: fill("extra_km_price", v.extra_km_price),
+                  };
+                  vehicleAutoFillRef.current = nextAuto;
+                  setData(next);
+                }}
                 onPlateChange={(plate) => setData((d) => ({ ...d, plate }))}
               />
             </div>

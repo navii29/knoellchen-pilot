@@ -34,7 +34,7 @@ export const GET = async (req: Request) => {
   let query = admin
     .from("vehicles")
     .select(
-      "id, plate, manufacturer, model, vehicle_type, color, first_registration, fuel_type, fin_number, category, status, decommission_date, daily_rate, deposit, pickup_location"
+      "id, plate, manufacturer, model, vehicle_type, color, first_registration, fuel_type, fin_number, category, status, decommission_date, daily_rate, weekly_rate, monthly_rate, deposit, pickup_location, power_ps, extra_km_price"
     )
     .eq("org_id", profile.org_id)
     .order("plate", { ascending: true })
@@ -114,8 +114,12 @@ export const GET = async (req: Request) => {
       category: v.category,
       status: v.status,
       daily_rate: v.daily_rate,
+      weekly_rate: v.weekly_rate,
+      monthly_rate: v.monthly_rate,
       deposit: v.deposit,
       pickup_location: v.pickup_location,
+      power_ps: v.power_ps,
+      extra_km_price: v.extra_km_price,
       available: conflicts.length === 0,
       conflicts,
     };

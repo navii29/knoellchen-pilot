@@ -223,6 +223,12 @@ export const POST = async (req: Request) => {
     renter_bank_holder: (body.renter_bank_holder as string)?.trim() || null,
     vehicle_color: (body.vehicle_color as string)?.trim() || null,
     vehicle_fin: (body.vehicle_fin as string)?.trim() || null,
+    // BEWUSST kein Fahrzeug-Fallback: monthly_rate ist kein passives Anzeige-
+    // feld — resolveEffectiveDailyRate gibt monthly÷29 VORRANG vor daily_rate
+    // (PDF-Preis, Zusatztage). Ein stilles Server-Backfill würde Tagespreis-
+    // Verträge umpreisen und das Leeren des Felds im Formular unmöglich machen.
+    // Der Fahrzeug-Picker befüllt die Felder SICHTBAR im Formular (Opt-out durch
+    // Leeren); was hier ankommt, ist die Entscheidung des Operators.
     weekly_rate: numeric(body.weekly_rate),
     monthly_rate: numeric(body.monthly_rate),
     pickup_date: body.pickup_date as string,
