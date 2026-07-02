@@ -239,6 +239,8 @@ export const POST = async (req: Request, { params }: Ctx) => {
             vehicleRate: (vehicle?.daily_rate as number | null) ?? null,
             contractMonthlyRate: contract.monthly_rate,
             vehicleMonthlyRate: (vehicle?.monthly_rate as number | null) ?? null,
+            contractWeeklyRate: contract.weekly_rate,
+            vehicleWeeklyRate: (vehicle?.weekly_rate as number | null) ?? null,
           }),
         });
         update.actual_days = summary.actualDays;

@@ -68,7 +68,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
     .maybeSingle();
   const { data: contract } = await admin
     .from("contracts")
-    .select("contract_nr, renter_name, plate, vehicle_id, vehicle_type, daily_rate, monthly_rate")
+    .select("contract_nr, renter_name, plate, vehicle_id, vehicle_type, daily_rate, weekly_rate, monthly_rate")
     .eq("id", params.id)
     .eq("org_id", session.org_id)
     .maybeSingle();
@@ -96,6 +96,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
       vehicle_id: string | null;
       vehicle_type: string | null;
       daily_rate: number | null;
+      weekly_rate: number | null;
       monthly_rate: number | null;
     },
     extension: extension as {

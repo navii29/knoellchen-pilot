@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { resolveEffectiveDailyRate, estimateExtensionCost } from "./daily-rate";
+import {
+  resolveEffectiveDailyRate,
+  estimateExtensionCost,
+  deriveBillingModel,
+  resolveBillingSelection,
+  dailyRateForModel,
+} from "./daily-rate";
 
 describe("resolveEffectiveDailyRate", () => {
   it("Vertragspreis gesetzt → der Vertragspreis (auch wenn Fahrzeugpreis existiert)", () => {
@@ -56,7 +62,10 @@ describe("resolveEffectiveDailyRate — Monatspreis ÷ 29", () => {
     ).toBe(68.97);
   });
 
-  it("nur vehicle-monthly gesetzt → vehicle-monthly/29, gewinnt über Tagespreis (1450/29 = 50)", () => {
+  it("VERTRAGSPREIS gewinnt vor jedem Fahrzeugpreis: Vertrags-daily schlägt Fahrzeug-monthly", () => {
+    // Regeländerung mit der Abrechnungsmodell-Umstellung: der Vertrag trägt
+    // genau EIN Modell — die Fahrzeug-Preisliste übersteuert ihn nicht mehr
+    // (früher gewann hier vehicle-monthly/29 = 50).
     expect(
       resolveEffectiveDailyRate({
         contractRate: 99,
@@ -64,7 +73,25 @@ describe("resolveEffectiveDailyRate — Monatspreis ÷ 29", () => {
         contractMonthlyRate: null,
         vehicleMonthlyRate: 1450,
       })
-    ).toBe(50);
+    ).toBe(99);
+  });
+
+  it("Fahrzeug-Fallback greift NUR bei preislosem Vertrag (dann Monat > Woche > Tag)", () => {
+    expect(
+      resolveEffectiveDailyRate({
+        contractRate: null,
+        vehicleRate: 99,
+        vehicleMonthlyRate: 1450,
+        vehicleWeeklyRate: 490,
+      })
+    ).toBe(50); // Fahrzeug-monthly/29
+    expect(
+      resolveEffectiveDailyRate({
+        contractRate: null,
+        vehicleRate: 99,
+        vehicleWeeklyRate: 490,
+      })
+    ).toBe(70); // Fahrzeug-weekly/7
   });
 
   it("monthly 0/null → reines Tages-Verhalten", () => {
@@ -92,6 +119,108 @@ describe("resolveEffectiveDailyRate — Monatspreis ÷ 29", () => {
       contractMonthlyRate: 2000,
     });
     expect(estimateExtensionCost({ extraDays: 7, rate })).toBe(482.79); // 7 × 68,97
+  });
+});
+
+describe("resolveEffectiveDailyRate — Wochenpreis ÷ 7", () => {
+  it("weekly gesetzt → weekly/7 (490/7 = 70), gewinnt über Tagespreis", () => {
+    expect(
+      resolveEffectiveDailyRate({ contractRate: 99, vehicleRate: null, contractWeeklyRate: 490 })
+    ).toBe(70);
+  });
+
+  it("monthly gewinnt über weekly (Vorrang Monat > Woche > Tag)", () => {
+    expect(
+      resolveEffectiveDailyRate({
+        contractRate: 99,
+        vehicleRate: null,
+        contractWeeklyRate: 490,
+        contractMonthlyRate: 1450,
+      })
+    ).toBe(50);
+  });
+
+  it("VERTRAGS-weekly schlägt FAHRZEUG-monthly (Wochen-Vertrag wird nicht übersteuert)", () => {
+    expect(
+      resolveEffectiveDailyRate({
+        contractRate: null,
+        vehicleRate: 100,
+        contractWeeklyRate: 490,
+        vehicleMonthlyRate: 1450,
+      })
+    ).toBe(70);
+  });
+
+  it("weekly rundet auf Cent (500/7 = 71,43)", () => {
+    expect(
+      resolveEffectiveDailyRate({ contractRate: null, vehicleRate: null, contractWeeklyRate: 500 })
+    ).toBe(71.43);
+  });
+
+  it("weekly weggelassen/0 → unverändertes Verhalten", () => {
+    expect(resolveEffectiveDailyRate({ contractRate: 69, vehicleRate: 50 })).toBe(69);
+    expect(
+      resolveEffectiveDailyRate({ contractRate: 69, vehicleRate: 50, contractWeeklyRate: 0 })
+    ).toBe(69);
+  });
+});
+
+describe("deriveBillingModel — Zeitraum → Modell (>=29 Monat, >=7 Woche, sonst Tag)", () => {
+  it("Grenzen: 6 Tage → Tag, 7 → Woche, 28 → Woche, 29 → Monat", () => {
+    expect(deriveBillingModel(1)).toBe("daily");
+    expect(deriveBillingModel(6)).toBe("daily");
+    expect(deriveBillingModel(7)).toBe("weekly");
+    expect(deriveBillingModel(28)).toBe("weekly");
+    expect(deriveBillingModel(29)).toBe("monthly");
+    expect(deriveBillingModel(180)).toBe("monthly");
+  });
+});
+
+describe("resolveBillingSelection — abgeleitetes Modell mit Preis-Fallback", () => {
+  const rates = { daily: 100, weekly: 490, monthly: 1450 };
+
+  it("Zeitraum bestimmt das Modell, wenn dessen Preis existiert", () => {
+    expect(resolveBillingSelection(3, rates)).toEqual({ model: "daily", rate: 100 });
+    expect(resolveBillingSelection(14, rates)).toEqual({ model: "weekly", rate: 490 });
+    expect(resolveBillingSelection(90, rates)).toEqual({ model: "monthly", rate: 1450 });
+  });
+
+  it("fehlt der Preis des abgeleiteten Modells → Fallback Tag → Woche → Monat", () => {
+    expect(resolveBillingSelection(14, { daily: 100, weekly: null, monthly: 1450 })).toEqual({
+      model: "daily",
+      rate: 100,
+    });
+    expect(resolveBillingSelection(90, { daily: null, weekly: 490, monthly: null })).toEqual({
+      model: "weekly",
+      rate: 490,
+    });
+  });
+
+  it("nur Monatspreis vorhanden (der Audi-Q3-Fall) → Monat, egal wie kurz", () => {
+    expect(resolveBillingSelection(3, { daily: null, weekly: null, monthly: 1099 })).toEqual({
+      model: "monthly",
+      rate: 1099,
+    });
+  });
+
+  it("gar kein Preis → abgeleitetes Modell mit rate null", () => {
+    expect(resolveBillingSelection(3, { daily: null, weekly: "", monthly: 0 })).toEqual({
+      model: "daily",
+      rate: null,
+    });
+  });
+});
+
+describe("dailyRateForModel — effektiver Tagessatz je Modell", () => {
+  it("Monat ÷ 29, Woche ÷ 7, Tag pur", () => {
+    expect(dailyRateForModel("monthly", 1450)).toBe(50);
+    expect(dailyRateForModel("weekly", 490)).toBe(70);
+    expect(dailyRateForModel("daily", 100)).toBe(100);
+  });
+  it("leer/0/Müll → null", () => {
+    expect(dailyRateForModel("monthly", null)).toBeNull();
+    expect(dailyRateForModel("weekly", 0)).toBeNull();
+    expect(dailyRateForModel("daily", "abc")).toBeNull();
   });
 });
 

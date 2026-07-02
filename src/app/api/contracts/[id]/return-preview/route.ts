@@ -31,7 +31,7 @@ export const POST = async (req: Request, { params }: { params: { id: string } })
   const admin = createAdminClient();
   const { data: contract } = await admin
     .from("contracts")
-    .select("pickup_date, return_date, original_return_date, daily_rate, monthly_rate, km_pickup, km_limit, plate")
+    .select("pickup_date, return_date, original_return_date, daily_rate, weekly_rate, monthly_rate, km_pickup, km_limit, plate")
     .eq("id", params.id)
     .eq("org_id", auth.org_id)
     .maybeSingle();
@@ -41,10 +41,11 @@ export const POST = async (req: Request, { params }: { params: { id: string } })
   let inclusiveKmMonth: number | null = null;
   let vehicleRate: number | null = null;
   let vehicleMonthlyRate: number | null = null;
+  let vehicleWeeklyRate: number | null = null;
   if (contract.plate) {
     const { data: v } = await admin
       .from("vehicles")
-      .select("extra_km_price, inclusive_km_month, daily_rate, monthly_rate, vehicle_type, manufacturer, model")
+      .select("extra_km_price, inclusive_km_month, daily_rate, weekly_rate, monthly_rate, vehicle_type, manufacturer, model")
       .eq("org_id", auth.org_id)
       .eq("plate", contract.plate)
       .maybeSingle();
@@ -52,13 +53,16 @@ export const POST = async (req: Request, { params }: { params: { id: string } })
     if (v?.inclusive_km_month != null) inclusiveKmMonth = Number(v.inclusive_km_month);
     vehicleRate = (v?.daily_rate as number | null) ?? null;
     vehicleMonthlyRate = (v?.monthly_rate as number | null) ?? null;
+    vehicleWeeklyRate = (v?.weekly_rate as number | null) ?? null;
   }
-  // Monatspreis ÷ 29 (Vertrag, sonst Fahrzeug) hat Vorrang, sonst Tagespreis.
+  // Geteilte Regel: Monat ÷ 29 > Woche ÷ 7 > Tag (jeweils Vertrag vor Fahrzeug).
   const dailyRate = resolveEffectiveDailyRate({
     contractRate: contract.daily_rate as number | null,
     vehicleRate,
     contractMonthlyRate: contract.monthly_rate as number | null,
     vehicleMonthlyRate,
+    contractWeeklyRate: contract.weekly_rate as number | null,
+    vehicleWeeklyRate,
   });
 
   const kmReturn =

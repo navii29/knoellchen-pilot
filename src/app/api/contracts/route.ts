@@ -237,12 +237,17 @@ export const POST = async (req: Request) => {
     return_time: (body.return_time as string) ?? null,
     // Ursprüngliches Rückgabedatum festschreiben (Basis für Zusatztage).
     original_return_date: body.return_date as string,
-    // Effektiver Tagespreis: expliziter Preis gewinnt; nur bei leer/0 den
-    // Fahrzeugpreis vorbefüllen (nie einen angegebenen Preis überschreiben).
-    daily_rate: resolveEffectiveDailyRate({
-      contractRate: numeric(body.daily_rate),
-      vehicleRate: (vehicle?.daily_rate as number | null | undefined) ?? null,
-    }),
+    // Tagespreis: expliziter Preis gewinnt; nur bei leer/0 den Fahrzeugpreis
+    // vorbefüllen — aber NICHT, wenn der Vertrag ein Wochen-/Monatsmodell trägt
+    // (dann ist "kein Tagespreis" die Entscheidung des Abrechnungsmodells und
+    // ein reingezogener Fahrzeug-Tagespreis würde das Modell verwässern).
+    daily_rate:
+      numeric(body.weekly_rate) != null || numeric(body.monthly_rate) != null
+        ? numeric(body.daily_rate)
+        : resolveEffectiveDailyRate({
+            contractRate: numeric(body.daily_rate),
+            vehicleRate: (vehicle?.daily_rate as number | null | undefined) ?? null,
+          }),
     total_amount: numeric(body.total_amount),
     deposit: numeric(body.deposit),
     km_pickup: kmPickup,
