@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { computeVehicleMargin } from "./margin";
-import type { Contract, Vehicle } from "./types";
+import type { Contract } from "./types";
 
 // Regressionstest zum Abrechnungsmodell: Wochen-/Monatsverträge tragen KEINEN
 // daily_rate mehr — der Umsatz muss trotzdem über den effektiven Tagessatz
