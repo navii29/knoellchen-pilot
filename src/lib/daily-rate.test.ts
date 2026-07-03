@@ -5,6 +5,7 @@ import {
   deriveBillingModel,
   resolveBillingSelection,
   dailyRateForModel,
+  totalForModel,
 } from "./daily-rate";
 
 describe("resolveEffectiveDailyRate", () => {
@@ -221,6 +222,25 @@ describe("dailyRateForModel — effektiver Tagessatz je Modell", () => {
     expect(dailyRateForModel("monthly", null)).toBeNull();
     expect(dailyRateForModel("weekly", 0)).toBeNull();
     expect(dailyRateForModel("daily", "abc")).toBeNull();
+  });
+});
+
+describe("totalForModel — Gesamtwert ohne Zwischenrundung (Drift-Fix)", () => {
+  it("Woche 500 €, 14 Tage → exakt 1000,00 (nicht 1000,02)", () => {
+    expect(totalForModel("weekly", 500, 14)).toBe(1000);
+  });
+  it("Monat 1099 €, 29 Tage → exakt 1099,00 (nicht 1099,10)", () => {
+    expect(totalForModel("monthly", 1099, 29)).toBe(1099);
+  });
+  it("Tag 100 €, 3 Tage → 300,00", () => {
+    expect(totalForModel("daily", 100, 3)).toBe(300);
+  });
+  it("Monat 1450 €, 90 Tage → round2(90 × 1450/29) = 4500,00", () => {
+    expect(totalForModel("monthly", 1450, 90)).toBe(4500);
+  });
+  it("leer/0 Tage/kein Preis → null", () => {
+    expect(totalForModel("weekly", null, 14)).toBeNull();
+    expect(totalForModel("daily", 100, 0)).toBeNull();
   });
 });
 

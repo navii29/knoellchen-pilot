@@ -25,14 +25,14 @@ export const MarginWidget = async ({ orgId }: { orgId: string }) => {
       admin
         .from("vehicles")
         .select(
-          "id, plate, manufacturer, model, vehicle_type, cost_daily, cost_monthly, target_daily_rate, daily_rate, status, onetime_cost_supplier, onetime_cost_pickup, onetime_cost_return, first_registration, decommission_date"
+          "id, plate, manufacturer, model, vehicle_type, cost_daily, cost_monthly, target_daily_rate, daily_rate, weekly_rate, monthly_rate, status, onetime_cost_supplier, onetime_cost_pickup, onetime_cost_return, first_registration, decommission_date"
         )
         .eq("org_id", orgId)
         .neq("status", "ausgesteuert"),
       admin
         .from("contracts")
         .select(
-          "id, plate, vehicle_id, pickup_date, return_date, actual_return_date, daily_rate, status"
+          "id, plate, vehicle_id, pickup_date, return_date, actual_return_date, daily_rate, weekly_rate, monthly_rate, status"
         )
         .eq("org_id", orgId)
         .lte("pickup_date", period.to)
@@ -40,7 +40,7 @@ export const MarginWidget = async ({ orgId }: { orgId: string }) => {
       admin
         .from("contracts")
         .select(
-          "id, plate, vehicle_id, pickup_date, return_date, actual_return_date, daily_rate, status"
+          "id, plate, vehicle_id, pickup_date, return_date, actual_return_date, daily_rate, weekly_rate, monthly_rate, status"
         )
         .eq("org_id", orgId)
         .lte("pickup_date", prev.to)
