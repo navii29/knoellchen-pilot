@@ -20,8 +20,8 @@ import {
 import { fmtEur } from "@/lib/utils";
 import {
   BILLING_MODEL_LABEL,
-  dailyRateForModel,
   resolveBillingSelection,
+  totalForModel,
   type BillingModel,
 } from "@/lib/daily-rate";
 import { normalizeNumber } from "@/lib/csv-import";
@@ -337,6 +337,13 @@ export const NewContractClient = ({
     setAiConfidence(j.confidence);
     setParsedFromAI(true);
     setMode("manual");
+    // Preis-Zustand der VORHERIGEN Bearbeitung zurücksetzen — sonst würde ein
+    // stehengebliebenes Abrechnungs-Override / Fahrzeug-Autofill den frisch
+    // geparsten Vertrag umpreisen. totalAutoRef „entkoppeln", damit ein aus dem
+    // Scan übernommener Gesamtbetrag nicht vom Auto-Wert überschrieben wird.
+    setBillingOverride(null);
+    vehicleAutoFillRef.current = {};
+    totalAutoRef.current = " ";
   };
 
   // Merkt sich, welche Preis-/Leistungswerte die LETZTE Fahrzeug-Auswahl
@@ -374,15 +381,48 @@ export const NewContractClient = ({
         ? data.weekly_rate
         : data.monthly_rate
   );
-  const effectiveDaily = dailyRateForModel(billingModel, billingRate);
+  // Gesamtwert (intern) OHNE Zwischenrundung des Tagessatzes — sonst driftet der
+  // Betrag bei exakten Perioden vom Modellpreis ab (Woche 500 €, 14 Tage → 1000,00).
   const computedTotal =
-    rentalDays != null && effectiveDaily != null
-      ? Math.round(rentalDays * effectiveDaily * 100) / 100
-      : null;
+    rentalDays != null ? totalForModel(billingModel, billingRate, rentalDays) : null;
+
+  // Der interne Gesamtwert wird automatisch aus Modell × Zeitraum vorbefüllt,
+  // bleibt aber editierbar (Rabatt / KI-übernommener Gesamtbetrag aus einem
+  // gescannten Vertrag). Wie beim Fahrzeug-Autofill: nur überschreiben, solange
+  // der Wert leer ist oder noch dem zuletzt automatisch gesetzten entspricht —
+  // ein manuell/aus OCR gesetzter Gesamtbetrag bleibt erhalten.
+  const totalAutoRef = useRef<string>("");
+  useEffect(() => {
+    const auto = computedTotal != null ? computedTotal.toFixed(2) : "";
+    setData((d) => {
+      const cur = d.total_amount.trim();
+      if (cur === "" || cur === totalAutoRef.current) {
+        totalAutoRef.current = auto;
+        return cur === auto ? d : { ...d, total_amount: auto };
+      }
+      return d;
+    });
+  }, [computedTotal]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    // Guard: ein per Klick gewähltes Abrechnungsmodell ohne hinterlegten Preis,
+    // obwohl andere Modelle einen Preis tragen — sonst würde beim Speichern der
+    // gewählte Preis null und (serverseitig) evtl. der Fahrzeug-Tagespreis
+    // reingezogen, im Widerspruch zur Auswahl.
+    if (
+      billingOverride != null &&
+      billingRate == null &&
+      (normalizeNumber(data.daily_rate) != null ||
+        normalizeNumber(data.weekly_rate) != null ||
+        normalizeNumber(data.monthly_rate) != null)
+    ) {
+      setError(
+        `Für die gewählte Abrechnung „${BILLING_MODEL_LABEL[billingModel]}" ist kein Preis eingetragen. Preis eintragen oder ein anderes Modell wählen.`
+      );
+      return;
+    }
     setSaving(true);
     // Deutsch-toleranter Parser (1.099,00 / 99,50) statt rohem Number(), das
     // deutsche Beträge still zu NaN→null verwarf (Review #3).
@@ -427,7 +467,10 @@ export const NewContractClient = ({
       daily_rate: billingModel === "daily" ? numeric(data.daily_rate) : null,
       weekly_rate: billingModel === "weekly" ? numeric(data.weekly_rate) : null,
       monthly_rate: billingModel === "monthly" ? numeric(data.monthly_rate) : null,
-      total_amount: computedTotal,
+      // Interner Gesamtwert aus dem (editierbaren, vorbefüllten) Feld — bewahrt
+      // einen aus dem gescannten Vertrag übernommenen oder manuell gesetzten
+      // (Rabatt-)Gesamtbetrag; Fallback auf den berechneten Wert.
+      total_amount: numeric(data.total_amount) ?? computedTotal,
       deposit: numeric(data.deposit),
       km_pickup: numeric(data.km_pickup),
       km_limit: numeric(data.km_limit),
@@ -797,7 +840,11 @@ export const NewContractClient = ({
                 sellingPerDay={data.partner_selling_price}
                 pickupDate={data.pickup_date}
                 returnDate={data.return_date}
-                onPartnerChange={(id, pricing) =>
+                onPartnerChange={(id, pricing) => {
+                  // Partner-VK ist ein TAGES-Preis → Abrechnung auf „Tag" fixieren,
+                  // sonst würde daily_rate beim Speichern für ein Wochen-/Monats-
+                  // modell verworfen und der Partnerpreis stillschweigend verloren.
+                  if (pricing?.selling_price != null) setBillingOverride("daily");
                   setData((d) => ({
                     ...d,
                     partner_id: id,
@@ -809,18 +856,19 @@ export const NewContractClient = ({
                       pricing?.selling_price != null
                         ? String(pricing.selling_price)
                         : d.daily_rate,
-                  }))
-                }
+                  }));
+                }}
                 onPurchaseChange={(v) =>
                   setData((d) => ({ ...d, partner_purchase_price: v }))
                 }
-                onSellingChange={(v) =>
+                onSellingChange={(v) => {
+                  setBillingOverride("daily");
                   setData((d) => ({
                     ...d,
                     partner_selling_price: v,
                     daily_rate: v,
-                  }))
-                }
+                  }));
+                }}
               />
             </div>
           </FormSection>
@@ -831,9 +879,11 @@ export const NewContractClient = ({
                 plate={data.plate}
                 pickupDate={data.pickup_date}
                 returnDate={data.return_date}
-                onApply={(price) =>
-                  setData((d) => ({ ...d, daily_rate: price.toFixed(2) }))
-                }
+                onApply={(price) => {
+                  // Empfehlung ist ein Tagespreis → Abrechnung „Tag" fixieren.
+                  setBillingOverride("daily");
+                  setData((d) => ({ ...d, daily_rate: price.toFixed(2) }));
+                }}
               />
             </div>
             <div className="sm:col-span-2">
@@ -878,12 +928,17 @@ export const NewContractClient = ({
             <Field label={`Monatsmiete (€)${billingModel === "monthly" ? " — wird abgerechnet" : ""}`}>
               <input value={data.monthly_rate} onChange={set("monthly_rate")} className="field font-mono tnum" />
             </Field>
-            <Field label="Gesamtwert (intern, berechnet)">
+            <Field label="Gesamtwert (intern)">
               <input
-                value={computedTotal != null ? computedTotal.toFixed(2).replace(".", ",") : ""}
-                readOnly
-                title="Zeitraum × effektiver Tagessatz (Monat ÷ 29, Woche ÷ 7). Erscheint nicht im Mietvertrag — Basis für Rechnung/Auswertung."
-                className="field font-mono tnum bg-canvas text-ink-muted"
+                value={data.total_amount}
+                onChange={(e) => {
+                  // Manuelle Eingabe „entkoppelt" das Feld vom Auto-Wert.
+                  totalAutoRef.current = " ";
+                  set("total_amount")(e);
+                }}
+                placeholder={computedTotal != null ? computedTotal.toFixed(2).replace(".", ",") : ""}
+                title="Vorbefüllt aus Zeitraum × effektivem Tagessatz (Monat ÷ 29, Woche ÷ 7), überschreibbar (Rabatt / gescannter Gesamtbetrag). Erscheint NICHT im Mietvertrag — Basis für Rechnung/Auswertung."
+                className="field font-mono tnum"
               />
             </Field>
             <Field label="Kaution (€)">

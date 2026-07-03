@@ -136,7 +136,9 @@ export default async function ContractDetailPage({ params }: { params: { id: str
       : null;
   const isClosed = c.status === "abgeschlossen";
   const marginInfo =
-    isClosed && c.actual_return_date && costDaily != null && c.daily_rate
+    // effectiveDailyRate statt rohem c.daily_rate: Wochen-/Monatsverträge tragen
+    // keinen daily_rate mehr — sonst bliebe die Marge-Karte für sie dauerhaft leer.
+    isClosed && c.actual_return_date && costDaily != null && effectiveDailyRate != null
       ? (() => {
           const start = new Date(c.pickup_date);
           const end = new Date(c.actual_return_date!);
@@ -146,7 +148,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
             1,
             Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1
           );
-          const istVk = days * Number(c.daily_rate);
+          const istVk = days * effectiveDailyRate;
           const ek = days * costDaily;
           const margin = istVk - ek;
           const marginPct = istVk > 0 ? (margin / istVk) * 100 : null;

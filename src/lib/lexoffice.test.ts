@@ -19,6 +19,8 @@ const baseContract: C = {
   return_date: "2026-06-08",
   actual_return_date: null,
   daily_rate: 49,
+  weekly_rate: null,
+  monthly_rate: null,
   total_amount: null,
   deposit: 500,
   km_excess: 0,

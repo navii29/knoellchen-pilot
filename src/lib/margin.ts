@@ -3,6 +3,7 @@
 // Components und API-Routes aufrufbar.
 
 import type { Contract, Vehicle } from "./types";
+import { resolveEffectiveDailyRate } from "./daily-rate";
 
 const startOfDay = (s: string | Date) => {
   const d = typeof s === "string" ? new Date(s) : new Date(s);
@@ -68,6 +69,8 @@ type VehicleLite = Pick<
   | "cost_monthly"
   | "target_daily_rate"
   | "daily_rate"
+  | "weekly_rate"
+  | "monthly_rate"
   | "onetime_cost_supplier"
   | "onetime_cost_pickup"
   | "onetime_cost_return"
@@ -84,6 +87,8 @@ type ContractLite = Pick<
   | "return_date"
   | "actual_return_date"
   | "daily_rate"
+  | "weekly_rate"
+  | "monthly_rate"
   | "status"
 >;
 
@@ -142,7 +147,19 @@ export const computeVehicleMargin = (args: {
     const overlap = contractDaysInPeriod(c, from, to);
     if (overlap <= 0) continue;
     rentedDays += overlap;
-    const rate = c.daily_rate != null ? Number(c.daily_rate) : 0;
+    // Effektiver Tagessatz mit dem Abrechnungsmodell (Monat ÷ 29 > Woche ÷ 7 >
+    // Tag). Seit der Modell-Umstellung trägt ein Wochen-/Monatsvertrag KEINEN
+    // daily_rate mehr — c.daily_rate direkt zu nehmen zählte solche Verträge als
+    // 0 € Umsatz. Fahrzeug-Verkaufspreise als Fallback für Altverträge ohne Rate.
+    const rate =
+      resolveEffectiveDailyRate({
+        contractRate: c.daily_rate,
+        vehicleRate: vehicle.daily_rate,
+        contractMonthlyRate: c.monthly_rate,
+        vehicleMonthlyRate: vehicle.monthly_rate,
+        contractWeeklyRate: c.weekly_rate,
+        vehicleWeeklyRate: vehicle.weekly_rate,
+      }) ?? 0;
     istVk += overlap * rate;
   }
 

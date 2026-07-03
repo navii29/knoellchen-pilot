@@ -15,6 +15,8 @@
  * - Beträge werden in EUR mit zwei Nachkommastellen erwartet.
  */
 
+import { resolveEffectiveDailyRate } from "./daily-rate";
+
 const BASE_URL = "https://api.lexoffice.io/v1";
 
 export type LxMoney = {
@@ -284,6 +286,8 @@ type ContractLike = {
   return_date: string;
   actual_return_date: string | null;
   daily_rate: number | null;
+  weekly_rate: number | null;
+  monthly_rate: number | null;
   total_amount: number | null;
   deposit: number | null;
   km_excess: number | null;
@@ -295,6 +299,9 @@ type VehicleLike = {
   model: string | null;
   vehicle_type: string | null;
   extra_km_price: number | null;
+  daily_rate?: number | null;
+  weekly_rate?: number | null;
+  monthly_rate?: number | null;
   lexoffice_product_id?: string | null;
 };
 
@@ -367,7 +374,18 @@ export const buildContractInvoice = (
 ): LxInvoice => {
   const endDate = contract.actual_return_date ?? contract.return_date;
   const days = daysBetween(contract.pickup_date, endDate);
-  const dailyRate = Number(contract.daily_rate ?? 0);
+  // Fallback-Tagessatz über das Abrechnungsmodell (Monat ÷ 29 > Woche ÷ 7 > Tag),
+  // nicht roh daily_rate: Wochen-/Monatsverträge tragen keinen daily_rate mehr —
+  // sonst ergäbe die Rechnung 0 €, falls kein total_amount vorliegt.
+  const dailyRate =
+    resolveEffectiveDailyRate({
+      contractRate: contract.daily_rate,
+      vehicleRate: vehicle?.daily_rate ?? null,
+      contractMonthlyRate: contract.monthly_rate,
+      vehicleMonthlyRate: vehicle?.monthly_rate ?? null,
+      contractWeeklyRate: contract.weekly_rate,
+      vehicleWeeklyRate: vehicle?.weekly_rate ?? null,
+    }) ?? 0;
 
   // total_amount (ausgehandelter Gesamtbetrag, z. B. mit Rabatt) hat Vorrang vor
   // Tage × Tagessatz — spiegelt contract-html.ts. Die Mengen-Position bleibt

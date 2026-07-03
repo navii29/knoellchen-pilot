@@ -103,6 +103,26 @@ export const dailyRateForModel = (
   return r;
 };
 
+/**
+ * Interner Gesamtwert (Zeitraum × effektiver Tagessatz) für ein Modell — OHNE
+ * Zwischenrundung des Tagessatzes, erst am Ende auf Cent runden. Sonst driftet
+ * bei exakten Perioden der Gesamtbetrag vom vereinbarten Modellpreis ab
+ * (z. B. Woche 500 €, 14 Tage: 14 × round2(500/7)=71,43 → 1000,02 statt 1000,00;
+ * mit dieser Funktion: round2(14 × 500/7) = 1000,00). Der gerundete Tagessatz
+ * aus dailyRateForModel bleibt für die reine Tagessatz-ANZEIGE korrekt.
+ */
+export const totalForModel = (
+  model: BillingModel,
+  rate: number | string | null | undefined,
+  days: number
+): number | null => {
+  const r = positiveOrNull(rate);
+  if (r == null || !Number.isFinite(days) || days <= 0) return null;
+  const perDay =
+    model === "monthly" ? r / MONTHLY_RATE_DIVISOR : model === "weekly" ? r / WEEKLY_RATE_DIVISOR : r;
+  return round2(perDay * days);
+};
+
 // Geschätzte Zusatzkosten einer Verlängerung: extra_days × effektiver Tagespreis,
 // auf Cent gerundet. null, wenn Tage oder Preis fehlen (z. B. kein Tagespreis
 // hinterlegt) — der Aufrufer zeigt dann einen Hinweis statt 0,00 €.
