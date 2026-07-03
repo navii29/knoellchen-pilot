@@ -26,7 +26,9 @@ export const GET = async (req: Request) => {
   if (!profile) return NextResponse.json({ error: "No profile" }, { status: 401 });
 
   const url = new URL(req.url);
-  const q = (url.searchParams.get("q") ?? "").trim();
+  // Kommas/Klammern sind PostgREST-or()-Syntax — aus dem Suchbegriff entfernen,
+  // sonst bricht die Suche bei Eingaben wie "Golf, blau" mit einem Parse-Fehler.
+  const q = (url.searchParams.get("q") ?? "").replace(/[,()]/g, " ").trim();
   const from = url.searchParams.get("from");
   const to = url.searchParams.get("to");
 
@@ -34,7 +36,7 @@ export const GET = async (req: Request) => {
   let query = admin
     .from("vehicles")
     .select(
-      "id, plate, manufacturer, model, vehicle_type, color, first_registration, fuel_type, fin_number, category, status, decommission_date, daily_rate, deposit, pickup_location"
+      "id, plate, manufacturer, model, vehicle_type, color, first_registration, fuel_type, fin_number, category, status, decommission_date, daily_rate, weekly_rate, monthly_rate, deposit, pickup_location, power_ps, extra_km_price"
     )
     .eq("org_id", profile.org_id)
     .order("plate", { ascending: true })
@@ -79,8 +81,13 @@ export const GET = async (req: Request) => {
       .eq("org_id", profile.org_id)
       .in("plate", plates)
       .neq("status", "storniert")
-      // Überschneidung: Belegungsende >= from UND Belegungsstart <= to
-      .lte("pickup_date", to);
+      // Überschneidung: Belegungsstart <= to UND Belegungsende >= from.
+      // Die Untergrenze MUSS in SQL stehen — nur im JS gefiltert würde die
+      // Query die komplette Vertragshistorie laden und ab PostgRESTs
+      // max-rows-Kappung (1000) aktuelle Belegungen still verlieren
+      // ("Frei"-Anzeige trotz Belegung).
+      .lte("pickup_date", to)
+      .or(`actual_return_date.gte.${from},and(actual_return_date.is.null,return_date.gte.${from})`);
 
     for (const c of contracts ?? []) {
       const occupiedUntil = c.actual_return_date ?? c.return_date;
@@ -114,8 +121,12 @@ export const GET = async (req: Request) => {
       category: v.category,
       status: v.status,
       daily_rate: v.daily_rate,
+      weekly_rate: v.weekly_rate,
+      monthly_rate: v.monthly_rate,
       deposit: v.deposit,
       pickup_location: v.pickup_location,
+      power_ps: v.power_ps,
+      extra_km_price: v.extra_km_price,
       available: conflicts.length === 0,
       conflicts,
     };

@@ -50,6 +50,7 @@ export const ProtocolPanel = ({
   const [error, setError] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [emailed, setEmailed] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const lessorRef = useRef<SignatureCanvasHandle>(null);
   const renterRef = useRef<SignatureCanvasHandle>(null);
@@ -112,6 +113,7 @@ export const ProtocolPanel = ({
       url?: string | null;
       emailed?: boolean;
       error?: string;
+      alreadyClosed?: boolean;
     };
     if (!res.ok || !j.ok) {
       setError(j.error ?? "Erzeugen fehlgeschlagen.");
@@ -119,6 +121,13 @@ export const ProtocolPanel = ({
     }
     if (j.url) setDownloadUrl(j.url);
     setEmailed(Boolean(j.emailed));
+    // Nicht stillschweigend: war der Vertrag schon abgeschlossen (z. B. Self-
+    // Check-out), wurden km/Tankstand/Rückgabedatum NICHT überschrieben.
+    setNotice(
+      j.alreadyClosed
+        ? "Vertrag war bereits abgeschlossen — km, Tankstand und Rückgabedatum wurden nicht überschrieben. Das Protokoll wurde mit den gespeicherten Werten erstellt."
+        : null
+    );
     return true;
   };
 
@@ -260,6 +269,12 @@ export const ProtocolPanel = ({
       {error && (
         <div className="mt-4 flex items-center gap-2 text-[13px] rounded-panel px-3 py-2 bg-red-50 border border-red-200 text-red-700">
           <AlertTriangle size={14} /> {error}
+        </div>
+      )}
+
+      {notice && (
+        <div className="mt-4 flex items-start gap-2 text-[13px] rounded-panel px-3 py-2 bg-amber-50 border border-amber-200 text-amber-800">
+          <AlertTriangle size={14} className="shrink-0 mt-0.5" /> {notice}
         </div>
       )}
 

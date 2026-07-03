@@ -18,6 +18,12 @@ import {
   type SalesPartner,
 } from "@/lib/partners";
 import { fmtEur } from "@/lib/utils";
+import {
+  BILLING_MODEL_LABEL,
+  dailyRateForModel,
+  resolveBillingSelection,
+  type BillingModel,
+} from "@/lib/daily-rate";
 import { normalizeNumber } from "@/lib/csv-import";
 import { customerDisplayName } from "@/lib/customer";
 import { Button } from "@/components/ui/Button";
@@ -333,6 +339,47 @@ export const NewContractClient = ({
     setMode("manual");
   };
 
+  // Merkt sich, welche Preis-/Leistungswerte die LETZTE Fahrzeug-Auswahl
+  // automatisch gesetzt hat. Beim Fahrzeug-WECHSEL werden diese Felder nur
+  // überschrieben, wenn sie leer sind oder noch dem Auto-Wert des vorherigen
+  // Fahrzeugs entsprechen — manuelle/Partner-/KI-Eingaben bleiben erhalten,
+  // aber es bleibt kein veralteter Preis des zuvor gewählten Fahrzeugs stehen.
+  const vehicleAutoFillRef = useRef<Record<string, string>>({});
+
+  // ── Abrechnungsmodell (Tag/Woche/Monat) ────────────────────────────────
+  // Automatisch aus dem Zeitraum abgeleitet (>= 29 Tage Monat, >= 7 Woche,
+  // sonst Tag), mit Preis-Fallback; per Klick übersteuerbar. Der Vertrag
+  // speichert NUR den Preis des gewählten Modells (die anderen -> null) und
+  // der Mietvertrag zeigt diesen Preis statt eines Gesamtbetrags. Der
+  // Gesamtwert wird intern weiterberechnet (Rechnung/Auswertung).
+  const [billingOverride, setBillingOverride] = useState<BillingModel | null>(null);
+  const rentalDays =
+    data.pickup_date && data.return_date
+      ? contractDays({
+          pickup_date: data.pickup_date,
+          return_date: data.return_date,
+          actual_return_date: null,
+        })
+      : null;
+  const autoSelection = resolveBillingSelection(rentalDays ?? 1, {
+    daily: normalizeNumber(data.daily_rate),
+    weekly: normalizeNumber(data.weekly_rate),
+    monthly: normalizeNumber(data.monthly_rate),
+  });
+  const billingModel: BillingModel = billingOverride ?? autoSelection.model;
+  const billingRate = normalizeNumber(
+    billingModel === "daily"
+      ? data.daily_rate
+      : billingModel === "weekly"
+        ? data.weekly_rate
+        : data.monthly_rate
+  );
+  const effectiveDaily = dailyRateForModel(billingModel, billingRate);
+  const computedTotal =
+    rentalDays != null && effectiveDaily != null
+      ? Math.round(rentalDays * effectiveDaily * 100) / 100
+      : null;
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -373,10 +420,14 @@ export const NewContractClient = ({
       // Fahrzeug-Stammdaten fürs Backfill (Vertragsspalten vehicle_color/_fin).
       vehicle_color: data.color.trim() || null,
       vehicle_fin: data.vin.trim() || null,
-      daily_rate: numeric(data.daily_rate),
-      weekly_rate: numeric(data.weekly_rate),
-      monthly_rate: numeric(data.monthly_rate),
-      total_amount: numeric(data.total_amount),
+      // Nur der Preis des gewählten Abrechnungsmodells landet am Vertrag — die
+      // anderen Modelle explizit null (Preisliste bleibt am Fahrzeug). Der
+      // Gesamtwert ist berechnet (Zeitraum × effektiver Tagessatz) und dient
+      // intern (Rechnung/Auswertung); der Mietvertrag zeigt ihn nicht.
+      daily_rate: billingModel === "daily" ? numeric(data.daily_rate) : null,
+      weekly_rate: billingModel === "weekly" ? numeric(data.weekly_rate) : null,
+      monthly_rate: billingModel === "monthly" ? numeric(data.monthly_rate) : null,
+      total_amount: computedTotal,
       deposit: numeric(data.deposit),
       km_pickup: numeric(data.km_pickup),
       km_limit: numeric(data.km_limit),
@@ -594,11 +645,38 @@ export const NewContractClient = ({
                 pickupDate={data.pickup_date}
                 returnDate={data.return_date}
                 required
-                onSelect={(v) =>
-                  setData((d) => ({
-                    ...d,
+                onSelect={(v) => {
+                  // Auto-Übernahme mit Wechsel-Semantik: überschreiben, wenn das
+                  // Feld leer ist ODER noch den Auto-Wert der VORHERIGEN Auswahl
+                  // trägt (dann war es nicht manuell editiert). So bleibt beim
+                  // Fahrzeug-Wechsel kein veralteter Preis stehen, aber eine
+                  // manuell gesetzte Partner-/KI-Rate wird nicht überschrieben.
+                  const prevAuto = vehicleAutoFillRef.current;
+                  const nextAuto: Record<string, string> = {};
+                  const fill = (
+                    key:
+                      | "daily_rate"
+                      | "weekly_rate"
+                      | "monthly_rate"
+                      | "deposit"
+                      | "power_ps"
+                      | "extra_km_price",
+                    raw: number | null
+                  ) => {
+                    const vStr = raw != null ? String(raw) : "";
+                    const cur = data[key];
+                    const applied = cur === "" || cur === prevAuto[key];
+                    // Nur als Auto-Wert merken, wenn er WIRKLICH angewendet wurde —
+                    // sonst würde ein manuell eingegebener Preis, der zufällig dem
+                    // Listenpreis eines zwischendurch gewählten Fahrzeugs gleicht,
+                    // beim nächsten Wechsel fälschlich als "auto" überschrieben.
+                    if (applied) nextAuto[key] = vStr;
+                    return applied ? vStr : cur;
+                  };
+                  const next = {
+                    ...data,
                     plate: v.plate,
-                    vehicle_type: v.vehicle_type || d.vehicle_type,
+                    vehicle_type: v.vehicle_type || data.vehicle_type,
                     // Echte Stammdaten des gewählten Fahrzeugs übernehmen — sonst
                     // bleiben Hersteller/Modell/Farbe/Kraftstoff/FIN leer und die
                     // Platzhalter wirken wie (falsche) Daten.
@@ -610,12 +688,16 @@ export const NewContractClient = ({
                     // FIN landet im vin-Feld (FormState hat kein fin_number) —
                     // das sichtbare FIN-Input und das Submit-Payload lesen data.vin.
                     vin: v.fin_number ?? "",
-                    // Preise nur befüllen, wenn noch leer (eine bereits gesetzte
-                    // Partner-/KI-Rate bzw. Kaution nicht überschreiben).
-                    daily_rate: d.daily_rate || (v.daily_rate != null ? String(v.daily_rate) : ""),
-                    deposit: d.deposit || (v.deposit != null ? String(v.deposit) : ""),
-                  }))
-                }
+                    daily_rate: fill("daily_rate", v.daily_rate),
+                    weekly_rate: fill("weekly_rate", v.weekly_rate),
+                    monthly_rate: fill("monthly_rate", v.monthly_rate),
+                    deposit: fill("deposit", v.deposit),
+                    power_ps: fill("power_ps", v.power_ps),
+                    extra_km_price: fill("extra_km_price", v.extra_km_price),
+                  };
+                  vehicleAutoFillRef.current = nextAuto;
+                  setData(next);
+                }}
                 onPlateChange={(plate) => setData((d) => ({ ...d, plate }))}
               />
             </div>
@@ -754,17 +836,55 @@ export const NewContractClient = ({
                 }
               />
             </div>
-            <Field label="Tagespreis (€)">
+            <div className="sm:col-span-2">
+              <div className="data-label text-ink-muted mb-1.5">Abrechnung</div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {(["daily", "weekly", "monthly"] as BillingModel[]).map((m) => {
+                  const active = billingModel === m;
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setBillingOverride(m === autoSelection.model ? null : m)}
+                      className={`h-8 px-3 rounded-btn text-[13px] font-medium transition-colors ${
+                        active
+                          ? "bg-ink text-white"
+                          : "border border-hairline bg-paper text-ink-soft hover:bg-canvas"
+                      }`}
+                    >
+                      {BILLING_MODEL_LABEL[m]}
+                    </button>
+                  );
+                })}
+                <span className="text-[12px] text-ink-muted">
+                  {billingOverride
+                    ? "manuell gewählt"
+                    : rentalDays != null
+                      ? `automatisch: ${BILLING_MODEL_LABEL[autoSelection.model]} (${rentalDays} ${rentalDays === 1 ? "Tag" : "Tage"})`
+                      : "Zeitraum wählen für den Auto-Vorschlag"}
+                </span>
+              </div>
+              <p className="text-[12px] text-ink-muted mt-1.5">
+                Im Mietvertrag erscheint nur dieser Preis — kein Gesamtbetrag. Der Zeitraum steht
+                im Vertrag.
+              </p>
+            </div>
+            <Field label={`Tagespreis (€)${billingModel === "daily" ? " — wird abgerechnet" : ""}`}>
               <input value={data.daily_rate} onChange={set("daily_rate")} className="field font-mono tnum" />
             </Field>
-            <Field label="Wochenmiete (€)">
+            <Field label={`Wochenmiete (€)${billingModel === "weekly" ? " — wird abgerechnet" : ""}`}>
               <input value={data.weekly_rate} onChange={set("weekly_rate")} className="field font-mono tnum" />
             </Field>
-            <Field label="Monatsmiete (€)">
+            <Field label={`Monatsmiete (€)${billingModel === "monthly" ? " — wird abgerechnet" : ""}`}>
               <input value={data.monthly_rate} onChange={set("monthly_rate")} className="field font-mono tnum" />
             </Field>
-            <Field label="Gesamtbetrag (€)">
-              <input value={data.total_amount} onChange={set("total_amount")} className="field font-mono tnum" />
+            <Field label="Gesamtwert (intern, berechnet)">
+              <input
+                value={computedTotal != null ? computedTotal.toFixed(2).replace(".", ",") : ""}
+                readOnly
+                title="Zeitraum × effektiver Tagessatz (Monat ÷ 29, Woche ÷ 7). Erscheint nicht im Mietvertrag — Basis für Rechnung/Auswertung."
+                className="field font-mono tnum bg-canvas text-ink-muted"
+              />
             </Field>
             <Field label="Kaution (€)">
               <input value={data.deposit} onChange={set("deposit")} className="field font-mono tnum" />

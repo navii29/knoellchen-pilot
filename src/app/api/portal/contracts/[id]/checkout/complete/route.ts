@@ -10,6 +10,20 @@ export const POST = async (req: Request, { params }: Ctx) => {
   const ctx = await loadPortalContract(params.id);
   if (!ctx) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
+  // Status-Guard: stornierte Verträge nicht abschließen; bereits abgeschlossene
+  // (z. B. durch den Vermieter per Rückgabeprotokoll) NICHT überschreiben —
+  // idempotent beantworten statt Operator-Daten per Replay zu ersetzen.
+  if (ctx.contract.status === "storniert")
+    return NextResponse.json({ error: "Vertrag ist storniert." }, { status: 409 });
+  if (ctx.contract.status === "abgeschlossen")
+    return NextResponse.json({
+      ok: true,
+      alreadyClosed: true,
+      checkout_step: 4,
+      km_return: ctx.contract.km_return,
+      fuel_level_return: ctx.contract.fuel_level_return,
+    });
+
   const body = (await req.json().catch(() => ({}))) as {
     km_return?: number;
     fuel_level_return?: string;
@@ -26,6 +40,21 @@ export const POST = async (req: Request, { params }: Ctx) => {
   if (ctx.contract.km_pickup != null && km < Number(ctx.contract.km_pickup))
     return NextResponse.json(
       { error: "Rückgabe-km darf nicht kleiner als Übergabe-km sein" },
+      { status: 400 }
+    );
+
+  // Foto-Minimum SERVERSEITIG durchsetzen (der Client fordert 4 — nur als
+  // deaktivierter Button; ein direkter API-Call konnte bisher ohne ein einziges
+  // Rückgabe-Foto abschließen).
+  const { count: returnPhotos } = await ctx.admin
+    .from("handover_photos")
+    .select("id", { count: "exact", head: true })
+    .eq("contract_id", params.id)
+    .eq("org_id", ctx.session.org_id)
+    .eq("type", "return");
+  if ((returnPhotos ?? 0) < 4)
+    return NextResponse.json(
+      { error: "Bitte zuerst mindestens 4 Rückgabe-Fotos hochladen." },
       { status: 400 }
     );
 

@@ -16,6 +16,7 @@ import type {
 import { INSURANCE_TYPE_LABEL, PAYMENT_METHOD_LABEL } from "./types";
 import type { VehicleTire } from "./tires";
 import { fmtDate, fmtEur } from "./utils";
+import { fuelLabel } from "./fuel";
 import { resolveEffectiveDailyRate } from "./daily-rate";
 import { DEFAULT_RENTAL_TERMS } from "./rental-terms";
 
@@ -531,23 +532,29 @@ const renderPage1 = (
       .filter(Boolean)
       .join(", ") || "";
 
-  // Effektiver Tagespreis wie an den Geld-Stellen (Verlängerung/Nachtrag/
-  // Rückgabe): monthly_rate ÷ 29 hat Vorrang, sonst daily_rate — damit der im
-  // PDF gezeigte Gesamtpreis dieselbe Tagesbasis nutzt. total_amount gewinnt.
-  // Rein lokale Anzeige-Berechnung, kein DB-Write.
+  // Der Mietvertrag zeigt BEWUSST keinen Gesamtbetrag mehr (bei Langzeitmieten
+  // wirkt "6 Monate = 15.000 €" abschreckend) — sondern den Preis des
+  // Abrechnungsmodells (Monat/Woche/Tag); der Zeitraum steht ohnehin im
+  // Vertrag. Der Vertrag trägt seit der Modell-Umstellung genau EINEN Preis;
+  // Alt-Verträge mit mehreren folgen dem Geld-Vorrang Monat > Woche > Tag.
+  const rateOf = (v: number | null | undefined): number | null => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  const monthlyRate = rateOf(contract.monthly_rate);
+  const weeklyRate = rateOf(contract.weekly_rate);
+  const rateLabel = monthlyRate != null ? "Monatsmiete" : weeklyRate != null ? "Wochenmiete" : "Tagespreis";
+  const rateGross = monthlyRate ?? weeklyRate ?? rateOf(contract.daily_rate) ?? 0;
+  const { net: priceNet, vat: priceVat } = grossToNet(rateGross);
+  // Effektiver Tagessatz wie an den Geld-Stellen (Monat ÷ 29, Woche ÷ 7) —
+  // Basis der "Preis Zusatztage"-Zeile, konsistent zu Verlängerung/Rückgabe.
   const effDaily = resolveEffectiveDailyRate({
     contractRate: contract.daily_rate,
     vehicleRate: null,
     contractMonthlyRate: contract.monthly_rate,
     vehicleMonthlyRate: null,
+    contractWeeklyRate: contract.weekly_rate,
   });
-  const gross =
-    contract.total_amount != null
-      ? Number(contract.total_amount)
-      : effDaily != null
-      ? Math.round(effDaily * days * 100) / 100
-      : 0;
-  const { net: priceNet, vat: priceVat } = grossToNet(gross);
   const paymentLabel =
     contract.payment_method != null
       ? PAYMENT_METHOD_LABEL[contract.payment_method as ContractPaymentMethod]
@@ -599,7 +606,7 @@ const renderPage1 = (
         ${formRow("Fahrzeugschlüssel:", `${contract.keys_count ?? 1} Fahrzeugschlüssel`)}
         ${formRow("Schäden bei Übergabe:", contract.damages_at_handover ?? "Keine")}
         ${formRow("KM-Stand bei Übergabe:", contract.km_pickup != null ? `${fmtNum(contract.km_pickup)} Km` : "")}
-        ${formRow("Tankfüllstand bei Übergabe:", contract.fuel_level_pickup ?? "")}
+        ${formRow("Tankfüllstand bei Übergabe:", fuelLabel(contract.fuel_level_pickup))}
         ${formRow("Übergabe an Mieter:", dateTimeLabel(contract.pickup_date, contract.pickup_time))}
         ${formRow("Mietdauer:", `${days} ${days === 1 ? "Tag" : "Tage"}`)}
         ${formRow("Rückgabe an Vermieter:", dateTimeLabel(contract.return_date, contract.return_time))}
@@ -607,11 +614,11 @@ const renderPage1 = (
         ${formRow("Vereinbarte Laufleistung / KM:", kmInclusive != null ? `${fmtNum(kmInclusive)} Km` : "")}
         ${gapRow()}
         ${formRow("Vertragsbedingungen:", `AGB vom ${dateStr}`)}
-        ${formRow("Preis Zusatztage:", contract.daily_rate != null ? fmtEur(Number(contract.daily_rate)) : "")}
+        ${formRow("Preis Zusatztage:", effDaily != null ? fmtEur(effDaily) : "")}
         ${formRow("Sondervereinbarungen:", contract.special_terms ?? "—")}
-        ${formRow("Einzelmietpreis netto:", gross > 0 ? fmtEur(priceNet) : "")}
-        ${formRow("zzgl. 19% MwSt.:", gross > 0 ? fmtEur(priceVat) : "")}
-        ${formRow("Einzelmietpreis brutto:", gross > 0 ? fmtEur(gross) : "")}
+        ${formRow(`${rateLabel} netto:`, rateGross > 0 ? fmtEur(priceNet) : "")}
+        ${formRow("zzgl. 19% MwSt.:", rateGross > 0 ? fmtEur(priceVat) : "")}
+        ${formRow(`${rateLabel} brutto:`, rateGross > 0 ? fmtEur(rateGross) : "")}
         ${formRow("Zahlungsart:", paymentLabel)}
         ${formRow("Kaution:", contract.deposit != null ? fmtEur(Number(contract.deposit)) : "")}
         ${formRow("Versicherung:", insBase, insRight)}

@@ -49,12 +49,23 @@ const orgAddress = (org: Organization): string =>
     .join(", ");
 
 // Datum/Uhrzeit des jeweiligen Vorgangs aus dem Vertrag (Übergabe vs. Rückgabe).
+// Rückgabe: das TATSÄCHLICHE Rückgabedatum bevorzugen (das Protokoll dokumentiert
+// den realen Vorgang, nicht den geplanten). Die geplante Uhrzeit nur anzeigen,
+// solange das Datum noch dem geplanten entspricht — sonst wäre sie irreführend.
 const eventDateTime = (
   contract: Contract,
   type: HandoverProtocolType
 ): string => {
-  const date = type === "pickup" ? contract.pickup_date : contract.return_date;
-  const time = type === "pickup" ? contract.pickup_time : contract.return_time;
+  const date =
+    type === "pickup"
+      ? contract.pickup_date
+      : contract.actual_return_date ?? contract.return_date;
+  const time =
+    type === "pickup"
+      ? contract.pickup_time
+      : date === contract.return_date
+        ? contract.return_time
+        : null;
   if (!date) return "";
   const d = fmtDate(date);
   return time ? `${d}, ${time} Uhr` : d;

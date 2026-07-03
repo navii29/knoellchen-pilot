@@ -34,8 +34,12 @@ type AvailabilityVehicle = {
   category: string | null;
   status: string | null;
   daily_rate: number | null;
+  weekly_rate: number | null;
+  monthly_rate: number | null;
   deposit: number | null;
   pickup_location: string | null;
+  power_ps: number | null;
+  extra_km_price: number | null;
   available: boolean;
   conflicts: AvailabilityConflict[];
 };
@@ -51,7 +55,11 @@ export type PickedVehicle = {
   fuel_type: string | null;
   fin_number: string | null;
   daily_rate: number | null;
+  weekly_rate: number | null;
+  monthly_rate: number | null;
   deposit: number | null;
+  power_ps: number | null;
+  extra_km_price: number | null;
 };
 
 const fmtDate = (iso: string) => {
@@ -193,7 +201,11 @@ export const VehiclePicker = ({
       fuel_type: v.fuel_type,
       fin_number: v.fin_number,
       daily_rate: v.daily_rate,
+      weekly_rate: v.weekly_rate,
+      monthly_rate: v.monthly_rate,
       deposit: v.deposit,
+      power_ps: v.power_ps,
+      extra_km_price: v.extra_km_price,
     });
     setOpen(false);
   };
@@ -241,6 +253,7 @@ export const VehiclePicker = ({
           autoComplete="off"
           role="combobox"
           aria-expanded={open}
+          aria-controls="vehicle-picker-listbox"
           aria-autocomplete="list"
           aria-label="Kennzeichen"
         />
@@ -254,6 +267,7 @@ export const VehiclePicker = ({
 
       {open && (
         <div
+          id="vehicle-picker-listbox"
           role="listbox"
           className="absolute z-30 left-0 right-0 mt-1 bg-paper border border-hairline rounded-card shadow-raised max-h-72 overflow-auto"
         >

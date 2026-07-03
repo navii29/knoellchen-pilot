@@ -4,6 +4,8 @@ import { generateHandoverProtocolPdf } from "@/lib/handover-protocol-pdf";
 import type { ProtocolPhoto } from "@/lib/handover-protocol-html";
 import { POSITIONS } from "@/lib/handover";
 import { isFuelLevel } from "@/lib/fuel";
+import { computeReturnSummary } from "@/lib/km";
+import { resolveEffectiveDailyRate } from "@/lib/daily-rate";
 import {
   loadCustomerForContract,
   loadLogoBase64,
@@ -101,6 +103,9 @@ export const POST = async (req: Request, { params }: Ctx) => {
   if (handoverType === "return" && km == null) {
     return NextResponse.json({ error: "Km bei Rückgabe erforderlich." }, { status: 400 });
   }
+  if (km != null && km < 0) {
+    return NextResponse.json({ error: "Km-Stand darf nicht negativ sein." }, { status: 400 });
+  }
   const actualReturnDate =
     typeof body.actual_return_date === "string" && body.actual_return_date.trim()
       ? body.actual_return_date.trim()
@@ -118,6 +123,22 @@ export const POST = async (req: Request, { params }: Ctx) => {
   if (!contractRow)
     return NextResponse.json({ error: "Vertrag nicht gefunden." }, { status: 404 });
   const contract = contractRow as Contract;
+
+  // Stornierte Verträge dürfen per Rückgabe-Protokoll NICHT auf "abgeschlossen"
+  // wiederbelebt werden.
+  if (handoverType === "return" && contract.status === "storniert") {
+    return NextResponse.json(
+      { error: "Vertrag ist storniert — Rückgabeprotokoll nicht möglich." },
+      { status: 409 }
+    );
+  }
+  // Plausibilität: Rückgabe-km nicht unter Übergabe-km (wie im Self-Checkout).
+  if (handoverType === "return" && contract.km_pickup != null && km != null && km < Number(contract.km_pickup)) {
+    return NextResponse.json(
+      { error: "Rückgabe-km darf nicht kleiner als Übergabe-km sein." },
+      { status: 400 }
+    );
+  }
 
   // --- Organisation (org-scoped) ---
   const { data: orgRow } = await admin
@@ -175,6 +196,11 @@ export const POST = async (req: Request, { params }: Ctx) => {
   // stillschweigend überschreiben — Protokoll-Artefakte (Signaturen/Zustand/PDF)
   // trotzdem speichern.
   const alreadyClosed = handoverType === "return" && contract.status === "abgeschlossen";
+  // Effektives Rückgabedatum (auch fürs PDF): explizit > vorhandener Wert > heute.
+  const effReturnDate =
+    actualReturnDate ??
+    (contract.actual_return_date as string | null) ??
+    new Date().toISOString().slice(0, 10);
 
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (handoverType === "pickup") {
@@ -193,8 +219,37 @@ export const POST = async (req: Request, { params }: Ctx) => {
       update.status = "abgeschlossen";
       update.km_return = km; // bei Rückgabe Pflicht (oben geprüft)
       update.fuel_level_return = fuel;
-      update.actual_return_date =
-        actualReturnDate ?? contract.actual_return_date ?? new Date().toISOString().slice(0, 10);
+      update.actual_return_date = effReturnDate;
+      // Rückgabe-Aufstellung persistieren (wie der frühere Abschluss über
+      // PATCH /api/contracts/[id]) — sonst fehlen Mehr-km/Zusatztage später
+      // auf Auswertung und Rechnung (LexOffice liest diese Vertragsfelder).
+      if (contract.pickup_date && contract.return_date) {
+        const summary = computeReturnSummary({
+          pickupDate: contract.pickup_date,
+          plannedReturnDate: contract.return_date,
+          actualReturnDate: effReturnDate,
+          kmPickup: contract.km_pickup,
+          kmReturn: km,
+          inclusiveKmMonth: (vehicle?.inclusive_km_month as number | null) ?? null,
+          kmLimitOverride: contract.km_limit,
+          pricePerKm: (vehicle?.extra_km_price as number | null) ?? null,
+          originalReturnDate: contract.original_return_date,
+          dailyRate: resolveEffectiveDailyRate({
+            contractRate: contract.daily_rate,
+            vehicleRate: (vehicle?.daily_rate as number | null) ?? null,
+            contractMonthlyRate: contract.monthly_rate,
+            vehicleMonthlyRate: (vehicle?.monthly_rate as number | null) ?? null,
+            contractWeeklyRate: contract.weekly_rate,
+            vehicleWeeklyRate: (vehicle?.weekly_rate as number | null) ?? null,
+          }),
+        });
+        update.actual_days = summary.actualDays;
+        update.actual_km_allowed = summary.allowedKm;
+        update.km_driven = summary.drivenKm;
+        update.km_excess = summary.excessKm;
+        update.extra_km_cost = summary.cost;
+        update.extra_days_cost = summary.extraDaysCost;
+      }
     }
   }
 
@@ -220,6 +275,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
           km_return: alreadyClosed ? contract.km_return : km,
           fuel_level_return: alreadyClosed ? contract.fuel_level_return : fuel,
           condition_at_return: condition ?? contract.condition_at_return,
+          actual_return_date: alreadyClosed ? contract.actual_return_date : effReturnDate,
         }),
   };
 

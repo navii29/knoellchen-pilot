@@ -59,7 +59,10 @@ export default async function HandoverPage({
   const { data: markerRows } = await supabase
     .from("damage_markers")
     .select("id, type, zone, part_id, x, y, z, damage_type, severity")
-    .eq("contract_id", c.id);
+    .eq("contract_id", c.id)
+    // Stabile Reihenfolge — ohne order() shufflet PostgREST die Zeilen nach
+    // jedem Update und die Marker-Nummerierung springt bei jedem Reload.
+    .order("created_at", { ascending: true });
   const rows = (markerRows ?? []) as Array<{
     id: string;
     type: string;

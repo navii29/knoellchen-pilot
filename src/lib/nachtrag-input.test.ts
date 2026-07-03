@@ -84,6 +84,7 @@ const sources = (over: Partial<NachtragInputSources> = {}): NachtragInputSources
     vehicle_id: "veh-1",
     vehicle_type: "Fallback Modell",
     daily_rate: 69,
+    weekly_rate: null,
     monthly_rate: null,
   },
   extension: {

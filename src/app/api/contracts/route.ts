@@ -223,6 +223,12 @@ export const POST = async (req: Request) => {
     renter_bank_holder: (body.renter_bank_holder as string)?.trim() || null,
     vehicle_color: (body.vehicle_color as string)?.trim() || null,
     vehicle_fin: (body.vehicle_fin as string)?.trim() || null,
+    // BEWUSST kein Fahrzeug-Fallback: monthly_rate ist kein passives Anzeige-
+    // feld — resolveEffectiveDailyRate gibt monthly÷29 VORRANG vor daily_rate
+    // (PDF-Preis, Zusatztage). Ein stilles Server-Backfill würde Tagespreis-
+    // Verträge umpreisen und das Leeren des Felds im Formular unmöglich machen.
+    // Der Fahrzeug-Picker befüllt die Felder SICHTBAR im Formular (Opt-out durch
+    // Leeren); was hier ankommt, ist die Entscheidung des Operators.
     weekly_rate: numeric(body.weekly_rate),
     monthly_rate: numeric(body.monthly_rate),
     pickup_date: body.pickup_date as string,
@@ -231,19 +237,31 @@ export const POST = async (req: Request) => {
     return_time: (body.return_time as string) ?? null,
     // Ursprüngliches Rückgabedatum festschreiben (Basis für Zusatztage).
     original_return_date: body.return_date as string,
-    // Effektiver Tagespreis: expliziter Preis gewinnt; nur bei leer/0 den
-    // Fahrzeugpreis vorbefüllen (nie einen angegebenen Preis überschreiben).
-    daily_rate: resolveEffectiveDailyRate({
-      contractRate: numeric(body.daily_rate),
-      vehicleRate: (vehicle?.daily_rate as number | null | undefined) ?? null,
-    }),
+    // Tagespreis: expliziter Preis gewinnt; nur bei leer/0 den Fahrzeugpreis
+    // vorbefüllen — aber NICHT, wenn der Vertrag ein Wochen-/Monatsmodell trägt
+    // (dann ist "kein Tagespreis" die Entscheidung des Abrechnungsmodells und
+    // ein reingezogener Fahrzeug-Tagespreis würde das Modell verwässern).
+    daily_rate:
+      numeric(body.weekly_rate) != null || numeric(body.monthly_rate) != null
+        ? numeric(body.daily_rate)
+        : resolveEffectiveDailyRate({
+            contractRate: numeric(body.daily_rate),
+            vehicleRate: (vehicle?.daily_rate as number | null | undefined) ?? null,
+          }),
     total_amount: numeric(body.total_amount),
     deposit: numeric(body.deposit),
     km_pickup: kmPickup,
     km_return: kmReturn,
     km_limit: kmLimit,
     extra_km_cost: extraKmCost,
-    contract_pdf_path: (body.contract_pdf_path as string) ?? null,
+    // Nur org-eigene Storage-Pfade akzeptieren (fremder Pfad → verworfen):
+    // spätere Signier-/Download-Schritte laufen mit dem Admin-Client (kein RLS)
+    // und würden sonst Dokumente anderer Organisationen ausliefern.
+    contract_pdf_path:
+      typeof body.contract_pdf_path === "string" &&
+      body.contract_pdf_path.startsWith(`${auth.org_id}/`)
+        ? body.contract_pdf_path
+        : null,
     notes: (body.notes as string) ?? null,
     status: (body.status as string) ?? "aktiv",
     partner_id: (body.partner_id as string) || null,

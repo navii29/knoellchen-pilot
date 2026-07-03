@@ -68,6 +68,16 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
   const update: Record<string, unknown> = {};
   for (const k of allowed) if (k in body) update[k] = body[k];
 
+  // Storage-Pfade sind org-präfixiert — einen fremden Pfad zu akzeptieren hieße,
+  // dass spätere Signier-/Download-Schritte (Admin-Client, kein RLS) Dokumente
+  // anderer Organisationen ausliefern könnten.
+  if (
+    update.contract_pdf_path != null &&
+    !(typeof update.contract_pdf_path === "string" && update.contract_pdf_path.startsWith(`${auth.org_id}/`))
+  ) {
+    return NextResponse.json({ error: "Ungültiger Dokumentpfad." }, { status: 400 });
+  }
+
   // Zahlungsstatus streng validieren; paid_at IMMER server-seitig ableiten
   // (kein Vertrauen auf Client-Zeitstempel in einem Abrechnungs-Datensatz).
   if ("payment_status" in body) {
@@ -106,7 +116,7 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
     const { data: current } = await admin
       .from("contracts")
       .select(
-        "km_pickup, km_return, km_limit, plate, org_id, pickup_date, return_date, actual_return_date, original_return_date, daily_rate, monthly_rate"
+        "km_pickup, km_return, km_limit, plate, org_id, pickup_date, return_date, actual_return_date, original_return_date, daily_rate, weekly_rate, monthly_rate"
       )
       .eq("id", params.id)
       .eq("org_id", auth.org_id)
@@ -144,10 +154,11 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
       let inclusiveKmMonth: number | null = null;
       let vehicleRate: number | null = null;
       let vehicleMonthlyRate: number | null = null;
+      let vehicleWeeklyRate: number | null = null;
       if (plate) {
         const { data: v } = await admin
           .from("vehicles")
-          .select("extra_km_price, inclusive_km_month, daily_rate, monthly_rate")
+          .select("extra_km_price, inclusive_km_month, daily_rate, weekly_rate, monthly_rate")
           .eq("org_id", auth.org_id)
           .eq("plate", plate)
           .maybeSingle();
@@ -155,14 +166,17 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
         if (v?.inclusive_km_month != null) inclusiveKmMonth = Number(v.inclusive_km_month);
         vehicleRate = (v?.daily_rate as number | null) ?? null;
         vehicleMonthlyRate = (v?.monthly_rate as number | null) ?? null;
+        vehicleWeeklyRate = (v?.weekly_rate as number | null) ?? null;
       }
-      // Effektiver Tagespreis (geteilte Regel: Monatspreis ÷ 29 hat Vorrang) +
+      // Effektiver Tagespreis (geteilte Regel: Monat ÷ 29 > Woche ÷ 7 > Tag) +
       // festgeschriebenes Ursprungsdatum.
       const dailyRate = resolveEffectiveDailyRate({
         contractRate: current.daily_rate as number | null,
         vehicleRate,
         contractMonthlyRate: current.monthly_rate as number | null,
         vehicleMonthlyRate,
+        contractWeeklyRate: current.weekly_rate as number | null,
+        vehicleWeeklyRate,
       });
       const originalReturn = current.original_return_date as string | null;
 

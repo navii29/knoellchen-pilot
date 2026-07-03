@@ -10,7 +10,10 @@ export const PATCH = async (req: Request, { params }: Ctx) => {
   const body = (await req.json().catch(() => ({}))) as { step?: number };
   if (typeof body.step !== "number")
     return NextResponse.json({ error: "step erforderlich" }, { status: 400 });
-  const step = Math.max(0, Math.min(4, Math.floor(body.step)));
+  // Max 3: checkout_step=4 bedeutet "Rückgabe erfasst" und wird ausschließlich
+  // vom complete-Endpoint gesetzt — sonst gilt der Vertrag schon beim Betreten
+  // der Prüfseite als zurückgegeben.
+  const step = Math.max(0, Math.min(3, Math.floor(body.step)));
 
   const { error } = await ctx.admin
     .from("contracts")

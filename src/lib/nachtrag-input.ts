@@ -28,6 +28,7 @@ export type NachtragInputSources = {
     vehicle_id: string | null;
     vehicle_type: string | null;
     daily_rate: number | null;
+    weekly_rate: number | null;
     monthly_rate: number | null;
   };
   extension: {
@@ -54,12 +55,14 @@ export const buildNachtragInput = async (
   const customer = await loadCustomerForContract(admin, s.orgId, s.extension.customer_id ?? null);
   const logoDataUri = await loadLogoBase64(admin, s.org.logo_path ?? null);
   // Kosten neu rechnen (gleiche geteilte Funktionen wie die Schätzung) →
-  // Tagespreis × Tage = Kosten exakt im Dokument. Monatspreis ÷ 29 hat Vorrang.
+  // Tagespreis × Tage = Kosten exakt im Dokument. Monat ÷ 29 > Woche ÷ 7 > Tag.
   const dailyRate = resolveEffectiveDailyRate({
     contractRate: s.contract.daily_rate ?? null,
     vehicleRate: (vehicle?.daily_rate as number | null) ?? null,
     contractMonthlyRate: s.contract.monthly_rate ?? null,
     vehicleMonthlyRate: (vehicle?.monthly_rate as number | null) ?? null,
+    contractWeeklyRate: s.contract.weekly_rate ?? null,
+    vehicleWeeklyRate: (vehicle?.weekly_rate as number | null) ?? null,
   });
   const extraDays = Number(s.extension.extra_days ?? 0);
   const extraCost = estimateExtensionCost({ extraDays, rate: dailyRate });
