@@ -397,11 +397,22 @@ export const generateLetterPdf = (
       ? "stellen wir Ihnen die vertraglich vereinbarte Bearbeitungsgebühr in Rechnung"
       : "informieren wir Sie über den Vorgang";
 
+  // Volle Behörden-Anschrift (Name + Straße + PLZ/Ort), soweit erfasst — wird
+  // auch beim Strafzettel-Auslesen angezeigt und gehört ins Anschreiben.
+  const authorityFull =
+    [
+      ticket.authority,
+      ticket.authority_street,
+      [ticket.authority_zip, ticket.authority_city].filter(Boolean).join(" "),
+    ]
+      .filter(Boolean)
+      .join(", ") || "—";
+
   const paragraphsBefore: string[] = [
     `bezugnehmend auf den Ihnen überlassenen Mietwagen mit dem Kennzeichen ${ticket.plate || "—"}${
       contract?.contract_nr ? ` (Mietvertrag-Nr. ${contract.contract_nr})` : ""
     } liegt uns ein Vorgang der ${ticket.authority || "zuständigen Behörde"} vor.`,
-    `Tatvorwurf: ${ticket.offense || "—"}${
+    `Behörde: ${authorityFull}\nTatvorwurf: ${ticket.offense || "—"}${
       ticket.offense_details ? " — " + ticket.offense_details : ""
     }\nTatzeit: ${tatzeit}\nTatort: ${ticket.location || "—"}`,
     `Da Sie das Fahrzeug zum Tatzeitpunkt im Rahmen Ihres Mietvertrags geführt haben, leiten wir Ihre Daten an die Behörde weiter und ${introClause}:`,
