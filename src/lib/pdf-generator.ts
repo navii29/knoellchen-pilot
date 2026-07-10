@@ -62,22 +62,56 @@ const drawFoldMarks = (doc: jsPDF) => {
   doc.line(4, 210, 7, 210);     // Zweite Falzmarke
 };
 
-// Logo-Block oben rechts: Teal-Quadrat mit Initial + Firmenname + Stammdaten
-const drawLetterhead = (doc: jsPDF, org: Organization) => {
-  // Logo-Square
-  setFill(doc, TEAL);
-  doc.roundedRect(INFO_X, INFO_Y_TOP, 11, 11, 1.5, 1.5, "F");
-  setColor(doc, [255, 255, 255]);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  const initial = org.name.charAt(0).toUpperCase() || "K";
-  doc.text(initial, INFO_X + 5.5, INFO_Y_TOP + 7.6, { align: "center" });
+// jsPDF-Bildformat aus einer data:-URI ableiten (SVG kann jsPDF NICHT rastern).
+const imageFormatFromDataUri = (dataUri: string): "PNG" | "JPEG" | "WEBP" | null => {
+  const m = /^data:image\/([a-z0-9+]+);/i.exec(dataUri);
+  const t = (m?.[1] || "").toLowerCase();
+  if (t === "png") return "PNG";
+  if (t === "jpeg" || t === "jpg") return "JPEG";
+  if (t === "webp") return "WEBP";
+  return null; // svg / unbekannt → Fallback aufs Initial-Quadrat
+};
 
-  // Firmenname rechts vom Logo
+// Logo-Block oben rechts: echtes Logo (falls hinterlegt), sonst Teal-Quadrat mit
+// Initial. Danach Firmenname + Stammdaten.
+const drawLetterhead = (doc: jsPDF, org: Organization, logoDataUri: string | null = null) => {
+  const LOGO_H = 11; // mm — Höhe des Logo-Slots
+  let nameX = INFO_X + 14; // Standard: rechts vom 11mm-Quadrat
+  let rendered = false;
+
+  const fmt = logoDataUri ? imageFormatFromDataUri(logoDataUri) : null;
+  if (logoDataUri && fmt) {
+    try {
+      const props = doc.getImageProperties(logoDataUri);
+      const ratio = props.width && props.height ? props.width / props.height : 1;
+      // Höhe fix, Breite seitenverhältnis-treu, gedeckelt (Platz für Info-Block).
+      const w = Math.min(Math.max(LOGO_H * ratio, LOGO_H), 34);
+      const h = w / ratio;
+      doc.addImage(logoDataUri, fmt, INFO_X, INFO_Y_TOP, w, h);
+      nameX = INFO_X + w + 3;
+      rendered = true;
+    } catch {
+      rendered = false; // bei defektem Bild sauber auf Quadrat zurückfallen
+    }
+  }
+
+  if (!rendered) {
+    // Fallback: Teal-Quadrat mit Initial
+    setFill(doc, TEAL);
+    doc.roundedRect(INFO_X, INFO_Y_TOP, 11, 11, 1.5, 1.5, "F");
+    setColor(doc, [255, 255, 255]);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    const initial = org.name.charAt(0).toUpperCase() || "K";
+    doc.text(initial, INFO_X + 5.5, INFO_Y_TOP + 7.6, { align: "center" });
+  }
+
+  // Firmenname rechts vom Logo (Breite gedeckelt, damit er nicht in den rechten
+  // Rand läuft).
   setColor(doc, INK);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text(org.name, INFO_X + 14, INFO_Y_TOP + 7);
+  doc.text(org.name, nameX, INFO_Y_TOP + 7);
 
   // Info-Liste darunter (Adresse + Kontakt)
   doc.setFont("helvetica", "normal");
@@ -277,15 +311,43 @@ const drawLetterFrame = (
   doc: jsPDF,
   org: Organization,
   recipient: string[],
-  refs: Parameters<typeof drawReferenceLine>[1]
+  refs: Parameters<typeof drawReferenceLine>[1],
+  logoDataUri: string | null = null
 ) => {
   drawFoldMarks(doc);
-  drawLetterhead(doc, org);
+  drawLetterhead(doc, org, logoDataUri);
   drawSenderLine(doc, org);
   drawRecipient(doc, recipient);
   drawReferenceLine(doc, refs);
   drawFooter(doc, org);
 };
+
+// Mieterdaten für die Dokumente: Vertrags-Snapshot bevorzugt, sonst der
+// verknüpfte Kunde (Quelle der Wahrheit), sonst „—". So bleiben Anschrift und
+// Geburtsdatum nicht leer, wenn sie am Vertrag nicht mitgeschrieben wurden.
+export type DocCustomer = {
+  salutation?: string | null;
+  street?: string | null;
+  zip?: string | null;
+  city?: string | null;
+  birthday?: string | null;
+} | null;
+
+const customerAddressLine = (cust: DocCustomer): string => {
+  if (!cust) return "";
+  const cityLine = [cust.zip, cust.city].filter(Boolean).join(" ");
+  return [cust.street, cityLine].filter(Boolean).join(", ");
+};
+
+const renterAddressOf = (contract: Contract | null, cust: DocCustomer): string =>
+  (contract?.renter_address && contract.renter_address.trim()) ||
+  customerAddressLine(cust) ||
+  "—";
+
+const renterBirthdayOf = (contract: Contract | null, cust: DocCustomer): string =>
+  (contract?.renter_birthday && contract.renter_birthday.trim()) ||
+  (cust?.birthday ? fmtDate(cust.birthday) : "") ||
+  "—";
 
 const finalize = (doc: jsPDF): Uint8Array => new Uint8Array(doc.output("arraybuffer"));
 
@@ -296,7 +358,8 @@ export const generateLetterPdf = (
   org: Organization,
   ticket: Ticket,
   contract: Contract | null,
-  customer: { salutation: string | null } | null = null
+  customer: DocCustomer = null,
+  logoDataUri: string | null = null
 ): Uint8Array => {
   const doc = newDoc();
   const renterName = contract?.renter_name || ticket.renter_name || "[Mieter:in]";
@@ -305,13 +368,14 @@ export const generateLetterPdf = (
   drawLetterFrame(
     doc,
     org,
-    [renterName, contract?.renter_address || "—"],
+    [renterName, renterAddressOf(contract, customer)],
     {
       ihrZeichen: ticket.reference_nr || undefined,
       unserZeichen: ticket.ticket_nr,
       telefon: org.phone || undefined,
       datum: new Date().toLocaleDateString("de-DE"),
-    }
+    },
+    logoDataUri
   );
 
   const subject = `Weiterbelastung Ordnungswidrigkeit ${ticket.plate ?? ""} — Aktenzeichen ${
@@ -400,7 +464,9 @@ export const generateLetterPdf = (
 export const generateInvoicePdf = (
   org: Organization,
   ticket: Ticket,
-  contract: Contract | null
+  contract: Contract | null,
+  customer: DocCustomer = null,
+  logoDataUri: string | null = null
 ): Uint8Array => {
   const doc = newDoc();
   const renterName = contract?.renter_name || ticket.renter_name || "[Mieter:in]";
@@ -408,13 +474,14 @@ export const generateInvoicePdf = (
   drawLetterFrame(
     doc,
     org,
-    [renterName, contract?.renter_address || "—"],
+    [renterName, renterAddressOf(contract, customer)],
     {
       ihrZeichen: ticket.reference_nr || undefined,
       unserZeichen: ticket.ticket_nr,
       telefon: org.phone || undefined,
       datum: new Date().toLocaleDateString("de-DE"),
-    }
+    },
+    logoDataUri
   );
 
   // Betreff
@@ -631,12 +698,14 @@ const drawTotalsBlock = (
 export const generateQuestionnairePdf = (
   org: Organization,
   ticket: Ticket,
-  contract: Contract | null
+  contract: Contract | null,
+  customer: DocCustomer = null,
+  logoDataUri: string | null = null
 ): Uint8Array => {
   const doc = newDoc();
   const renterName = contract?.renter_name || ticket.renter_name || "—";
-  const renterBirthday = contract?.renter_birthday || "—";
-  const renterAddress = contract?.renter_address || "—";
+  const renterBirthday = renterBirthdayOf(contract, customer);
+  const renterAddress = renterAddressOf(contract, customer);
 
   drawLetterFrame(
     doc,
@@ -647,7 +716,8 @@ export const generateQuestionnairePdf = (
       unserZeichen: ticket.ticket_nr,
       telefon: org.phone || undefined,
       datum: new Date().toLocaleDateString("de-DE"),
-    }
+    },
+    logoDataUri
   );
 
   drawSubject(
