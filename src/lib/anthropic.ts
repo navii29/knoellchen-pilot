@@ -18,7 +18,10 @@ Analysiere das übermittelte Bild eines Strafzettels und extrahiere alle Daten p
 Antworte AUSSCHLIESSLICH mit gültigem JSON in folgendem Format (keine Erklärungen, kein Markdown):
 {
   "reference_nr": "Aktenzeichen oder null",
-  "authority": "Vollständiger Name der Behörde",
+  "authority": "Vollständiger Name der Behörde (z. B. 'Stadt Augsburg — Ordnungsamt')",
+  "authority_street": "Straße + Hausnummer der Behörde aus dem Briefkopf/Absender des Bescheids oder null",
+  "authority_zip": "PLZ der Behörde oder null",
+  "authority_city": "Ort der Behörde oder null",
   "plate": "Kennzeichen ohne Leerzeichen-Reorganisation, z.B. M-KP 2847",
   "vehicle_type": "Fahrzeugtyp wenn erkennbar oder null",
   "offense_date": "YYYY-MM-DD",

@@ -85,6 +85,9 @@ export const POST = async (
     .update({
       reference_nr: d.reference_nr || null,
       authority: d.authority || null,
+      authority_street: d.authority_street || null,
+      authority_zip: d.authority_zip || null,
+      authority_city: d.authority_city || null,
       plate: normalizePlate(d.plate) || null,
       vehicle_type: d.vehicle_type || null,
       offense_date: d.offense_date || null,

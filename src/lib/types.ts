@@ -590,6 +590,9 @@ export interface Ticket {
   offense_date: string | null;
   offense_time: string | null;
   authority: string | null;
+  authority_street: string | null;
+  authority_zip: string | null;
+  authority_city: string | null;
   reference_nr: string | null;
   fine_amount: number | null;
   points: number;
@@ -639,6 +642,9 @@ export interface TicketLog {
 export interface ParsedTicketData {
   reference_nr?: string | null;
   authority?: string | null;
+  authority_street?: string | null;
+  authority_zip?: string | null;
+  authority_city?: string | null;
   plate?: string | null;
   offense_date?: string | null;
   offense_time?: string | null;

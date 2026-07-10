@@ -707,10 +707,21 @@ export const generateQuestionnairePdf = (
   const renterBirthday = renterBirthdayOf(contract, customer);
   const renterAddress = renterAddressOf(contract, customer);
 
+  // Empfänger = Behörde mit voller Postanschrift (Straße + PLZ/Ort), soweit
+  // erfasst; leere Zeilen werden im Anschriftfeld ausgelassen.
+  const authorityCityLine = [ticket.authority_zip, ticket.authority_city]
+    .filter(Boolean)
+    .join(" ");
+  const authorityRecipient = [
+    ticket.authority || "Zuständige Bußgeldstelle",
+    ticket.authority_street || "",
+    authorityCityLine,
+  ];
+
   drawLetterFrame(
     doc,
     org,
-    [ticket.authority || "Zuständige Bußgeldstelle", "", ""],
+    authorityRecipient,
     {
       ihrZeichen: ticket.reference_nr || undefined,
       unserZeichen: ticket.ticket_nr,
