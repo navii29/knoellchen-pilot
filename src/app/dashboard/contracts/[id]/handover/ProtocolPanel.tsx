@@ -51,6 +51,8 @@ export const ProtocolPanel = ({
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [emailed, setEmailed] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  // Nur Rückgabe: Mieter nicht vor Ort → seine Unterschrift entfällt.
+  const [renterAbsent, setRenterAbsent] = useState(false);
 
   const lessorRef = useRef<SignatureCanvasHandle>(null);
   const renterRef = useRef<SignatureCanvasHandle>(null);
@@ -90,8 +92,13 @@ export const ProtocolPanel = ({
     setError(null);
     const sigLessor = lessorRef.current?.toPNG() ?? null;
     const sigRenter = renterRef.current?.toPNG() ?? null;
-    if (!sigLessor || !sigRenter) {
-      setError("Bitte beide Felder unterschreiben (Vermieter und Mieter).");
+    const absent = type === "return" && renterAbsent;
+    if (!sigLessor) {
+      setError("Bitte die Vermieter-Unterschrift setzen.");
+      return false;
+    }
+    if (!absent && !sigRenter) {
+      setError('Bitte die Mieter-Unterschrift setzen — oder „Mieter nicht vor Ort" markieren.');
       return false;
     }
     const res = await fetch(`/api/contracts/${contractId}/handover/protocol`, {
@@ -103,9 +110,10 @@ export const ProtocolPanel = ({
         fuel_level: fuel,
         condition_notes: condition,
         signature_lessor: sigLessor,
-        signature_renter: sigRenter,
+        signature_renter: absent ? undefined : sigRenter,
         send_email: sendEmail,
         actual_return_date: type === "return" ? returnDate : undefined,
+        renter_absent: absent,
       }),
     });
     const j = (await res.json().catch(() => ({}))) as {
@@ -263,7 +271,29 @@ export const ProtocolPanel = ({
 
       <div className="mt-5 grid sm:grid-cols-2 gap-4">
         <SignatureField label="Unterschrift Vermieter" canvasRef={lessorRef} />
-        <SignatureField label="Unterschrift Mieter" canvasRef={renterRef} />
+        <div>
+          {type === "return" && renterAbsent ? (
+            <div>
+              <div className="data-label text-ink-muted mb-1">Unterschrift Mieter</div>
+              <div className="flex items-center justify-center h-[150px] rounded-panel border border-dashed border-hairline text-[13px] text-ink-muted">
+                Mieter nicht vor Ort
+              </div>
+            </div>
+          ) : (
+            <SignatureField label="Unterschrift Mieter" canvasRef={renterRef} />
+          )}
+          {type === "return" && (
+            <label className="mt-2 flex items-center gap-2 text-[13px] text-ink-soft cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={renterAbsent}
+                onChange={(e) => setRenterAbsent(e.target.checked)}
+                className="w-4 h-4 rounded border-hairline accent-signal"
+              />
+              Mieter nicht vor Ort (Unterschrift entfällt)
+            </label>
+          )}
+        </div>
       </div>
 
       {error && (

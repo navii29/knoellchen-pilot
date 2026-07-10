@@ -71,6 +71,7 @@ export const POST = async (req: Request, { params }: Ctx) => {
     signature_renter?: string;
     send_email?: boolean;
     actual_return_date?: string;
+    renter_absent?: boolean;
   };
 
   const type = body.type;
@@ -82,17 +83,24 @@ export const POST = async (req: Request, { params }: Ctx) => {
   }
   const handoverType = type as HandoverPhotoType;
 
+  // "Mieter nicht vor Ort" (nur bei Rückgabe): der Mieter kann nicht
+  // unterschreiben → seine Unterschrift entfällt. Vermieter-Unterschrift + km
+  // bleiben Pflicht (bewusste Lockerung der 2-Pflicht-Regel).
+  const renterAbsent = handoverType === "return" && body.renter_absent === true;
   const sigLessor = body.signature_lessor;
-  const sigRenter = body.signature_renter;
-  if (!isPngDataUrl(sigLessor) || !isPngDataUrl(sigRenter)) {
+  const sigRenter = renterAbsent ? null : body.signature_renter;
+
+  // Vermieter-Unterschrift immer Pflicht.
+  if (!isPngDataUrl(sigLessor) || !hasInk(sigLessor)) {
     return NextResponse.json(
-      { error: "Ungültige Unterschrift (erwartet: data:image/png;base64,…) — beide Felder." },
+      { error: "Unterschrift Vermieter fehlt oder ungültig." },
       { status: 400 }
     );
   }
-  if (!hasInk(sigLessor) || !hasInk(sigRenter)) {
+  // Mieter-Unterschrift Pflicht, außer der Mieter war nicht vor Ort.
+  if (!renterAbsent && (!isPngDataUrl(sigRenter) || !hasInk(sigRenter))) {
     return NextResponse.json(
-      { error: "Unterschrift fehlt — beide Felder müssen unterschrieben sein." },
+      { error: "Unterschrift Mieter fehlt oder ungültig (oder „Mieter nicht vor Ort“ markieren)." },
       { status: 400 }
     );
   }
@@ -202,6 +210,33 @@ export const POST = async (req: Request, { params }: Ctx) => {
     (contract.actual_return_date as string | null) ??
     new Date().toISOString().slice(0, 10);
 
+  // Rückgabe-Aufstellung EINMAL berechnen — fürs PDF (Mehrtage/Mehr-km) UND die
+  // Persistenz. Bei schon-abgeschlossenem Vertrag die gespeicherten Werte nutzen.
+  const returnSummary =
+    handoverType === "return" && contract.pickup_date && contract.return_date
+      ? computeReturnSummary({
+          pickupDate: contract.pickup_date,
+          plannedReturnDate: contract.return_date,
+          actualReturnDate: alreadyClosed
+            ? (contract.actual_return_date as string | null) ?? effReturnDate
+            : effReturnDate,
+          kmPickup: contract.km_pickup,
+          kmReturn: alreadyClosed ? contract.km_return : km,
+          inclusiveKmMonth: (vehicle?.inclusive_km_month as number | null) ?? null,
+          kmLimitOverride: contract.km_limit,
+          pricePerKm: (vehicle?.extra_km_price as number | null) ?? null,
+          originalReturnDate: contract.original_return_date,
+          dailyRate: resolveEffectiveDailyRate({
+            contractRate: contract.daily_rate,
+            vehicleRate: (vehicle?.daily_rate as number | null) ?? null,
+            contractMonthlyRate: contract.monthly_rate,
+            vehicleMonthlyRate: (vehicle?.monthly_rate as number | null) ?? null,
+            contractWeeklyRate: contract.weekly_rate,
+            vehicleWeeklyRate: (vehicle?.weekly_rate as number | null) ?? null,
+          }),
+        })
+      : null;
+
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (handoverType === "pickup") {
     if (km != null) update.km_pickup = km;
@@ -223,32 +258,13 @@ export const POST = async (req: Request, { params }: Ctx) => {
       // Rückgabe-Aufstellung persistieren (wie der frühere Abschluss über
       // PATCH /api/contracts/[id]) — sonst fehlen Mehr-km/Zusatztage später
       // auf Auswertung und Rechnung (LexOffice liest diese Vertragsfelder).
-      if (contract.pickup_date && contract.return_date) {
-        const summary = computeReturnSummary({
-          pickupDate: contract.pickup_date,
-          plannedReturnDate: contract.return_date,
-          actualReturnDate: effReturnDate,
-          kmPickup: contract.km_pickup,
-          kmReturn: km,
-          inclusiveKmMonth: (vehicle?.inclusive_km_month as number | null) ?? null,
-          kmLimitOverride: contract.km_limit,
-          pricePerKm: (vehicle?.extra_km_price as number | null) ?? null,
-          originalReturnDate: contract.original_return_date,
-          dailyRate: resolveEffectiveDailyRate({
-            contractRate: contract.daily_rate,
-            vehicleRate: (vehicle?.daily_rate as number | null) ?? null,
-            contractMonthlyRate: contract.monthly_rate,
-            vehicleMonthlyRate: (vehicle?.monthly_rate as number | null) ?? null,
-            contractWeeklyRate: contract.weekly_rate,
-            vehicleWeeklyRate: (vehicle?.weekly_rate as number | null) ?? null,
-          }),
-        });
-        update.actual_days = summary.actualDays;
-        update.actual_km_allowed = summary.allowedKm;
-        update.km_driven = summary.drivenKm;
-        update.km_excess = summary.excessKm;
-        update.extra_km_cost = summary.cost;
-        update.extra_days_cost = summary.extraDaysCost;
+      if (returnSummary) {
+        update.actual_days = returnSummary.actualDays;
+        update.actual_km_allowed = returnSummary.allowedKm;
+        update.km_driven = returnSummary.drivenKm;
+        update.km_excess = returnSummary.excessKm;
+        update.extra_km_cost = returnSummary.cost;
+        update.extra_days_cost = returnSummary.extraDaysCost;
       }
     }
   }
@@ -288,8 +304,10 @@ export const POST = async (req: Request, { params }: Ctx) => {
     type: handoverType,
     photos,
     sigLessorPng: sigLessor,
-    sigRenterPng: sigRenter,
+    sigRenterPng: sigRenter ?? null,
     logoDataUri,
+    returnSummary,
+    renterAbsent,
   });
 
   // --- In generated-docs ablegen — org-scoped Pfad ---
