@@ -100,12 +100,13 @@ export default async function ContractDetailPage({ params }: { params: { id: str
   const { data: vehicleRow } = await supabase
     .from("vehicles")
     .select(
-      "extra_km_price, inclusive_km_month, cost_daily, cost_monthly, target_daily_rate, daily_rate, weekly_rate, monthly_rate"
+      "id, extra_km_price, inclusive_km_month, cost_daily, cost_monthly, target_daily_rate, daily_rate, weekly_rate, monthly_rate"
     )
     .eq("plate", c.plate)
     .maybeSingle();
   const vRow = vehicleRow as Pick<
     Vehicle,
+    | "id"
     | "extra_km_price"
     | "inclusive_km_month"
     | "cost_daily"
@@ -115,6 +116,9 @@ export default async function ContractDetailPage({ params }: { params: { id: str
     | "weekly_rate"
     | "monthly_rate"
   > | null;
+  // Fahrzeug-Verknüpfung fürs klickbare Kennzeichen: bevorzugt die feste
+  // vehicle_id am Vertrag, sonst per Kennzeichen aufgelöst (Alt-Verträge ohne id).
+  const vehicleId = c.vehicle_id ?? vRow?.id ?? null;
   // Effektiver Tagespreis für die LIVE-Schätzung der Verlängerungs-Anfragen:
   // Monatspreis ÷ 29 (Vertrag, sonst Fahrzeug) hat Vorrang, sonst Tagespreis
   // (geteilte Regel). So sind auch alte 0,00-Anfragen sofort korrekt.
@@ -399,7 +403,19 @@ export default async function ContractDetailPage({ params }: { params: { id: str
               <Row label="Fahrzeug" value={c.vehicle_type || "—"} />
               <Row
                 label="Kennzeichen"
-                value={<Plate value={c.plate} size="sm" />}
+                value={
+                  vehicleId ? (
+                    <Link
+                      href={`/dashboard/vehicles/${vehicleId}`}
+                      className="inline-flex rounded-btn hover:opacity-80 transition-opacity"
+                      title="Zum Fahrzeug"
+                    >
+                      <Plate value={c.plate} size="sm" />
+                    </Link>
+                  ) : (
+                    <Plate value={c.plate} size="sm" />
+                  )
+                }
               />
             </InfoCard>
 
