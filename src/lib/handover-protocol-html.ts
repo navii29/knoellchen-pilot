@@ -6,8 +6,9 @@
 // Dokument zum Mietvertrag konsistent aussieht.
 
 import type { Contract, Customer, Organization, Vehicle } from "./types";
+import type { ReturnSummary } from "./km";
 import { esc } from "./contract-html";
-import { fmtDate } from "./utils";
+import { fmtDate, fmtEur } from "./utils";
 import { fuelLabel } from "./fuel";
 
 export type HandoverProtocolType = "pickup" | "return";
@@ -22,16 +23,19 @@ const fmtNum = (v: number | null | undefined): string =>
   v == null ? "" : v.toLocaleString("de-DE");
 
 const customerFullName = (c: Customer | null, fallback: string): string => {
-  if (!c) return fallback;
-  const parts = [c.title, c.first_name, c.last_name].filter(Boolean);
-  return parts.length > 0 ? parts.join(" ") : c.last_name || fallback;
+  const parts = [c?.title, c?.first_name, c?.last_name].filter(Boolean);
+  // Kunde bevorzugt, aber auf den Vertragsnamen zurückfallen, wenn der Kunde
+  // (noch) keinen Namen trägt — nicht leer bleiben.
+  return parts.length > 0 ? parts.join(" ") : c?.last_name || fallback;
 };
 
 const customerAddress = (c: Customer | null, contract: Contract): string => {
-  if (!c) return contract.renter_address ?? "";
-  const street = [c.street, c.house_nr].filter(Boolean).join(" ");
-  const zipCity = [c.zip, c.city].filter(Boolean).join(" ");
-  return [street, zipCity].filter(Boolean).join(", ");
+  // Kunde ist die Quelle der Wahrheit; ist dessen Adresse leer, auf den
+  // Vertrags-Snapshot zurückfallen (statt "" zu liefern).
+  const street = [c?.street, c?.house_nr].filter(Boolean).join(" ");
+  const zipCity = [c?.zip, c?.city].filter(Boolean).join(" ");
+  const fromCustomer = [street, zipCity].filter(Boolean).join(", ");
+  return fromCustomer || contract.renter_address || "";
 };
 
 const vehicleModel = (v: Vehicle | null, fallback: string | null): string => {
@@ -115,6 +119,9 @@ const CSS = `
   .meta td.lbl { font-weight: 700; width: 42mm; padding-right: 3mm; }
   .meta td.val { color: #1e1e1e; }
 
+  /* Mehrtage / Mehrkilometer hervorheben */
+  .val-alert { color: #c0392b; font-weight: 700; }
+
   .section-title {
     font-weight: 700;
     font-size: 10pt;
@@ -187,6 +194,10 @@ const dataRow = (label: string, value: string, notes = false): string =>
     notes ? " notes-val" : ""
   }">${esc(value) || "—"}</td></tr>`;
 
+// Rot hervorgehobene Zeile (Mehrtage / Mehrkilometer).
+const alertRow = (label: string, value: string): string =>
+  `<tr><td class="lbl">${esc(label)}</td><td class="val val-alert">${esc(value)}</td></tr>`;
+
 const sigBlock = (
   heading: string,
   name: string,
@@ -198,6 +209,20 @@ const sigBlock = (
     <div class="signature-img">${
       png ? `<img src="${esc(png)}" alt="${esc(heading)}" />` : ""
     }</div>
+    <div class="line"></div>
+    <div class="name">${esc(name)}</div>
+    <div class="date">${esc(dateStr)}</div>
+  </div>
+`;
+
+// Mieter-Unterschriftsblock, wenn der Mieter bei der Rückgabe nicht anwesend war
+// (keine Unterschrift möglich) — dokumentiert das angekreuzt statt einer Linie.
+const absentSigBlock = (heading: string, name: string, dateStr: string): string => `
+  <div class="sig-block">
+    <div class="heading">${esc(heading)}</div>
+    <div class="signature-img" style="align-items:center;">
+      <span class="val-alert" style="font-size:9pt;">&#9746; Mieter nicht vor Ort</span>
+    </div>
     <div class="line"></div>
     <div class="name">${esc(name)}</div>
     <div class="date">${esc(dateStr)}</div>
@@ -230,11 +255,16 @@ export const buildHandoverProtocolHtml = (args: {
   sigLessorPng: string | null;
   sigRenterPng: string | null;
   logoDataUri: string | null;
+  returnSummary?: ReturnSummary | null;
+  renterAbsent?: boolean;
 }): string => {
   const { org, contract, customer, vehicle, type, photos } = args;
+  const summary = args.returnSummary ?? null;
+  const renterAbsent = args.renterAbsent ?? false;
 
   const isPickup = type === "pickup";
   const eventLabel = isPickup ? "Übergabe" : "Rückgabe";
+  const docTitle = `${eventLabel}protokoll`;
 
   const fullName = customerFullName(customer, contract.renter_name);
   const address = customerAddress(customer, contract);
@@ -258,7 +288,7 @@ export const buildHandoverProtocolHtml = (args: {
 <html lang="de">
 <head>
 <meta charset="UTF-8" />
-<title>Übergabeprotokoll ${esc(contract.contract_nr)}</title>
+<title>${esc(docTitle)} ${esc(contract.contract_nr)}</title>
 <style>${CSS}</style>
 </head>
 <body>
@@ -272,12 +302,33 @@ export const buildHandoverProtocolHtml = (args: {
     </div>
 
     <div class="title-bar">
-      <div class="title">Übergabeprotokoll</div>
-      <div class="subtitle">${esc(eventLabel)}</div>
+      <div class="title">${esc(docTitle)}</div>
     </div>
 
     <table class="meta">
       ${metaRow("Vertrag-Nr.:", contract.contract_nr)}
+      ${metaRow(
+        "Laufzeit:",
+        [contract.pickup_date, contract.return_date]
+          .map((d) => (d ? fmtDate(d) : ""))
+          .filter(Boolean)
+          .join(" – ")
+      )}
+      ${
+        !isPickup && contract.actual_return_date
+          ? metaRow("Tatsächliche Rückgabe:", fmtDate(contract.actual_return_date))
+          : ""
+      }
+      ${
+        !isPickup && summary && summary.extraDays > 0
+          ? alertRow(
+              "Mehrtage:",
+              `+${summary.extraDays} ${summary.extraDays === 1 ? "Tag" : "Tage"}${
+                summary.extraDaysCost > 0 ? ` · ${fmtEur(summary.extraDaysCost)}` : ""
+              }`
+            )
+          : ""
+      }
       ${metaRow(`Datum/Uhrzeit (${eventLabel}):`, dateTime)}
     </table>
 
@@ -297,6 +348,24 @@ export const buildHandoverProtocolHtml = (args: {
     <div class="section-title">Zustand bei ${esc(eventLabel)}</div>
     <table class="data-grid">
       ${dataRow("km-Stand:", km != null ? `${fmtNum(km)} km` : "")}
+      ${
+        !isPickup && summary && summary.drivenKm != null
+          ? dataRow("Gefahrene km:", `${fmtNum(summary.drivenKm)} km`)
+          : ""
+      }
+      ${
+        !isPickup && summary && summary.allowedKm != null
+          ? dataRow("Inklusiv-km:", `${fmtNum(summary.allowedKm)} km`)
+          : ""
+      }
+      ${
+        !isPickup && summary && summary.excessKm > 0
+          ? alertRow(
+              "Mehrkilometer:",
+              `+${fmtNum(summary.excessKm)} km${summary.cost > 0 ? ` · ${fmtEur(summary.cost)}` : ""}`
+            )
+          : ""
+      }
       ${dataRow("Tankstand:", fuelLabel(fuel))}
       ${dataRow("Zustand / Schäden:", condition ?? "", true)}
     </table>
@@ -307,7 +376,11 @@ export const buildHandoverProtocolHtml = (args: {
     <div class="sigs">
       <div class="row">
         ${sigBlock("Unterschrift Vermieter", org.name, cityDate, args.sigLessorPng)}
-        ${sigBlock("Unterschrift Mieter", fullName, cityDate, args.sigRenterPng)}
+        ${
+          !isPickup && renterAbsent
+            ? absentSigBlock("Unterschrift Mieter", fullName, cityDate)
+            : sigBlock("Unterschrift Mieter", fullName, cityDate, args.sigRenterPng)
+        }
       </div>
     </div>
   </div>
