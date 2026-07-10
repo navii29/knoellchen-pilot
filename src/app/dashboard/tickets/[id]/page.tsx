@@ -6,6 +6,7 @@ import { Topbar } from "@/components/dashboard/Topbar";
 import { ConfidenceBanner } from "@/components/ticket/ConfidenceBanner";
 import { TicketActions } from "@/components/ticket/TicketActions";
 import { ChargeEditor } from "@/components/ticket/ChargeEditor";
+import { AuthorityEditor } from "@/components/ticket/AuthorityEditor";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { StatusPill } from "@/components/ui/StatusPill";
@@ -130,7 +131,24 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
                   mono: true,
                 },
                 { label: "Tatort", value: t.location || "—" },
-                { label: "Behörde", value: t.authority || "—" },
+              ].map(({ label, value, mono }) => (
+                <div key={label} className="grid grid-cols-[160px_1fr] gap-3 px-5 py-2.5 text-[13.5px]">
+                  <div className="data-label text-ink-muted">{label}</div>
+                  <div className={mono ? "font-mono tnum text-ink" : "text-ink"}>{value}</div>
+                </div>
+              ))}
+              {/* Behörde inkl. voller Postanschrift — inline editierbar (Empfänger
+                  des Zeugenfragebogens). */}
+              <AuthorityEditor
+                ticketId={t.id}
+                value={{
+                  authority: t.authority,
+                  authority_street: t.authority_street,
+                  authority_zip: t.authority_zip,
+                  authority_city: t.authority_city,
+                }}
+              />
+              {[
                 { label: "Aktenzeichen", value: t.reference_nr || "—", mono: true },
                 {
                   label: "Bußgeld (Behörde)",

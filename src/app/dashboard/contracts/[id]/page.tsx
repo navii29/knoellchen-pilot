@@ -6,6 +6,7 @@ import { Topbar } from "@/components/dashboard/Topbar";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ContractActions } from "./ContractActions";
 import { DailyRateRow } from "./DailyRateRow";
+import { RenterInfoEditor } from "./RenterInfoEditor";
 import { redactContractPartner } from "@/lib/redact";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeReturnSummary } from "@/lib/km";
@@ -378,7 +379,9 @@ export default async function ContractDetailPage({ params }: { params: { id: str
           <div className="mt-6 grid sm:grid-cols-2 gap-3">
             <InfoCard Icon={User} title="Mieter">
               <Row label="Name" value={c.renter_name} />
-              <Row label="Geburtsdatum" value={c.renter_birthday || "—"} />
+              {/* Anschrift + Geburtsdatum inline nachtragbar (fehlen oft bei
+                  importierten Alt-Verträgen; speisen den Zeugenfragebogen). */}
+              <RenterInfoEditor contractId={c.id} address={c.renter_address} birthday={c.renter_birthday} />
               <Row label="Führerschein" value={c.renter_license_nr || "—"} />
               <Row label="E-Mail" value={c.renter_email || "—"} />
               <Row label="Telefon" value={c.renter_phone || "—"} />
