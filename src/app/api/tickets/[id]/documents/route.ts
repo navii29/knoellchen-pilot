@@ -6,6 +6,7 @@ import {
   generateQuestionnairePdf,
 } from "@/lib/pdf-generator";
 import { computeCharge } from "@/lib/charge";
+import { loadLogoBase64 } from "@/lib/contract-loaders";
 import type { Contract, Customer, Organization, Ticket } from "@/lib/types";
 
 export const POST = async (
@@ -45,12 +46,21 @@ export const POST = async (
   const { data: customerData } = contract?.customer_id
     ? await admin
         .from("customers")
-        .select("salutation, first_name, last_name")
+        .select("salutation, first_name, last_name, street, zip, city, birthday")
         .eq("id", contract.customer_id)
         .eq("org_id", profile.org_id)
         .maybeSingle()
     : { data: null };
-  const customer = (customerData as Pick<Customer, "salutation"> | null) ?? null;
+  // Fallback-Quelle für Mieter-Anschrift/Geburtsdatum, wenn am Vertrag nicht
+  // mitgeschrieben (verknüpfter Kunde ist die Quelle der Wahrheit).
+  const customer =
+    (customerData as Pick<
+      Customer,
+      "salutation" | "street" | "zip" | "city" | "birthday"
+    > | null) ?? null;
+
+  // Echtes Org-Logo für den Briefkopf (Bucket "brand"); null → Initial-Fallback.
+  const logoDataUri = await loadLogoBase64(admin, o.logo_path ?? null);
 
   // §14 UStG: ohne Bankverbindung ist die Rechnung nicht zahlbar → blockieren.
   if (!o.iban || !o.iban.trim()) {
@@ -91,9 +101,9 @@ export const POST = async (
     t.invoice_nr = nr as string;
   }
 
-  const letter = generateLetterPdf(o, t, contract, customer);
-  const invoice = generateInvoicePdf(o, t, contract);
-  const questionnaire = generateQuestionnairePdf(o, t, contract);
+  const letter = generateLetterPdf(o, t, contract, customer, logoDataUri);
+  const invoice = generateInvoicePdf(o, t, contract, customer, logoDataUri);
+  const questionnaire = generateQuestionnairePdf(o, t, contract, customer, logoDataUri);
 
   // Storage-Pfad auf die UUID des Tickets — verhindert das Überschreiben fremder
   // Belege bei kollidierender Vorgangs-Nr. (ticket_nr ist nur ein Anzeige-Label).
