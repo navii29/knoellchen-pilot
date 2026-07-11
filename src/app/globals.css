@@ -64,11 +64,16 @@
   --aurora-blue: rgba(0, 113, 227, 0.30);
   --aurora-indigo: rgba(124, 108, 255, 0.24);
 
-  /* signal — now Apple vivid blue (CTA / active / link) */
-  --signal: #0071e3;
+  /* signal — Apple vivid blue (CTA / active / link). Als RGB-Kanäle, damit
+     Tailwind-Utilities (bg-signal, text-signal, bg-signal/15) UND scoped
+     Overrides (.dash-clean → Schwarz) daraus lesen. */
+  --signal-rgb: 0 113 227;
+  --signal-soft-rgb: 233 242 254;
+  --signal-ink-rgb: 0 102 204;
+  --signal: rgb(var(--signal-rgb));
   --signal-strong: #0066cc;
-  --signal-soft: #e9f2fe;
-  --signal-ink: #0066cc;
+  --signal-soft: rgb(var(--signal-soft-rgb));
+  --signal-ink: rgb(var(--signal-ink-rgb));
 
   /* license-plate chrome */
   --plate-eu: #003399;
@@ -505,4 +510,58 @@ body {
 /* iOS: verhindert Auto-Zoom auf Inputs mit < 16px Schrift */
 @media (max-width: 768px) {
   input, select, textarea { font-size: 16px !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Dashboard „Clean"-Theme — minimalistisch, flach, monochrom.
+   NUR im Operating-Dashboard aktiv (Klasse .dash-clean am Layout-Root).
+   Landing + Portal behalten die Liquid-Glass-/Aurora-Optik.
+   ═══════════════════════════════════════════════════════════════════════ */
+.dash-clean {
+  /* Akzent monochrom: aktive Nav/Buttons/Toggles/Links → Schwarz-Anthrazit.
+     Wirkt automatisch auf alle bg-signal/text-signal/bg-signal/15-Utilities. */
+  --signal-rgb: 24 24 27;
+  --signal-soft-rgb: 240 240 242;
+  --signal-ink-rgb: 24 24 27;
+  --canvas: #f4f5f7;
+  background: #f4f5f7;
+}
+
+/* Aurora-Lichtfeld aus — ruhige, flache Fläche. */
+.dash-clean .workspace-aurora { display: none !important; }
+
+/* Karten flach: solides Weiß, weicher diffuser Schatten (kein Glass-Blur),
+   größere Rundung, feine Hairline. Cascaded über alle .panel/.glass-*-Karten. */
+.dash-clean .panel,
+.dash-clean .glass-card,
+.dash-clean .glass-raised {
+  background: #ffffff;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border: 1px solid #ececef;
+  border-radius: 22px;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 12px 30px -16px rgba(16, 24, 40, 0.14);
+}
+.dash-clean .glass-raised {
+  box-shadow:
+    0 2px 6px rgba(16, 24, 40, 0.06),
+    0 30px 60px -24px rgba(16, 24, 40, 0.22);
+}
+
+/* Topbar (glass-chrome): flache weiße Leiste mit Hairline unten, kein Blur. */
+.dash-clean .glass-chrome {
+  background: #ffffff;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-color: #ececef;
+  box-shadow: none;
+}
+
+/* Glass-Effekte neutralisieren, die im flachen Look stören. */
+.dash-clean .glass-sheen::before { display: none !important; }
+.dash-clean .glass-active {
+  background: rgba(24, 24, 27, 0.06) !important;
+  box-shadow: none !important;
 }

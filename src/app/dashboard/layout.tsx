@@ -45,7 +45,7 @@ export default async function DashboardLayout({
   if (org && org.onboarding_completed === false) redirect("/onboarding");
 
   return (
-    <div className="md:h-screen md:flex bg-canvas min-h-screen relative isolate">
+    <div className="dash-clean md:h-screen md:flex bg-canvas min-h-screen relative isolate">
       {/* Misst aktive Zeit fürs Inhaber-Überwachungs-Dashboard. */}
       <Heartbeat />
       {/* Aurora field — the luminous light the Liquid Glass refracts. */}
