@@ -6,6 +6,87 @@ import { buildExtensionNotification } from "@/lib/extension-notify";
 import { buildNachtragInput } from "@/lib/nachtrag-input";
 import { generateNachtragPdf } from "@/lib/nachtrag-pdf";
 import { fmtDate } from "@/lib/utils";
+import { daysBetween } from "@/lib/km";
+import { resolveEffectiveDailyRate, estimateExtensionCost } from "@/lib/daily-rate";
+
+// Nachtrag-zum-Mietvertrag-PDF erzeugen + speichern (best-effort). Geteilt von
+// der Genehmigung (approve) und der Operator-Anlage (create). Fehler werden
+// PII-frei geloggt und kippen den Vorgang NIE.
+const generateAndStoreNachtrag = async (
+  admin: ReturnType<typeof createAdminClient>,
+  orgId: string,
+  contractId: string,
+  extension: {
+    id: string;
+    customer_id: string | null;
+    current_return_date: string | null;
+    requested_return_date: string | null;
+    extra_days: number | null;
+  }
+): Promise<void> => {
+  try {
+    const { data: full } = await admin
+      .from("contracts")
+      .select("contract_nr, renter_name, plate, vehicle_id, vehicle_type, daily_rate, weekly_rate, monthly_rate")
+      .eq("id", contractId)
+      .eq("org_id", orgId)
+      .maybeSingle();
+    const { data: org } = await admin
+      .from("organizations")
+      .select("name, city, logo_path, brand_color")
+      .eq("id", orgId)
+      .maybeSingle();
+    if (!full || !org) {
+      console.error(
+        "[extension] nachtrag übersprungen — contract/org nicht ladbar (contract_id=" + contractId + ")"
+      );
+      return;
+    }
+    const input = await buildNachtragInput(admin, {
+      orgId,
+      org: org as { name: string | null; city: string | null; logo_path: string | null; brand_color: string | null },
+      contract: full as {
+        contract_nr: string | null;
+        renter_name: string | null;
+        plate: string | null;
+        vehicle_id: string | null;
+        vehicle_type: string | null;
+        daily_rate: number | null;
+        weekly_rate: number | null;
+        monthly_rate: number | null;
+      },
+      extension: extension as {
+        customer_id: string | null;
+        current_return_date: string | null;
+        requested_return_date: string | null;
+        extra_days: number | null;
+      },
+      dateStr: fmtDate(new Date().toISOString()),
+    });
+    const pdfBuf = await generateNachtragPdf(input);
+    const stamp = Date.now().toString(36);
+    const path = `${orgId}/${contractId}/nachtrag-${stamp}.pdf`;
+    const { error: upErr } = await admin.storage
+      .from("generated-docs")
+      .upload(path, pdfBuf, { contentType: "application/pdf", upsert: true });
+    if (upErr) {
+      console.error("[extension] nachtrag upload fehlgeschlagen (contract_id=" + contractId + ")");
+    } else {
+      const { error: pErr } = await admin
+        .from("contract_extensions")
+        .update({ addendum_pdf_path: path })
+        .eq("id", extension.id)
+        .eq("org_id", orgId);
+      if (pErr)
+        console.error(
+          "[extension] nachtrag addendum_pdf_path update fehlgeschlagen (contract_id=" + contractId + "):",
+          pErr.code ?? ""
+        );
+    }
+  } catch {
+    console.error("[extension] nachtrag generierung fehlgeschlagen (contract_id=" + contractId + ")");
+  }
+};
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -37,14 +118,147 @@ export const POST = async (req: Request, { params }: Ctx) => {
   const auth = await requireAuth();
   if (!auth) return NextResponse.json({ error: "Nicht authentifiziert" }, { status: 401 });
 
-  let body: { extension_id?: string; action?: string };
+  let body: {
+    extension_id?: string;
+    action?: string;
+    requested_return_date?: string;
+    requested_return_time?: string;
+  };
   try {
-    body = (await req.json()) as { extension_id?: string; action?: string };
+    body = (await req.json()) as typeof body;
   } catch {
     return NextResponse.json({ error: "Ungültiger Request-Body" }, { status: 400 });
   }
 
   const { extension_id, action } = body;
+  const admin = createAdminClient();
+
+  // ── Operator-initiierte Verlängerung (Dashboard) ─────────────────────────
+  // Ein Klick: Vertrag verlängern + Nachtrag erzeugen. Legt eine bereits
+  // BESTÄTIGTE Verlängerung an (keine Mieter-Anfrage nötig). Preis-/Tage-Logik
+  // identisch zum Portal (estimateExtensionCost + effektiver Tagessatz).
+  if (action === "create") {
+    const requested = typeof body.requested_return_date === "string" ? body.requested_return_date : "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(requested) || Number.isNaN(new Date(requested).getTime())) {
+      return NextResponse.json({ error: "Ungültiges Rückgabedatum." }, { status: 400 });
+    }
+    const reqTime = body.requested_return_time?.trim();
+    const requestedReturnTime =
+      reqTime && /^([01]\d|2[0-3]):[0-5]\d$/.test(reqTime) ? reqTime : null;
+
+    const { data: contract } = await admin
+      .from("contracts")
+      .select("*")
+      .eq("id", params.id)
+      .eq("org_id", auth.org_id)
+      .maybeSingle();
+    if (!contract) {
+      return NextResponse.json({ error: "Vertrag nicht gefunden" }, { status: 404 });
+    }
+    if (contract.status !== "aktiv") {
+      return NextResponse.json(
+        { error: "Nur aktive Verträge können verlängert werden." },
+        { status: 400 }
+      );
+    }
+    const current = contract.return_date as string;
+    const extraDays = daysBetween(current, requested);
+    if (!Number.isFinite(extraDays) || extraDays <= 0) {
+      return NextResponse.json(
+        { error: "Das neue Rückgabedatum muss nach dem aktuellen liegen." },
+        { status: 400 }
+      );
+    }
+    if (extraDays > 365) {
+      return NextResponse.json(
+        { error: "Verlängerung darf maximal 365 Tage betragen." },
+        { status: 400 }
+      );
+    }
+
+    // Effektiver Tagessatz (Vertrag, sonst Fahrzeug-Fallback) — geteilte Regel.
+    const vehKey = contract.vehicle_id ? "id" : "plate";
+    const vehVal = (contract.vehicle_id ?? contract.plate) as string | null;
+    let vehicleRate: number | null = null;
+    let vehicleMonthlyRate: number | null = null;
+    let vehicleWeeklyRate: number | null = null;
+    if (vehVal) {
+      const { data: veh } = await admin
+        .from("vehicles")
+        .select("daily_rate, weekly_rate, monthly_rate")
+        .eq("org_id", auth.org_id)
+        .eq(vehKey, vehVal)
+        .maybeSingle();
+      vehicleRate = (veh?.daily_rate as number | null) ?? null;
+      vehicleMonthlyRate = (veh?.monthly_rate as number | null) ?? null;
+      vehicleWeeklyRate = (veh?.weekly_rate as number | null) ?? null;
+    }
+    const daily = resolveEffectiveDailyRate({
+      contractRate: contract.daily_rate,
+      vehicleRate,
+      contractMonthlyRate: contract.monthly_rate,
+      vehicleMonthlyRate,
+      contractWeeklyRate: contract.weekly_rate,
+      vehicleWeeklyRate,
+    });
+    const estCost = estimateExtensionCost({ extraDays, rate: daily }) ?? 0;
+
+    // Verlängerung direkt BESTÄTIGT anlegen.
+    const { data: ext, error: insErr } = await admin
+      .from("contract_extensions")
+      .insert({
+        contract_id: params.id,
+        org_id: auth.org_id,
+        customer_id: (contract.customer_id as string | null) ?? null,
+        current_return_date: current,
+        requested_return_date: requested,
+        requested_return_time: requestedReturnTime,
+        extra_days: extraDays,
+        est_cost: estCost,
+        status: "bestaetigt",
+      })
+      .select("*")
+      .single();
+    if (insErr || !ext) {
+      return NextResponse.json(
+        { error: insErr?.message ?? "Verlängerung konnte nicht angelegt werden." },
+        { status: 500 }
+      );
+    }
+
+    // Vertrag verlängern (return_date + optional return_time).
+    const { error: cErr } = await admin
+      .from("contracts")
+      .update({
+        return_date: requested,
+        ...(requestedReturnTime ? { return_time: requestedReturnTime } : {}),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", params.id)
+      .eq("org_id", auth.org_id);
+    if (cErr) return NextResponse.json({ error: cErr.message }, { status: 500 });
+
+    // Noch offene Mieter-Anfragen desselben Vertrags sind jetzt hinfällig.
+    await admin
+      .from("contract_extensions")
+      .update({ status: "abgelehnt" })
+      .eq("contract_id", params.id)
+      .eq("org_id", auth.org_id)
+      .eq("status", "angefragt")
+      .neq("id", ext.id);
+
+    await logActivity(
+      admin,
+      auth.user.id,
+      auth.org_id,
+      "contract.extension_created",
+      (contract as { contract_nr?: string }).contract_nr ?? null
+    );
+
+    await generateAndStoreNachtrag(admin, auth.org_id, params.id, ext);
+
+    return NextResponse.json({ ok: true, status: "bestaetigt", extension_id: ext.id });
+  }
 
   if (!extension_id || typeof extension_id !== "string") {
     return NextResponse.json({ error: "extension_id fehlt" }, { status: 400 });
@@ -52,8 +266,6 @@ export const POST = async (req: Request, { params }: Ctx) => {
   if (action !== "approve" && action !== "decline") {
     return NextResponse.json({ error: "action muss 'approve' oder 'decline' sein" }, { status: 400 });
   }
-
-  const admin = createAdminClient();
 
   // Verlängerungs-Anfrage laden — org-scoped UND zum richtigen Vertrag gehörig.
   const { data: extension } = await admin
@@ -206,87 +418,9 @@ export const POST = async (req: Request, { params }: Ctx) => {
     }
 
     // Nachtrag-zum-Mietvertrag-PDF best-effort NACH persistierter Entscheidung
-    // erzeugen + speichern. Fehler werden PII-frei geloggt (nur contract_id +
-    // error.code), kippen die Genehmigung NIE. Geteilte Loader/Funktionen.
-    try {
-      const { data: full } = await admin
-        .from("contracts")
-        .select("contract_nr, renter_name, plate, vehicle_id, vehicle_type, daily_rate, weekly_rate, monthly_rate")
-        .eq("id", params.id)
-        .eq("org_id", auth.org_id)
-        .maybeSingle();
-      const { data: org } = await admin
-        .from("organizations")
-        .select("name, city, logo_path, brand_color")
-        .eq("id", auth.org_id)
-        .maybeSingle();
-      if (!full || !org) {
-        console.error(
-          "[extension] nachtrag übersprungen — contract/org nicht ladbar (contract_id=" +
-            params.id +
-            ")"
-        );
-      } else {
-        // Geteilter Assembler — identische Logik wie zuvor inline (verhaltens-
-        // neutral, bewiesen in nachtrag-input.test.ts). Unsigniert: keine
-        // Signaturen → leere Unterschriftslinien wie bisher.
-        const input = await buildNachtragInput(admin, {
-          orgId: auth.org_id,
-          org: org as {
-            name: string | null;
-            city: string | null;
-            logo_path: string | null;
-            brand_color: string | null;
-          },
-          contract: full as {
-            contract_nr: string | null;
-            renter_name: string | null;
-            plate: string | null;
-            vehicle_id: string | null;
-            vehicle_type: string | null;
-            daily_rate: number | null;
-            weekly_rate: number | null;
-            monthly_rate: number | null;
-          },
-          extension: extension as {
-            customer_id: string | null;
-            current_return_date: string | null;
-            requested_return_date: string | null;
-            extra_days: number | null;
-          },
-          dateStr: fmtDate(new Date().toISOString()),
-        });
-        const pdfBuf = await generateNachtragPdf(input);
-        const stamp = Date.now().toString(36);
-        const path = `${auth.org_id}/${params.id}/nachtrag-${stamp}.pdf`;
-        const { error: upErr } = await admin.storage
-          .from("generated-docs")
-          .upload(path, pdfBuf, { contentType: "application/pdf", upsert: true });
-        if (upErr) {
-          // Storage-Fehler generisch loggen (message kann den Pfad spiegeln).
-          console.error(
-            "[extension] nachtrag upload fehlgeschlagen (contract_id=" + params.id + ")"
-          );
-        } else {
-          const { error: pErr } = await admin
-            .from("contract_extensions")
-            .update({ addendum_pdf_path: path })
-            .eq("id", extension_id)
-            .eq("org_id", auth.org_id);
-          if (pErr)
-            console.error(
-              "[extension] nachtrag addendum_pdf_path update fehlgeschlagen (contract_id=" +
-                params.id +
-                "):",
-              pErr.code ?? ""
-            );
-        }
-      }
-    } catch {
-      console.error(
-        "[extension] nachtrag generierung fehlgeschlagen (contract_id=" + params.id + ")"
-      );
-    }
+    // (geteilter Helfer — identisch zur Operator-Anlage). Fehler kippen die
+    // Genehmigung NIE.
+    await generateAndStoreNachtrag(admin, auth.org_id, params.id, extension);
 
     return NextResponse.json({ ok: true, status: "bestaetigt" });
   }
