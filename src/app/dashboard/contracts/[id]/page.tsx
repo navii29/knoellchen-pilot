@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ContractActions } from "./ContractActions";
 import { DailyRateRow } from "./DailyRateRow";
 import { RenterInfoEditor } from "./RenterInfoEditor";
+import { ExtendContractForm } from "./ExtendContractForm";
 import { redactContractPartner } from "@/lib/redact";
 import { fmtDate, fmtEur } from "@/lib/utils";
 import { computeReturnSummary } from "@/lib/km";
@@ -330,6 +331,17 @@ export default async function ContractDetailPage({ params }: { params: { id: str
               risk_override_reason={c.risk_override_reason ?? null}
             />
           </div>
+
+          {/* Operator-Verlängerung — direkt im Dashboard (nur aktive Verträge) */}
+          {c.status === "aktiv" && (
+            <div className="mt-6">
+              <ExtendContractForm
+                contractId={c.id}
+                currentReturnDate={c.return_date}
+                effectiveDailyRate={effectiveDailyRate}
+              />
+            </div>
+          )}
 
           {/* Verlängerungs-Anfragen (nur wenn offen) */}
           <ExtensionRequests
