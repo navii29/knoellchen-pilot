@@ -49,6 +49,9 @@ export const GET = async (req: Request) => {
       `manufacturer.ilike.${like}`,
       `model.ilike.${like}`,
       `vehicle_type.ilike.${like}`,
+      // Auch nach FIN suchen — Operatoren suchen ein Fahrzeug oft über die
+      // Fahrgestellnummer aus dem Fahrzeugschein.
+      `fin_number.ilike.${like}`,
     ];
     // Kennzeichen werden kanonisch OHNE Leerzeichen gespeichert ("M-S 8271" ->
     // "M-S8271"). Damit eine Eingabe MIT Leerzeichen das gespeicherte Plate
