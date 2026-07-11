@@ -513,6 +513,16 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+   Metrik-Typografie — konsistente KPI-Hierarchie fürs Dashboard.
+   (Refactoring UI: „Hierarchy is everything" — die Kennzahl ist der Fokus.)
+   Ein Skala-Set statt Ad-hoc-Pixelwerten; Tabular-Nums für saubere Ziffern.
+   ═══════════════════════════════════════════════════════════════════════ */
+.metric-xl { font-weight: 600; font-size: clamp(32px, 3.4vw, 42px); line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--ink); }
+.metric-lg { font-weight: 600; font-size: 32px; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--ink); }
+.metric-md { font-weight: 600; font-size: 24px; line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; color: var(--ink); }
+.metric-cap { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-muted); }
+
+/* ═══════════════════════════════════════════════════════════════════════
    Dashboard „Clean"-Theme — minimalistisch, flach, monochrom.
    NUR im Operating-Dashboard aktiv (Klasse .dash-clean am Layout-Root).
    Landing + Portal behalten die Liquid-Glass-/Aurora-Optik.

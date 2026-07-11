@@ -24,32 +24,27 @@ export const ActionBar = ({ items }: { items: ActionItem[] }) => {
             <Link
               key={it.label}
               href={it.href}
-              className="group glass-card glass-sheen rounded-card p-4 flex items-center gap-3.5 hover:-translate-y-px transition-transform"
+              className="group glass-card glass-sheen rounded-card p-4 flex flex-col gap-2.5 hover:-translate-y-px transition-transform"
             >
-              <span
-                className={`shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl ${
-                  active ? "bg-signal text-white" : "bg-signal-soft text-signal"
-                }`}
-              >
-                <it.Icon size={18} strokeWidth={2} />
-              </span>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className={`font-display font-semibold text-[26px] leading-none tabular-nums ${
-                      active ? "text-ink" : "text-ink-muted"
-                    }`}
-                  >
-                    {it.count}
-                  </span>
-                  {active && <span className="w-1.5 h-1.5 rounded-full bg-signal" />}
-                </div>
-                <div className="text-[12.5px] text-ink-muted mt-1 leading-tight">{it.label}</div>
+              {/* Kopfzeile: Icon dezent + Chevron — die Zahl darunter führt. */}
+              <div className="flex items-center justify-between">
+                <it.Icon
+                  size={17}
+                  strokeWidth={1.9}
+                  className={active ? "text-ink" : "text-ink-muted"}
+                />
+                <ChevronRight
+                  size={15}
+                  className="shrink-0 text-ink-muted opacity-0 group-hover:opacity-100 transition-opacity"
+                />
               </div>
-              <ChevronRight
-                size={16}
-                className="ml-auto shrink-0 text-ink-muted opacity-0 group-hover:opacity-100 transition-opacity"
-              />
+              <div className="flex items-center gap-2">
+                <span className={active ? "metric-md" : "metric-md text-ink-muted"}>
+                  {it.count}
+                </span>
+                {active && <span className="w-1.5 h-1.5 rounded-full bg-signal" />}
+              </div>
+              <div className="text-[12.5px] text-ink-muted leading-tight">{it.label}</div>
             </Link>
           );
         })}
