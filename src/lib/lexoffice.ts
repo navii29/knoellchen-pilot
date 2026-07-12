@@ -86,6 +86,10 @@ export type LxProfile = {
   taxNumber?: string;
   vatId?: string;
   email?: string;
+  // Steuer-Klassifizierung des LexOffice-Kontos — maßgeblich dafür, welche
+  // taxType eine Rechnung tragen DARF (sonst 406). NICHT aus unserem Flag ableiten.
+  taxType?: "net" | "gross" | "vatfree";
+  smallBusiness?: boolean;
 };
 
 export class LexOfficeError extends Error {
@@ -103,15 +107,32 @@ const request = async <T>(
   path: string,
   init: RequestInit = {}
 ): Promise<T> => {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      ...(init.headers ?? {}),
-    },
-  });
+  // Harte Zeitgrenze (AbortController): ohne Timeout kann ein langsamer
+  // LexOffice-Call die Serverless-Funktion überleben und mitten in der
+  // Rechnungserstellung abgebrochen werden — dann bleibt in der Aktivierungs-
+  // Route ein "__pending__"-Lock hängen. Mit Timeout schlägt der Call sauber
+  // fehl (→ catch setzt das Lock zurück).
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 25_000);
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      ...init,
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(init.headers ?? {}),
+      },
+    });
+  } catch (e) {
+    if (e instanceof Error && e.name === "AbortError")
+      throw new LexOfficeError(504, "LexOffice antwortet nicht (Zeitüberschreitung).", null);
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
   const text = await res.text();
   let body: unknown = null;
   try {

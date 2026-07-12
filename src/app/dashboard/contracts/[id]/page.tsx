@@ -77,12 +77,19 @@ export default async function ContractDetailPage({ params }: { params: { id: str
 
   const [{ data: contract }, { data: orgRow }] = await Promise.all([
     supabase.from("contracts").select("*").eq("id", params.id).maybeSingle(),
-    supabase.from("organizations").select("lexoffice_enabled").single(),
+    supabase.from("organizations").select("lexoffice_enabled, lexoffice_api_key").single(),
   ]);
   if (!contract) notFound();
   const c = contract as Contract;
-  const lexofficeEnabled = !!(orgRow as { lexoffice_enabled?: boolean } | null)
-    ?.lexoffice_enabled;
+  // „Bereit" nur, wenn aktiviert UND ein Key hinterlegt ist — sonst würde der
+  // Button „& Rechnung erstellen" versprechen, ohne dass eine Rechnung entsteht.
+  // (Server-Component: der Key verlässt den Server nicht, nur der Boolean.)
+  const _lx = orgRow as { lexoffice_enabled?: boolean; lexoffice_api_key?: string | null } | null;
+  const lexofficeEnabled = !!(
+    _lx?.lexoffice_enabled &&
+    _lx?.lexoffice_api_key &&
+    String(_lx.lexoffice_api_key).trim()
+  );
 
   const { data: tickets } = await supabase
     .from("tickets")
