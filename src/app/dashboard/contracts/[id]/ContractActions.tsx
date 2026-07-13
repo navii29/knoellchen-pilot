@@ -241,8 +241,8 @@ export const ContractActions = ({
             disabled={busy != null}
             title={
               lexofficeEnabled
-                ? "Erstellt Miet-Rechnung + separate Kautions-Rechnung in LexOffice"
-                : "Markiert den Vertrag als aktiviert (LexOffice nicht aktiviert — keine Rechnung)"
+                ? "Erstellt jetzt Miet-Rechnung + separate Kautions-Rechnung in LexOffice (passiert sonst automatisch bei Mietbeginn)"
+                : "Markiert den Vertrag als abgerechnet (LexOffice nicht aktiviert — keine Rechnung)"
             }
             className="inline-flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-btn bg-signal text-white hover:opacity-90 transition-opacity disabled:opacity-50"
           >
@@ -251,13 +251,13 @@ export const ContractActions = ({
             ) : (
               <Zap size={14} />
             )}
-            {lexofficeEnabled ? "Aktivieren & Rechnung erstellen" : "Aktivieren"}
+            {lexofficeEnabled ? "Rechnung erstellen" : "Als abgerechnet markieren"}
           </button>
         )}
 
         {contract.is_activated && (
           <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 h-8 rounded-btn border border-[#166534]/30 bg-[#E6F4EA] text-[#166534] font-mono">
-            <Check size={12} /> Aktiviert
+            <Check size={12} /> Abgerechnet
           </span>
         )}
 

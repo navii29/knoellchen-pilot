@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/activity";
-import {
-  LexOfficeError,
-  buildContractInvoice,
-  buildDepositInvoice,
-  lxCreateInvoice,
-  lxGetProfile,
-} from "@/lib/lexoffice";
+import { LexOfficeError } from "@/lib/lexoffice";
+import { createContractInvoices } from "@/lib/contract-invoicing";
+import type { Contract } from "@/lib/types";
 
 const requireAuth = async () => {
   const supabase = createClient();
@@ -104,134 +100,17 @@ export const POST = async (_req: Request, { params }: Ctx) => {
 
   if (lexofficeReady) {
     const apiKey = org!.lexoffice_api_key as string;
-    const [{ data: customer }, { data: vehicle }] = await Promise.all([
-      contract.customer_id
-        ? admin
-            .from("customers")
-            .select("*")
-            .eq("id", contract.customer_id)
-            .eq("org_id", auth.org_id)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-      contract.vehicle_id
-        ? admin
-            .from("vehicles")
-            .select(
-              "manufacturer, model, vehicle_type, extra_km_price, lexoffice_product_id"
-            )
-            .eq("id", contract.vehicle_id)
-            .eq("org_id", auth.org_id)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-    ]);
-
-    // Nebenläufigkeit: Statt eines Laufzeit-Guards (snapshot-basiert, anfällig für
-    // gleichzeitige Aktivierungen → Doppel-Rechnungen) claimen wir jeden Beleg
-    // atomar in der DB. Ein bedingtes UPDATE setzt einen "__pending__"-Marker NUR
-    // solange die Spalte null ist (.is(..., null)) und liefert nur dann eine Zeile
-    // zurück. Genau ein gleichzeitiger Request gewinnt den Claim und erstellt die
-    // Rechnung; der echte LexOffice-ID ersetzt danach den Marker. Bei Fehler wird
-    // der Marker auf null zurückgesetzt — die inkrementelle Retry-Sicherheit bleibt
-    // erhalten (ein späterer Aufruf kann den Beleg erneut claimen).
     try {
-      // Selbstheilung: hängengebliebene "__pending__"-Marker (aus einem
-      // abgebrochenen früheren Lauf) auf null zurücksetzen, damit der .is(null)-
-      // Claim unten sie neu vergeben kann. Mit dem 25s-Timeout im LexOffice-
-      // Client ist ein echter In-Flight-Marker kurzlebig; ein permanent
-      // hängender wird so wieder aufgelöst.
-      if (contract.lexoffice_invoice_id === "__pending__")
-        await admin
-          .from("contracts")
-          .update({ lexoffice_invoice_id: null })
-          .eq("id", params.id)
-          .eq("org_id", auth.org_id)
-          .eq("lexoffice_invoice_id", "__pending__");
-      if (contract.deposit_invoice_id === "__pending__")
-        await admin
-          .from("contracts")
-          .update({ deposit_invoice_id: null })
-          .eq("id", params.id)
-          .eq("org_id", auth.org_id)
-          .eq("deposit_invoice_id", "__pending__");
-
-      // Steuerart aus dem LexOffice-KONTO ableiten (nicht aus unserem
-      // kleinunternehmer-Flag) — sonst lehnt LexOffice die Rechnung mit 406 ab,
-      // wenn die Klassifizierung abweicht.
-      const profile = await lxGetProfile(apiKey);
-      const kleinunternehmer = profile.taxType === "vatfree" || profile.smallBusiness === true;
-
-      // 1) Miet-Rechnung — atomar claimen, dann erstellen.
-      if (!rentalInvoiceId) {
-        const { data: claimed } = await admin
-          .from("contracts")
-          .update({ lexoffice_invoice_id: "__pending__" })
-          .eq("id", params.id)
-          .eq("org_id", auth.org_id)
-          .is("lexoffice_invoice_id", null)
-          .select("id")
-          .maybeSingle();
-        if (claimed) {
-          try {
-            const invoice = buildContractInvoice(
-              contract,
-              customer ?? null,
-              vehicle ?? null,
-              kleinunternehmer
-            );
-            const result = await lxCreateInvoice(apiKey, invoice);
-            rentalInvoiceId = result.id;
-            await admin
-              .from("contracts")
-              .update({ lexoffice_invoice_id: rentalInvoiceId })
-              .eq("id", params.id)
-              .eq("org_id", auth.org_id);
-          } catch (e) {
-            // Claim zurücknehmen, damit ein Retry erneut greifen kann.
-            await admin
-              .from("contracts")
-              .update({ lexoffice_invoice_id: null })
-              .eq("id", params.id)
-              .eq("org_id", auth.org_id)
-              .eq("lexoffice_invoice_id", "__pending__");
-            throw e;
-          }
-        }
-      }
-      // 2) Separate, steuerneutrale Kautions-Rechnung — ebenfalls atomar claimen.
-      if (!depositInvoiceId && Number(contract.deposit ?? 0) > 0) {
-        const { data: claimed } = await admin
-          .from("contracts")
-          .update({ deposit_invoice_id: "__pending__" })
-          .eq("id", params.id)
-          .eq("org_id", auth.org_id)
-          .is("deposit_invoice_id", null)
-          .select("id")
-          .maybeSingle();
-        if (claimed) {
-          try {
-            const depInvoice = buildDepositInvoice(
-              contract,
-              customer ?? null,
-              kleinunternehmer
-            );
-            const depResult = await lxCreateInvoice(apiKey, depInvoice);
-            depositInvoiceId = depResult.id;
-            await admin
-              .from("contracts")
-              .update({ deposit_invoice_id: depositInvoiceId })
-              .eq("id", params.id)
-              .eq("org_id", auth.org_id);
-          } catch (e) {
-            await admin
-              .from("contracts")
-              .update({ deposit_invoice_id: null })
-              .eq("id", params.id)
-              .eq("org_id", auth.org_id)
-              .eq("deposit_invoice_id", "__pending__");
-            throw e;
-          }
-        }
-      }
+      // Geteilte, idempotente Rechnungserstellung (identisch mit der
+      // Auto-Abrechnung im Cron).
+      const res = await createContractInvoices({
+        admin,
+        orgId: auth.org_id,
+        apiKey,
+        contract: contract as Contract,
+      });
+      rentalInvoiceId = res.rentalInvoiceId;
+      depositInvoiceId = res.depositInvoiceId;
     } catch (e) {
       if (e instanceof LexOfficeError) {
         return NextResponse.json(
