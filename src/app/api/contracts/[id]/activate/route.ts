@@ -6,6 +6,7 @@ import {
   buildContractInvoice,
   buildDepositInvoice,
   lxCreateInvoice,
+  lxGetProfile,
 } from "@/lib/lexoffice";
 
 const requireAuth = async () => {
@@ -74,13 +75,32 @@ export const POST = async (_req: Request, { params }: Ctx) => {
 
   const { data: org } = await admin
     .from("organizations")
-    .select("lexoffice_api_key, lexoffice_enabled, kleinunternehmer")
+    .select("lexoffice_api_key, lexoffice_enabled")
     .eq("id", auth.org_id)
     .single();
 
-  const lexofficeReady = Boolean(org?.lexoffice_enabled && org?.lexoffice_api_key);
-  let rentalInvoiceId: string | null = contract.lexoffice_invoice_id ?? null;
-  let depositInvoiceId: string | null = contract.deposit_invoice_id ?? null;
+  // Bug-Fix: LexOffice aktiviert, aber KEIN Key hinterlegt (z. B. Key entfernt,
+  // enabled blieb an) → NICHT stillschweigend ohne die versprochene Rechnung
+  // aktivieren, sondern klar melden.
+  const keyPresent = !!(org?.lexoffice_api_key && String(org.lexoffice_api_key).trim());
+  if (org?.lexoffice_enabled && !keyPresent) {
+    return NextResponse.json(
+      {
+        error:
+          "LexOffice ist aktiviert, aber es ist kein API-Key hinterlegt. Bitte in den Einstellungen den LexOffice-API-Key eintragen.",
+      },
+      { status: 400 }
+    );
+  }
+
+  const lexofficeReady = Boolean(org?.lexoffice_enabled && keyPresent);
+  // "__pending__" ist KEINE echte Rechnungs-ID (hängengebliebenes Lock aus einem
+  // abgebrochenen Lauf) → als "nicht erstellt" behandeln, damit ein erneuter
+  // Versuch die Rechnung nachholt statt sie stillschweigend zu überspringen.
+  const realId = (v: string | null | undefined): string | null =>
+    v && v !== "__pending__" ? v : null;
+  let rentalInvoiceId: string | null = realId(contract.lexoffice_invoice_id);
+  let depositInvoiceId: string | null = realId(contract.deposit_invoice_id);
 
   if (lexofficeReady) {
     const apiKey = org!.lexoffice_api_key as string;
@@ -114,6 +134,32 @@ export const POST = async (_req: Request, { params }: Ctx) => {
     // der Marker auf null zurückgesetzt — die inkrementelle Retry-Sicherheit bleibt
     // erhalten (ein späterer Aufruf kann den Beleg erneut claimen).
     try {
+      // Selbstheilung: hängengebliebene "__pending__"-Marker (aus einem
+      // abgebrochenen früheren Lauf) auf null zurücksetzen, damit der .is(null)-
+      // Claim unten sie neu vergeben kann. Mit dem 25s-Timeout im LexOffice-
+      // Client ist ein echter In-Flight-Marker kurzlebig; ein permanent
+      // hängender wird so wieder aufgelöst.
+      if (contract.lexoffice_invoice_id === "__pending__")
+        await admin
+          .from("contracts")
+          .update({ lexoffice_invoice_id: null })
+          .eq("id", params.id)
+          .eq("org_id", auth.org_id)
+          .eq("lexoffice_invoice_id", "__pending__");
+      if (contract.deposit_invoice_id === "__pending__")
+        await admin
+          .from("contracts")
+          .update({ deposit_invoice_id: null })
+          .eq("id", params.id)
+          .eq("org_id", auth.org_id)
+          .eq("deposit_invoice_id", "__pending__");
+
+      // Steuerart aus dem LexOffice-KONTO ableiten (nicht aus unserem
+      // kleinunternehmer-Flag) — sonst lehnt LexOffice die Rechnung mit 406 ab,
+      // wenn die Klassifizierung abweicht.
+      const profile = await lxGetProfile(apiKey);
+      const kleinunternehmer = profile.taxType === "vatfree" || profile.smallBusiness === true;
+
       // 1) Miet-Rechnung — atomar claimen, dann erstellen.
       if (!rentalInvoiceId) {
         const { data: claimed } = await admin
@@ -130,7 +176,7 @@ export const POST = async (_req: Request, { params }: Ctx) => {
               contract,
               customer ?? null,
               vehicle ?? null,
-              Boolean(org?.kleinunternehmer)
+              kleinunternehmer
             );
             const result = await lxCreateInvoice(apiKey, invoice);
             rentalInvoiceId = result.id;
@@ -166,7 +212,7 @@ export const POST = async (_req: Request, { params }: Ctx) => {
             const depInvoice = buildDepositInvoice(
               contract,
               customer ?? null,
-              Boolean(org?.kleinunternehmer)
+              kleinunternehmer
             );
             const depResult = await lxCreateInvoice(apiKey, depInvoice);
             depositInvoiceId = depResult.id;

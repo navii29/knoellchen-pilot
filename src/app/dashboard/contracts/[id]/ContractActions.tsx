@@ -91,19 +91,27 @@ export const ContractActions = ({
   const activate = async () => {
     setBusy("activate");
     setError(null);
-    const res = await fetch(`/api/contracts/${contract.id}/activate`, {
-      method: "POST",
-    });
-    const j = await res.json().catch(() => ({}));
-    setBusy(null);
-    if (!res.ok) {
-      setError(j.error || "Aktivierung fehlgeschlagen");
-      // Auch bei Teilfehler aktualisieren: eine bereits erstellte Miet-Rechnung
-      // soll sichtbar werden, damit niemand versehentlich neu auslöst.
+    try {
+      const res = await fetch(`/api/contracts/${contract.id}/activate`, {
+        method: "POST",
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(j.error || "Aktivierung fehlgeschlagen");
+        // Auch bei Teilfehler aktualisieren: eine bereits erstellte Miet-Rechnung
+        // soll sichtbar werden, damit niemand versehentlich neu auslöst.
+        router.refresh();
+        return;
+      }
       router.refresh();
-      return;
+    } catch {
+      // Netzwerkabbruch / Timeout: NICHT still hängen bleiben — klar melden.
+      // (Erneuter Versuch erzeugt keine Doppel-Rechnung — per-Beleg-Claim.)
+      setError("Aktivierung fehlgeschlagen (Netzwerk oder Zeitüberschreitung). Bitte erneut versuchen.");
+      router.refresh();
+    } finally {
+      setBusy(null);
     }
-    router.refresh();
   };
 
   const [sentInfo, setSentInfo] = useState<string | null>(null);
