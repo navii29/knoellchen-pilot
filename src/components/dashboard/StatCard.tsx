@@ -19,25 +19,19 @@ export const StatCard = ({
   sub?: string;
 }) => (
   <div className="glass-card glass-sheen rounded-card p-5 flex flex-col gap-4 min-h-[150px]">
-    {/* Icon + Label als ruhige Kopfzeile, beide links bündig — kein Icon mehr
-        in der Ecke, das an der Kartenrundung abgeschnitten wirkt. */}
-    <div className="flex items-center gap-2.5">
-      <span
-        className={`shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-xl ${
-          accent ? "bg-signal text-white" : "bg-signal-soft text-signal"
-        }`}
-      >
-        <Icon size={17} strokeWidth={2} />
-      </span>
-      <span className="text-[13px] font-medium text-ink-soft leading-tight [overflow-wrap:anywhere]">
-        {label}
-      </span>
+    {/* Kopfzeile: Label führt, Icon nur als ruhiger Hinweis rechts (demoted) —
+        die Kennzahl ist der Fokus, nicht das Icon. */}
+    <div className="flex items-start justify-between gap-2">
+      <span className="metric-cap [overflow-wrap:anywhere] pt-0.5">{label}</span>
+      <Icon
+        size={16}
+        strokeWidth={1.9}
+        className={accent ? "shrink-0 text-ink" : "shrink-0 text-ink-muted"}
+      />
     </div>
     <div className="mt-auto">
-      <div className="font-display font-semibold text-[30px] leading-none tracking-tight tabular-nums text-ink">
-        {value}
-      </div>
-      {sub && <div className="mt-1.5 text-[12.5px] text-ink-muted">{sub}</div>}
+      <div className="metric-lg">{value}</div>
+      {sub && <div className="mt-2 text-[12.5px] text-ink-muted">{sub}</div>}
     </div>
   </div>
 );

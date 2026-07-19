@@ -105,7 +105,7 @@ export const Sidebar = ({
 
   const navList = (
     <>
-      <div className="text-[11px] font-medium uppercase tracking-wider text-ink-muted px-3 py-2.5">
+      <div className="text-[11px] font-medium uppercase tracking-wider text-white/40 px-3 py-2.5">
         Arbeitsbereich
       </div>
       {ITEMS.map((it) => {
@@ -129,20 +129,20 @@ export const Sidebar = ({
             href={it.href}
             className={`group w-full flex items-center gap-2.5 px-3 py-2 rounded-btn text-[13.5px] transition-all duration-150 ${
               isActive
-                ? "glass-active text-signal font-medium"
-                : "text-ink-soft hover:bg-white/40 hover:text-ink"
+                ? "bg-white/[0.12] text-white font-medium"
+                : "text-white/65 hover:bg-white/[0.07] hover:text-white"
             }`}
           >
             <it.Icon
               size={16}
               strokeWidth={isActive ? 2.1 : 1.85}
-              className={isActive ? "text-signal" : "text-ink-muted group-hover:text-ink-soft"}
+              className={isActive ? "text-white" : "text-white/55 group-hover:text-white/85"}
             />
             <span>{it.label}</span>
             {badge != null && badge > 0 && (
               <span
                 className={`ml-auto text-[10.5px] font-medium tabular-nums px-1.5 py-0.5 rounded-full ${
-                  isActive ? "bg-signal/15 text-signal" : "bg-black/[0.05] text-ink-muted"
+                  isActive ? "bg-white/20 text-white" : "bg-white/10 text-white/55"
                 }`}
               >
                 {badge}
@@ -156,40 +156,40 @@ export const Sidebar = ({
 
   const profileBlock = (
     <form action="/auth/signout" method="post">
-      <button className="w-full flex items-center gap-2.5 px-2 py-2 rounded-btn hover:bg-black/[0.04] transition-all duration-150">
-        <div className="w-8 h-8 rounded-full bg-graphite text-white flex items-center justify-center text-[11px] font-semibold shrink-0">
+      <button className="w-full flex items-center gap-2.5 px-2 py-2 rounded-btn hover:bg-white/[0.07] transition-all duration-150">
+        <div className="w-8 h-8 rounded-full bg-white/[0.12] text-white flex items-center justify-center text-[11px] font-semibold shrink-0">
           {orgName.slice(0, 2).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0 text-left">
-          <div className="text-[13px] font-medium text-ink truncate">{orgName}</div>
-          <div className="text-[11px] text-ink-muted truncate">Abmelden</div>
+          <div className="text-[13px] font-medium text-white truncate">{orgName}</div>
+          <div className="text-[11px] text-white/50 truncate">Abmelden</div>
         </div>
-        <ChevronRight size={14} className="text-ink-muted shrink-0" />
+        <ChevronRight size={14} className="text-white/50 shrink-0" />
       </button>
     </form>
   );
 
   const logoBlock = (
-    <div className="h-16 px-4 flex items-center border-b border-hairline">
-      <Logo tone="light" size={28} />
+    <div className="h-16 px-4 flex items-center border-b border-white/10">
+      <Logo tone="dark" size={28} />
     </div>
   );
 
   const legalLinks = (
-    <div className="flex items-center gap-x-3 gap-y-1 flex-wrap px-3 pt-2 text-[11px] text-ink-muted">
-      <Link href="/impressum" className="hover:text-ink-soft transition-colors">Impressum</Link>
-      <Link href="/datenschutz" className="hover:text-ink-soft transition-colors">Datenschutz</Link>
-      <Link href="/agb" className="hover:text-ink-soft transition-colors">AGB</Link>
+    <div className="flex items-center gap-x-3 gap-y-1 flex-wrap px-3 pt-2 text-[11px] text-white/40">
+      <Link href="/impressum" className="hover:text-white/70 transition-colors">Impressum</Link>
+      <Link href="/datenschutz" className="hover:text-white/70 transition-colors">Datenschutz</Link>
+      <Link href="/agb" className="hover:text-white/70 transition-colors">AGB</Link>
     </div>
   );
 
   return (
     <>
-      {/* Desktop-Sidebar — frosted glass chrome */}
-      <aside className="hidden md:flex w-60 shrink-0 glass-chrome border-y-0 border-l-0 flex-col relative z-10">
+      {/* Desktop-Sidebar — dunkles, cleanes Chrome */}
+      <aside className="hidden md:flex w-60 shrink-0 bg-void-700 border-r border-white/[0.08] flex-col relative z-10">
         {logoBlock}
-        <div className="p-2 space-y-0.5 flex-1 overflow-y-auto">{navList}</div>
-        <div className="p-3 border-t border-hairline">{profileBlock}{legalLinks}</div>
+        <div className="p-2 space-y-0.5 flex-1 overflow-y-auto scroll-thin">{navList}</div>
+        <div className="p-3 border-t border-white/10">{profileBlock}{legalLinks}</div>
       </aside>
 
       {/* Mobile-Drawer + Backdrop */}
@@ -204,22 +204,22 @@ export const Sidebar = ({
           onClick={() => setMobileOpen(false)}
         />
         <aside
-          className={`absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] glass-raised flex flex-col transition-transform duration-200 ${
+          className={`absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-void-700 flex flex-col transition-transform duration-200 ${
             mobileOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          <div className="h-16 px-4 flex items-center justify-between border-b border-hairline">
-            <Logo tone="light" size={28} />
+          <div className="h-16 px-4 flex items-center justify-between border-b border-white/10">
+            <Logo tone="dark" size={28} />
             <button
               onClick={() => setMobileOpen(false)}
-              className="touch-target -mr-2 flex items-center justify-center text-ink-muted hover:text-ink"
+              className="touch-target -mr-2 flex items-center justify-center text-white/60 hover:text-white"
               aria-label="Menü schließen"
             >
               <X size={18} />
             </button>
           </div>
-          <div className="p-2 space-y-0.5 flex-1 overflow-y-auto">{navList}</div>
-          <div className="p-3 border-t border-hairline safe-bottom">{profileBlock}{legalLinks}</div>
+          <div className="p-2 space-y-0.5 flex-1 overflow-y-auto scroll-thin">{navList}</div>
+          <div className="p-3 border-t border-white/10 safe-bottom">{profileBlock}{legalLinks}</div>
         </aside>
       </div>
     </>

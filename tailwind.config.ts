@@ -42,12 +42,16 @@ const config: Config = {
           DEFAULT: "#d2d2d7", // light borders / dividers (Apple silver)
           dark: "rgba(255,255,255,0.12)", // dark borders / dividers
         },
-        // "signal" is now Apple vivid blue (CTA / active / link).
+        // "signal" = CTA / active / link. Standard Apple-Blau, aber über
+        // CSS-Variablen (RGB-Kanäle) definiert, damit einzelne Bereiche den
+        // Akzent scopen können (z. B. das Dashboard auf Schwarz via .dash-clean),
+        // ohne Landing/Portal zu ändern. Opacity-Modifier (bg-signal/15) bleiben
+        // dank rgb(var / <alpha-value>) erhalten.
         signal: {
-          DEFAULT: "#0071e3",
-          strong: "#0066cc",
-          soft: "#e9f2fe", // tint background on light
-          ink: "#0066cc", // text on signal-soft
+          DEFAULT: "rgb(var(--signal-rgb) / <alpha-value>)",
+          strong: "rgb(var(--signal-rgb) / <alpha-value>)",
+          soft: "rgb(var(--signal-soft-rgb) / <alpha-value>)",
+          ink: "rgb(var(--signal-ink-rgb) / <alpha-value>)",
         },
         // License-plate chrome — EU strip ONLY, never a UI accent.
         plate: {
